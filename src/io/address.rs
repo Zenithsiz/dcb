@@ -15,8 +15,7 @@ pub use data::Data;
 
 /// Error type for `TryFrom<Real> for Data`
 #[derive(Debug, derive_more::Display)]
-pub enum RealToDataError
-{
+pub enum RealToDataError {
 	/// Occurs when the Real is outside of the data section of the sector
 	#[display(fmt = "The real address {} could not be converted to a data address as it is not in the data section", _0)]
 	OutsideDataSection(Real),
@@ -31,11 +30,10 @@ impl std::error::Error for RealToDataError {
 }
 
 // Real -> Data
-impl std::convert::TryFrom<Real> for Data
-{
+impl std::convert::TryFrom<Real> for Data {
 	type Error = RealToDataError;
 	
-	fn try_from(real_address: Real) -> Result<Data, Self::Error>
+	fn try_from(real_address: Real) -> Result<Self, Self::Error>
 	{
 		// If the real address isn't in the data section, then return err
 		if !real_address.in_data_section() { return Err( Self::Error::OutsideDataSection(real_address) ); }
@@ -47,7 +45,7 @@ impl std::convert::TryFrom<Real> for Data
 		// The data address is just converting the real_sector
 		// to a data_sector and subtracting the header from the
 		// real offset to get the data offset 
-		Ok( Data::from(
+		Ok( Self::from(
 			Real::SECTOR_BYTE_SIZE * real_sector +      // Base of data sector
 			real_sector_offset - Real::HEADER_BYTE_SIZE // Data offset
 		))
@@ -57,7 +55,7 @@ impl std::convert::TryFrom<Real> for Data
 // Data -> Real
 impl From<Data> for Real
 {
-	fn from(data_address: Data) -> Real
+	fn from(data_address: Data) -> Self
 	{
 		// Get the sector and offset
 		let data_sector        = data_address.sector();
@@ -65,9 +63,9 @@ impl From<Data> for Real
 		
 		// Then the real address is just convering the data_sector
 		// to a real_sector and adding the header plus the offset
-		Real::from(
-			Real::SECTOR_BYTE_SIZE * data_sector + // Base of real sector
-			Real::HEADER_BYTE_SIZE               + // Skip header
+		Self::from(
+			Self::SECTOR_BYTE_SIZE * data_sector + // Base of real sector
+			Self::HEADER_BYTE_SIZE               + // Skip header
 			data_sector_offset                     // Offset inside data sector
 		)
 	}

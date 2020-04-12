@@ -151,15 +151,16 @@
 			impl CardType
 			{
 				/// Returns the byte size of the corresponding card
+				#[must_use]
 				pub fn card_byte_size(self) -> usize
 				{
 					use crate::game::Bytes;
 					
 					match self
 					{
-						CardType::Digimon   => <crate::game::card::Digimon   as Bytes>::BUF_BYTE_SIZE,
-						CardType::Item      => <crate::game::card::Item      as Bytes>::BUF_BYTE_SIZE,
-						CardType::Digivolve => <crate::game::card::Digivolve as Bytes>::BUF_BYTE_SIZE,
+						Self::Digimon   => <crate::game::card::Digimon   as Bytes>::BUF_BYTE_SIZE,
+						Self::Item      => <crate::game::card::Item      as Bytes>::BUF_BYTE_SIZE,
+						Self::Digivolve => <crate::game::card::Digivolve as Bytes>::BUF_BYTE_SIZE,
 					}
 				}
 			}

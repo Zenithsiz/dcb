@@ -1,10 +1,10 @@
 //! Game Data
 //! 
 //! The game module is where all of the game data is defined, this game data
-//! can read from the [GameFile](crate::io::GameFile) in the `io` module.
+//! can read from the [`GameFile`](crate::io::GameFile) in the `io` module.
 //! 
-//! Some notable types within this module are [CardTable](crate::game::card::Table), the table which
-//! stores all cards and [DeckTable](crate::game::deck::Table), the table which stores all cards available.
+//! Some notable types within this module are [`CardTable`](crate::game::card::Table), the table which
+//! stores all cards and [`DeckTable`](crate::game::deck::Table), the table which stores all cards available.
 //! 
 //! # Strings
 //! A lot of types in this module have strings that they must read and write from the game.
@@ -16,8 +16,6 @@
 
 // Modules
 #[macro_use] pub mod util;
-
-pub mod structure;
 
 pub mod bytes;
 pub mod from_bytes;
@@ -32,6 +30,5 @@ pub mod deck;
 pub use bytes::Bytes;
 pub use from_bytes::FromBytes;
 pub use to_bytes::ToBytes;
-pub use structure::Structure;
 
 pub use card::Digimon;

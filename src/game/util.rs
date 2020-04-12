@@ -132,6 +132,7 @@
 	}
 	
 	/// Returns an ordinal string from a u64
+	#[must_use]
 	pub fn as_ordinal(num: u64) -> String
 	{
 		format!("{0}{1}", num, match num % 10 {

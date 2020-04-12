@@ -1,3 +1,5 @@
+//! Digivolve
+
 // Crate
 //--------------------------------------------------------------------------------------------------
 	// Game
@@ -142,7 +144,7 @@ use serde::Deserialize;
 		
 		fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Error>
 		{
-			Ok( Digivolve {
+			Ok( Self {
 				basic: Basic {
 					name: util::read_null_terminated_string( &bytes[0x0..0x15] ).map_err(FromBytesError::NameToString)?.to_string(),
 				},

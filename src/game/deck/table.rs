@@ -47,7 +47,7 @@ use serde::Deserialize;
 	
 	/// Error type for `Table::new`
 	#[derive(Debug, derive_more::Display)]
-	pub enum TableNewError
+	pub enum NewError
 	{
 		/// Could not seek tothe beginning of the deck table
 		#[display(fmt = "Could not seek to the beginning of the deck table")]
@@ -78,7 +78,7 @@ use serde::Deserialize;
 		*/
 	}
 	
-	impl std::error::Error for TableNewError {
+	impl std::error::Error for NewError {
 		fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
 			match self {
 				Self::SeekTableBegin(err) |
@@ -90,7 +90,7 @@ use serde::Deserialize;
 	
 	/// Error type for `Table::write_to_file`
 	#[derive(Debug, derive_more::Display)]
-	pub enum TableWriteError
+	pub enum WriteError
 	{
 		/// The deck table was too big
 		#[display(fmt = "The deck table was too big (is {}, should be 65536 max)", _0)]
@@ -127,7 +127,7 @@ use serde::Deserialize;
 		// Constructors
 		//--------------------------------------------------------------------------------------------------
 			/// Reads the deck table from a dcb bin file
-			pub fn new<F>(game_file: &mut GameFile<F>) -> Result<Table, TableNewError>
+			pub fn new<F>(game_file: &mut GameFile<F>) -> Result<Self, NewError>
 			where
 				F: Read + Write + Seek
 			{
@@ -136,7 +136,7 @@ use serde::Deserialize;
 				
 				
 				// Seek to the beginning of the deck table
-				game_file.seek( std::io::SeekFrom::Start( u64::from( Table::DECK_TABLE_START_ADDRESS) ) ).map_err(TableNewError::SeekTableBegin)?;
+				game_file.seek( std::io::SeekFrom::Start( u64::from( Self::DECK_TABLE_START_ADDRESS) ) ).map_err(NewError::SeekTableBegin)?;
 				
 				// Then loop until we're at the end of the table
 				//'table_loop: loop
@@ -144,15 +144,15 @@ use serde::Deserialize;
 				{
 					// Read the deck
 					let mut buf = [0u8; 110];
-					game_file.read_exact(&mut buf).map_err(TableNewError::DeckEntry).unwrap();
+					game_file.read_exact(&mut buf)
+						.map_err(NewError::DeckEntry)?;
 					
 					// And construct the deck
 					let deck = Deck {
 						cards: {
 							let mut cards_buf = [0u16; 30];
 							
-							for card_id in 0..30
-							{
+							for card_id in 0..30 {
 								cards_buf[card_id] = LittleEndian::read_u16( &buf[0x0 + card_id*2 .. 0x2 + card_id*2] );
 							}
 							
@@ -165,7 +165,7 @@ use serde::Deserialize;
 				}
 				
 				// And return the table
-				Ok( Table {
+				Ok( Self {
 					decks,
 				})
 			}
@@ -173,8 +173,9 @@ use serde::Deserialize;
 		
 		// Write
 		//--------------------------------------------------------------------------------------------------
+			/*
 			/// Writes this table to a dcb bin file
-			pub fn write_to_file<F>(&self, _game_file: &mut GameFile<F>) -> Result<(), TableWriteError>
+			pub fn write_to_file<F>(&self, _game_file: &mut GameFile<F>) -> Result<(), WriteError>
 			where
 				F: Read + Write + Seek
 			{
@@ -204,6 +205,7 @@ use serde::Deserialize;
 				
 				Ok(())
 			}
+			*/
 		//--------------------------------------------------------------------------------------------------
 	}
 //--------------------------------------------------------------------------------------------------

@@ -1,12 +1,23 @@
-// Crate
-//--------------------------------------------------------------------------------------------------
-	// Game
-	use crate::game::{Bytes, FromBytes, ToBytes};
-	use crate::game::card::property::{DigimonProperty, SupportEffectOperation, AttackType, PlayerType, Slot};
-//--------------------------------------------------------------------------------------------------
+//! Support effects
+
+// Lints
+#![allow(
+	// We have a lot of `a, b, c, x, y` from the formulas,
+	// but we can't change those names since they're the actual
+	// names of the variables in the formulas
+	clippy::many_single_char_names
+)] 
 
 // byteorder
 use byteorder::{ByteOrder, LittleEndian};
+
+// Crate
+use crate::{
+	game::{
+		Bytes, FromBytes, ToBytes,
+		card::property::{DigimonProperty, SupportEffectOperation, AttackType, PlayerType, Slot},
+	},
+};
 
 // Types
 //--------------------------------------------------------------------------------------------------
@@ -14,6 +25,8 @@ use byteorder::{ByteOrder, LittleEndian};
 	#[derive(PartialEq, Eq, Clone, Copy, Hash, Debug)]
 	#[derive(serde::Serialize, serde::Deserialize)]
 	#[serde(tag = "type")]
+	// TODO: Move this `allow` to the variant once clippy allows
+	#[allow(clippy::pub_enum_variant_names)] // `Effect` on `VoidOpponentSupportEffect` isn't refering to the enum
 	pub enum SupportEffect
 	{
 		/// Changes a property of either digimon
@@ -218,54 +231,56 @@ use byteorder::{ByteOrder, LittleEndian};
 			match effect_type_byte
 			{
 				0..=13 => {
-					Ok( SupportEffect::ChangeProperty {
+					Ok( Self::ChangeProperty {
 						// Note: unwrapping is fine here because we know that `effect_type_byte+1` is between 1 and 14 inclusive
-						property: DigimonProperty::from_bytes( &[ effect_type_byte+1 ] ).unwrap(),
+						property: DigimonProperty::from_bytes( &[ effect_type_byte+1 ] )
+							.expect("Unable to get digimon property from bytes"),
 						a, b, c, x, y, op,
 					})
 				},
 				
-				16 => { Ok( SupportEffect::UseAttack{ player: PlayerType::Player  , attack: AttackType::from_bytes( &[x as u8] )  .map_err(FromBytesError::AttackType)? } ) },
-				17 => { Ok( SupportEffect::UseAttack{ player: PlayerType::Opponent, attack: AttackType::from_bytes( &[x as u8] )  .map_err(FromBytesError::AttackType)? } ) },
+				// Take lower byte from `x` for these
+				16 => { Ok( Self::UseAttack{ player: PlayerType::Player  , attack: AttackType::from_bytes( &[x.to_le_bytes()[0]] )  .map_err(FromBytesError::AttackType)? } ) },
+				17 => { Ok( Self::UseAttack{ player: PlayerType::Opponent, attack: AttackType::from_bytes( &[x.to_le_bytes()[0]] )  .map_err(FromBytesError::AttackType)? } ) },
 				
 				
-				25 => { Ok( SupportEffect::SetTempSlot{ a, b, c, op } ) },
+				25 => { Ok( Self::SetTempSlot{ a, b, c, op } ) },
 				
-				26 => { Ok( SupportEffect::MoveCards{ player: PlayerType::Player  , source: Slot::Hand   , destination: Slot::Offline, count: y } ) },
-				27 => { Ok( SupportEffect::MoveCards{ player: PlayerType::Opponent, source: Slot::Hand   , destination: Slot::Offline, count: y } ) },
+				26 => { Ok( Self::MoveCards{ player: PlayerType::Player  , source: Slot::Hand   , destination: Slot::Offline, count: y } ) },
+				27 => { Ok( Self::MoveCards{ player: PlayerType::Opponent, source: Slot::Hand   , destination: Slot::Offline, count: y } ) },
 				
-				30 => { Ok( SupportEffect::MoveCards{ player: PlayerType::Player  , source: Slot::Hand   , destination: Slot::Online , count: y } ) },
-				31 => { Ok( SupportEffect::MoveCards{ player: PlayerType::Opponent, source: Slot::Hand   , destination: Slot::Online , count: y } ) },
+				30 => { Ok( Self::MoveCards{ player: PlayerType::Player  , source: Slot::Hand   , destination: Slot::Online , count: y } ) },
+				31 => { Ok( Self::MoveCards{ player: PlayerType::Opponent, source: Slot::Hand   , destination: Slot::Online , count: y } ) },
 				
-				32 => { Ok( SupportEffect::MoveCards{ player: PlayerType::Player  , source: Slot::Online , destination: Slot::Offline, count: y } ) },
-				33 => { Ok( SupportEffect::MoveCards{ player: PlayerType::Opponent, source: Slot::Online , destination: Slot::Offline, count: y } ) },
+				32 => { Ok( Self::MoveCards{ player: PlayerType::Player  , source: Slot::Online , destination: Slot::Offline, count: y } ) },
+				33 => { Ok( Self::MoveCards{ player: PlayerType::Opponent, source: Slot::Online , destination: Slot::Offline, count: y } ) },
 				
-				34 => { Ok( SupportEffect::MoveCards{ player: PlayerType::Player  , source: Slot::Offline, destination: Slot::Online , count: y } ) },
-				35 => { Ok( SupportEffect::MoveCards{ player: PlayerType::Opponent, source: Slot::Offline, destination: Slot::Online , count: y } ) },
+				34 => { Ok( Self::MoveCards{ player: PlayerType::Player  , source: Slot::Offline, destination: Slot::Online , count: y } ) },
+				35 => { Ok( Self::MoveCards{ player: PlayerType::Opponent, source: Slot::Offline, destination: Slot::Online , count: y } ) },
 				
-				36 => { Ok( SupportEffect::MoveCards{ player: PlayerType::Player  , source: Slot::Dp     , destination: Slot::Offline, count: y } ) },
-				37 => { Ok( SupportEffect::MoveCards{ player: PlayerType::Opponent, source: Slot::Dp     , destination: Slot::Offline, count: y } ) },
+				36 => { Ok( Self::MoveCards{ player: PlayerType::Player  , source: Slot::Dp     , destination: Slot::Offline, count: y } ) },
+				37 => { Ok( Self::MoveCards{ player: PlayerType::Opponent, source: Slot::Dp     , destination: Slot::Offline, count: y } ) },
 				
 				
-				42 => { Ok( SupportEffect::ShuffleOnlineDeck{ player: PlayerType::Player   } ) },
-				43 => { Ok( SupportEffect::ShuffleOnlineDeck{ player: PlayerType::Opponent } ) },
+				42 => { Ok( Self::ShuffleOnlineDeck{ player: PlayerType::Player   } ) },
+				43 => { Ok( Self::ShuffleOnlineDeck{ player: PlayerType::Opponent } ) },
 				
-				44 => { Ok( SupportEffect::VoidOpponentSupportEffect       ) },
-				45 => { Ok( SupportEffect::VoidOpponentSupportOptionEffect ) },
+				44 => { Ok( Self::VoidOpponentSupportEffect       ) },
+				45 => { Ok( Self::VoidOpponentSupportOptionEffect ) },
 				
-				46 => { Ok( SupportEffect::PickPartnerCard ) },
+				46 => { Ok( Self::PickPartnerCard ) },
 				
-				47 => { Ok( SupportEffect::CycleOpponentAttackType ) },
+				47 => { Ok( Self::CycleOpponentAttackType ) },
 				
-				48 => { Ok( SupportEffect::KoDigimonRevives{ health: y } ) },
+				48 => { Ok( Self::KoDigimonRevives{ health: y } ) },
 				
-				49 => { Ok( SupportEffect::DrawCards{ player: PlayerType::Player  , count: y } ) },
-				50 => { Ok( SupportEffect::DrawCards{ player: PlayerType::Opponent, count: y } ) },
+				49 => { Ok( Self::DrawCards{ player: PlayerType::Player  , count: y } ) },
+				50 => { Ok( Self::DrawCards{ player: PlayerType::Opponent, count: y } ) },
 				
-				51 => { Ok( SupportEffect::OwnAttackBecomesEatUpHP ) },
+				51 => { Ok( Self::OwnAttackBecomesEatUpHP ) },
 				
-				52 => { Ok( SupportEffect::AttackFirst{ player: PlayerType::Player   } ) },
-				53 => { Ok( SupportEffect::AttackFirst{ player: PlayerType::Opponent } ) },
+				52 => { Ok( Self::AttackFirst{ player: PlayerType::Player   } ) },
+				53 => { Ok( Self::AttackFirst{ player: PlayerType::Opponent } ) },
 				
 				_ => Err( FromBytesError::UnknownEffectType{ byte: effect_type_byte } ),
 			}
@@ -280,10 +295,13 @@ use byteorder::{ByteOrder, LittleEndian};
 		fn to_bytes(&self, _bytes: &mut [u8]) -> Result<(), Self::Error>
 		{
 			// Match which effect we are
+			todo!()
+			/*
 			match self
 			{
-				_ => { unimplemented!(); }
+				_ => { todo!(); }
 			}
+			*/
 			
 			// Return Ok
 			//Ok(())

@@ -2,15 +2,14 @@
 
 /// A type for defining addresses on the `.bin` file.
 /// 
-/// # Details
-/// All addresses of type `Real` will represent the *real* position
-/// on the file.
+/// All real addresses will depict the actual position
+/// within the game file, including headers from the `.bin` file format.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(derive_more::From, derive_more::Into)]
 pub struct Real(u64);
 
 // Constants
-impl Real
-{
+impl Real {
 	/// The number of bytes within a whole sector
 	pub const SECTOR_BYTE_SIZE: u64 = 2352;
 	
@@ -33,76 +32,66 @@ impl Real
 	pub const DATA_RANGE: std::ops::Range<u64> = Self::DATA_START .. Self::DATA_END;
 }
 
-impl Real
-{
+impl Real {
 	/// Returns the real sector associated with this address
+	#[must_use]
+	#[allow(clippy::integer_division)] // We want to get the whole division
 	pub fn sector(self) -> u64 {
 		u64::from(self) / Self::SECTOR_BYTE_SIZE
 	}
 	
-	/// Returns the real offset into the sector of this address
+	/// Returns the offset into the sector of this address
+	#[must_use]
 	pub fn offset(self) -> u64 {
 		u64::from(self) % Self::SECTOR_BYTE_SIZE
 	}
 	
-	/// Returns the real end address of the data section
+	/// Returns the address of the end of the data section in this sector.
+	#[must_use]
 	pub fn data_section_end(self) -> Self {
 		// Get the sector
 		let real_sector = self.sector();
 		
 		// The end of the real data section is after the header and data sections
 		Self::from(
-			Real::SECTOR_BYTE_SIZE * real_sector + // Beginning of sector
-			Real::HEADER_BYTE_SIZE               + // Skip Header
-			Real::  DATA_BYTE_SIZE                 // Skip Data
+			Self::SECTOR_BYTE_SIZE * real_sector + // Beginning of sector
+			Self::HEADER_BYTE_SIZE               + // Skip Header
+			Self::  DATA_BYTE_SIZE                 // Skip Data
 		)
 	}
 	
-	/// Checks if a real address lies within the data section
+	/// Checks if this address is within the real data section
+	#[must_use]
 	pub fn in_data_section(self) -> bool {
 		// If our offset is within the data range
 		Self::DATA_RANGE.contains( &self.offset() )
 	}
 }
 
-// Conversions from and into u64
-impl From<Real> for u64  { fn from(address: Real) -> u64  { address.0     } }
-impl From<u64 > for Real { fn from(address: u64 ) -> Real { Real(address) } }
 
-// Conversions from and into i64
-impl From<Real> for i64  { fn from(address: Real) -> i64  {  u64::from(address       ) as i64 } }
-impl From<i64 > for Real { fn from(address: i64 ) -> Real { Real::from(address as u64)        } }
+// Real + Offset
+impl std::ops::Add<i64> for Real {
+	type Output = Self;
+	
+	fn add(self, offset: i64) -> Self {
+		Self::from( ( u64::from(self) as i64 + offset) as u64 )
+	}
+}
 
-// Operations
-//--------------------------------------------------------------------------------------------------
-	// Real + Offset
-	impl std::ops::Add<i64> for Real
-	{
-		type Output = Real;
-		
-		fn add(self, offset: i64) -> Real
-		{
-			Self::from( i64::from(self) + offset )
-		}
-	}
+// Real += Offset
+impl std::ops::AddAssign<i64> for Real {
+	fn add_assign(&mut self, offset: i64) { *self = *self + offset; }
+}
+
+// Real - Real
+impl std::ops::Sub<Real> for Real
+{
+	type Output = i64;
 	
-	// Real += Offset
-	impl std::ops::AddAssign<i64> for Real
-	{
-		fn add_assign(&mut self, offset: i64) { *self = *self + offset; }
+	fn sub(self, address: Self) -> i64 {
+		u64::from(self) as i64 - u64::from(address) as i64
 	}
-	
-	// Real - Real
-	impl std::ops::Sub<Real> for Real
-	{
-		type Output = i64;
-		
-		fn sub(self, address: Real) -> i64
-		{
-			i64::from(self) - i64::from(address)
-		}
-	}
-//--------------------------------------------------------------------------------------------------
+}
 
 
 // Display

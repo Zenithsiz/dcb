@@ -76,7 +76,7 @@ use byteorder::{ByteOrder, LittleEndian};
 			let cond = DigimonProperty::from_bytes( &bytes[0x2..0x3] ).map_err(FromBytesError::Condition)?;
 			
 			// And return the move
-			Ok( SupportCondition {
+			Ok( Self {
 				misfire: { bytes[0x0] != 0 },
 				cond,
 				
@@ -112,10 +112,12 @@ use byteorder::{ByteOrder, LittleEndian};
 			bytes[0x1] = 0;
 			
 			// 0x2 - Condition
-			self.cond.to_bytes(&mut bytes[0x2..0x3])?;
+			#[allow(clippy::diverging_sub_expression)] { // False positive
+				self.cond.to_bytes(&mut bytes[0x2..0x3])?;
+			}
 			
 			// 0x3..0x8 - Unknown[0..5]
-			for i in 0..5 { bytes[0x3 + i] = self.unknown[0 + i]; }
+			bytes[0x3..0x8].copy_from_slice( &self.unknown[0..5] );
 			
 			// 0x8 - Type arg / 0 if None
 			if let Some(type_arg) = self.type_arg {
@@ -124,13 +126,15 @@ use byteorder::{ByteOrder, LittleEndian};
 			else { bytes[0x8] = 0; }
 			
 			// 0x9..0x14 - Unknown[5..16]
-			for i in 0..11 { bytes[0x9 + i] = self.unknown[5 + i]; }
+			bytes[0x9..0x14].copy_from_slice( &self.unknown[5..16] );
 			
 			// 0x14..0x16 - Number arg
 			LittleEndian::write_u16(&mut bytes[0x14..0x16], self.num_arg);
 			
 			// 0x1a - Operation arg
-			self.operation.to_bytes(&mut bytes[0x1a..0x1b])?;
+			#[allow(clippy::diverging_sub_expression)] { // False positive
+				self.operation.to_bytes(&mut bytes[0x1a..0x1b])?;
+			}
 			
 			// And return OK
 			Ok(())

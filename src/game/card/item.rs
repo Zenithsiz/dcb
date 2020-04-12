@@ -1,3 +1,5 @@
+//! Item
+
 // Crate
 //--------------------------------------------------------------------------------------------------
 	// Game
@@ -142,7 +144,7 @@ use serde::Deserialize;
 			//assert_eq!(bytes[0x1a], 0);
 			
 			// And return the struct
-			Ok( Item {
+			Ok( Self {
 				basic: Basic {
 					name: util::read_null_terminated_string( &bytes[0x0..0x15] ).map_err(FromBytesError::NameToString)?.to_string(),
 					

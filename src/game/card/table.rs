@@ -8,34 +8,36 @@
 //! The digimon table has a max size of [0x14950](Table::MAX_BYTE_SIZE), but does not
 //! necessary use all of this space, but it does follow this layout:
 //! 
-//! | Offset | Size     | Type          | Name                 | Details                                                                 |
-//! |--------|----------|---------------|----------------------|-------------------------------------------------------------------------|
-//! | 0x0    | 0x4      | u32           | Magic                | Always contains the string "0ACD" (= [0x44434130](Table::HEADER_MAGIC)) |
-//! | 0x4    | 0x2      | u16           | Number of digimon    |                                                                         |
-//! | 0x6    | 0x1      | u8            | Number of items      |                                                                         |
-//! | 0x7    | 0x1      | u8            | Number of digivolves |                                                                         |
-//! | 0x8    | variable | \[CardEntry\] | Card Entries         | A contigous array of [Card Entry](#card-entry-layout)                   |
+//! | Offset | Size     | Type            | Name                 | Details                                                                 |
+//! |--------|----------|-----------------|----------------------|-------------------------------------------------------------------------|
+//! | 0x0    | 0x4      | u32             | Magic                | Always contains the string "0ACD" (= [0x44434130](Table::HEADER_MAGIC)) |
+//! | 0x4    | 0x2      | u16             | Number of digimon    |                                                                         |
+//! | 0x6    | 0x1      | u8              | Number of items      |                                                                         |
+//! | 0x7    | 0x1      | u8              | Number of digivolves |                                                                         |
+//! | 0x8    | variable | \[`CardEntry`\] | Card Entries         | A contigous array of [Card Entry](#card-entry-layout)                   |
 //! 
 //! # Card Entry Layout
 //! Each card entry consists of a header of the card
 //! 
-//! | Offset | Size     | Type                               | Name            | Details                                      |
-//! |--------|----------|------------------------------------|-----------------|----------------------------------------------|
-//! | 0x0    | 0x3      | [Card Header](#card-header-layout) | Card Header     | The card's header                            |
-//! | 0x3    | variable |                                    | Card            | Either a [Digimon], [Item] or [Digivolve]    |
-//! | ...    | 0x1      | u8                                 | Null terminator | A null terminator for the card (must be `0`) |
+//! | Offset | Size     | Type                                 | Name            | Details                                      |
+//! |--------|----------|--------------------------------------|-----------------|----------------------------------------------|
+//! | 0x0    | 0x3      | [`Card Header`](#card-header-layout) | Card Header     | The card's header                            |
+//! | 0x3    | variable |                                      | Card            | Either a [Digimon], [Item] or [Digivolve]    |
+//! | ...    | 0x1      | u8                                   | Null terminator | A null terminator for the card (must be `0`) |
 //! 
 //! # Card Header Layout
 //! The card header determines which type of card this card entry has.
 //! 
-//! | Offset | Size | Type       | Name      | Details                                          |
-//! |--------|------|------------|-----------|--------------------------------------------------|
-//! | 0x0    | 0x2  | u16        | Card id   | This card's ID                                   |
-//! | 0x2    | 0x1  | [CardType] | Card type | The card type ([Digimon], [Item] or [Digivolve]) |
-//! 
-//! # Todo
-//! [Table] might be changed from it's [Table::new] and [Table::write_to_file] interface to
-//! using the [ToBytes](crate::game::ToBytes) and [FromBytes](crate::game::FromBytes) traits, once it is fully figured out.
+//! | Offset | Size | Type         | Name      | Details                                          |
+//! |--------|------|--------------|-----------|--------------------------------------------------|
+//! | 0x0    | 0x2  | u16          | Card id   | This card's ID                                   |
+//! | 0x2    | 0x1  | [`CardType`] | Card type | The card type ([Digimon], [Item] or [Digivolve]) |
+
+// Io Traits
+use std::io::{Read, Write, Seek};
+
+// byteorder
+use byteorder::{ByteOrder, LittleEndian};
 
 // Dcb
 use crate::{
@@ -46,15 +48,8 @@ use crate::{
 			property::{CardType, card_type::UnknownCardType},
 		},
 		Bytes, FromBytes,
-		Structure,
 	}
 };
-
-// Io Traits
-use std::io::{Read, Write, Seek};
-
-// byteorder
-use byteorder::{ByteOrder, LittleEndian};
 
 /// The table storing all cards
 #[derive(Debug)]
@@ -81,46 +76,10 @@ impl Table {
 	pub const HEADER_MAGIC: u32 = 0x44434130;
 }
 
-// Error type for [`Table::from_game_file`]
-#[derive(Debug)]
-#[derive(derive_more::Display)]
-pub enum TableFromGameFileError {
-	/// Unable to seek game file
-	#[display(fmt = "Unable to seek game file")]
-	Seek( std::io::Error ),
-	
-	/// Unable to deserialize table
-	#[display(fmt = "Unable to deserialize table from game file")]
-	Deserialize( DeserializeError ),
-}
-
-impl std::error::Error for TableFromGameFileError {
-	fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-		match self {
-			Self::Seek       (err) => Some(err),
-			Self::Deserialize(err) => Some(err),
-		}
-	}
-}
-
-// Constructors
-impl Table {
-	/// Retrieves the card table from a game file
-	pub fn from_game_file<R: Read + Write + Seek>(game_file: &mut GameFile<R>) -> Result<Table, TableFromGameFileError> {
-		// Seek to the table address
-		game_file.seek( std::io::SeekFrom::Start( u64::from( Self::START_ADDRESS ) ) )
-			.map_err(TableFromGameFileError::Seek)?;
-		
-		// Deserialize it and return it
-		let table = Table::deserialize(game_file)
-			.map_err(TableFromGameFileError::Deserialize)?;
-		Ok(table)
-	}
-}
-
 // Utils
 impl Table {
 	/// Returns how many cards are in this table
+	#[must_use]
 	pub fn card_count(&self) -> usize {
 		self.digimons  .len() +
 		self.items     .len() +
@@ -129,13 +88,17 @@ impl Table {
 }
 
 
-/// Error type for [`<Table as Structure>::DeserializeError`]
+/// Error type for [`Structure::DeserializeError`]
 #[derive(Debug)]
 #[derive(derive_more::Display)]
 pub enum DeserializeError {
+	/// Unable to seek game file
+	#[display(fmt = "Unable to seek game file to card table")]
+	Seek( std::io::Error ),
+	
 	/// Unable to read table header
 	#[display(fmt = "Unable to read table header")]
-	ReadTableHeader( std::io::Error ),
+	ReadHeader( std::io::Error ),
 	
 	/// The magic of the table was wrong
 	#[display(fmt = "Found wrong table header magic (expected {:x}, found {:x})", Table::HEADER_MAGIC, "magic")]
@@ -148,11 +111,9 @@ pub enum DeserializeError {
 		"digimon_cards",
 		"item_cards",
 		"digivolve_cards",
-		r#"
-		  digimon_cards * (0x3 + Digimon  ::BUF_BYTE_SIZE + 0x1) +
+		" digimon_cards * (0x3 + Digimon  ::BUF_BYTE_SIZE + 0x1) +
 		     item_cards * (0x3 + Item     ::BUF_BYTE_SIZE + 0x1) +
-		digivolve_cards * (0x3 + Digivolve::BUF_BYTE_SIZE + 0x1)
-		"#,
+		digivolve_cards * (0x3 + Digivolve::BUF_BYTE_SIZE + 0x1)",
 		Table::MAX_BYTE_SIZE
 	)]
 	TooManyCards {
@@ -186,7 +147,8 @@ pub enum DeserializeError {
 impl std::error::Error for DeserializeError {
 	fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
 		match self {
-			Self::ReadTableHeader(err) |
+			Self::Seek(err) |
+			Self::ReadHeader(err) |
 			Self::ReadCardHeader { err, .. } |
 			Self::ReadCardFooter { err, .. } => Some(err),
 			Self::UnknownCardType { err, .. } => Some(err),
@@ -196,23 +158,21 @@ impl std::error::Error for DeserializeError {
 	}
 }
 
-impl Structure for Table {
-	type SerializeError = !;
-	type DeserializeError = DeserializeError;
-	
-	fn size() -> (usize, Option<usize>) {
-		(Self::HEADER_BYTE_SIZE, Some(Self::MAX_BYTE_SIZE))
-	}
-	
-	fn deserialize<R: Read + Write + Seek>(file: &mut GameFile<R>) -> Result<Self, Self::DeserializeError> {
+impl Table {
+	/// Deserializes the card table from a game file
+	pub fn deserialize<R: Read + Write + Seek>(file: &mut GameFile<R>) -> Result<Self, DeserializeError> {
+		// Seek to the table
+		file.seek( std::io::SeekFrom::Start( u64::from( Self::START_ADDRESS ) ) )
+			.map_err(DeserializeError::Seek)?;
+		
 		// Read header
 		let mut header_bytes = [0u8; 0x8];
 		file.read_exact(&mut header_bytes)
-			.map_err(Self::DeserializeError::ReadTableHeader)?;
+			.map_err(DeserializeError::ReadHeader)?;
 		
 		// Check if the magic is right
 		let magic = LittleEndian::read_u32( &header_bytes[0x0..0x4] );
-		if magic != Table::HEADER_MAGIC { return Err( Self::DeserializeError::HeaderMagic{ magic } ); }
+		if magic != Self::HEADER_MAGIC { return Err( DeserializeError::HeaderMagic{ magic } ); }
 		
 		// Then check the number of each card
 		let   digimon_cards = LittleEndian::read_u16( &header_bytes[0x4..0x6] ) as usize;
@@ -226,7 +186,7 @@ impl Structure for Table {
 		let table_size =  digimon_cards * (0x3 + Digimon  ::BUF_BYTE_SIZE + 0x1) +
 		                            item_cards * (0x3 + Item     ::BUF_BYTE_SIZE + 0x1) +
 		                       digivolve_cards * (0x3 + Digivolve::BUF_BYTE_SIZE + 0x1);
-		if table_size > Table::MAX_BYTE_SIZE { return Err( Self::DeserializeError::TooManyCards {
+		if table_size > Self::MAX_BYTE_SIZE { return Err( DeserializeError::TooManyCards {
 			  digimon_cards,
 			     item_cards,
 			digivolve_cards,
@@ -244,12 +204,12 @@ impl Structure for Table {
 			// Read card header bytes
 			let mut card_header_bytes = [0u8; 0x3];
 			file.read_exact(&mut card_header_bytes)
-				.map_err(|err| Self::DeserializeError::ReadCardHeader { id: cur_id, err })?;
+				.map_err(|err| DeserializeError::ReadCardHeader { id: cur_id, err })?;
 			
 			// Read the header
 			let card_id = LittleEndian::read_u16( &card_header_bytes[0x0..0x2] );
 			let card_type = CardType::from_bytes( &card_header_bytes[0x2..0x3] )
-				.map_err(|err| Self::DeserializeError::UnknownCardType{ id: cur_id, err } )?;
+				.map_err(|err| DeserializeError::UnknownCardType{ id: cur_id, err } )?;
 			
 			// If the card id isn't what we expected, log warning
 			if usize::from(card_id) != cur_id {
@@ -287,21 +247,21 @@ impl Structure for Table {
 			// Skip null terminator
 			let mut null_terminator = [0; 1];
 			file.read_exact(&mut null_terminator)
-				.map_err(|err| Self::DeserializeError::ReadCardFooter { id: cur_id, err })?;
+				.map_err(|err| DeserializeError::ReadCardFooter { id: cur_id, err })?;
 			if null_terminator[0] != 0 {
 				log::warn!("Card with id {}'s null terminator was {} instead of 0", cur_id, null_terminator[0]);
 			}
 		}
 		
 		// Return the table
-		Ok( Table {
+		Ok( Self {
 			digimons,
 			items,
 			digivolves,
 		})
 	}
 	
-	fn serialize<R: Read + Write + Seek>(&self, _file: &mut GameFile<R>) -> Result<(), Self::SerializeError> {
+	pub fn serialize<R: Read + Write + Seek>(&self, _file: &mut GameFile<R>) -> Result<(), !> {
 		todo!();
 		
 		/*

@@ -63,7 +63,7 @@ use byteorder::LittleEndian;
 		fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Error>
 		{
 			// And return the move
-			Ok( Move {
+			Ok( Self {
 				name   : util::read_null_terminated_string( &bytes[0x6..0x1c] ).map_err(FromBytesError::NameToString)?.to_string(),
 				power  : LittleEndian::read_u16( &bytes[0x0..0x2] ),
 				unknown: LittleEndian::read_u32( &bytes[0x2..0x6] ),

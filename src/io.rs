@@ -11,4 +11,3 @@ pub mod address;
 
 // Exports
 pub use game_file::GameFile;
-pub use address::Data as DataAddress;

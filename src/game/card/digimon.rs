@@ -5,27 +5,30 @@
 //! # Layout
 //! The digimon card has a size of 0x138 bytes, and it's layout is the following:
 //! 
-//! | Offset | Size | Name                      | Location                     | Details                                                                             |
-//! |--------|------|---------------------------|------------------------------|-------------------------------------------------------------------------------------|
-//! | 0x0    | 0x15 | Name                      | basic.name                   |                                                                                     |
-//! | 0x15   | 0x2  | Unknown                   | basic.unknown_1              | Most likely contains the digimon's model                                            |
-//! | 0x17   | 0x1  | Speciality & Level        | basic.speciality basic.level | The bottom nibble of this byte is the level, while the top nibble is the speciality |
-//! | 0x18   | 0x1  | DP                        | basic.dp_cost                |                                                                                     |
-//! | 0x19   | 0x1  | +P                        | basic.dp_give                |                                                                                     |
-//! | 0x1a   | 0x1  | Unknown                   | basic.unknown_0              | Is `0` for all digimon                                                              |
-//! | 0x1b   | 0x2  | Health                    | basic.hp                     |                                                                                     |
-//! | 0x1d   | 0x1c | Circle Move               | moves.circle                 |                                                                                     |
-//! | 0x39   | 0x1c | Triangle move             | moves.triangle               |                                                                                     |
-//! | 0x55   | 0x1c | Cross move                | moves.cross                  |                                                                                     |
-//! | 0x71   | 0x20 | First condition           | effects.conditions.first     |                                                                                     |
-//! | 0x91   | 0x20 | Second condition          | effects.conditions.second    |                                                                                     |
-//! | 0xb1   | 0x10 | First effect              | support.effects.first        |                                                                                     |
-//! | 0xc1   | 0x10 | Second effect             | support.effects.second       |                                                                                     |
-//! | 0xd1   | 0x10 | Third effect              | support.effects.third        |                                                                                     |
-//! | 0xe1   | 0x1  | Cross move effect         | support.cross_move           |                                                                                     |
-//! | 0xe2   | 0x1  | Unknown                   | support.unknown              |                                                                                     |
-//! | 0xe3   | 0x1  | Effect arrow color        | effects.arrow_color          |                                                                                     |
-//! | 0xe4   | 0x54 | Effect description lines  | effects.description          | Each line is `0x15` bytes, split over 4 lines                                       |
+//! | Offset | Size | Type                 | Name                      | Location                       | Details                                                                             |
+//! |--------|------|----------------------|---------------------------|--------------------------------|-------------------------------------------------------------------------------------|
+//! | 0x0    | 0x15 | `char[0x15]`         | Name                      |` basic.name`                   |                                                                                     |
+//! | 0x15   | 0x2  | `u16`                | Unknown                   |` basic.unknown_1`              | Most likely contains the digimon's model                                            |
+//! | 0x17   | 0x1  | `u8`                 | Speciality & Level        |` basic.speciality basic.level` | The bottom nibble of this byte is the level, while the top nibble is the speciality |
+//! | 0x18   | 0x1  | `u8`                 | DP                        |` basic.dp_cost`                |                                                                                     |
+//! | 0x19   | 0x1  | `u8`                 | +P                        |` basic.dp_give`                |                                                                                     |
+//! | 0x1a   | 0x1  | `u8`                 | Unknown                   |` basic.unknown_0`              | Is` 0` for all digimon                                                              |
+//! | 0x1b   | 0x2  | `u16`                | Health                    |` basic.hp`                     |                                                                                     |
+//! | 0x1d   | 0x1c | [`Move`]             | Circle Move               |` moves.circle`                 |                                                                                     |
+//! | 0x39   | 0x1c | [`Move`]             | Triangle move             |` moves.triangle`               |                                                                                     |
+//! | 0x55   | 0x1c | [`Move`]             | Cross move                |` moves.cross`                  |                                                                                     |
+//! | 0x71   | 0x20 | [`SupportCondition`] | First condition           |` effects.conditions.first`     |                                                                                     |
+//! | 0x91   | 0x20 | [`SupportCondition`] | Second condition          |` effects.conditions.second`    |                                                                                     |
+//! | 0xb1   | 0x10 | [`SupportEffect`]    | First effect              |` support.effects.first`        |                                                                                     |
+//! | 0xc1   | 0x10 | [`SupportEffect`]    | Second effect             |` support.effects.second`       |                                                                                     |
+//! | 0xd1   | 0x10 | [`SupportEffect`]    | Third effect              |` support.effects.third`        |                                                                                     |
+//! | 0xe1   | 0x1  | [`CrossMoveEffect`]  | Cross move effect         |` support.cross_move`           |                                                                                     |
+//! | 0xe2   | 0x1  | `u8`                 | Unknown                   |` support.unknown`              |                                                                                     |
+//! | 0xe3   | 0x1  | [`ArrowColor`]       | Effect arrow color        |` effects.arrow_color`          |                                                                                     |
+//! | 0xe4   | 0x54 | `char[0x15][4]`      | Effect description lines  |` effects.description`          | Each line is` 0x15` bytes, split over 4 lines                                       |
+
+// byteorder
+use byteorder::{ByteOrder, LittleEndian};
 
 // Crate
 use crate::game::{
@@ -36,211 +39,205 @@ use crate::game::{
 	}
 };
 
-// byteorder
-use byteorder::{ByteOrder, LittleEndian};
+/// A digimon card
+#[derive(PartialEq, Eq, Clone, Hash, Debug)]
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct Digimon
+{
+	/// The basic info of the digimon
+	pub basic: Basic,
+	
+	/// The moves
+	pub moves: Moves,
+	
+	/// The support
+	pub support: Support,
+}
 
-// Types
-//--------------------------------------------------------------------------------------------------
-	/// A digimon card
-	#[derive(PartialEq, Eq, Clone, Hash, Debug)]
-	#[derive(serde::Serialize, serde::Deserialize)]
-	pub struct Digimon
-	{
-		/// The basic info of the digimon
-		pub basic: Basic,
-		
-		/// The moves
-		pub moves: Moves,
-		
-		/// The support
-		pub support: Support,
-	}
+/// The basic properties of a digimon
+#[derive(PartialEq, Eq, Clone, Hash, Debug)]
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct Basic
+{
+	pub name: String,
+	pub speciality: Speciality,
+	pub level: Level,
+	pub hp: u16,
 	
-	/// The basic properties of a digimon
-	#[derive(PartialEq, Eq, Clone, Hash, Debug)]
-	#[derive(serde::Serialize, serde::Deserialize)]
-	pub struct Basic
-	{
-		pub name: String,
-		pub speciality: Speciality,
-		pub level: Level,
-		pub hp: u16,
-		
-		/// `DP` in the game.
-		pub dp_cost: u8,
-		
-		/// `+P` in the game.
-		pub dp_give: u8,
-		
-		// Unknown fields
-		pub unknown_0: u8,
-		pub unknown_1: u16,
-	}
+	/// `DP` in the game.
+	pub dp_cost: u8,
 	
-	/// The moves a digimon has
-	#[derive(PartialEq, Eq, Clone, Hash, Debug)]
-	#[derive(serde::Serialize, serde::Deserialize)]
-	pub struct Moves
-	{
-		pub circle  : Move,
-		pub triangle: Move,
-		pub cross   : Move,
-	}
+	/// `+P` in the game.
+	pub dp_give: u8,
 	
-	/// The support effect of a digimon
-	#[derive(PartialEq, Eq, Clone, Hash, Debug)]
-	#[derive(serde::Serialize, serde::Deserialize)]
-	pub struct Support
-	{
-		/// Unknown field
-		pub unknown: u8,
-		
-		/// The cross move effect
-		pub cross_move: Option<CrossMoveEffect>,
-		
-		/// The effect description
-		pub description: [String; 4],
-		
-		/// The effect arrow color
-		pub arrow_color: Option<ArrowColor>,
-		
-		/// The effect conditions
-		pub conditions: SupportConditions,
-		
-		/// The effects themselves
-		pub effects: SupportSupport,
-	}
+	// Unknown fields
+	pub unknown_0: u8,
+	pub unknown_1: u16,
+}
+
+/// The moves a digimon has
+#[derive(PartialEq, Eq, Clone, Hash, Debug)]
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct Moves
+{
+	pub circle  : Move,
+	pub triangle: Move,
+	pub cross   : Move,
+}
+
+/// The support effect of a digimon
+#[derive(PartialEq, Eq, Clone, Hash, Debug)]
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct Support
+{
+	/// Unknown field
+	pub unknown: u8,
 	
-	/// All of the support effects
-	#[derive(PartialEq, Eq, Clone, Copy, Hash, Debug)]
-	#[derive(serde::Serialize, serde::Deserialize)]
-	pub struct SupportSupport
-	{
-		pub first : Option<SupportEffect>,
-		pub second: Option<SupportEffect>,
-		pub third : Option<SupportEffect>,
-	}
+	/// The cross move effect
+	pub cross_move: Option<CrossMoveEffect>,
 	
-	/// All of the support effect conditions
-	#[derive(PartialEq, Eq, Clone, Copy, Hash, Debug)]
-	#[derive(serde::Serialize, serde::Deserialize)]
-	pub struct SupportConditions
-	{
-		pub first : Option<SupportCondition>,
-		pub second: Option<SupportCondition>,
-	}
+	/// The effect description
+	pub description: [String; 4],
 	
-	/// The error type thrown by [`FromBytes`]
-	#[derive(Debug, derive_more::Display)]
-	pub enum FromBytesError
-	{
-		/// Unable to convert name to a string
-		#[display(fmt = "Unable to convert name to a string")]
-		NameToString( util::ReadNullTerminatedStringError ),
-		
-		/// Unable to convert one of the support effect descriptions to a string
-		#[display(fmt = "The {} support effect description could not be converted to a string", rank)]
-		SupportEffectDescriptionToString {
-			rank: &'static str,
-			
-			
-			err: util::ReadNullTerminatedStringError,
-		},
-		
-		/// An unknown speciality was found
-		#[display(fmt = "Unknown speciality found")]
-		UnknownSpeciality( crate::game::card::property::speciality::UnknownSpeciality ),
-		
-		/// An unknown level was found
-		#[display(fmt = "Unknown level found")]
-		UnknownLevel( crate::game::card::property::level::UnknownLevel ),
-		
-		/// An unknown effect arrow color was found
-		#[display(fmt = "Unknown effect arrow color found")]
-		UnknownEffectArrowColor( crate::game::card::property::arrow_color::UnknownArrowColor ),
-		
-		/// An unknown cross move effect was found
-		#[display(fmt = "Unknown cross move effect found")]
-		UnknownCrossMoveEffect( crate::game::card::property::cross_move_effect::UnknownCrossMoveEffect ),
-		
-		/// Unable to read a support effect condition
-		#[display(fmt = "Unable to read the {0} support effect condition", rank)]
-		SupportCondition {
-			rank: &'static str,
-			
-			
-			err: crate::game::card::property::support_condition::FromBytesError,
-		},
-		
-		/// Unable to read a support effect
-		#[display(fmt = "Unable to read the {} support effect", rank)]
-		SupportEffect {
-			rank: &'static str,
-			
-			
-			err: crate::game::card::property::support_effect::FromBytesError,
-		},
-		
-		/// Unable to read a move
-		#[display(fmt = "Unable to read the {} move", name)]
-		Move {
-			name: &'static str,
-			
-			
-			err: crate::game::card::property::moves::FromBytesError,
-		},
-	}
+	/// The effect arrow color
+	pub arrow_color: Option<ArrowColor>,
 	
-	/// The error type thrown by `ToBytes`
-	#[derive(Debug, derive_more::Display)]
-	pub enum ToBytesError
-	{
-		/// The name was too long to be written to file
-		#[display(fmt = r#"The name "{}" is too long to be written to file"#, name)]
-		NameTooLong {
-			name: String,
-			
-			
-			err: crate::game::util::WriteNullTerminatedStringError,
-		},
+	/// The effect conditions
+	pub conditions: SupportConditions,
+	
+	/// The effects themselves
+	pub effects: SupportSupport,
+}
+
+/// All of the support effects
+#[derive(PartialEq, Eq, Clone, Copy, Hash, Debug)]
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct SupportSupport
+{
+	pub first : Option<SupportEffect>,
+	pub second: Option<SupportEffect>,
+	pub third : Option<SupportEffect>,
+}
+
+/// All of the support effect conditions
+#[derive(PartialEq, Eq, Clone, Copy, Hash, Debug)]
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct SupportConditions
+{
+	pub first : Option<SupportCondition>,
+	pub second: Option<SupportCondition>,
+}
+
+/// The error type thrown by [`FromBytes`]
+#[derive(Debug, derive_more::Display)]
+pub enum FromBytesError
+{
+	/// Unable to convert name to a string
+	#[display(fmt = "Unable to convert name to a string")]
+	NameToString( util::ReadNullTerminatedStringError ),
+	
+	/// Unable to convert one of the support effect descriptions to a string
+	#[display(fmt = "The {} support effect description could not be converted to a string", rank)]
+	SupportEffectDescriptionToString {
+		rank: &'static str,
 		
-		/// The name was not ascii
-		#[display(fmt = r#"The name "{}" is not valid ascii"#, name)]
-		NameNotAscii {
-			name: String,
-		},
+		
+		err: util::ReadNullTerminatedStringError,
+	},
+	
+	/// An unknown speciality was found
+	#[display(fmt = "Unknown speciality found")]
+	UnknownSpeciality( crate::game::card::property::speciality::UnknownSpeciality ),
+	
+	/// An unknown level was found
+	#[display(fmt = "Unknown level found")]
+	UnknownLevel( crate::game::card::property::level::UnknownLevel ),
+	
+	/// An unknown effect arrow color was found
+	#[display(fmt = "Unknown effect arrow color found")]
+	UnknownEffectArrowColor( crate::game::card::property::arrow_color::UnknownArrowColor ),
+	
+	/// An unknown cross move effect was found
+	#[display(fmt = "Unknown cross move effect found")]
+	UnknownCrossMoveEffect( crate::game::card::property::cross_move_effect::UnknownCrossMoveEffect ),
+	
+	/// Unable to read a support effect condition
+	#[display(fmt = "Unable to read the {0} support effect condition", rank)]
+	SupportCondition {
+		rank: &'static str,
 		
 		
-		
-		/// A support effect description was too long to be written to file
-		#[display(fmt = r#"The {0} support effect description "{1}" is too long to be written to file"#, rank, string)]
-		SupportEffectDescriptionTooLong {
-			string: String,
-			rank: String,
-			
-			
-			err: crate::game::util::WriteNullTerminatedStringError,
-		},
-		
-		/// A support effect description was not ascii
-		#[display(fmt = r#"The {0} support effect description "{1}" is not valid ascii"#, rank, name)]
-		SupportEffectDescriptionNotAscii {
-			name: String,
-			rank: String,
-		},
+		err: crate::game::card::property::support_condition::FromBytesError,
+	},
+	
+	/// Unable to read a support effect
+	#[display(fmt = "Unable to read the {} support effect", rank)]
+	SupportEffect {
+		rank: &'static str,
 		
 		
+		err: crate::game::card::property::support_effect::FromBytesError,
+	},
+	
+	/// Unable to read a move
+	#[display(fmt = "Unable to read the {} move", name)]
+	Move {
+		name: &'static str,
 		
-		/// Unable to write a move
-		#[display(fmt = "Unable to write the {} move", name)]
-		Move {
-			name: &'static str,
-			
-			
-			err: crate::game::card::property::moves::ToBytesError,
-		},
-	}
-//--------------------------------------------------------------------------------------------------
+		
+		err: crate::game::card::property::moves::FromBytesError,
+	},
+}
+
+/// The error type thrown by `ToBytes`
+#[derive(Debug, derive_more::Display)]
+pub enum ToBytesError
+{
+	/// The name was too long to be written to file
+	#[display(fmt = r#"The name "{}" is too long to be written to file"#, name)]
+	NameTooLong {
+		name: String,
+		
+		
+		err: crate::game::util::WriteNullTerminatedStringError,
+	},
+	
+	/// The name was not ascii
+	#[display(fmt = r#"The name "{}" is not valid ascii"#, name)]
+	NameNotAscii {
+		name: String,
+	},
+	
+	
+	
+	/// A support effect description was too long to be written to file
+	#[display(fmt = r#"The {0} support effect description "{1}" is too long to be written to file"#, rank, string)]
+	SupportEffectDescriptionTooLong {
+		string: String,
+		rank: String,
+		
+		
+		err: crate::game::util::WriteNullTerminatedStringError,
+	},
+	
+	/// A support effect description was not ascii
+	#[display(fmt = r#"The {0} support effect description "{1}" is not valid ascii"#, rank, name)]
+	SupportEffectDescriptionNotAscii {
+		name: String,
+		rank: String,
+	},
+	
+	
+	
+	/// Unable to write a move
+	#[display(fmt = "Unable to write the {} move", name)]
+	Move {
+		name: &'static str,
+		
+		
+		err: crate::game::card::property::moves::ToBytesError,
+	},
+}
 
 // Impl
 //--------------------------------------------------------------------------------------------------
@@ -257,8 +254,16 @@ use byteorder::{ByteOrder, LittleEndian};
 		
 		fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Error>
 		{
+			// Note: We can't use `TryInto` because it only supports arrays up to 32
+			// SAFETY: Safe as we checked the length
+			assert!(bytes.len() == Self::BUF_BYTE_SIZE);
+			let bytes: &[u8; Self::BUF_BYTE_SIZE] = unsafe {
+				#[allow(clippy::as_conversions)]
+				&*( bytes.as_ptr() as *const [u8; Self::BUF_BYTE_SIZE] )
+			};
+			
 			// Return the struct after building it
-			Ok( Digimon {
+			Ok( Self {
 				// 0x0 - 0x1d
 				basic: Basic {
 					name      : util::read_null_terminated_string( &bytes[0x0..0x15] )  .map_err(FromBytesError::NameToString)?.to_string(),
