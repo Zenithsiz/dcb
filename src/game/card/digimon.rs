@@ -7,25 +7,25 @@
 //! 
 //! | Offset | Size | Type                 | Name                      | Location                       | Details                                                                             |
 //! |--------|------|----------------------|---------------------------|--------------------------------|-------------------------------------------------------------------------------------|
-//! | 0x0    | 0x15 | `char[0x15]`         | Name                      |` basic.name`                   |                                                                                     |
-//! | 0x15   | 0x2  | `u16`                | Unknown                   |` basic.unknown_1`              | Most likely contains the digimon's model                                            |
-//! | 0x17   | 0x1  | `u8`                 | Speciality & Level        |` basic.speciality basic.level` | The bottom nibble of this byte is the level, while the top nibble is the speciality |
-//! | 0x18   | 0x1  | `u8`                 | DP                        |` basic.dp_cost`                |                                                                                     |
-//! | 0x19   | 0x1  | `u8`                 | +P                        |` basic.dp_give`                |                                                                                     |
-//! | 0x1a   | 0x1  | `u8`                 | Unknown                   |` basic.unknown_0`              | Is` 0` for all digimon                                                              |
-//! | 0x1b   | 0x2  | `u16`                | Health                    |` basic.hp`                     |                                                                                     |
-//! | 0x1d   | 0x1c | [`Move`]             | Circle Move               |` moves.circle`                 |                                                                                     |
-//! | 0x39   | 0x1c | [`Move`]             | Triangle move             |` moves.triangle`               |                                                                                     |
-//! | 0x55   | 0x1c | [`Move`]             | Cross move                |` moves.cross`                  |                                                                                     |
-//! | 0x71   | 0x20 | [`SupportCondition`] | First condition           |` effects.conditions.first`     |                                                                                     |
-//! | 0x91   | 0x20 | [`SupportCondition`] | Second condition          |` effects.conditions.second`    |                                                                                     |
-//! | 0xb1   | 0x10 | [`SupportEffect`]    | First effect              |` support.effects.first`        |                                                                                     |
-//! | 0xc1   | 0x10 | [`SupportEffect`]    | Second effect             |` support.effects.second`       |                                                                                     |
-//! | 0xd1   | 0x10 | [`SupportEffect`]    | Third effect              |` support.effects.third`        |                                                                                     |
-//! | 0xe1   | 0x1  | [`CrossMoveEffect`]  | Cross move effect         |` support.cross_move`           |                                                                                     |
-//! | 0xe2   | 0x1  | `u8`                 | Unknown                   |` support.unknown`              |                                                                                     |
-//! | 0xe3   | 0x1  | [`ArrowColor`]       | Effect arrow color        |` effects.arrow_color`          |                                                                                     |
-//! | 0xe4   | 0x54 | `char[0x15][4]`      | Effect description lines  |` effects.description`          | Each line is` 0x15` bytes, split over 4 lines                                       |
+//! | 0x0    | 0x15 | `char[0x15]`         | Name                      | `basic.name`                   |                                                                                     |
+//! | 0x15   | 0x2  | `u16`                | Unknown                   | `basic.unknown_1`              | Most likely contains the digimon's model                                            |
+//! | 0x17   | 0x1  | `u8`                 | Speciality & Level        | `basic.speciality basic.level` | The bottom nibble of this byte is the level, while the top nibble is the speciality |
+//! | 0x18   | 0x1  | `u8`                 | DP                        | `basic.dp_cost`                |                                                                                     |
+//! | 0x19   | 0x1  | `u8`                 | +P                        | `basic.dp_give`                |                                                                                     |
+//! | 0x1a   | 0x1  | `u8`                 | Unknown                   | `basic.unknown_0`              | Is` 0` for all digimon                                                              |
+//! | 0x1b   | 0x2  | `u16`                | Health                    | `basic.hp`                     |                                                                                     |
+//! | 0x1d   | 0x1c | [`Move`]             | Circle Move               | `moves.circle`                 |                                                                                     |
+//! | 0x39   | 0x1c | [`Move`]             | Triangle move             | `moves.triangle`               |                                                                                     |
+//! | 0x55   | 0x1c | [`Move`]             | Cross move                | `moves.cross`                  |                                                                                     |
+//! | 0x71   | 0x20 | [`SupportCondition`] | First condition           | `effects.conditions.first`     |                                                                                     |
+//! | 0x91   | 0x20 | [`SupportCondition`] | Second condition          | `effects.conditions.second`    |                                                                                     |
+//! | 0xb1   | 0x10 | [`SupportEffect`]    | First effect              | `support.effects.first`        |                                                                                     |
+//! | 0xc1   | 0x10 | [`SupportEffect`]    | Second effect             | `support.effects.second`       |                                                                                     |
+//! | 0xd1   | 0x10 | [`SupportEffect`]    | Third effect              | `support.effects.third`        |                                                                                     |
+//! | 0xe1   | 0x1  | [`CrossMoveEffect`]  | Cross move effect         | `support.cross_move`           |                                                                                     |
+//! | 0xe2   | 0x1  | `u8`                 | Unknown                   | `support.unknown`              |                                                                                     |
+//! | 0xe3   | 0x1  | [`ArrowColor`]       | Effect arrow color        | `effects.arrow_color`          |                                                                                     |
+//! | 0xe4   | 0x54 | `char[0x15][4]`      | Effect description lines  | `effects.description`          | Each line is` 0x15` bytes, split over 4 lines                                       |
 
 // byteorder
 use byteorder::{ByteOrder, LittleEndian};
