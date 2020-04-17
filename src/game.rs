@@ -18,9 +18,6 @@
 #[macro_use] pub mod util;
 
 pub mod bytes;
-pub mod from_bytes;
-pub mod to_bytes;
-
 pub mod card;
 pub mod deck;
 
@@ -28,7 +25,4 @@ pub mod deck;
 
 // Exports
 pub use bytes::Bytes;
-pub use from_bytes::FromBytes;
-pub use to_bytes::ToBytes;
-
 pub use card::Digimon;

@@ -47,7 +47,7 @@ use crate::{
 			Digimon, Item, Digivolve,
 			property::{CardType, card_type::UnknownCardType},
 		},
-		Bytes, FromBytes,
+		Bytes,
 	}
 };
 
@@ -178,6 +178,9 @@ impl Table {
 		let   digimon_cards = LittleEndian::read_u16( &header_bytes[0x4..0x6] ) as usize;
 		let      item_cards = header_bytes[0x6] as usize;
 		let digivolve_cards = header_bytes[0x7] as usize;
+		log::debug!("[Table Header] Found {} digimon cards", digimon_cards);
+		log::debug!("[Table Header] Found {} item cards", item_cards);
+		log::debug!("[Table Header] Found {} digivolve cards", digivolve_cards);
 		
 		// And calculate the number of cards
 		let cards_len = digimon_cards + item_cards + digivolve_cards;
@@ -186,12 +189,12 @@ impl Table {
 		let table_size =  digimon_cards * (0x3 + Digimon  ::BUF_BYTE_SIZE + 0x1) +
 		                            item_cards * (0x3 + Item     ::BUF_BYTE_SIZE + 0x1) +
 		                       digivolve_cards * (0x3 + Digivolve::BUF_BYTE_SIZE + 0x1);
+		log::debug!("[Table Header] {} total bytes of cards", table_size);
 		if table_size > Self::MAX_BYTE_SIZE { return Err( DeserializeError::TooManyCards {
 			  digimon_cards,
 			     item_cards,
 			digivolve_cards,
 		} ); }
-		
 		
 		// Create the arrays with capacity
 		let mut digimons     = Vec::with_capacity(digimon_cards);
@@ -210,6 +213,8 @@ impl Table {
 			let card_id = LittleEndian::read_u16( &card_header_bytes[0x0..0x2] );
 			let card_type = CardType::from_bytes( &card_header_bytes[0x2..0x3] )
 				.map_err(|err| DeserializeError::UnknownCardType{ id: cur_id, err } )?;
+			
+			log::debug!("[Card Header] Found {} with id {}", card_type, card_id);
 			
 			// If the card id isn't what we expected, log warning
 			if usize::from(card_id) != cur_id {
@@ -261,6 +266,7 @@ impl Table {
 		})
 	}
 	
+	/*
 	pub fn serialize<R: Read + Write + Seek>(&self, _file: &mut GameFile<R>) -> Result<(), !> {
 		todo!();
 		
@@ -368,4 +374,5 @@ impl Table {
 		Ok(())
 		*/
 	}
+	*/
 }

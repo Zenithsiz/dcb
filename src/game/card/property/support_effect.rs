@@ -14,7 +14,7 @@ use byteorder::{ByteOrder, LittleEndian};
 // Crate
 use crate::{
 	game::{
-		Bytes, FromBytes, ToBytes,
+		Bytes,
 		card::property::{DigimonProperty, SupportEffectOperation, AttackType, PlayerType, Slot},
 	},
 };
@@ -187,19 +187,11 @@ use crate::{
 	impl Bytes for SupportEffect
 	{
 		const BUF_BYTE_SIZE : usize = 0x10;
-	}
-	
-	// From bytes
-	impl FromBytes for SupportEffect
-	{
-		type Error = FromBytesError;
 		
-		/// # Details
+		type FromError = FromBytesError;
+		
 		/// `bytes` should include the `exists` byte
-		/// 
-		/// # Panics
-		/// Will panic if this effect is non-existant
-		fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Error>
+		fn from_bytes(bytes: &[u8]) -> Result<Self, Self::FromError>
 		{
 			// Assert that we do exist
 			assert_ne!(bytes[0x0], 0);
@@ -285,26 +277,12 @@ use crate::{
 				_ => Err( FromBytesError::UnknownEffectType{ byte: effect_type_byte } ),
 			}
 		}
-	}
-	
-	// To bytes
-	impl ToBytes for SupportEffect
-	{
-		type Error = !;
 		
-		fn to_bytes(&self, _bytes: &mut [u8]) -> Result<(), Self::Error>
+		type ToError = !;
+		fn to_bytes(&self, _bytes: &mut [u8]) -> Result<(), Self::ToError>
 		{
 			// Match which effect we are
 			todo!()
-			/*
-			match self
-			{
-				_ => { todo!(); }
-			}
-			*/
-			
-			// Return Ok
-			//Ok(())
 		}
 	}
 //--------------------------------------------------------------------------------------------------

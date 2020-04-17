@@ -5,8 +5,6 @@
 	// Game
 	use crate::game::util;
 	use crate::game::Bytes;
-	use crate::game::FromBytes;
-	use crate::game::ToBytes;
 	use crate::game::card::property::SupportCondition;
 	use crate::game::card::property::SupportEffect;
 	use crate::game::card::property::ArrowColor;
@@ -131,14 +129,9 @@ use serde::Deserialize;
 	impl Bytes for Item
 	{
 		const BUF_BYTE_SIZE : usize = 0xde;
-	}
-	
-	// From bytes
-	impl FromBytes for Item
-	{
-		type Error = FromBytesError;
 		
-		fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Error>
+		type FromError = FromBytesError;
+		fn from_bytes(bytes: &[u8]) -> Result<Self, Self::FromError>
 		{
 			// Assert some fields are 0
 			//assert_eq!(bytes[0x1a], 0);
@@ -189,14 +182,9 @@ use serde::Deserialize;
 				},
 			})
 		}
-	}
-	
-	// To bytes
-	impl ToBytes for Item
-	{
-		type Error = ToBytesError;
 		
-		fn to_bytes(&self, bytes: &mut [u8]) -> Result<(), Self::Error>
+		type ToError = ToBytesError;
+		fn to_bytes(&self, bytes: &mut [u8]) -> Result<(), Self::ToError>
 		{
 			// Basic
 			//--------------------------------------------------------------------------------------------------

@@ -5,8 +5,6 @@
 	// Game
 	use crate::game::util;
 	use crate::game::Bytes;
-	use crate::game::FromBytes;
-	use crate::game::ToBytes;
 //--------------------------------------------------------------------------------------------------
 
 // byteorder
@@ -135,14 +133,10 @@ use serde::Deserialize;
 	impl Bytes for Digivolve
 	{
 		const BUF_BYTE_SIZE : usize = 0x6c;
-	}
-	
-	// From bytes
-	impl FromBytes for Digivolve
-	{
-		type Error = FromBytesError;
 		
-		fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Error>
+		type FromError = FromBytesError;
+		
+		fn from_bytes(bytes: &[u8]) -> Result<Self, Self::FromError>
 		{
 			Ok( Self {
 				basic: Basic {
@@ -163,14 +157,10 @@ use serde::Deserialize;
 				}
 			})
 		}
-	}
-	
-	// To bytes
-	impl ToBytes for Digivolve
-	{
-		type Error = ToBytesError;
 		
-		fn to_bytes(&self, bytes: &mut [u8]) -> Result<(), Self::Error>
+		type ToError = ToBytesError;
+		
+		fn to_bytes(&self, bytes: &mut [u8]) -> Result<(), Self::ToError>
 		{
 			// Basic
 			//--------------------------------------------------------------------------------------------------

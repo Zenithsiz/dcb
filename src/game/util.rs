@@ -20,14 +20,9 @@
 			impl $crate::game::Bytes for $name
 			{
 				const BUF_BYTE_SIZE : usize = $bytes;
-			}
-			
-			// From bytes
-			impl $crate::game::FromBytes for $name
-			{
-				type Error = $err;
 				
-				fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Error>
+				type FromError = $err;
+				fn from_bytes(bytes: &[u8]) -> Result<Self, Self::FromError>
 				{
 					match bytes[0] {
 						$( $value => Ok( <$name>::$variant ), )*
@@ -35,14 +30,9 @@
 						_ => { return Err( $err{ byte: bytes[0] } ); }
 					}
 				}
-			}
-			
-			// To bytes
-			impl $crate::game::ToBytes for $name
-			{
-				type Error = !;
 				
-				fn to_bytes(&self, bytes: &mut [u8]) -> Result<(), Self::Error>
+				type ToError = !;
+				fn to_bytes(&self, bytes: &mut [u8]) -> Result<(), Self::ToError>
 				{
 					bytes[0] = match self
 					{

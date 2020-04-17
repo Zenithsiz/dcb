@@ -1,7 +1,7 @@
 // Crate
 //--------------------------------------------------------------------------------------------------
 	// Game
-	use crate::game::{Bytes, FromBytes, ToBytes};
+	use crate::game::{Bytes};
 	use crate::game::card::property::{DigimonProperty, SupportConditionOperation};
 //--------------------------------------------------------------------------------------------------
 
@@ -63,14 +63,9 @@ use byteorder::{ByteOrder, LittleEndian};
 	impl Bytes for SupportCondition
 	{
 		const BUF_BYTE_SIZE : usize = 0x20;
-	}
-	
-	// From bytes
-	impl FromBytes for SupportCondition
-	{
-		type Error = FromBytesError;
 		
-		fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Error>
+		type FromError = FromBytesError;
+		fn from_bytes(bytes: &[u8]) -> Result<Self, Self::FromError>
 		{
 			// Get the condition
 			let cond = DigimonProperty::from_bytes( &bytes[0x2..0x3] ).map_err(FromBytesError::Condition)?;
@@ -96,14 +91,9 @@ use byteorder::{ByteOrder, LittleEndian};
 				]
 			})
 		}
-	}
-	
-	// To bytes
-	impl ToBytes for SupportCondition
-	{
-		type Error = !;
 		
-		fn to_bytes(&self, bytes: &mut [u8]) -> Result<(), Self::Error>
+		type ToError = !;
+		fn to_bytes(&self, bytes: &mut [u8]) -> Result<(), Self::ToError>
 		{
 			// 0x0 - Misfire
 			bytes[0x0] = if self.misfire { 1 } else { 0 };

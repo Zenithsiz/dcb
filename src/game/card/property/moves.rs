@@ -3,8 +3,6 @@
 	// Game
 	use crate::game::util;
 	use crate::game::Bytes;
-	use crate::game::FromBytes;
-	use crate::game::ToBytes;
 //--------------------------------------------------------------------------------------------------
 
 // byteorder
@@ -53,14 +51,9 @@ use byteorder::LittleEndian;
 	impl Bytes for Move
 	{
 		const BUF_BYTE_SIZE : usize = 0x1c;
-	}
-	
-	// From bytes
-	impl FromBytes for Move
-	{
-		type Error = FromBytesError;
 		
-		fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Error>
+		type FromError = FromBytesError;
+		fn from_bytes(bytes: &[u8]) -> Result<Self, Self::FromError>
 		{
 			// And return the move
 			Ok( Self {
@@ -69,14 +62,9 @@ use byteorder::LittleEndian;
 				unknown: LittleEndian::read_u32( &bytes[0x2..0x6] ),
 			})
 		}
-	}
-	
-	// To bytes
-	impl ToBytes for Move
-	{
-		type Error = ToBytesError;
 		
-		fn to_bytes(&self, bytes: &mut [u8]) -> Result<(), Self::Error>
+		type ToError = ToBytesError;
+		fn to_bytes(&self, bytes: &mut [u8]) -> Result<(), Self::ToError>
 		{
 			// Write the name
 			bytes[0x6..0x1c].copy_from_slice( &{

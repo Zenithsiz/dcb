@@ -32,7 +32,7 @@
 							//       it will be used for associating each variant with a value.
 							$enum_variant_name:ident
 							
-							$( ($enum_variant_rename:literal) )?
+							($enum_variant_rename:literal)
 							
 							=>
 							
@@ -61,13 +61,13 @@
 						$( #[$enum_attr] )*
 						#[derive(PartialEq, Eq, Clone, Copy, Hash, Debug)]
 						#[derive(::serde::Serialize, ::serde::Deserialize)]
+						#[derive(derive_more::Display)]
 						$mod_vis enum $enum_name
 						{
 							$(
 								$( #[$enum_variant_attr] )*
-								
-								$( #[serde(rename = $enum_variant_rename)] )?
-								
+								#[serde(rename = $enum_variant_rename)]
+								#[display(fmt = $enum_variant_rename)]
 								$enum_variant_name,
 							)*
 						}
@@ -108,8 +108,10 @@
 			/// A player's card slots
 			enum Slot
 			{
-				Hand   => 0, Dp      => 1,
-				Online => 2, Offline => 3,
+				Hand   ("Hand"   ) => 0,
+				Dp     ("Dp"     ) => 1,
+				Online ("Online" ) => 2,
+				Offline("Offline") => 3,
 				
 				_ => UnknownSlot("Unknown byte 0x{:x} for a slot")
 			}
@@ -119,8 +121,9 @@
 			/// A digimon effect's arrow color 
 			enum ArrowColor
 			{
-				Red   => 1, Green => 2,
-				Blue  => 3,
+				Red  ("Red"  ) => 1,
+				Green("Green") => 2,
+				Blue ("Blue" ) => 3,
 				
 				_ => UnknownArrowColor("Unknown byte 0x{:x} for an arrow color")
 			}
@@ -130,8 +133,9 @@
 			/// A digimon's attack type
 			enum AttackType
 			{
-				Circle => 0, Triangle => 1,
-				Cross  => 2,
+				Circle  ("Circle"  ) => 0,
+				Triangle("Triangle") => 1,
+				Cross   ("Cross"   ) => 2,
 				
 				_ => UnknownAttackType("Unknown byte 0x{:x} for an attack type")
 			}
@@ -141,9 +145,9 @@
 			/// A card type
 			enum CardType
 			{
-				Digimon   => 0,
-				Item      => 1,
-				Digivolve => 2,
+				Digimon  ("Digimon"  ) => 0,
+				Item     ("Item"     ) => 1,
+				Digivolve("Digivolve") => 2,
 				
 				_ => UnknownCardType("Unknown byte 0x{:x} for a card type")
 			}
@@ -170,8 +174,8 @@
 			/// A player type
 			enum PlayerType
 			{
-				Opponent => 0,
-				Player   => 1,
+				Opponent("Opponent") => 0,
+				Player  ("Player"  ) => 1,
 				
 				_ => UnknownPlayerType("Unknown byte 0x{:x} for a player type")
 			}
@@ -181,8 +185,10 @@
 			/// A digimon's level
 			enum Level
 			{
-				Rookie   => 0, Armor    => 1,
-				Champion => 2, Ultimate => 3,
+				Rookie  ("Rookie"  ) => 0,
+				Armor   ("Armor"   ) => 1,
+				Champion("Champion") => 2,
+				Ultimate("Ultimate") => 3,
 				
 				_ => UnknownLevel("Unknown byte 0x{:x} for a level")
 			}
@@ -192,9 +198,11 @@
 			/// A digimon's speciality
 			enum Speciality
 			{
-				Fire      => 0, Ice       => 1,
-				Nature    => 2, Darkness  => 3,
-				Rare      => 4,
+				Fire    ("Fire"    ) => 0,
+				Ice     ("Ice"     ) => 1,
+				Nature  ("Nature"  ) => 2,
+				Darkness("Darkness") => 3,
+				Rare    ("Rare"    ) => 4,
 				
 				_ => UnknownSpeciality("Unknown byte 0x{:x} for a speciality")
 			}
@@ -204,10 +212,10 @@
 			/// A digimon's support effect operation
 			enum SupportEffectOperation
 			{
-				Addition       => 0,
-				Subtraction    => 1,
-				Multiplication => 2,
-				Division       => 3,
+				Addition      ("Addition"      ) => 0,
+				Subtraction   ("Subtraction"   ) => 1,
+				Multiplication("Multiplication") => 2,
+				Division      ("Division"      ) => 3,
 				
 				_ => UnknownSupportEffectOperation("Unknown byte 0x{:x} for a support effect operation")
 			}
@@ -245,9 +253,9 @@
 				TriangleCounter("Triangle counter") => 6,
 				   CrossCounter("Cross counter"   ) => 7,
 				
-				Crash                => 8,
+				Crash  ("Crash"    ) => 8,
 				EatUpHP("Eat Up HP") => 9,
-				Jamming              => 10,
+				Jamming("Jamming"  ) => 10,
 				
 					FireFoe3x("Fire Foe x3"    ) => 11,
 					 IceFoe3x("Ice Foe x3"     ) => 12,

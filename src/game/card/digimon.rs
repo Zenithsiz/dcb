@@ -33,7 +33,7 @@ use byteorder::{ByteOrder, LittleEndian};
 // Crate
 use crate::game::{
 	util,
-	Bytes, FromBytes, ToBytes,
+	Bytes,
 	card::property::{
 		Speciality, Level, Move, CrossMoveEffect, SupportCondition, SupportEffect, ArrowColor
 	}
@@ -245,14 +245,10 @@ pub enum ToBytesError
 	impl Bytes for Digimon
 	{
 		const BUF_BYTE_SIZE : usize = 0x138;
-	}
-	
-	// From bytes
-	impl FromBytes for Digimon
-	{
-		type Error = FromBytesError;
 		
-		fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Error>
+		type FromError = FromBytesError;
+		
+		fn from_bytes(bytes: &[u8]) -> Result<Self, Self::FromError>
 		{
 			// Note: We can't use `TryInto` because it only supports arrays up to 32
 			// SAFETY: Safe as we checked the length
@@ -328,14 +324,10 @@ pub enum ToBytesError
 				},
 			})
 		}
-	}
-	
-	// To bytes
-	impl ToBytes for Digimon
-	{
-		type Error = ToBytesError;
 		
-		fn to_bytes(&self, bytes: &mut [u8]) -> Result<(), Self::Error>
+		type ToError = ToBytesError;
+		
+		fn to_bytes(&self, bytes: &mut [u8]) -> Result<(), Self::ToError>
 		{
 			// Basic
 			//--------------------------------------------------------------------------------------------------
