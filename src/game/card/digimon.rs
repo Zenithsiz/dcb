@@ -265,7 +265,7 @@ pub enum ToBytesError
 					name      : util::read_null_terminated_string( &bytes[0x0..0x15] )  .map_err(FromBytesError::NameToString)?.to_string(),
 					unknown_1 : LittleEndian::read_u16( &bytes[0x15..0x17] ),
 					speciality: Speciality::from_bytes( &[(bytes[0x17] & 0xF0) >> 4] )  .map_err(FromBytesError::UnknownSpeciality)?,
-					level     :      Level::from_bytes( &[ bytes[0x17] & 0x0F      ] )  .map_err(FromBytesError::UnknownLevel     )?,
+					level     :      Level::from_bytes( &[(bytes[0x17] & 0x0F) >> 0] )  .map_err(FromBytesError::UnknownLevel     )?,
 					dp_cost   : bytes[0x18],
 					dp_give   : bytes[0x19],
 					unknown_0 : bytes[0x1a],
