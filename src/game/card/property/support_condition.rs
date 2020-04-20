@@ -50,6 +50,16 @@ use byteorder::{ByteOrder, LittleEndian};
 		#[display(fmt = "Unable to read the effect operation")]
 		Operation( crate::game::card::property::support_condition_operation::UnknownSupportConditionOperation ),
 	}
+	
+	impl std::error::Error for FromBytesError {
+		fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+			match self {
+				Self::Condition(err) |
+				Self::PropertyArgument(err) => Some(err),
+				Self::Operation(err) => Some(err),
+			}
+		}
+	}
 //--------------------------------------------------------------------------------------------------
 
 // Impl

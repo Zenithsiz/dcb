@@ -180,6 +180,17 @@ use crate::{
 		#[display(fmt = "An unknown attack type was found")]
 		AttackType( crate::game::card::property::attack_type::UnknownAttackType ),
 	}
+	
+	impl std::error::Error for FromBytesError {
+		fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+			match self {
+				Self::UnknownEffectType{ .. } => None,
+				Self::PropertyArgument{ err, ..} => Some(err),
+				Self::Operation(err) => Some(err),
+				Self::AttackType(err) => Some(err),
+			}
+		}
+	}
 //--------------------------------------------------------------------------------------------------
 
 // Impl

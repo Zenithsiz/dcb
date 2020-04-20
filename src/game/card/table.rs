@@ -88,7 +88,7 @@ impl Table {
 }
 
 
-/// Error type for [`Structure::DeserializeError`]
+/// Error type for [`Table::DeserializeError`]
 #[derive(Debug)]
 #[derive(derive_more::Display)]
 pub enum DeserializeError {
@@ -153,6 +153,61 @@ impl std::error::Error for DeserializeError {
 			Self::ReadCardFooter { err, .. } => Some(err),
 			Self::UnknownCardType { err, .. } => Some(err),
 			Self::HeaderMagic { .. } |
+			Self::TooManyCards { .. } => None,
+		}
+	}
+}
+
+/// Error type for [`Table::DeserializeError`]
+#[derive(Debug)]
+#[derive(derive_more::Display)]
+pub enum SerializeError {
+	/// Unable to seek game file
+	#[display(fmt = "Unable to seek game file to card table")]
+	Seek( std::io::Error ),
+	
+	/// Unable to write table header
+	#[display(fmt = "Unable to write table header")]
+	WriteHeader( std::io::Error ),
+	
+	/// There were too many cards
+	#[display(fmt = "Too many cards in table ({} digimon, {} item, {} digivolve, {} / {} bytes max)",
+		"digimon_cards",
+		"item_cards",
+		"digivolve_cards",
+		" digimon_cards * (0x3 + Digimon  ::BUF_BYTE_SIZE + 0x1) +
+		     item_cards * (0x3 + Item     ::BUF_BYTE_SIZE + 0x1) +
+		digivolve_cards * (0x3 + Digivolve::BUF_BYTE_SIZE + 0x1)",
+		Table::MAX_BYTE_SIZE
+	)]
+	TooManyCards {
+		  digimon_cards: usize,
+		     item_cards: usize,
+		digivolve_cards: usize,
+	},
+	
+	/// Unable to write card header
+	#[display(fmt = "Unable to write card header for card id {}", id)]
+	WriteCardHeader {
+		id: usize,
+		err: std::io::Error,
+	},
+	
+	/// Unable to write card footer
+	#[display(fmt = "Unable to write card footer for card id {}", id)]
+	WriteCardFooter {
+		id: usize,
+		err: std::io::Error,
+	},
+}
+
+impl std::error::Error for SerializeError {
+	fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+		match self {
+			Self::Seek(err) |
+			Self::WriteHeader(err) |
+			Self::WriteCardHeader { err, .. } |
+			Self::WriteCardFooter { err, .. } => Some(err),
 			Self::TooManyCards { .. } => None,
 		}
 	}
@@ -266,34 +321,109 @@ impl Table {
 		})
 	}
 	
-	/*
-	pub fn serialize<R: Read + Write + Seek>(&self, _file: &mut GameFile<R>) -> Result<(), !> {
-		todo!();
-		
-		/*
+	pub fn serialize<R: Read + Write + Seek>(&self, file: &mut GameFile<R>) -> Result<(), SerializeError> {
 		// Get the final table size
-		// Note: + 0x4 here is for the `next` section
-		let table_size = self.digimons  .len() * (Digimon  ::BUF_BYTE_SIZE + 0x4) +
-		                 self.items     .len() * (Item     ::BUF_BYTE_SIZE + 0x4) +
-		                 self.digivolves.len() * (Digivolve::BUF_BYTE_SIZE + 0x4);
-		let table_size = table_size as u64;
+		let table_size = self.digimons  .len() * (0x3 + Digimon  ::BUF_BYTE_SIZE + 0x1) +
+		                        self.items     .len() * (0x3 + Item     ::BUF_BYTE_SIZE + 0x1) +
+		                        self.digivolves.len() * (0x3 + Digivolve::BUF_BYTE_SIZE + 0x1);
 		
 		// If the total table size is bigger than the max, return Err
-		assert!(table_size > Table::MAX_BYTE_SIZE as u64, "Table is too big");
+		if table_size > Self::MAX_BYTE_SIZE { return Err( SerializeError::TooManyCards {
+				digimon_cards: self.digimons  .len(),
+				   item_cards: self.items     .len(),
+			  digivolve_cards: self.digivolves.len(),
+		} ); }
+		
+		// Seek to the beginning of the card table
+		file.seek( std::io::SeekFrom::Start( u64::from( Self::START_ADDRESS ) + 0x8 ) )
+			.map_err(SerializeError::Seek)?;
+		
+		// Function to write a card to file
+		fn write_card<R: Read + Write + Seek, C: Bytes>(_file: &mut GameFile<R>, _card: &C, _cur_id: usize) {
+			/*
+			// Get the bytes
+			let mut bytes = [0u8; <C as Bytes>::BUF_BYTE_SIZE];
+			card.to_bytes(&mut bytes)
+				.expect("Unable to get digimon as bytes");
+			
+			// Write the digimon buffer
+			file.write_all(&bytes)
+				.expect("Unable to write digimon card");
+			
+			// And write the 'next' section
+			let mut buf = [0u8; 0x4];
+			
+			match idx {
+				num if num + 1 == self.digimons.len() => CardType::Item   .to_bytes( &mut buf[0x3..0x4] )?,
+				_                                     => CardType::Digimon.to_bytes( &mut buf[0x3..0x4] )?,
+			}
+			
+			LittleEndian::write_u16( &mut buf[0x1..0x3], cur_id+1);
+			
+			file.write_all(&buf)
+				.expect("");
+			*/
+		}
+		
+		// Write all digimon, items and digivolves
+		for (id, digimon) in self.digimons.iter().enumerate() {
+			write_card(file, digimon, id);
+		}
+		for (id, item) in self.items.iter().enumerate() {
+			write_card(file, item, self.digimons.len() + id);
+		}
+		for (id, digivolve) in self.digivolves.iter().enumerate() {
+			write_card(file, digivolve, self.digimons.len() + self.items.len() + id);
+		}
+		
 		/*
-		if table_size > Table::MAX_BYTE_SIZE as u64
+		enum Card<'a> {
+			Digimon  (&'a Digimon  ),
+			Item     (&'a Item     ),
+			Digivolve(&'a Digivolve),
+		}
+		
+		// Then write all cards
+		for (idx, card) in std::iter::empty()
+			.chain(self.digimons  .iter().map(Card::Digimon  ))
+			.chain(self.items     .iter().map(Card::Item     ))
+			.chain(self.digivolves.iter().map(Card::Digivolve))
+			.enumerate()
 		{
-			return Err( WriteError::TableTooBig{size: table_size, max: Table::MAX_BYTE_SIZE as u64} );
+			let bytes = match card {
+				Card::Digimon(digimon) => {
+					let mut bytes = [0; Digimon::BUF_BYTE_SIZE];
+					digimon.to_bytes(&mut bytes);
+					&bytes as &[u8]
+				},
+				_ => &[],
+			};
+			
+			// Write the buffer
+			file.write_all(&bytes)
+				.expect("Unable to write card");
+			
+			// And write the 'next' section
+			let mut buf = [0u8; 0x4];
+			
+			match idx {
+				num if num + 1 == self.digimons.len() => CardType::Item   .to_bytes( &mut buf[0x3..0x4] )?,
+				_                                            => CardType::Digimon.to_bytes( &mut buf[0x3..0x4] )?,
+			}
+			
+			LittleEndian::write_u16( &mut buf[0x1..0x3], (idx+1) as u16);
+			
+			file.write_all(&buf)
+				.expect("");
 		}
 		*/
 		
+		/*
 		// The current id
 		let mut cur_id = 0u16;
 		
 		
-		// Seek to the beginning of the card table
-		game_file.seek( std::io::SeekFrom::Start( u64::from( Table::START_ADDRESS ) + 0x8 ) )
-			.expect("Unable to seek to card table");
+		
 		
 		// Then write all cards, first digimon, then items, then digivolves
 		for (idx, digimon) in self.digimons.iter().enumerate()
@@ -304,21 +434,21 @@ impl Table {
 				.expect("Unable to get digimon as bytes");
 			
 			// Write the digimon buffer
-			game_file.write_all(&bytes)
+			file.write_all(&bytes)
 				.expect("Unable to write digimon card");
 			
 			// And write the 'next' section
 			let mut buf = [0u8; 0x4];
 			
 			match idx {
-				num if num + 1 == self.digimons.len() => { CardType::Item   .to_bytes( &mut buf[0x3..0x4] )?; }
-				_                                     => { CardType::Digimon.to_bytes( &mut buf[0x3..0x4] )?; }
+				num if num + 1 == self.digimons.len() => CardType::Item   .to_bytes( &mut buf[0x3..0x4] )?,
+				_                                            => CardType::Digimon.to_bytes( &mut buf[0x3..0x4] )?,
 			}
 			
 			LittleEndian::write_u16( &mut buf[0x1..0x3], cur_id+1);
 			
-			game_file.write_all(&buf)
-				.expect("")
+			file.write_all(&buf)
+				.expect("");
 			
 			cur_id += 1;
 		}
@@ -327,10 +457,10 @@ impl Table {
 		{
 			// Get the bytes
 			let mut bytes = [0u8; Item::BUF_BYTE_SIZE as usize];
-			item.to_bytes(&mut bytes).map_err(|err| WriteError::ConvertItem{id: cur_id, err})?;
+			item.to_bytes(&mut bytes).unwrap();//.map_err(|err| SerializeError::ConvertItem{id: cur_id, err})?;
 			
 			// Write the item buffer
-			game_file.write_all(&bytes).map_err(|err| WriteError::WriteItem{id: cur_id, err})?;
+			file.write_all(&bytes).unwrap();//.map_err(|err| SerializeError::WriteItem{id: cur_id, err})?;
 			
 			// And write the 'next' section
 			let mut buf = [0u8; 0x4];
@@ -342,7 +472,7 @@ impl Table {
 			
 			LittleEndian::write_u16( &mut buf[0x1..0x3], cur_id+1);
 			
-			game_file.write_all(&buf).map_err(|err| WriteError::NextEntryInfo{ id: cur_id, err })?;
+			file.write_all(&buf).unwrap();//.map_err(|err| SerializeError::NextEntryInfo{ id: cur_id, err })?;
 			
 			cur_id += 1;
 		}
@@ -351,10 +481,10 @@ impl Table {
 		{
 			// Get the bytes
 			let mut bytes = [0u8; Digivolve::BUF_BYTE_SIZE as usize];
-			digivolve.to_bytes(&mut bytes).map_err(|err| WriteError::ConvertDigivolve{id: cur_id, err})?;
+			digivolve.to_bytes(&mut bytes).unwrap();//.map_err(|err| SerializeError::ConvertDigivolve{id: cur_id, err})?;
 			
 			// Write the digimon buffer
-			game_file.write_all(&bytes).map_err(|err| WriteError::WriteDigivolve{id: cur_id, err})?;
+			file.write_all(&bytes).unwrap();//.map_err(|err| SerializeError::WriteDigivolve{id: cur_id, err})?;
 			
 			// And write the 'next' section
 			let mut buf = [0u8; 0x4];
@@ -364,15 +494,13 @@ impl Table {
 				_                                       => { CardType::Digivolve.to_bytes( &mut buf[0x3..0x4] )?; LittleEndian::write_u16( &mut buf[0x1..0x3], cur_id+1); }
 			}
 			
-			game_file.write_all(&buf).map_err(|err| WriteError::NextEntryInfo{ id: cur_id, err })?;
+			file.write_all(&buf).unwrap();//.map_err(|err| SerializeError::NextEntryInfo{ id: cur_id, err })?;
 			
 			cur_id += 1;
 		}
-		
+		*/
 		
 		// And return Ok
 		Ok(())
-		*/
 	}
-	*/
 }

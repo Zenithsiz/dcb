@@ -14,5 +14,4 @@ pub mod table;
 pub use digimon  ::Digimon;
 pub use item     ::Item;
 pub use digivolve::Digivolve;
-
 pub use table::Table;

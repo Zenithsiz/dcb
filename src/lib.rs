@@ -45,6 +45,7 @@
 	clippy::unreadable_literal,             // More important to be able to copy the number with no formatting than it being readable
 	clippy::multiple_inherent_impl,         // We prefer to separate certain methods by type and insert error types in between methods
 	clippy::identity_op,                    // Makes sense sometimes for symmetry
+	clippy::items_after_statements,         // Sometimes we only introduce items when we first use them.
 	
 	// TODO: Deal with casts eventually
 	clippy::cast_possible_wrap,

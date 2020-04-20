@@ -61,6 +61,15 @@
 		Utf8( std::str::Utf8Error ),
 	}
 	
+	impl std::error::Error for ReadNullTerminatedStringError {
+		fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+			match self {
+				Self::NoNull => None,
+				Self::Utf8(err) => Some(err),
+			}
+		}
+	}
+	
 	/// Error type for `write_null_terminated_string`
 	#[derive(Debug, derive_more::Display)]
 	#[display(fmt = "The string was too long to write to the buffer ({0} / {1})", string_size, buf_size)]
@@ -72,6 +81,9 @@
 		/// The buffer size
 		buf_size: usize,
 	}
+	
+	// No source
+	impl std::error::Error for WriteNullTerminatedStringError { }
 //--------------------------------------------------------------------------------------------------
 
 // Impl

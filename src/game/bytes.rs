@@ -9,13 +9,13 @@ where
 	const BUF_BYTE_SIZE: usize;
 	
 	/// The error type used for the operation
-	type FromError;
+	type FromError: std::fmt::Debug + std::error::Error;
 		
 	/// Reads `bytes` and returns a result with `Self`
 	fn from_bytes(bytes: &[u8]) -> Result<Self, Self::FromError>;
 	
 	/// The error type used for the operation
-	type ToError;
+	type ToError: std::fmt::Debug + std::error::Error;
 	
 	/// Writes bytes into `bytes` from self
 	fn to_bytes(&self, bytes: &mut [u8]) -> Result<(), Self::ToError>;

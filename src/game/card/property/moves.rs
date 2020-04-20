@@ -27,16 +27,16 @@ use byteorder::LittleEndian;
 	}
 	
 	/// The error type thrown by `FromBytes`
-	#[derive(Debug, derive_more::Display)]
+	#[derive(Debug, derive_more::Display, err_impl::Error)]
 	pub enum FromBytesError
 	{
 		/// Unable to convert name to a string
 		#[display(fmt = "Unable to convert name to a string")]
-		NameToString( util::ReadNullTerminatedStringError ),
+		NameToString( #[error(source)] util::ReadNullTerminatedStringError ),
 	}
 	
 	/// The error type thrown by `ToBytes`
-	#[derive(Debug, derive_more::Display)]
+	#[derive(Debug, derive_more::Display, err_impl::Error)]
 	pub enum ToBytesError
 	{
 		/// The name was too big to be written to file

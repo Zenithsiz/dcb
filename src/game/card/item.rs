@@ -81,8 +81,6 @@ use serde::Deserialize;
 		#[display(fmt = "Unable to convert the {} support effect description to a string", rank)]
 		SupportEffectDescriptionToString {
 			rank: &'static str,
-			
-			
 			err: util::ReadNullTerminatedStringError,
 		},
 		
@@ -91,8 +89,6 @@ use serde::Deserialize;
 		SupportCondition {
 			rank: &'static str,
 			item_pos: u64,
-			
-			
 			err: crate::game::card::property::support_condition::FromBytesError,
 		},
 		
@@ -100,10 +96,21 @@ use serde::Deserialize;
 		#[display(fmt = "Unable to read the {} support effect", rank)]
 		SupportEffect {
 			rank: &'static str,
-			
-			
 			err: crate::game::card::property::support_effect::FromBytesError,
 		},
+	}
+	
+	impl std::error::Error for FromBytesError {
+		fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+			match self {
+				Self::NameToString(err) |
+				Self::SupportEffectDescriptionToString{err, ..} => Some(err),
+				
+				Self::EffectArrowColor(err) => Some(err),
+				Self::SupportCondition{err, ..} => Some(err),
+				Self::SupportEffect{err, ..} => Some(err),
+			}
+		}
 	}
 	
 	/// The error type thrown by `ToBytes`
@@ -120,6 +127,15 @@ use serde::Deserialize;
 			rank: &'static str,
 			string: String,
 		},
+	}
+	
+	impl std::error::Error for ToBytesError {
+		fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+			match self {
+				Self::NameTooLong(..) |
+				Self::SupportEffectDescriptionTooLong{ .. } => None,
+			}
+		}
 	}
 //--------------------------------------------------------------------------------------------------
 
