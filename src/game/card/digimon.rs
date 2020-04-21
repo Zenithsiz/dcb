@@ -7,13 +7,13 @@
 //! 
 //! | Offset | Size | Type                 | Name                      | Location                       | Details                                                                             |
 //! |--------|------|----------------------|---------------------------|--------------------------------|-------------------------------------------------------------------------------------|
-//! | 0x0    | 0x15 | `char[0x15]`         | Name                      | `name`                   |                                                                                     |
-//! | 0x15   | 0x2  | `u16`                | Unknown                   | `unknown_1`              | Most likely contains the digimon's model                                            |
-//! | 0x17   | 0x1  | `u8`                 | Speciality & Level        | `speciality level` | The bottom nibble of this byte is the level, while the top nibble is the speciality |
-//! | 0x18   | 0x1  | `u8`                 | DP                        | `dp_cost`                |                                                                                     |
-//! | 0x19   | 0x1  | `u8`                 | +P                        | `dp_give`                |                                                                                     |
-//! | 0x1a   | 0x1  | `u8`                 | Unknown                   | `unknown_0`              | Is` 0` for all digimon                                                              |
-//! | 0x1b   | 0x2  | `u16`                | Health                    | `hp`                     |                                                                                     |
+//! | 0x0    | 0x15 | `char[0x15]`         | Name                      | `name`                         |                                                                                     |
+//! | 0x15   | 0x2  | `u16`                | Unknown                   | `unknown_1`                    | Most likely contains the digimon's model                                            |
+//! | 0x17   | 0x1  | `u8`                 | Speciality & Level        | `speciality level`             | The bottom nibble of this byte is the level, while the top nibble is the speciality |
+//! | 0x18   | 0x1  | `u8`                 | DP                        | `dp_cost`                      |                                                                                     |
+//! | 0x19   | 0x1  | `u8`                 | +P                        | `dp_give`                      |                                                                                     |
+//! | 0x1a   | 0x1  | `u8`                 | Unknown                   | `unknown_0`                    | Is` 0` for all digimon                                                              |
+//! | 0x1b   | 0x2  | `u16`                | Health                    | `hp`                           |                                                                                     |
 //! | 0x1d   | 0x1c | [`Move`]             | Circle Move               | `moves.circle`                 |                                                                                     |
 //! | 0x39   | 0x1c | [`Move`]             | Triangle move             | `moves.triangle`               |                                                                                     |
 //! | 0x55   | 0x1c | [`Move`]             | Cross move                | `moves.cross`                  |                                                                                     |
@@ -44,7 +44,6 @@ use crate::game::{
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Digimon
 {
-	/// The digimon's name
 	pub name: String,
 	pub speciality: Speciality,
 	pub level: Level,
@@ -60,11 +59,31 @@ pub struct Digimon
 	pub unknown_0: u8,
 	pub unknown_1: u16,
 	
-	/// The moves
-	pub moves: Moves,
+	pub circle_move  : Move,
+	pub triangle_move: Move,
+	pub cross_move   : Move,
 	
-	/// The support
-	pub support: Support,
+	/// Unknown field
+	pub unknown_2: u8,
+	
+	/// The cross move effect
+	#[serde(default)]
+	pub cross_move_effect: Option<CrossMoveEffect>,
+	
+	/// The effect description
+	pub effect_description: [String; 4],
+	
+	/// The effect arrow color
+	#[serde(default)]
+	pub effect_arrow_color: Option<ArrowColor>,
+	
+	/// The effect conditions
+	#[serde(default)]
+	pub effect_conditions: [Option<SupportCondition>; 2],
+	
+	/// The effects themselves
+	#[serde(default)]
+	pub effects: [Option<SupportEffect>; 3],
 }
 
 /// The moves a digimon has
@@ -72,37 +91,7 @@ pub struct Digimon
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Moves
 {
-	pub circle  : Move,
-	pub triangle: Move,
-	pub cross   : Move,
-}
-
-/// The support effect of a digimon
-#[derive(PartialEq, Eq, Clone, Hash, Debug)]
-#[derive(serde::Serialize, serde::Deserialize)]
-pub struct Support
-{
-	/// Unknown field
-	pub unknown: u8,
 	
-	/// The cross move effect
-	#[serde(default)]
-	pub cross_move: Option<CrossMoveEffect>,
-	
-	/// The effect description
-	pub description: [String; 4],
-	
-	/// The effect arrow color
-	#[serde(default)]
-	pub arrow_color: Option<ArrowColor>,
-	
-	/// The effect conditions
-	#[serde(default)]
-	pub conditions: [Option<SupportCondition>; 2],
-	
-	/// The effects themselves
-	#[serde(default)]
-	pub effects: [Option<SupportEffect>; 3],
 }
 
 /// The error type thrown by [`FromBytes`]
@@ -256,55 +245,51 @@ impl Bytes for Digimon
 			hp        : LittleEndian::read_u16( &bytes[0x1b..0x1d] ),
 			
 			// 0x1d - 0x71
-			moves: Moves {
-				circle  : Move::from_bytes( &bytes[0x1d..0x39] )  .map_err(|err| FromBytesError::Move{ name: "circle"  , err })?,
-				triangle: Move::from_bytes( &bytes[0x39..0x55] )  .map_err(|err| FromBytesError::Move{ name: "triangle", err })?,
-				cross   : Move::from_bytes( &bytes[0x55..0x71] )  .map_err(|err| FromBytesError::Move{ name: "cross"   , err })?,
-			},
+			circle_move  : Move::from_bytes( &bytes[0x1d..0x39] )  .map_err(|err| FromBytesError::Move{ name: "circle"  , err })?,
+			triangle_move: Move::from_bytes( &bytes[0x39..0x55] )  .map_err(|err| FromBytesError::Move{ name: "triangle", err })?,
+			cross_move   : Move::from_bytes( &bytes[0x55..0x71] )  .map_err(|err| FromBytesError::Move{ name: "cross"   , err })?,
 			
 			// 0x71 - 0x138
-			support: Support {
-				conditions: [
-					if bytes[0x73] != 0 { Some(
-						SupportCondition::from_bytes( &bytes[0x71..0x91] )  .map_err(|err| FromBytesError::SupportCondition{ rank: "1st", err })?
-					)} else { None },
-					
-					if bytes[0x93] != 0 { Some(
-						SupportCondition::from_bytes( &bytes[0x91..0xb1] )  .map_err(|err| FromBytesError::SupportCondition{ rank: "2nd", err })?
-					)} else { None },
-				],
-				
-				effects: [
-					if bytes[0xb1] != 0 { Some(
-						SupportEffect::from_bytes( &bytes[0xb1..0xc1] )  .map_err(|err| FromBytesError::SupportEffect{ rank: "1st", err })?
-					)} else { None },
-					
-					if bytes[0xc1] != 0 { Some(
-						SupportEffect::from_bytes( &bytes[0xc1..0xd1] )  .map_err(|err| FromBytesError::SupportEffect{ rank: "2nd", err })?
-					)} else { None },
-					
-					if bytes[0xd1] != 0 { Some(
-						SupportEffect::from_bytes( &bytes[0xd1..0xe1] )  .map_err(|err| FromBytesError::SupportEffect{ rank: "3rd", err })?
-					)} else { None },
-				],
-				
-				cross_move: if bytes[0xe1] != 0 { Some(
-					CrossMoveEffect::from_bytes( &[ bytes[0xe1] ] )  .map_err(FromBytesError::UnknownCrossMoveEffect)?
+			effect_conditions: [
+				if bytes[0x73] != 0 { Some(
+					SupportCondition::from_bytes( &bytes[0x71..0x91] )  .map_err(|err| FromBytesError::SupportCondition{ rank: "1st", err })?
 				)} else { None },
 				
-				unknown: bytes[0xe2],
+				if bytes[0x93] != 0 { Some(
+					SupportCondition::from_bytes( &bytes[0x91..0xb1] )  .map_err(|err| FromBytesError::SupportCondition{ rank: "2nd", err })?
+				)} else { None },
+			],
+			
+			effects: [
+				if bytes[0xb1] != 0 { Some(
+					SupportEffect::from_bytes( &bytes[0xb1..0xc1] )  .map_err(|err| FromBytesError::SupportEffect{ rank: "1st", err })?
+				)} else { None },
 				
-				arrow_color: if bytes[0xe3] != 0 {
-					Some( ArrowColor::from_bytes( &bytes[0xe3..0xe4] )  .map_err(FromBytesError::UnknownEffectArrowColor)? )
-				} else { None },
+				if bytes[0xc1] != 0 { Some(
+					SupportEffect::from_bytes( &bytes[0xc1..0xd1] )  .map_err(|err| FromBytesError::SupportEffect{ rank: "2nd", err })?
+				)} else { None },
 				
-				description: [
-					util::read_null_terminated_string( &bytes[0x0e4..0x0f9] )  .map_err(|err| FromBytesError::SupportEffectDescriptionToString{ rank: "1st", err })?.to_string(),
-					util::read_null_terminated_string( &bytes[0x0f9..0x10e] )  .map_err(|err| FromBytesError::SupportEffectDescriptionToString{ rank: "2nd", err })?.to_string(),
-					util::read_null_terminated_string( &bytes[0x10e..0x123] )  .map_err(|err| FromBytesError::SupportEffectDescriptionToString{ rank: "3rd", err })?.to_string(),
-					util::read_null_terminated_string( &bytes[0x123..0x138] )  .map_err(|err| FromBytesError::SupportEffectDescriptionToString{ rank: "4th", err })?.to_string(),
-				],
-			},
+				if bytes[0xd1] != 0 { Some(
+					SupportEffect::from_bytes( &bytes[0xd1..0xe1] )  .map_err(|err| FromBytesError::SupportEffect{ rank: "3rd", err })?
+				)} else { None },
+			],
+			
+			cross_move_effect: if bytes[0xe1] != 0 { Some(
+				CrossMoveEffect::from_bytes( &[ bytes[0xe1] ] )  .map_err(FromBytesError::UnknownCrossMoveEffect)?
+			)} else { None },
+			
+			unknown_2: bytes[0xe2],
+			
+			effect_arrow_color: if bytes[0xe3] != 0 {
+				Some( ArrowColor::from_bytes( &bytes[0xe3..0xe4] )  .map_err(FromBytesError::UnknownEffectArrowColor)? )
+			} else { None },
+			
+			effect_description: [
+				util::read_null_terminated_string( &bytes[0x0e4..0x0f9] )  .map_err(|err| FromBytesError::SupportEffectDescriptionToString{ rank: "1st", err })?.to_string(),
+				util::read_null_terminated_string( &bytes[0x0f9..0x10e] )  .map_err(|err| FromBytesError::SupportEffectDescriptionToString{ rank: "2nd", err })?.to_string(),
+				util::read_null_terminated_string( &bytes[0x10e..0x123] )  .map_err(|err| FromBytesError::SupportEffectDescriptionToString{ rank: "3rd", err })?.to_string(),
+				util::read_null_terminated_string( &bytes[0x123..0x138] )  .map_err(|err| FromBytesError::SupportEffectDescriptionToString{ rank: "4th", err })?.to_string(),
+			],
 		})
 	}
 	
@@ -349,28 +334,28 @@ impl Bytes for Digimon
 		//--------------------------------------------------------------------------------------------------
 		
 		// Moves
-		self.moves.circle  .to_bytes(&mut bytes[0x1d..0x39]).map_err(|err| ToBytesError::Move{ name: "circle"  , err })?;
-		self.moves.triangle.to_bytes(&mut bytes[0x39..0x55]).map_err(|err| ToBytesError::Move{ name: "triangle", err })?;
-		self.moves.cross   .to_bytes(&mut bytes[0x55..0x71]).map_err(|err| ToBytesError::Move{ name: "cross"   , err })?;
+		self.  circle_move.to_bytes(&mut bytes[0x1d..0x39]).map_err(|err| ToBytesError::Move{ name: "circle"  , err })?;
+		self.triangle_move.to_bytes(&mut bytes[0x39..0x55]).map_err(|err| ToBytesError::Move{ name: "triangle", err })?;
+		self.   cross_move.to_bytes(&mut bytes[0x55..0x71]).map_err(|err| ToBytesError::Move{ name: "cross"   , err })?;
 		
 		// Support
 		// Note: Although support conditions and effects aren't written if they're None,
 		//       a bit pattern of all 0s is a valid pattern and means "None" to the game.
 		//--------------------------------------------------------------------------------------------------
 			// Support conditions
-			if let Some(support_condition) = &self.support.conditions[0] { support_condition.to_bytes(&mut bytes[0x71..0x91])?; }
-			if let Some(support_condition) = &self.support.conditions[1] { support_condition.to_bytes(&mut bytes[0x91..0xb1])?; }
+			if let Some(support_condition) = &self.support_conditions[0] { support_condition.to_bytes(&mut bytes[0x71..0x91])?; }
+			if let Some(support_condition) = &self.support_conditions[1] { support_condition.to_bytes(&mut bytes[0x91..0xb1])?; }
 			
 			// Support effects
-			if let Some(support_effect) = &self.support.effects[0] { support_effect.to_bytes(&mut bytes[0xb1..0xc1])?; }
-			if let Some(support_effect) = &self.support.effects[1] { support_effect.to_bytes(&mut bytes[0xc1..0xd1])?; }
-			if let Some(support_effect) = &self.support.effects[2] { support_effect.to_bytes(&mut bytes[0xd1..0xe1])?; }
+			if let Some(support_effect) = &self.effects[0] { support_effect.to_bytes(&mut bytes[0xb1..0xc1])?; }
+			if let Some(support_effect) = &self.effects[1] { support_effect.to_bytes(&mut bytes[0xc1..0xd1])?; }
+			if let Some(support_effect) = &self.effects[2] { support_effect.to_bytes(&mut bytes[0xd1..0xe1])?; }
 			
 			// Cross move
-			if let Some(cross_move) = self.support.cross_move { cross_move.to_bytes(&mut bytes[0xe1..0xe2])? };
+			if let Some(cross_move) = self.cross_move_effect { cross_move.to_bytes(&mut bytes[0xe1..0xe2])? };
 			
 			// Unknown
-			bytes[0xe2] = self.support.unknown;
+			bytes[0xe2] = self.unknown_2;
 			
 			// Support arrow color
 			if let Some(arrow_color) = self.support.arrow_color { arrow_color.to_bytes( &mut bytes[0xe3..0xe4] )?; }
