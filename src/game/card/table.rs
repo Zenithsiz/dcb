@@ -45,7 +45,7 @@ use crate::{
 	game::{
 		card::{
 			Digimon, Item, Digivolve,
-			property::{CardType, card_type::UnknownCardType},
+			property::{self, CardType},
 		},
 		Bytes,
 	}
@@ -88,7 +88,7 @@ impl Table {
 }
 
 
-/// Error type for [`Table::DeserializeError`]
+/// Error type for [`Table::deserialize`]
 #[derive(Debug)]
 #[derive(derive_more::Display)]
 pub enum DeserializeError {
@@ -133,7 +133,7 @@ pub enum DeserializeError {
 	#[display(fmt = "Unknown card type for card id {}", id)]
 	UnknownCardType {
 		id: usize,
-		err: UnknownCardType,
+		err: property::card_type::FromBytesError,
 	},
 	
 	/// Unable to read card footer
@@ -158,7 +158,7 @@ impl std::error::Error for DeserializeError {
 	}
 }
 
-/// Error type for [`Table::DeserializeError`]
+/// Error type for [`Table::serialize`]
 #[derive(Debug)]
 #[derive(derive_more::Display)]
 pub enum SerializeError {

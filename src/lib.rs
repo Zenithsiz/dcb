@@ -27,6 +27,7 @@
 	never_type,
 	trait_alias,
 	unsized_locals,
+	bool_to_option,
 )]
 
 // Lints

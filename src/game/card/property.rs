@@ -1,105 +1,146 @@
 //! Card properties
 
-// Macros
-//--------------------------------------------------------------------------------------------------
-	/// Defines a module and an enum inside of it representing a simple property
-	/// 
-	/// # Details
-	/// Both the enum and the error inherit the module's visibility
-	macro_rules! generate_enum_property_mod
-	{
-		// Entry point
-		(
-			// The modules
-			$(
-				// Module
-				$mod_vis:vis mod $mod_name:ident
+/// Defines a module and an enum inside of it representing a simple property
+/// 
+/// Both the enum and the error inherit the module's visibility
+macro_rules! generate_enum_property_mod
+{
+	// Entry point
+	(
+		// The modules
+		$(
+			// Module
+			$mod_vis:vis mod $mod_name:ident
+			{
+				// Enum attributes
+				$( #[$enum_attr:meta] )*
+				
+				// Enum
+				enum $enum_name:ident
 				{
-					// Enum attributes
-					$( #[$enum_attr:meta] )*
+					// Enum variants
+					$(
+						// Attributes
+						$( #[$enum_variant_attr:meta] )*
+						
+						// Variant
+						// Note: Must have no data
+						$enum_variant_name:ident
+						
+						// `Display` convertion name
+						($enum_variant_rename:literal)
+						
+						=>
+						
+						// Variant value
+						$enum_variant_value:expr,
+					)*
 					
-					// Enum
-					enum $enum_name:ident
+					// Error
+					_ => $error_unknown_value_display:literal
+					
+					$(,)?
+				}
+				
+				// Any further definitions inside the module
+				$( $extra_defs:tt )*
+			}
+		)+
+	) =>
+	{
+		// Modules
+		$(
+			// The module
+			$mod_vis mod $mod_name
+			{
+				// The property enum
+				$( #[$enum_attr] )*
+				#[derive(PartialEq, Eq, Clone, Copy, Hash, Debug)]
+				#[derive(::serde::Serialize, ::serde::Deserialize)]
+				#[derive(derive_more::Display)]
+				$mod_vis enum $enum_name
+				{
+					$(
+						$( #[$enum_variant_attr] )*
+						#[serde(rename = $enum_variant_rename)]
+						#[display(fmt = $enum_variant_rename)]
+						$enum_variant_name = $enum_variant_value,
+					)*
+				}
+				
+				/// Error type for [`Bytes::from_bytes`]
+				#[derive(Debug)]
+				#[derive(::derive_more::Display, ::err_impl::Error)]
+				$mod_vis enum FromBytesError {
+					
+					/// The given slice was not big enough
+					#[display(fmt = "Given slice was too small ({} / 1)", "slice_len")]
+					SliceTooSmall {
+						slice_len: usize,
+					},
+					
+					/// Unknown value
+					#[display(fmt = $error_unknown_value_display, "byte")]
+					UnknownValue {
+						byte: u8,
+					}
+				}
+				
+				/// Error type for [`Bytes::to_bytes`]
+				#[derive(Debug)]
+				#[derive(::derive_more::Display, ::err_impl::Error)]
+				$mod_vis enum ToBytesError {
+					
+					/// The given slice was not big enough
+					#[display(fmt = "Given slice was too small ({} / 1)", "slice_len")]
+					SliceTooSmall {
+						slice_len: usize,
+					},
+				}
+				
+				// Bytes
+				impl $crate::game::Bytes for $enum_name
+				{
+					const BUF_BYTE_SIZE: usize = 1;
+					
+					type FromError = FromBytesError;
+					fn from_bytes(bytes: &[u8]) -> Result<Self, Self::FromError>
 					{
-						// Enum variants
-						$(
-							// Attributes
-							$( #[$enum_variant_attr:meta] )*
-							
-							// Name
-							// Note: All variants must be simple enums associated with a value
-							// Note: This value will not be used in the enum definition, instead
-							//       it will be used for associating each variant with a value.
-							$enum_variant_name:ident
-							
-							($enum_variant_rename:literal)
-							
-							=>
-							
-							$enum_variant_value:expr,
-						)*
+						use ::std::convert::TryInto;
+						let bytes: &[u8; 1] = bytes
+							.try_into()
+							.map_err(|_| Self::FromError::SliceTooSmall { slice_len: bytes.len() })?;
 						
-						// Error
-						_ => $error_name:ident($error_display:literal)
-						
-						$(,)?
+						match bytes[0] {
+							$( $enum_variant_value => Ok( <$enum_name>::$enum_variant_name ), )*
+							
+							_ => Err( Self::FromError::UnknownValue{ byte: bytes[0] } ),
+						}
 					}
 					
-					// Any further definitions inside the module
-					$( $extra_defs:tt )*
+					type ToError = ToBytesError;
+					fn to_bytes(&self, bytes: &mut [u8]) -> Result<(), Self::ToError>
+					{
+						use ::std::convert::TryInto;
+						let slice_len = bytes.len();
+						let bytes: &mut [u8; 1] = bytes
+							.try_into()
+							.map_err(|_| Self::ToError::SliceTooSmall { slice_len })?;
+						
+						bytes[0] = match self {
+							$( <$enum_name>::$enum_variant_name => $enum_variant_value, )*
+						};
+						
+						Ok(())
+					}
 				}
-			)+
-		) =>
-		{
-			// Modules
-			$(
-				// The module
-				$mod_vis mod $mod_name
-				{
-					// Types
-					//--------------------------------------------------------------------------------------------------
-						$( #[$enum_attr] )*
-						#[derive(PartialEq, Eq, Clone, Copy, Hash, Debug)]
-						#[derive(::serde::Serialize, ::serde::Deserialize)]
-						#[derive(derive_more::Display)]
-						$mod_vis enum $enum_name
-						{
-							$(
-								$( #[$enum_variant_attr] )*
-								#[serde(rename = $enum_variant_rename)]
-								#[display(fmt = $enum_variant_rename)]
-								$enum_variant_name,
-							)*
-						}
-						
-						/// The error type thrown by `FromBytes`
-						#[derive(Debug, ::derive_more::Display)]
-						#[display(fmt = $error_display, byte)]
-						$mod_vis struct $error_name {
-							byte: u8,
-						}
-					//--------------------------------------------------------------------------------------------------
-					
-					// Impl
-					//--------------------------------------------------------------------------------------------------
-						generate_from_to_bytes!($enum_name, 1, $error_name, [
-							$(
-								$enum_variant_name => $enum_variant_value,
-							)*
-						]);
-						
-						impl ::std::error::Error for $error_name {
-							// No source
-						}
-						
-						// Extra definitions
-						$( $extra_defs )*
-					//--------------------------------------------------------------------------------------------------
-				}
-			)*
-		}
+				
+				// Extra definitions
+				$( $extra_defs )*
+			}
+		)*
 	}
-//--------------------------------------------------------------------------------------------------
+}
 
 // Modules
 //--------------------------------------------------------------------------------------------------
@@ -113,7 +154,7 @@
 				Online ("Online" ) => 2,
 				Offline("Offline") => 3,
 				
-				_ => UnknownSlot("Unknown byte 0x{:x} for a slot")
+				_ => "Unknown byte 0x{:x} for a slot"
 			}
 		}
 		
@@ -125,7 +166,7 @@
 				Green("Green") => 2,
 				Blue ("Blue" ) => 3,
 				
-				_ => UnknownArrowColor("Unknown byte 0x{:x} for an arrow color")
+				_ => "Unknown byte 0x{:x} for an arrow color"
 			}
 		}
 		
@@ -137,7 +178,7 @@
 				Triangle("Triangle") => 1,
 				Cross   ("Cross"   ) => 2,
 				
-				_ => UnknownAttackType("Unknown byte 0x{:x} for an attack type")
+				_ => "Unknown byte 0x{:x} for an attack type"
 			}
 		}
 		
@@ -149,7 +190,7 @@
 				Item     ("Item"     ) => 1,
 				Digivolve("Digivolve") => 2,
 				
-				_ => UnknownCardType("Unknown byte 0x{:x} for a card type")
+				_ => "Unknown byte 0x{:x} for a card type"
 			}
 			
 			impl CardType
@@ -177,7 +218,7 @@
 				Opponent("Opponent") => 0,
 				Player  ("Player"  ) => 1,
 				
-				_ => UnknownPlayerType("Unknown byte 0x{:x} for a player type")
+				_ => "Unknown byte 0x{:x} for a player type",
 			}
 		}
 		
@@ -190,7 +231,7 @@
 				Champion("Champion") => 2,
 				Ultimate("Ultimate") => 3,
 				
-				_ => UnknownLevel("Unknown byte 0x{:x} for a level")
+				_ => "Unknown byte 0x{:x} for a level",
 			}
 		}
 		
@@ -204,7 +245,7 @@
 				Darkness("Darkness") => 3,
 				Rare    ("Rare"    ) => 4,
 				
-				_ => UnknownSpeciality("Unknown byte 0x{:x} for a speciality")
+				_ => "Unknown byte 0x{:x} for a speciality",
 			}
 		}
 		
@@ -217,7 +258,7 @@
 				Multiplication("Multiplication") => 2,
 				Division      ("Division"      ) => 3,
 				
-				_ => UnknownSupportEffectOperation("Unknown byte 0x{:x} for a support effect operation")
+				_ => "Unknown byte 0x{:x} for a support effect operation",
 			}
 		}
 			
@@ -235,7 +276,7 @@
 				DifferentFromNumber("Different from number") => 4,
 				EqualToNumber      ("Equal to number"      ) => 5,
 				
-				_ => UnknownSupportConditionOperation("Unknown byte 0x{:x} for a support condition operation")
+				_ => "Unknown byte 0x{:x} for a support condition operation",
 			}
 		}
 		
@@ -263,7 +304,7 @@
 				DarknessFoe3x("Darkness Foe x3") => 14,
 					RareFoe3x("Rare Foe x3"    ) => 15,
 				
-				_ => UnknownCrossMoveEffect("Unknown byte 0x{:x} for a cross move effect")
+				_ => "Unknown byte 0x{:x} for a cross move effect",
 			}
 		}
 		
@@ -299,7 +340,7 @@
 				CardsInOwnOnDeck ("Cards in own online deck"     ) => 27,
 				CardsInOpnOnDeck ("Cards in opponent online deck") => 28,
 				
-				_ => UnknownDigimonProperty("Unknown byte 0x{:x} for a digimon property")
+				_ => "Unknown byte 0x{:x} for a digimon property",
 			}
 		}
 	);

@@ -40,15 +40,15 @@ use byteorder::{ByteOrder, LittleEndian};
 	{
 		/// Unable to read the condition
 		#[display(fmt = "Unable to read the effect condition")]
-		Condition( crate::game::card::property::digimon_property::UnknownDigimonProperty ),
+		Condition( crate::game::card::property::digimon_property::FromBytesError ),
 		
 		/// Unable to read a property argument
 		#[display(fmt = "Unable to read the property argument")]
-		PropertyArgument( crate::game::card::property::digimon_property::UnknownDigimonProperty ),
+		PropertyArgument( crate::game::card::property::digimon_property::FromBytesError ),
 		
 		/// Unable to read the effect operation
 		#[display(fmt = "Unable to read the effect operation")]
-		Operation( crate::game::card::property::support_condition_operation::UnknownSupportConditionOperation ),
+		Operation( crate::game::card::property::support_condition_operation::FromBytesError ),
 	}
 	
 	impl std::error::Error for FromBytesError {
@@ -113,7 +113,8 @@ use byteorder::{ByteOrder, LittleEndian};
 			
 			// 0x2 - Condition
 			#[allow(clippy::diverging_sub_expression)] { // False positive
-				self.cond.to_bytes(&mut bytes[0x2..0x3])?;
+				self.cond.to_bytes(&mut bytes[0x2..0x3])
+					.expect("Unable to convert condition to bytes");
 			}
 			
 			// 0x3..0x8 - Unknown[0..5]
@@ -121,7 +122,8 @@ use byteorder::{ByteOrder, LittleEndian};
 			
 			// 0x8 - Type arg / 0 if None
 			if let Some(type_arg) = self.type_arg {
-				type_arg.to_bytes(&mut bytes[0x8..0x9])?
+				type_arg.to_bytes(&mut bytes[0x8..0x9])
+					.expect("Unable to convert type argument to bytes")
 			}
 			else { bytes[0x8] = 0; }
 			
@@ -133,7 +135,8 @@ use byteorder::{ByteOrder, LittleEndian};
 			
 			// 0x1a - Operation arg
 			#[allow(clippy::diverging_sub_expression)] { // False positive
-				self.operation.to_bytes(&mut bytes[0x1a..0x1b])?;
+				self.operation.to_bytes(&mut bytes[0x1a..0x1b])
+					.expect("Unable to convert operation to bytes");
 			}
 			
 			// And return OK

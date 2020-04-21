@@ -75,7 +75,7 @@ use serde::Deserialize;
 		
 		/// Unable to read the effect arrow color
 		#[display(fmt = "Unable to read the effect arrow color")]
-		EffectArrowColor( crate::game::card::property::arrow_color::UnknownArrowColor ),
+		EffectArrowColor( crate::game::card::property::arrow_color::FromBytesError ),
 		
 		/// Unable to convert one of the support effect descriptions to a string
 		#[display(fmt = "Unable to convert the {} support effect description to a string", rank)]
@@ -243,7 +243,7 @@ use serde::Deserialize;
 					});
 				}
 				
-				if let Some(arrow_color) = self.effects.arrow_color { arrow_color.to_bytes( &mut bytes[0x89..0x8a] )?; }
+				if let Some(arrow_color) = self.effects.arrow_color { arrow_color.to_bytes( &mut bytes[0x89..0x8a] ).expect("Unable to convert arrow color to bytes"); }
 				
 				// If they are None, 0 is a valid value for the conditions
 				if let Some(support_condition) = &self.effects.conditions.first  { support_condition.to_bytes(&mut bytes[0x19..0x39])?; }

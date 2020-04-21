@@ -8,44 +8,6 @@
 
 // Macros
 
-
-// Macros
-//--------------------------------------------------------------------------------------------------
-	/// Automatically generates `FromBytes` and `ToBytes` implementations for enum types
-	macro_rules! generate_from_to_bytes
-	{
-		($name:ty, $bytes:expr, $err: tt, [ $($variant:ident => $value:expr,)* ]) =>
-		{
-			// Bytes
-			impl $crate::game::Bytes for $name
-			{
-				const BUF_BYTE_SIZE : usize = $bytes;
-				
-				type FromError = $err;
-				fn from_bytes(bytes: &[u8]) -> Result<Self, Self::FromError>
-				{
-					match bytes[0] {
-						$( $value => Ok( <$name>::$variant ), )*
-						
-						_ => { return Err( $err{ byte: bytes[0] } ); }
-					}
-				}
-				
-				type ToError = !;
-				fn to_bytes(&self, bytes: &mut [u8]) -> Result<(), Self::ToError>
-				{
-					bytes[0] = match self
-					{
-						$( <$name>::$variant => $value, )*
-					};
-					
-					Ok(())
-				}
-			}
-		}
-	}
-//--------------------------------------------------------------------------------------------------
-
 // Types
 //--------------------------------------------------------------------------------------------------
 	/// Error type for `read_null_terminated_string`
@@ -93,6 +55,8 @@
 
 // Functions
 //--------------------------------------------------------------------------------------------------
+	
+	
 	/// Reads a string from a buffer, stopping at the first null character found
 	/// 
 	/// # Errors
@@ -145,3 +109,57 @@
 		})
 	}
 //--------------------------------------------------------------------------------------------------
+
+/// Error type for [`read_null_ascii_string`]
+#[derive(Debug)]
+#[derive(derive_more::Display, err_impl::Error)]
+pub enum ReadNullAsciiStringError {
+	/// No null was found in the string
+	#[display(fmt = "No null was found on the buffer")]
+	NoNull,
+	
+	/// The string was not ascii
+	#[display(fmt = "The buffer did not contain valid Ascii")]
+	NotAscii( #[error(source)] ascii::AsAsciiStrError ),
+}
+
+/// Reads a null-terminated ascii string from a buffer.
+pub fn read_null_ascii_string(mut buf: &[u8]) -> Result<&ascii::AsciiStr, ReadNullAsciiStringError> {
+	// Find the first null and trim the buffer until it
+	if let Some(null_idx) = buf.iter().position(|&b| b == 0) {
+		buf = &buf[0..null_idx];
+	} else {
+		return Err( ReadNullAsciiStringError::NoNull );
+	}
+	
+	// Then convert it from Ascii
+	ascii::AsciiStr::from_ascii(buf)
+		.map_err(ReadNullAsciiStringError::NotAscii)
+}
+
+/// Error type for [`write_null_ascii_string`]
+#[derive(Debug)]
+#[derive(derive_more::Display, err_impl::Error)]
+pub enum WriteNullAsciiStringError {
+	/// The input string was too large
+	#[display(fmt = "Input string was too large for buffer. ({} / {})", "input_len", "buffer_len")]
+	TooLarge {
+		input_len : usize,
+		buffer_len: usize,
+	},
+}
+
+/// Writes a null-terminated ascii string to a buffer and returns it
+pub fn write_null_ascii_string<'a>(input: &ascii::AsciiStr, buf: &'a mut [u8]) -> Result<&'a mut [u8], WriteNullAsciiStringError> {
+	// If the input string is too large, return Err
+	if input.len() >= buf.len() {
+		return Err(WriteNullAsciiStringError::TooLarge{ input_len: input.len(), buffer_len: buf.len() });
+	}
+	
+	// Else copy everything over and set the last byte to null
+	buf[ 0..input.len() ].copy_from_slice( input.as_bytes() );
+	buf[ input.len() ] = 0;
+	
+	// And return Ok with the buffer
+	Ok( buf )
+}

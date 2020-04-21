@@ -79,7 +79,7 @@ use serde::Deserialize;
 		
 		/// Unable to read the effect arrow color
 		#[display(fmt = "Unable to read the effect arrow color")]
-		EffectArrowColor( crate::game::card::property::arrow_color::UnknownArrowColor ),
+		EffectArrowColor( crate::game::card::property::arrow_color::FromBytesError ),
 		
 		/// Unable to convert one of the support effect descriptions to a string
 		#[display(fmt = "Unable to convert the {} support effect description to a string", rank)]

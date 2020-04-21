@@ -169,16 +169,16 @@ use crate::{
 			rank: &'static str,
 			
 			
-			err: crate::game::card::property::digimon_property::UnknownDigimonProperty,
+			err: crate::game::card::property::digimon_property::FromBytesError,
 		},
 		
 		/// An unknown operation was found
 		#[display(fmt = "An unknown operation was found")]
-		Operation( crate::game::card::property::support_effect_operation::UnknownSupportEffectOperation ),
+		Operation( crate::game::card::property::support_effect_operation::FromBytesError ),
 		
 		/// An unknown attack type was found
 		#[display(fmt = "An unknown attack type was found")]
-		AttackType( crate::game::card::property::attack_type::UnknownAttackType ),
+		AttackType( crate::game::card::property::attack_type::FromBytesError ),
 	}
 	
 	impl std::error::Error for FromBytesError {
