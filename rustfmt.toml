@@ -1,0 +1,13 @@
+# We're fine with unstable features
+unstable_features = true
+
+
+
+binop_separator = "Back"
+hard_tabs = true
+condense_wildcard_suffixes = true
+match_block_trailing_comma = true
+newline_style = "Unix"
+reorder_impl_items = true
+overflow_delimited_expr = true
+use_field_init_shorthand = true
