@@ -10,6 +10,9 @@
 	use crate::game::card::property::ArrowColor;
 //--------------------------------------------------------------------------------------------------
 
+// Array-ref
+use arrayref::{array_ref, array_mut_ref};
+
 // byteorder
 use byteorder::ByteOrder;
 use byteorder::LittleEndian;
@@ -144,10 +147,10 @@ use serde::Deserialize;
 	// Bytes
 	impl Bytes for Item
 	{
-		const BUF_BYTE_SIZE : usize = 0xde;
+		type ByteArray = [u8; 0xde];
 		
 		type FromError = FromBytesError;
-		fn from_bytes(bytes: &[u8]) -> Result<Self, Self::FromError>
+		fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError>
 		{
 			// Assert some fields are 0
 			//assert_eq!(bytes[0x1a], 0);
@@ -169,30 +172,30 @@ use serde::Deserialize;
 					],
 					
 					arrow_color: if bytes[0x89] != 0 {
-						Some( ArrowColor::from_bytes( &bytes[0x89..0x8a] ).map_err(FromBytesError::EffectArrowColor)? )
+						Some( ArrowColor::from_bytes( &bytes[0x89] ).map_err(FromBytesError::EffectArrowColor)? )
 					} else { None },
 					
 					conditions: SupportConditions {
 						first: if bytes[0x19] != 0 { Some(
-							SupportCondition::from_bytes( &bytes[0x19..0x39] ).map_err(|err| FromBytesError::SupportCondition{ rank: "1st", item_pos: 0x19, err })?
+							SupportCondition::from_bytes( array_ref!(bytes, 0x19, 0x20) ).map_err(|err| FromBytesError::SupportCondition{ rank: "1st", item_pos: 0x19, err })?
 						)} else { None },
 						
 						second: if bytes[0x39] != 0 { Some(
-							SupportCondition::from_bytes( &bytes[0x39..0x59] ).map_err(|err| FromBytesError::SupportCondition{ rank: "2nd", item_pos: 0x39, err })?
+							SupportCondition::from_bytes( array_ref!(bytes, 0x39, 0x20) ).map_err(|err| FromBytesError::SupportCondition{ rank: "2nd", item_pos: 0x39, err })?
 						)} else { None },
 					},
 					
 					effects: SupportEffects {
 						first: if bytes[0x59] != 0 { Some(
-							SupportEffect::from_bytes( &bytes[0x59..0x69] ).map_err(|err| FromBytesError::SupportEffect{ rank: "1st", err })?
+							SupportEffect::from_bytes( array_ref!(bytes, 0x59, 0x10) ).map_err(|err| FromBytesError::SupportEffect{ rank: "1st", err })?
 						)} else { None },
 						
 						second: if bytes[0x69] != 0 { Some(
-							SupportEffect::from_bytes( &bytes[0x69..0x79] ).map_err(|err| FromBytesError::SupportEffect{ rank: "2nd", err })?
+							SupportEffect::from_bytes( array_ref!(bytes, 0x69, 0x10) ).map_err(|err| FromBytesError::SupportEffect{ rank: "2nd", err })?
 						)} else { None },
 						
 						third: if bytes[0x79] != 0 { Some(
-							SupportEffect::from_bytes( &bytes[0x79..0x89] ).map_err(|err| FromBytesError::SupportEffect{ rank: "3rd", err })?
+							SupportEffect::from_bytes( array_ref!(bytes, 0x79, 0x10) ).map_err(|err| FromBytesError::SupportEffect{ rank: "3rd", err })?
 						)} else { None },
 					},
 				},
@@ -200,7 +203,7 @@ use serde::Deserialize;
 		}
 		
 		type ToError = ToBytesError;
-		fn to_bytes(&self, bytes: &mut [u8]) -> Result<(), Self::ToError>
+		fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError>
 		{
 			// Basic
 			//--------------------------------------------------------------------------------------------------
@@ -243,17 +246,17 @@ use serde::Deserialize;
 					});
 				}
 				
-				if let Some(arrow_color) = self.effects.arrow_color { arrow_color.to_bytes( &mut bytes[0x89..0x8a] ).expect("Unable to convert arrow color to bytes"); }
+				if let Some(arrow_color) = self.effects.arrow_color { arrow_color.to_bytes( &mut bytes[0x89] ).expect("Unable to convert arrow color to bytes"); }
 				
 				// If they are None, 0 is a valid value for the conditions
-				if let Some(support_condition) = &self.effects.conditions.first  { support_condition.to_bytes(&mut bytes[0x19..0x39])?; }
-				if let Some(support_condition) = &self.effects.conditions.second { support_condition.to_bytes(&mut bytes[0x39..0x59])?; }
+				if let Some(support_condition) = &self.effects.conditions.first  { support_condition.to_bytes( array_mut_ref!(bytes, 0x19, 0x20) )?; }
+				if let Some(support_condition) = &self.effects.conditions.second { support_condition.to_bytes( array_mut_ref!(bytes, 0x39, 0x20) )?; }
 				
 				
 				// If they are None, 0 is a valid value for the effects
-				if let Some(support_effect) = &self.effects.effects.first  { support_effect.to_bytes(&mut bytes[0x59..0x69])?; }
-				if let Some(support_effect) = &self.effects.effects.second { support_effect.to_bytes(&mut bytes[0x69..0x79])?; }
-				if let Some(support_effect) = &self.effects.effects.third  { support_effect.to_bytes(&mut bytes[0x79..0x89])?; }
+				if let Some(support_effect) = &self.effects.effects.first  { support_effect.to_bytes( array_mut_ref!(bytes, 0x59, 0x10) )?; }
+				if let Some(support_effect) = &self.effects.effects.second { support_effect.to_bytes( array_mut_ref!(bytes, 0x69, 0x10) )?; }
+				if let Some(support_effect) = &self.effects.effects.third  { support_effect.to_bytes( array_mut_ref!(bytes, 0x79, 0x10) )?; }
 			//--------------------------------------------------------------------------------------------------
 			
 			// Return the bytes

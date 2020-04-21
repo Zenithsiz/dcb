@@ -149,11 +149,10 @@ use serde::Deserialize;
 	// Bytes
 	impl Bytes for Digivolve
 	{
-		const BUF_BYTE_SIZE : usize = 0x6c;
+		type ByteArray = [u8; 0x6c];
 		
 		type FromError = FromBytesError;
-		
-		fn from_bytes(bytes: &[u8]) -> Result<Self, Self::FromError>
+		fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError>
 		{
 			Ok( Self {
 				basic: Basic {
@@ -176,8 +175,7 @@ use serde::Deserialize;
 		}
 		
 		type ToError = ToBytesError;
-		
-		fn to_bytes(&self, bytes: &mut [u8]) -> Result<(), Self::ToError>
+		fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError>
 		{
 			// Basic
 			//--------------------------------------------------------------------------------------------------

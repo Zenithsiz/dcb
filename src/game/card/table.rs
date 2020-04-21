@@ -111,9 +111,9 @@ pub enum DeserializeError {
 		"digimon_cards",
 		"item_cards",
 		"digivolve_cards",
-		" digimon_cards * (0x3 + Digimon  ::BUF_BYTE_SIZE + 0x1) +
-		     item_cards * (0x3 + Item     ::BUF_BYTE_SIZE + 0x1) +
-		digivolve_cards * (0x3 + Digivolve::BUF_BYTE_SIZE + 0x1)",
+		" digimon_cards * (0x3 + CardType::Digimon  .byte_size() + 0x1) +
+		     item_cards * (0x3 + CardType::Item     .byte_size() + 0x1) +
+		digivolve_cards * (0x3 + CardType::Digivolve.byte_size() + 0x1)",
 		Table::MAX_BYTE_SIZE
 	)]
 	TooManyCards {
@@ -175,9 +175,9 @@ pub enum SerializeError {
 		"digimon_cards",
 		"item_cards",
 		"digivolve_cards",
-		" digimon_cards * (0x3 + Digimon  ::BUF_BYTE_SIZE + 0x1) +
-		     item_cards * (0x3 + Item     ::BUF_BYTE_SIZE + 0x1) +
-		digivolve_cards * (0x3 + Digivolve::BUF_BYTE_SIZE + 0x1)",
+		" digimon_cards * (0x3 + CardType::Digimon  .byte_size() + 0x1) +
+		     item_cards * (0x3 + CardType::Item     .byte_size() + 0x1) +
+		digivolve_cards * (0x3 + CardType::Digivolve.byte_size() + 0x1)",
 		Table::MAX_BYTE_SIZE
 	)]
 	TooManyCards {
@@ -240,10 +240,12 @@ impl Table {
 		// And calculate the number of cards
 		let cards_len = digimon_cards + item_cards + digivolve_cards;
 		
+		
+		
 		// If there are too many cards, return Err
-		let table_size =  digimon_cards * (0x3 + Digimon  ::BUF_BYTE_SIZE + 0x1) +
-		                            item_cards * (0x3 + Item     ::BUF_BYTE_SIZE + 0x1) +
-		                       digivolve_cards * (0x3 + Digivolve::BUF_BYTE_SIZE + 0x1);
+		let table_size =  digimon_cards * (0x3 + CardType::Digimon  .byte_size() + 0x1) +
+		                            item_cards * (0x3 + CardType::Item     .byte_size() + 0x1) +
+		                       digivolve_cards * (0x3 + CardType::Digivolve.byte_size() + 0x1);
 		log::debug!("[Table Header] {} total bytes of cards", table_size);
 		if table_size > Self::MAX_BYTE_SIZE { return Err( DeserializeError::TooManyCards {
 			  digimon_cards,
@@ -266,7 +268,7 @@ impl Table {
 			
 			// Read the header
 			let card_id = LittleEndian::read_u16( &card_header_bytes[0x0..0x2] );
-			let card_type = CardType::from_bytes( &card_header_bytes[0x2..0x3] )
+			let card_type = CardType::from_bytes( &card_header_bytes[0x2] )
 				.map_err(|err| DeserializeError::UnknownCardType{ id: cur_id, err } )?;
 			
 			log::debug!("[Card Header] Found {} with id {}", card_type, card_id);
@@ -279,7 +281,7 @@ impl Table {
 			match card_type
 			{
 				CardType::Digimon => {
-					let mut digimon_bytes = [0; Digimon::BUF_BYTE_SIZE];
+					let mut digimon_bytes = [0; std::mem::size_of::< <Digimon as Bytes>::ByteArray>()];
 					file.read_exact(&mut digimon_bytes)
 						.expect("Unable to read digimon bytes");
 					let digimon = Digimon::from_bytes(&digimon_bytes)
@@ -287,7 +289,7 @@ impl Table {
 					digimons.push(digimon);
 				},
 				CardType::Item => {
-					let mut item_bytes = [0; Item::BUF_BYTE_SIZE];
+					let mut item_bytes = [0; std::mem::size_of::< <Item as Bytes>::ByteArray>()];
 					file.read_exact(&mut item_bytes)
 						.expect("Unable to read item bytes");
 					let item = Item::from_bytes(&item_bytes)
@@ -295,7 +297,7 @@ impl Table {
 					items.push(item);
 				},
 				CardType::Digivolve => {
-					let mut digivolve_bytes = [0; Digivolve::BUF_BYTE_SIZE];
+					let mut digivolve_bytes = [0; std::mem::size_of::< <Digivolve as Bytes>::ByteArray>()];
 					file.read_exact(&mut digivolve_bytes)
 						.expect("Unable to read digivolve bytes");
 					let digivolve = Digivolve::from_bytes(&digivolve_bytes)
@@ -323,9 +325,9 @@ impl Table {
 	
 	pub fn serialize<R: Read + Write + Seek>(&self, file: &mut GameFile<R>) -> Result<(), SerializeError> {
 		// Get the final table size
-		let table_size = self.digimons  .len() * (0x3 + Digimon  ::BUF_BYTE_SIZE + 0x1) +
-		                        self.items     .len() * (0x3 + Item     ::BUF_BYTE_SIZE + 0x1) +
-		                        self.digivolves.len() * (0x3 + Digivolve::BUF_BYTE_SIZE + 0x1);
+		let table_size = self.  digimons.len() * (0x3 + CardType::Digimon  .byte_size() + 0x1) +
+		                        self.     items.len() * (0x3 + CardType::Item     .byte_size() + 0x1) +
+		                        self.digivolves.len() * (0x3 + CardType::Digivolve.byte_size() + 0x1);
 		
 		// If the total table size is bigger than the max, return Err
 		if table_size > Self::MAX_BYTE_SIZE { return Err( SerializeError::TooManyCards {

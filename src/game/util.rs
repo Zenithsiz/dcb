@@ -6,7 +6,39 @@
 //! All items in this module will eventually be depracated and moved
 //! somewhere else, but this change might take some time.
 
-// Macros
+/// Splits an array into it's various element arrays
+pub macro array_split {
+	(
+		$arr:ident,
+		$( $start:literal..$end:literal => $name:tt),* $(,)?
+	) => {
+		let (
+			$(
+				$name,
+			)*
+		) = ::arrayref::array_refs!(
+			$arr,
+			$( $end - $start ),*
+		);
+	}
+}
+
+/// Splits an array mutable into it's various element arrays
+pub macro array_split_mut {
+	(
+		$arr:ident,
+		$( $start:literal..$end:literal => $name:tt),* $(,)?
+	) => {
+		let (
+			$(
+				$name,
+			)*
+		) = ::arrayref::mut_array_refs!(
+			$arr,
+			$( $end - $start ),*
+		);
+	}
+}
 
 // Types
 //--------------------------------------------------------------------------------------------------

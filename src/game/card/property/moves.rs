@@ -50,10 +50,10 @@ use byteorder::LittleEndian;
 	// Bytes
 	impl Bytes for Move
 	{
-		const BUF_BYTE_SIZE : usize = 0x1c;
+		type ByteArray = [u8; 0x1c];
 		
 		type FromError = FromBytesError;
-		fn from_bytes(bytes: &[u8]) -> Result<Self, Self::FromError>
+		fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError>
 		{
 			// And return the move
 			Ok( Self {
@@ -64,7 +64,7 @@ use byteorder::LittleEndian;
 		}
 		
 		type ToError = ToBytesError;
-		fn to_bytes(&self, bytes: &mut [u8]) -> Result<(), Self::ToError>
+		fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError>
 		{
 			// Write the name
 			bytes[0x6..0x1c].copy_from_slice( &{

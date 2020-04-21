@@ -73,61 +73,31 @@ macro_rules! generate_enum_property_mod
 				#[derive(::derive_more::Display, ::err_impl::Error)]
 				$mod_vis enum FromBytesError {
 					
-					/// The given slice was not big enough
-					#[display(fmt = "Given slice was too small ({} / 1)", "slice_len")]
-					SliceTooSmall {
-						slice_len: usize,
-					},
-					
 					/// Unknown value
 					#[display(fmt = $error_unknown_value_display, "byte")]
 					UnknownValue {
 						byte: u8,
 					}
 				}
-				
-				/// Error type for [`Bytes::to_bytes`]
-				#[derive(Debug)]
-				#[derive(::derive_more::Display, ::err_impl::Error)]
-				$mod_vis enum ToBytesError {
-					
-					/// The given slice was not big enough
-					#[display(fmt = "Given slice was too small ({} / 1)", "slice_len")]
-					SliceTooSmall {
-						slice_len: usize,
-					},
-				}
-				
 				// Bytes
 				impl $crate::game::Bytes for $enum_name
 				{
-					const BUF_BYTE_SIZE: usize = 1;
+					type ByteArray = u8;
 					
 					type FromError = FromBytesError;
-					fn from_bytes(bytes: &[u8]) -> Result<Self, Self::FromError>
+					fn from_bytes(byte: &Self::ByteArray) -> Result<Self, Self::FromError>
 					{
-						use ::std::convert::TryInto;
-						let bytes: &[u8; 1] = bytes
-							.try_into()
-							.map_err(|_| Self::FromError::SliceTooSmall { slice_len: bytes.len() })?;
-						
-						match bytes[0] {
+						match byte {
 							$( $enum_variant_value => Ok( <$enum_name>::$enum_variant_name ), )*
 							
-							_ => Err( Self::FromError::UnknownValue{ byte: bytes[0] } ),
+							_ => Err( Self::FromError::UnknownValue{ byte: *byte } ),
 						}
 					}
 					
-					type ToError = ToBytesError;
-					fn to_bytes(&self, bytes: &mut [u8]) -> Result<(), Self::ToError>
+					type ToError = !;
+					fn to_bytes(&self, byte: &mut Self::ByteArray) -> Result<(), Self::ToError>
 					{
-						use ::std::convert::TryInto;
-						let slice_len = bytes.len();
-						let bytes: &mut [u8; 1] = bytes
-							.try_into()
-							.map_err(|_| Self::ToError::SliceTooSmall { slice_len })?;
-						
-						bytes[0] = match self {
+						*byte = match self {
 							$( <$enum_name>::$enum_variant_name => $enum_variant_value, )*
 						};
 						
@@ -197,15 +167,15 @@ macro_rules! generate_enum_property_mod
 			{
 				/// Returns the byte size of the corresponding card
 				#[must_use]
-				pub fn card_byte_size(self) -> usize
+				pub fn byte_size(self) -> usize
 				{
 					use crate::game::Bytes;
 					
 					match self
 					{
-						Self::Digimon   => <crate::game::card::Digimon   as Bytes>::BUF_BYTE_SIZE,
-						Self::Item      => <crate::game::card::Item      as Bytes>::BUF_BYTE_SIZE,
-						Self::Digivolve => <crate::game::card::Digivolve as Bytes>::BUF_BYTE_SIZE,
+						Self::Digimon   => std::mem::size_of::< <crate::game::card::Digimon   as Bytes>::ByteArray >(),
+						Self::Item      => std::mem::size_of::< <crate::game::card::Item      as Bytes>::ByteArray >(),
+						Self::Digivolve => std::mem::size_of::< <crate::game::card::Digivolve as Bytes>::ByteArray >(),
 					}
 				}
 			}

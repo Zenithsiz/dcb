@@ -28,6 +28,7 @@
 	trait_alias,
 	unsized_locals,
 	bool_to_option,
+	decl_macro,
 )]
 
 // Lints
@@ -47,6 +48,7 @@
 	clippy::multiple_inherent_impl,         // We prefer to separate certain methods by type and insert error types in between methods
 	clippy::identity_op,                    // Makes sense sometimes for symmetry
 	clippy::items_after_statements,         // Sometimes we only introduce items when we first use them.
+	clippy::unseparated_literal_suffix,     // We only separate them when they are long
 	
 	// TODO: Deal with casts eventually
 	clippy::cast_possible_wrap,
@@ -56,9 +58,7 @@
 	// TODO: Remove these once all modules are ported
 	clippy::missing_docs_in_private_items,
 	clippy::as_conversions,
-	clippy::panic,
 	clippy::indexing_slicing,
-	clippy::unseparated_literal_suffix,
 	clippy::integer_arithmetic,
 	clippy::unreachable,
 	clippy::todo,

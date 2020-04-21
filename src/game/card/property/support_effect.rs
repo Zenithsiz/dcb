@@ -197,12 +197,11 @@ use crate::{
 //--------------------------------------------------------------------------------------------------
 	impl Bytes for SupportEffect
 	{
-		const BUF_BYTE_SIZE : usize = 0x10;
+		type ByteArray = [u8; 0x10];
 		
 		type FromError = FromBytesError;
-		
 		/// `bytes` should include the `exists` byte
-		fn from_bytes(bytes: &[u8]) -> Result<Self, Self::FromError>
+		fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError>
 		{
 			// Assert that we do exist
 			assert_ne!(bytes[0x0], 0);
@@ -212,15 +211,15 @@ use crate::{
 			
 			// The properties
 			let a = if bytes[0x2] != 0 {
-				Some( DigimonProperty::from_bytes( &bytes[0x2..0x3] )  .map_err(|err| FromBytesError::PropertyArgument{ rank: "1st", err })? )
+				Some( DigimonProperty::from_bytes( &bytes[0x2] )  .map_err(|err| FromBytesError::PropertyArgument{ rank: "1st", err })? )
 			} else { None };
 			
 			let b = if bytes[0x4] != 0 {
-				Some( DigimonProperty::from_bytes( &bytes[0x4..0x5] )  .map_err(|err| FromBytesError::PropertyArgument{ rank: "2nd", err })? )
+				Some( DigimonProperty::from_bytes( &bytes[0x4] )  .map_err(|err| FromBytesError::PropertyArgument{ rank: "2nd", err })? )
 			} else { None };
 			
 			let c = if bytes[0x6] != 0 {
-				Some( DigimonProperty::from_bytes( &bytes[0x6..0x7] )  .map_err(|err| FromBytesError::PropertyArgument{ rank: "3rd", err })? )
+				Some( DigimonProperty::from_bytes( &bytes[0x6] )  .map_err(|err| FromBytesError::PropertyArgument{ rank: "3rd", err })? )
 			} else { None };
 			
 			// The numbers
@@ -228,7 +227,7 @@ use crate::{
 			let y = LittleEndian::read_u16( &bytes[0xc..0xe] );
 			
 			// The operation
-			let op = SupportEffectOperation::from_bytes( &bytes[0xf..0x10] )  .map_err(FromBytesError::Operation)?;
+			let op = SupportEffectOperation::from_bytes( &bytes[0xf] )  .map_err(FromBytesError::Operation)?;
 			
 			// Check what the effect type is
 			match effect_type_byte
@@ -236,15 +235,15 @@ use crate::{
 				0..=13 => {
 					Ok( Self::ChangeProperty {
 						// Note: unwrapping is fine here because we know that `effect_type_byte+1` is between 1 and 14 inclusive
-						property: DigimonProperty::from_bytes( &[ effect_type_byte+1 ] )
+						property: DigimonProperty::from_bytes( &(effect_type_byte+1) )
 							.expect("Unable to get digimon property from bytes"),
 						a, b, c, x, y, op,
 					})
 				},
 				
 				// Take lower byte from `x` for these
-				16 => { Ok( Self::UseAttack{ player: PlayerType::Player  , attack: AttackType::from_bytes( &[x.to_le_bytes()[0]] )  .map_err(FromBytesError::AttackType)? } ) },
-				17 => { Ok( Self::UseAttack{ player: PlayerType::Opponent, attack: AttackType::from_bytes( &[x.to_le_bytes()[0]] )  .map_err(FromBytesError::AttackType)? } ) },
+				16 => { Ok( Self::UseAttack{ player: PlayerType::Player  , attack: AttackType::from_bytes( &x.to_le_bytes()[0] )  .map_err(FromBytesError::AttackType)? } ) },
+				17 => { Ok( Self::UseAttack{ player: PlayerType::Opponent, attack: AttackType::from_bytes( &x.to_le_bytes()[0] )  .map_err(FromBytesError::AttackType)? } ) },
 				
 				
 				25 => { Ok( Self::SetTempSlot{ a, b, c, op } ) },
@@ -290,7 +289,7 @@ use crate::{
 		}
 		
 		type ToError = !;
-		fn to_bytes(&self, _bytes: &mut [u8]) -> Result<(), Self::ToError>
+		fn to_bytes(&self, _bytes: &mut Self::ByteArray) -> Result<(), Self::ToError>
 		{
 			// Match which effect we are
 			todo!()

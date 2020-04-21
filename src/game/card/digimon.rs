@@ -5,27 +5,27 @@
 //! # Layout
 //! The digimon card has a size of 0x138 bytes, and it's layout is the following:
 //! 
-//! | Offset | Size | Type                 | Name                      | Location                       | Details                                                                             |
-//! |--------|------|----------------------|---------------------------|--------------------------------|-------------------------------------------------------------------------------------|
-//! | 0x0    | 0x15 | `[char; 0x15]`       | Name                      | `name`                         | Null-terminated                                                                     |
-//! | 0x15   | 0x2  | `u16`                | Unknown                   | `unknown_15`                   | Most likely contains the digimon's model                                            |
-//! | 0x17   | 0x1  | `u8`                 | Speciality & Level        | `speciality level`             | The bottom nibble of this byte is the level, while the top nibble is the speciality |
-//! | 0x18   | 0x1  | `u8`                 | DP                        | `dp_cost`                      |                                                                                     |
-//! | 0x19   | 0x1  | `u8`                 | +P                        | `dp_give`                      |                                                                                     |
-//! | 0x1a   | 0x1  | `u8`                 | Unknown                   | `unknown_1a`                   | Is` 0` for all digimon                                                              |
-//! | 0x1b   | 0x2  | `u16`                | Health                    | `hp`                           |                                                                                     |
-//! | 0x1d   | 0x1c | [`Move`]             | Circle Move               | `moves.circle`                 |                                                                                     |
-//! | 0x39   | 0x1c | [`Move`]             | Triangle move             | `moves.triangle`               |                                                                                     |
-//! | 0x55   | 0x1c | [`Move`]             | Cross move                | `moves.cross`                  |                                                                                     |
-//! | 0x71   | 0x20 | [`SupportCondition`] | First condition           | `effects.conditions.first`     |                                                                                     |
-//! | 0x91   | 0x20 | [`SupportCondition`] | Second condition          | `effects.conditions.second`    |                                                                                     |
-//! | 0xb1   | 0x10 | [`SupportEffect`]    | First effect              | `support.effects.first`        |                                                                                     |
-//! | 0xc1   | 0x10 | [`SupportEffect`]    | Second effect             | `support.effects.second`       |                                                                                     |
-//! | 0xd1   | 0x10 | [`SupportEffect`]    | Third effect              | `support.effects.third`        |                                                                                     |
-//! | 0xe1   | 0x1  | [`CrossMoveEffect`]  | Cross move effect         | `support.cross_move`           |                                                                                     |
-//! | 0xe2   | 0x1  | `u8`                 | Unknown                   | `support.unknown`              |                                                                                     |
-//! | 0xe3   | 0x1  | [`ArrowColor`]       | Effect arrow color        | `effects.arrow_color`          |                                                                                     |
-//! | 0xe4   | 0x54 | `[[char; 0x15]; 4]`  | Effect description lines  | `effects.description`          | Each line is` 0x15` bytes, split over 4 lines, each null terminated                 |
+//! | Offset | Size | Type                 | Name                      | Location               | Details                                                                             |
+//! |--------|------|----------------------|---------------------------|------------------------|-------------------------------------------------------------------------------------|
+//! | 0x0    | 0x15 | `[char; 0x15]`       | Name                      | `name`                 | Null-terminated                                                                     |
+//! | 0x15   | 0x2  | `u16`                | Unknown                   | `unknown_15`           | Most likely contains the digimon's model                                            |
+//! | 0x17   | 0x1  | `u8`                 | Speciality & Level        | `speciality level`     | The bottom nibble of this byte is the level, while the top nibble is the speciality |
+//! | 0x18   | 0x1  | `u8`                 | DP                        | `dp_cost`              |                                                                                     |
+//! | 0x19   | 0x1  | `u8`                 | +P                        | `dp_give`              |                                                                                     |
+//! | 0x1a   | 0x1  | `u8`                 | Unknown                   | `unknown_1a`           | Is` 0` for all digimon                                                              |
+//! | 0x1b   | 0x2  | `u16`                | Health                    | `hp`                   |                                                                                     |
+//! | 0x1d   | 0x1c | [`Move`]             | Circle Move               | `move_circle`          |                                                                                     |
+//! | 0x39   | 0x1c | [`Move`]             | Triangle move             | `move_triangle`        |                                                                                     |
+//! | 0x55   | 0x1c | [`Move`]             | Cross move                | `move_cross`           |                                                                                     |
+//! | 0x71   | 0x20 | [`SupportCondition`] | First condition           | `effect_conditions[0]` |                                                                                     |
+//! | 0x91   | 0x20 | [`SupportCondition`] | Second condition          | `effect_conditions[1]` |                                                                                     |
+//! | 0xb1   | 0x10 | [`SupportEffect`]    | First effect              | `effects[0]`           |                                                                                     |
+//! | 0xc1   | 0x10 | [`SupportEffect`]    | Second effect             | `effects[1]`           |                                                                                     |
+//! | 0xd1   | 0x10 | [`SupportEffect`]    | Third effect              | `effects[2]`           |                                                                                     |
+//! | 0xe1   | 0x1  | [`CrossMoveEffect`]  | Cross move effect         | `cross_move_effect`    |                                                                                     |
+//! | 0xe2   | 0x1  | `u8`                 | Unknown                   | `unknown_e2`           |                                                                                     |
+//! | 0xe3   | 0x1  | [`ArrowColor`]       | Effect arrow color        | `effect_arrow_color`   |                                                                                     |
+//! | 0xe4   | 0x54 | `[[char; 0x15]; 4]`  | Effect description lines  | `effect_description`   | Each line is` 0x15` bytes, split over 4 lines, each null terminated                 |
 
 // byteorder
 use byteorder::{ByteOrder, LittleEndian};
@@ -87,13 +87,13 @@ pub struct Digimon
 	pub unknown_e2: u8,
 	
 	/// The digimon's circle move
-	pub circle_move: Move,
+	pub move_circle: Move,
 	
 	/// The digimon's triangle move
-	pub triangle_move: Move,
+	pub move_triangle: Move,
 	
 	/// The digimon's cross move
-	pub cross_move: Move,
+	pub move_cross: Move,
 	
 	/// The digimon's cross move effect, if any
 	#[serde(default)]
@@ -123,12 +123,6 @@ pub struct Digimon
 #[derive(derive_more::Display, err_impl::Error)]
 pub enum FromBytesError
 {
-	/// The given slice was not big enough
-	#[display(fmt = "Given slice was too small ({} / {})", "slice_len", "Digimon::BUF_BYTE_SIZE")]
-	SliceTooSmall {
-		slice_len: usize,
-	},
-	
 	/// Unable to read the digimon name
 	#[display(fmt = "Unable to read the digimon name")]
 	Name( #[error(source)] util::ReadNullAsciiStringError ),
@@ -203,12 +197,6 @@ pub enum FromBytesError
 #[derive(derive_more::Display, err_impl::Error)]
 pub enum ToBytesError
 {
-	/// The given slice was not big enough
-	#[display(fmt = "Given slice was too small ({} / {})", "slice_len", "Digimon::BUF_BYTE_SIZE")]
-	SliceTooSmall {
-		slice_len: usize,
-	},
-	
 	/// Unable to write a move
 	#[display(fmt = "Unable to write the {} move", name)]
 	Move {
@@ -220,21 +208,25 @@ pub enum ToBytesError
 
 impl Bytes for Digimon
 {
-	const BUF_BYTE_SIZE : usize = 0x138;
+	type ByteArray = [u8; 0x138];
 	
 	type FromError = FromBytesError;
 	
-	fn from_bytes(bytes: &[u8]) -> Result<Self, Self::FromError>
+	fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError>
 	{
-		// Make sure `bytes` is an array big enough, else return Err
-		// SAFETY: We confirm `bytes` has at least `Self::BUF_BYTE_SIZE` elements.
-		if bytes.len() < Self::BUF_BYTE_SIZE {
-			return Err( FromBytesError::SliceTooSmall { slice_len: bytes.len() } );
-		}
-		let bytes: &[u8; Self::BUF_BYTE_SIZE] = unsafe {
-			#[allow(clippy::as_conversions)]
-			&*( bytes.as_ptr() as *const [u8; Self::BUF_BYTE_SIZE] )
-		};
+		// Get all byte arrays we need
+		util::array_split!(bytes,
+			0x00..0x1d  => _,
+			0x1d..0x39  =>   move_circle,
+			0x39..0x55  => move_triangle,
+			0x55..0x71  =>    move_cross,
+			0x71..0x91  => condition_first,
+			0x91..0xb1  => condition_second,
+			0xb1..0xc1  => effect_first,
+			0xc1..0xd1  => effect_second,
+			0xd1..0xe1  => effect_third,
+			0xe1..0x138 => _,
+		);
 		
 		// Return the struct after building it
 		Ok( Self {
@@ -245,10 +237,10 @@ impl Bytes for Digimon
 			
 			unknown_15: LittleEndian::read_u16( &bytes[0x15..0x17] ),
 			
-			speciality: Speciality::from_bytes( &[(bytes[0x17] & 0xF0) >> 4] )
+			speciality: Speciality::from_bytes( &( (bytes[0x17] & 0xF0) >> 4 ) )
 				.map_err(FromBytesError::Speciality)?,
 			
-			level: Level::from_bytes( &[(bytes[0x17] & 0x0F) >> 0] )
+			level: Level::from_bytes( &( (bytes[0x17] & 0x0F) >> 0 ) )
 				.map_err(FromBytesError::Level)?,
 			
 			dp_cost   : bytes[0x18],
@@ -258,52 +250,52 @@ impl Bytes for Digimon
 			hp: LittleEndian::read_u16( &bytes[0x1b..0x1d] ),
 			
 			// 0x1d - 0x71
-			circle_move: Move::from_bytes( &bytes[0x1d..0x39] )
+			move_circle: Move::from_bytes( move_circle )
 				.map_err(FromBytesError::MoveCircle)?,
-			triangle_move: Move::from_bytes( &bytes[0x39..0x55] )
+			move_triangle: Move::from_bytes( move_triangle )
 				.map_err(FromBytesError::MoveTriangle)?,
-			cross_move: Move::from_bytes( &bytes[0x55..0x71] )
+			move_cross: Move::from_bytes( move_cross )
 				.map_err(FromBytesError::MoveCross)?,
 			
 			// 0x71 - 0x138
 			effect_conditions: [
 				(bytes[0x73] != 0)
-					.then(|| SupportCondition::from_bytes( &bytes[0x71..0x91] ) )
+					.then(|| SupportCondition::from_bytes( condition_first ) )
 					.transpose()
 					.map_err(FromBytesError::EffectConditionFirst)?,
 				
 				(bytes[0x93] != 0)
-					.then(|| SupportCondition::from_bytes( &bytes[0x91..0xb1] ) )
+					.then(|| SupportCondition::from_bytes( condition_second ) )
 					.transpose()
 					.map_err(FromBytesError::EffectConditionSecond)?,
 			],
 			
 			effects: [
 				(bytes[0xb1] != 0)
-					.then(|| SupportEffect::from_bytes( &bytes[0xb1..0xc1] ) )
+					.then(|| SupportEffect::from_bytes( effect_first ) )
 					.transpose()
 					.map_err(FromBytesError::EffectFirst)?,
 				
 				(bytes[0xc1] != 0)
-					.then(|| SupportEffect::from_bytes( &bytes[0xc1..0xd1] ) )
+					.then(|| SupportEffect::from_bytes( effect_second ) )
 					.transpose()
 					.map_err(FromBytesError::EffectSecond)?,
 				
 				(bytes[0xd1] != 0)
-					.then(|| SupportEffect::from_bytes( &bytes[0xd1..0xe1] ) )
+					.then(|| SupportEffect::from_bytes( effect_third ) )
 					.transpose()
 					.map_err(FromBytesError::EffectThird)?,
 			],
 			
 			cross_move_effect: (bytes[0xe1] != 0)
-				.then(|| CrossMoveEffect::from_bytes( &bytes[0xe1..0xe2] ) )
+				.then(|| CrossMoveEffect::from_bytes( &bytes[0xe1] ) )
 				.transpose()
 				.map_err(FromBytesError::CrossMoveEffect)?,
 			
 			unknown_e2: bytes[0xe2],
 			
 			effect_arrow_color: (bytes[0xe3] != 0)
-				.then(|| ArrowColor::from_bytes( &bytes[0xe3..0xe4] ) )
+				.then(|| ArrowColor::from_bytes( &bytes[0xe3] ) )
 				.transpose()
 				.map_err(FromBytesError::ArrowColor)?,
 			
@@ -325,99 +317,106 @@ impl Bytes for Digimon
 	}
 	
 	type ToError = ToBytesError;
-	
-	fn to_bytes(&self, bytes: &mut [u8]) -> Result<(), Self::ToError>
+	fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError>
 	{
-		// Make sure `bytes` is an array big enough, else return Err
-		// SAFETY: We confirm `bytes` has at least `Self::BUF_BYTE_SIZE` elements.
-		if bytes.len() < Self::BUF_BYTE_SIZE {
-			return Err( ToBytesError::SliceTooSmall { slice_len: bytes.len() } );
-		}
-		let bytes: &mut [u8; Self::BUF_BYTE_SIZE] = unsafe {
-			#[allow(clippy::as_conversions)]
-			&mut *( bytes.as_mut_ptr() as *mut [u8; Self::BUF_BYTE_SIZE] )
-		};
+		// Get all byte arrays we need
+		util::array_split_mut!(bytes,
+			0x00..0x15  => name,
+			0x15..0x17  => unknown_15,
+			0x17..0x18  => speciality_level,
+			0x18..0x19  => dp_cost,
+			0x19..0x1a  => dp_give,
+			0x1a..0x1b  => unknown_1a,
+			0x1b..0x1d  => hp,
+			0x1d..0x39  =>   move_circle,
+			0x39..0x55  => move_triangle,
+			0x55..0x71  =>    move_cross,
+			0x71..0x91  => condition_first,
+			0x91..0xb1  => condition_second,
+			0xb1..0xc1  => effect_first,
+			0xc1..0xd1  => effect_second,
+			0xd1..0xe1  => effect_third,
+			0xe1..0xe2  => cross_move_effect,
+			0xe2..0xe3  => unknown_e2,
+			0xe3..0xe4  => effect_arrow_color,
+			0xe4..0x138 => effect_description,
+		);
 		
-		// Name
-		bytes[0x0..0x15].copy_from_slice(
+		// name
+		name.copy_from_slice(
 			// Note: `self.name` is at most [char; 20], this cannot fail
 			util::write_null_ascii_string(self.name.as_ref().as_ref(), &mut [0u8; 21])
 				.expect("Name was too large for output buffer")
 		);
 		
-		// Basic
-		//--------------------------------------------------------------------------------------------------
+		// unknown_15
+		LittleEndian::write_u16(unknown_15, self.unknown_15);
+		
+		// Speciality / Level
+		{
+			let (mut speciality_byte, mut level_byte) = ( 0u8, 0u8 );
 			
+			// Note: Buffers have 1 byte, so this can't fail
+			self.speciality.to_bytes(&mut speciality_byte)?;
+			self.level.to_bytes(&mut level_byte)?;
 			
-			// Unknown 1
-			LittleEndian::write_u16(&mut bytes[0x15..0x17], self.unknown_15);
-			
-			// Speciality / Level
-			{
-				let (mut speciality_byte, mut level_byte) = ( [0u8], [0u8] );
-				
-				// Note: Buffers have 1 byte, so this can't fail
-				self.speciality.to_bytes(&mut speciality_byte)
-					.expect("Could not convert speciality to bytes");
-				self.level.to_bytes(&mut level_byte)
-					.expect("Could not convert level to bytes");
-				
-				// Merge them
-				bytes[0x17] = (speciality_byte[0] << 4) | level_byte[0];
-			}
-			
-			// DP / +P
-			bytes[0x18] = self.dp_cost;
-			bytes[0x19] = self.dp_give;
-			
-			// Unknown
-			bytes[0x1a] = self.unknown_1a;
-			
-			// Health
-			LittleEndian::write_u16(&mut bytes[0x1b..0x1d], self.hp);
-		//--------------------------------------------------------------------------------------------------
+			// Merge them
+			speciality_level[0] = (speciality_byte << 4) | level_byte;
+		}
+		
+		// DP / +P
+		dp_cost[0] = self.dp_cost;
+		dp_give[0] = self.dp_give;
+		
+		// Unknown
+		unknown_1a[0] = self.unknown_1a;
+		
+		// Health
+		LittleEndian::write_u16(hp, self.hp);
 		
 		// Moves
-		self.  circle_move.to_bytes(&mut bytes[0x1d..0x39]).map_err(|err| ToBytesError::Move{ name: "circle"  , err })?;
-		self.triangle_move.to_bytes(&mut bytes[0x39..0x55]).map_err(|err| ToBytesError::Move{ name: "triangle", err })?;
-		self.   cross_move.to_bytes(&mut bytes[0x55..0x71]).map_err(|err| ToBytesError::Move{ name: "cross"   , err })?;
-		
-		// Support
+		self.  move_circle.to_bytes(   move_circle ).map_err(|err| ToBytesError::Move{ name: "circle"  , err })?;
+		self.move_triangle.to_bytes( move_triangle ).map_err(|err| ToBytesError::Move{ name: "triangle", err })?;
+		self.   move_cross.to_bytes(    move_cross ).map_err(|err| ToBytesError::Move{ name: "cross"   , err })?;
+	
+		// Support conditions
 		// Note: Although support conditions and effects aren't written if they're None,
 		//       a bit pattern of all 0s is a valid pattern and means "None" to the game.
-		//--------------------------------------------------------------------------------------------------
-			// Support conditions
-			if let Some(support_condition) = &self.effect_conditions[0] { support_condition.to_bytes(&mut bytes[0x71..0x91])?; }
-			if let Some(support_condition) = &self.effect_conditions[1] { support_condition.to_bytes(&mut bytes[0x91..0xb1])?; }
-			
-			// Support effects
-			if let Some(support_effect) = &self.effects[0] { support_effect.to_bytes(&mut bytes[0xb1..0xc1])?; }
-			if let Some(support_effect) = &self.effects[1] { support_effect.to_bytes(&mut bytes[0xc1..0xd1])?; }
-			if let Some(support_effect) = &self.effects[2] { support_effect.to_bytes(&mut bytes[0xd1..0xe1])?; }
-			
-			// Cross move
-			if let Some(cross_move) = self.cross_move_effect { cross_move.to_bytes(&mut bytes[0xe1..0xe2])
-				.expect("Unable to convert cross move effect to bytes")
-			};
-			
-			// Unknown
-			bytes[0xe2] = self.unknown_e2;
-			
-			// Support arrow color
-			if let Some(arrow_color) = self.effect_arrow_color { arrow_color.to_bytes( &mut bytes[0xe3..0xe4] )
-				.expect("Unable to convert arrow color to bytes");
-			}
-			
-			// Write the support effects
-			for (index, line) in self.effect_description.iter().enumerate()
-			{
-				bytes[0x0e4 + (0x15 * index) .. 0x0f9 + (0x15 * index)].copy_from_slice(
-					// Note: `line` is at most [char; 20], this cannot fail
-					util::write_null_ascii_string(line.as_ref().as_ref(), &mut [0u8; 21])
-						.expect("Effect description was too large for output buffer")
-				);
-			}
-		//--------------------------------------------------------------------------------------------------
+		if let Some(support_condition) = &self.effect_conditions[0] { support_condition.to_bytes( condition_first  )?; }
+		if let Some(support_condition) = &self.effect_conditions[1] { support_condition.to_bytes( condition_second )?; }
+		
+		// Support effects
+		if let Some(support_effect) = &self.effects[0] { support_effect.to_bytes( effect_first  )?; }
+		if let Some(support_effect) = &self.effects[1] { support_effect.to_bytes( effect_second )?; }
+		if let Some(support_effect) = &self.effects[2] { support_effect.to_bytes( effect_third  )?; }
+		
+		// Cross move
+		if let Some(move_cross) = self.cross_move_effect { move_cross.to_bytes( &mut cross_move_effect[0] )
+			.expect("Unable to convert cross move effect to bytes")
+		};
+		
+		// Unknown
+		unknown_e2[0] = self.unknown_e2;
+		
+		// Support arrow color
+		if let Some(arrow_color) = self.effect_arrow_color { arrow_color.to_bytes( &mut effect_arrow_color[1] )
+			.expect("Unable to convert arrow color to bytes");
+		}
+		
+		// effect_description
+		// Note: Each string is at most [char; 20], this cannot fail
+		effect_description[0x00..0x15].copy_from_slice( util::write_null_ascii_string(self.effect_description[0].as_ref().as_ref(), &mut [0u8; 21])
+			.expect("First line of effect description was too large for output buffer")
+		);
+		effect_description[0x15..0x2a].copy_from_slice( util::write_null_ascii_string(self.effect_description[1].as_ref().as_ref(), &mut [0u8; 21])
+			.expect("Second line of effect description was too large for output buffer")
+		);
+		effect_description[0x2a..0x3f].copy_from_slice( util::write_null_ascii_string(self.effect_description[2].as_ref().as_ref(), &mut [0u8; 21])
+			.expect("Third line of effect description was too large for output buffer")
+		);
+		effect_description[0x3f..0x54].copy_from_slice( util::write_null_ascii_string(self.effect_description[3].as_ref().as_ref(), &mut [0u8; 21])
+			.expect("Fourth line of effect description was too large for output buffer")
+		);
 		
 		// Return Ok
 		Ok(())
