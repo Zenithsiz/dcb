@@ -49,6 +49,8 @@
 	clippy::identity_op,                    // Makes sense sometimes for symmetry
 	clippy::items_after_statements,         // Sometimes we only introduce items when we first use them.
 	clippy::unseparated_literal_suffix,     // We only separate them when they are long
+	clippy::diverging_sub_expression,       // We use `?` on `Result<T, !>` for extracting the result currently, once a method is done for it, we'll use it.
+	clippy::match_same_arms,                // Sometimes we separate them for clarify and order
 	
 	// TODO: Deal with casts eventually
 	clippy::cast_possible_wrap,

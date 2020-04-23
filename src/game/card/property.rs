@@ -68,7 +68,7 @@ macro_rules! generate_enum_property_mod
 					)*
 				}
 				
-				/// Error type for [`Bytes::from_bytes`]
+				/// Error type for [`$crate::game::Bytes::from_bytes`]
 				#[derive(Debug)]
 				#[derive(::derive_more::Display, ::err_impl::Error)]
 				$mod_vis enum FromBytesError {

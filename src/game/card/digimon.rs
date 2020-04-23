@@ -1,9 +1,9 @@
 //! A digimon card
 //! 
-//! This module stores the [Digimon] struct, which describes a digimon card.
+//! This module stores the [`Digimon`] struct, which describes a digimon card.
 //! 
 //! # Layout
-//! The digimon card has a size of 0x138 bytes, and it's layout is the following:
+//! The digimon card has a size of `0x138` bytes, and it's layout is the following:
 //! 
 //! | Offset | Size | Type                 | Name                      | Location               | Details                                                                             |
 //! |--------|------|----------------------|---------------------------|------------------------|-------------------------------------------------------------------------------------|
@@ -12,7 +12,7 @@
 //! | 0x17   | 0x1  | `u8`                 | Speciality & Level        | `speciality level`     | The bottom nibble of this byte is the level, while the top nibble is the speciality |
 //! | 0x18   | 0x1  | `u8`                 | DP                        | `dp_cost`              |                                                                                     |
 //! | 0x19   | 0x1  | `u8`                 | +P                        | `dp_give`              |                                                                                     |
-//! | 0x1a   | 0x1  | `u8`                 | Unknown                   | `unknown_1a`           | Is` 0` for all digimon                                                              |
+//! | 0x1a   | 0x1  | `u8`                 | Unknown                   | `unknown_1a`           | Is `0` for all digimon                                                              |
 //! | 0x1b   | 0x2  | `u16`                | Health                    | `hp`                   |                                                                                     |
 //! | 0x1d   | 0x1c | [`Move`]             | Circle Move               | `move_circle`          |                                                                                     |
 //! | 0x39   | 0x1c | [`Move`]             | Triangle move             | `move_triangle`        |                                                                                     |
@@ -48,7 +48,7 @@ use crate::game::{
 
 /// A digimon card
 /// 
-/// Contains all information about each digimon stored in the [`Card Table`](table::Table)
+/// Contains all information about each digimon card stored in the [`Card Table`](crate::game::card::table::Table)
 #[derive(PartialEq, Eq, Clone, Hash, Debug)]
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Digimon
@@ -192,34 +192,19 @@ pub enum FromBytesError
 	EffectThird( #[error(source)] property::support_effect::FromBytesError ),
 }
 
-/// The error type thrown by [`Bytes::to_bytes`]
-#[derive(Debug)]
-#[derive(derive_more::Display, err_impl::Error)]
-pub enum ToBytesError
-{
-	/// Unable to write a move
-	#[display(fmt = "Unable to write the {} move", name)]
-	Move {
-		name: &'static str,
-		#[error(source)]
-		err: property::moves::ToBytesError,
-	},
-}
-
 impl Bytes for Digimon
 {
 	type ByteArray = [u8; 0x138];
 	
 	type FromError = FromBytesError;
-	
 	fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError>
 	{
 		// Get all byte arrays we need
 		util::array_split!(bytes,
 			0x00..0x1d  => _,
-			0x1d..0x39  =>   move_circle,
+			0x1d..0x39  => move_circle,
 			0x39..0x55  => move_triangle,
-			0x55..0x71  =>    move_cross,
+			0x55..0x71  => move_cross,
 			0x71..0x91  => condition_first,
 			0x91..0xb1  => condition_second,
 			0xb1..0xc1  => effect_first,
@@ -316,7 +301,7 @@ impl Bytes for Digimon
 		})
 	}
 	
-	type ToError = ToBytesError;
+	type ToError = !;
 	fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError>
 	{
 		// Get all byte arrays we need
@@ -328,9 +313,9 @@ impl Bytes for Digimon
 			0x19..0x1a  => dp_give,
 			0x1a..0x1b  => unknown_1a,
 			0x1b..0x1d  => hp,
-			0x1d..0x39  =>   move_circle,
+			0x1d..0x39  => move_circle,
 			0x39..0x55  => move_triangle,
-			0x55..0x71  =>    move_cross,
+			0x55..0x71  => move_cross,
 			0x71..0x91  => condition_first,
 			0x91..0xb1  => condition_second,
 			0xb1..0xc1  => effect_first,
@@ -375,9 +360,9 @@ impl Bytes for Digimon
 		LittleEndian::write_u16(hp, self.hp);
 		
 		// Moves
-		self.  move_circle.to_bytes(   move_circle ).map_err(|err| ToBytesError::Move{ name: "circle"  , err })?;
-		self.move_triangle.to_bytes( move_triangle ).map_err(|err| ToBytesError::Move{ name: "triangle", err })?;
-		self.   move_cross.to_bytes(    move_cross ).map_err(|err| ToBytesError::Move{ name: "cross"   , err })?;
+		self.  move_circle.to_bytes(   move_circle )?;
+		self.move_triangle.to_bytes( move_triangle )?;
+		self.   move_cross.to_bytes(    move_cross )?;
 	
 		// Support conditions
 		// Note: Although support conditions and effects aren't written if they're None,
@@ -391,17 +376,13 @@ impl Bytes for Digimon
 		if let Some(support_effect) = &self.effects[2] { support_effect.to_bytes( effect_third  )?; }
 		
 		// Cross move
-		if let Some(move_cross) = self.cross_move_effect { move_cross.to_bytes( &mut cross_move_effect[0] )
-			.expect("Unable to convert cross move effect to bytes")
-		};
+		if let Some(move_cross) = self.cross_move_effect { move_cross.to_bytes( &mut cross_move_effect[0] )? };
 		
 		// Unknown
 		unknown_e2[0] = self.unknown_e2;
 		
 		// Support arrow color
-		if let Some(arrow_color) = self.effect_arrow_color { arrow_color.to_bytes( &mut effect_arrow_color[1] )
-			.expect("Unable to convert arrow color to bytes");
-		}
+		if let Some(arrow_color) = self.effect_arrow_color { arrow_color.to_bytes( &mut effect_arrow_color[0] )? }
 		
 		// effect_description
 		// Note: Each string is at most [char; 20], this cannot fail
