@@ -56,7 +56,7 @@ pub struct Digimon
 	/// The digimon's name
 	/// 
 	/// An ascii string with 20 characters at most
-	pub name: arrayvec::ArrayVec<[ascii::AsciiChar; 20]>,
+	pub name: ascii::AsciiString,
 	
 	/// The digimon's speciality
 	/// 
@@ -103,7 +103,7 @@ pub struct Digimon
 	/// 
 	/// The description is split along 4 lines, each
 	/// being an ascii string with 20 characters at most.
-	pub effect_description: [arrayvec::ArrayVec<[ascii::AsciiChar; 20]>; 4],
+	pub effect_description: [ascii::AsciiString; 4],
 	
 	/// The effect arrow color
 	#[serde(default)]
@@ -118,7 +118,7 @@ pub struct Digimon
 	pub effects: [Option<SupportEffect>; 3],
 }
 
-/// The error type thrown by [`Bytes::from_bytes`]
+/// Error type for [`Bytes::from_bytes`]
 #[derive(Debug)]
 #[derive(derive_more::Display, err_impl::Error)]
 pub enum FromBytesError
@@ -191,6 +191,43 @@ pub enum FromBytesError
 	#[display(fmt = "Unable to read the third effect")]
 	EffectThird( #[error(source)] property::support_effect::FromBytesError ),
 }
+/// Error type for [`Bytes::to_bytes`]
+#[derive(Debug)]
+#[derive(derive_more::Display, err_impl::Error)]
+pub enum ToBytesError
+{
+	/// Unable to write the digimon name
+	#[display(fmt = "Unable to write the digimon name")]
+	Name( #[error(source)] util::WriteNullAsciiStringError ),
+	
+	/// Unable to write the first support effect description
+	#[display(fmt = "Unable to write the first line of the effect description")]
+	EffectDescriptionFirst( #[error(source)] util::WriteNullAsciiStringError ),
+	
+	/// Unable to write the second support effect description
+	#[display(fmt = "Unable to write the second line of the effect description")]
+	EffectDescriptionSecond( #[error(source)] util::WriteNullAsciiStringError ),
+	
+	/// Unable to write the third support effect description
+	#[display(fmt = "Unable to write the third line of the effect description")]
+	EffectDescriptionThird( #[error(source)] util::WriteNullAsciiStringError ),
+	
+	/// Unable to write the fourth support effect description
+	#[display(fmt = "Unable to write the fourth line of the effect description")]
+	EffectDescriptionFourth( #[error(source)] util::WriteNullAsciiStringError ),
+	
+	/// Unable to write the circle move
+	#[display(fmt = "Unable to write the circle move")]
+	MoveCircle( #[error(source)] property::moves::ToBytesError ),
+	
+	/// Unable to write the triangle move
+	#[display(fmt = "Unable to write the triangle move")]
+	MoveTriangle( #[error(source)] property::moves::ToBytesError ),
+	
+	/// Unable to write the cross move
+	#[display(fmt = "Unable to write the cross move")]
+	MoveCross( #[error(source)] property::moves::ToBytesError ),
+}
 
 impl Bytes for Digimon
 {
@@ -200,118 +237,13 @@ impl Bytes for Digimon
 	fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError>
 	{
 		// Get all byte arrays we need
-		util::array_split!(bytes,
-			0x00..0x1d  => _,
-			0x1d..0x39  => move_circle,
-			0x39..0x55  => move_triangle,
-			0x55..0x71  => move_cross,
-			0x71..0x91  => condition_first,
-			0x91..0xb1  => condition_second,
-			0xb1..0xc1  => effect_first,
-			0xc1..0xd1  => effect_second,
-			0xd1..0xe1  => effect_third,
-			0xe1..0x138 => _,
-		);
-		
-		// Return the struct after building it
-		Ok( Self {
-			// 0x0 - 0x1d
-			name: util::read_null_ascii_string( &bytes[0x0..0x15] )
-				.map_err(FromBytesError::Name)?
-				.chars().collect(),
-			
-			unknown_15: LittleEndian::read_u16( &bytes[0x15..0x17] ),
-			
-			speciality: Speciality::from_bytes( &( (bytes[0x17] & 0xF0) >> 4 ) )
-				.map_err(FromBytesError::Speciality)?,
-			
-			level: Level::from_bytes( &( (bytes[0x17] & 0x0F) >> 0 ) )
-				.map_err(FromBytesError::Level)?,
-			
-			dp_cost   : bytes[0x18],
-			dp_give   : bytes[0x19],
-			unknown_1a: bytes[0x1a],
-			
-			hp: LittleEndian::read_u16( &bytes[0x1b..0x1d] ),
-			
-			// 0x1d - 0x71
-			move_circle: Move::from_bytes( move_circle )
-				.map_err(FromBytesError::MoveCircle)?,
-			move_triangle: Move::from_bytes( move_triangle )
-				.map_err(FromBytesError::MoveTriangle)?,
-			move_cross: Move::from_bytes( move_cross )
-				.map_err(FromBytesError::MoveCross)?,
-			
-			// 0x71 - 0x138
-			effect_conditions: [
-				(bytes[0x73] != 0)
-					.then(|| SupportCondition::from_bytes( condition_first ) )
-					.transpose()
-					.map_err(FromBytesError::EffectConditionFirst)?,
-				
-				(bytes[0x93] != 0)
-					.then(|| SupportCondition::from_bytes( condition_second ) )
-					.transpose()
-					.map_err(FromBytesError::EffectConditionSecond)?,
-			],
-			
-			effects: [
-				(bytes[0xb1] != 0)
-					.then(|| SupportEffect::from_bytes( effect_first ) )
-					.transpose()
-					.map_err(FromBytesError::EffectFirst)?,
-				
-				(bytes[0xc1] != 0)
-					.then(|| SupportEffect::from_bytes( effect_second ) )
-					.transpose()
-					.map_err(FromBytesError::EffectSecond)?,
-				
-				(bytes[0xd1] != 0)
-					.then(|| SupportEffect::from_bytes( effect_third ) )
-					.transpose()
-					.map_err(FromBytesError::EffectThird)?,
-			],
-			
-			cross_move_effect: (bytes[0xe1] != 0)
-				.then(|| CrossMoveEffect::from_bytes( &bytes[0xe1] ) )
-				.transpose()
-				.map_err(FromBytesError::CrossMoveEffect)?,
-			
-			unknown_e2: bytes[0xe2],
-			
-			effect_arrow_color: (bytes[0xe3] != 0)
-				.then(|| ArrowColor::from_bytes( &bytes[0xe3] ) )
-				.transpose()
-				.map_err(FromBytesError::ArrowColor)?,
-			
-			effect_description: [
-				util::read_null_ascii_string( &bytes[0x0e4..0x0f9] )
-					.map_err(FromBytesError::EffectDescriptionFirst)?
-					.chars().collect(),
-				util::read_null_ascii_string( &bytes[0x0f9..0x10e] )
-					.map_err(FromBytesError::EffectDescriptionSecond)?
-					.chars().collect(),
-				util::read_null_ascii_string( &bytes[0x10e..0x123] )
-					.map_err(FromBytesError::EffectDescriptionThird)?
-					.chars().collect(),
-				util::read_null_ascii_string( &bytes[0x123..0x138] )
-					.map_err(FromBytesError::EffectDescriptionFourth)?
-					.chars().collect(),
-			],
-		})
-	}
-	
-	type ToError = !;
-	fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError>
-	{
-		// Get all byte arrays we need
-		util::array_split_mut!(bytes,
+		let bytes = util::array_split!(bytes,
 			0x00..0x15  => name,
 			0x15..0x17  => unknown_15,
-			0x17..0x18  => speciality_level,
-			0x18..0x19  => dp_cost,
-			0x19..0x1a  => dp_give,
-			0x1a..0x1b  => unknown_1a,
+			=0x17       => speciality_level,
+			=0x18       => dp_cost,
+			=0x19       => dp_give,
+			=0x1a       => unknown_1a,
 			0x1b..0x1d  => hp,
 			0x1d..0x39  => move_circle,
 			0x39..0x55  => move_triangle,
@@ -327,15 +259,129 @@ impl Bytes for Digimon
 			0xe4..0x138 => effect_description,
 		);
 		
-		// name
-		name.copy_from_slice(
-			// Note: `self.name` is at most [char; 20], this cannot fail
-			util::write_null_ascii_string(self.name.as_ref().as_ref(), &mut [0u8; 21])
-				.expect("Name was too large for output buffer")
+		// Return the struct after building it
+		Ok( Self {
+			// 0x0 - 0x1d
+			name: util::read_null_ascii_string(bytes.name)
+				.map_err(FromBytesError::Name)?
+				.chars().collect(),
+			
+			unknown_15: LittleEndian::read_u16(bytes.unknown_15),
+			
+			speciality: Speciality::from_bytes( &( (bytes.speciality_level & 0xF0) >> 4 ) )
+				.map_err(FromBytesError::Speciality)?,
+			
+			level: Level::from_bytes( &( (bytes.speciality_level & 0x0F) >> 0 ) )
+				.map_err(FromBytesError::Level)?,
+			
+			dp_cost   : *bytes.dp_cost,
+			dp_give   : *bytes.dp_give,
+			unknown_1a: *bytes.unknown_1a,
+			
+			hp: LittleEndian::read_u16( bytes.hp ),
+			
+			// 0x1d - 0x71
+			move_circle: Move::from_bytes( bytes.move_circle )
+				.map_err(FromBytesError::MoveCircle)?,
+			move_triangle: Move::from_bytes( bytes.move_triangle )
+				.map_err(FromBytesError::MoveTriangle)?,
+			move_cross: Move::from_bytes( bytes.move_cross )
+				.map_err(FromBytesError::MoveCross)?,
+			
+			// 0x71 - 0x138
+			effect_conditions: [
+				(bytes.condition_first[2] != 0)
+					.then(|| SupportCondition::from_bytes( bytes.condition_first ) )
+					.transpose()
+					.map_err(FromBytesError::EffectConditionFirst)?,
+				
+				(bytes.condition_second[2] != 0)
+					.then(|| SupportCondition::from_bytes( bytes.condition_second ) )
+					.transpose()
+					.map_err(FromBytesError::EffectConditionSecond)?,
+			],
+			
+			effects: [
+				(bytes.effect_first[0] != 0)
+					.then(|| SupportEffect::from_bytes( bytes.effect_first ) )
+					.transpose()
+					.map_err(FromBytesError::EffectFirst)?,
+				
+				(bytes.effect_second[0] != 0)
+					.then(|| SupportEffect::from_bytes( bytes.effect_second ) )
+					.transpose()
+					.map_err(FromBytesError::EffectSecond)?,
+				
+				(bytes.effect_third[0] != 0)
+					.then(|| SupportEffect::from_bytes( bytes.effect_third ) )
+					.transpose()
+					.map_err(FromBytesError::EffectThird)?,
+			],
+			
+			cross_move_effect: (bytes.cross_move_effect[0] != 0)
+				.then(|| CrossMoveEffect::from_bytes( &bytes.cross_move_effect[0] ) )
+				.transpose()
+				.map_err(FromBytesError::CrossMoveEffect)?,
+			
+			unknown_e2: bytes.unknown_e2[0],
+			
+			effect_arrow_color: (bytes.effect_arrow_color[0] != 0)
+				.then(|| ArrowColor::from_bytes( &bytes.effect_arrow_color[0] ) )
+				.transpose()
+				.map_err(FromBytesError::ArrowColor)?,
+			
+			effect_description: [
+				util::read_null_ascii_string( &bytes.effect_description[0x00..0x15] )
+					.map_err(FromBytesError::EffectDescriptionFirst)?
+					.chars().collect(),
+				util::read_null_ascii_string( &bytes.effect_description[0x15..0x2a] )
+					.map_err(FromBytesError::EffectDescriptionSecond)?
+					.chars().collect(),
+				util::read_null_ascii_string( &bytes.effect_description[0x2a..0x3f] )
+					.map_err(FromBytesError::EffectDescriptionThird)?
+					.chars().collect(),
+				util::read_null_ascii_string( &bytes.effect_description[0x3f..0x54] )
+					.map_err(FromBytesError::EffectDescriptionFourth)?
+					.chars().collect(),
+			],
+		})
+	}
+	
+	type ToError = ToBytesError;
+	fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError>
+	{
+		// Get all byte arrays we need
+		let bytes = util::array_split_mut!(bytes,
+			name                : [0x15],
+			unknown_15          : [0x2],
+			speciality_level    : 0x1,
+			dp_cost             : 0x1,
+			dp_give             : 0x1,
+			unknown_1a          : 0x1,
+			hp                  : [0x2],
+			move_circle         : [0x1c],
+			move_triangle       : [0x1c],
+			move_cross          : [0x1c],
+			condition_first     : [0x20],
+			condition_second    : [0x20],
+			effect_first        : [0x10],
+			effect_second       : [0x10],
+			effect_third        : [0x10],
+			cross_move_effect   : 1,
+			unknown_e2          : 1,
+			effect_arrow_color  : 1,
+			effect_description_0: [0x15],
+			effect_description_1: [0x15],
+			effect_description_2: [0x15],
+			effect_description_3: [0x15],
 		);
 		
+		// name
+		util::write_null_ascii_string(self.name.as_ref(), bytes.name)
+			.map_err(ToBytesError::Name)?;
+		
 		// unknown_15
-		LittleEndian::write_u16(unknown_15, self.unknown_15);
+		LittleEndian::write_u16(bytes.unknown_15, self.unknown_15);
 		
 		// Speciality / Level
 		{
@@ -346,58 +392,53 @@ impl Bytes for Digimon
 			self.level.to_bytes(&mut level_byte)?;
 			
 			// Merge them
-			speciality_level[0] = (speciality_byte << 4) | level_byte;
+			*bytes.speciality_level = (speciality_byte << 4) | level_byte;
 		}
 		
 		// DP / +P
-		dp_cost[0] = self.dp_cost;
-		dp_give[0] = self.dp_give;
+		*bytes.dp_cost = self.dp_cost;
+		*bytes.dp_give = self.dp_give;
 		
 		// Unknown
-		unknown_1a[0] = self.unknown_1a;
+		*bytes.unknown_1a = self.unknown_1a;
 		
 		// Health
-		LittleEndian::write_u16(hp, self.hp);
+		LittleEndian::write_u16(bytes.hp, self.hp);
 		
 		// Moves
-		self.  move_circle.to_bytes(   move_circle )?;
-		self.move_triangle.to_bytes( move_triangle )?;
-		self.   move_cross.to_bytes(    move_cross )?;
+		self.  move_circle.to_bytes( bytes.move_circle   ).map_err(ToBytesError::MoveCircle  )?;
+		self.move_triangle.to_bytes( bytes.move_triangle ).map_err(ToBytesError::MoveTriangle)?;
+		self.   move_cross.to_bytes( bytes.move_cross    ).map_err(ToBytesError::MoveCross   )?;
 	
 		// Support conditions
 		// Note: Although support conditions and effects aren't written if they're None,
 		//       a bit pattern of all 0s is a valid pattern and means "None" to the game.
-		if let Some(support_condition) = &self.effect_conditions[0] { support_condition.to_bytes( condition_first  )?; }
-		if let Some(support_condition) = &self.effect_conditions[1] { support_condition.to_bytes( condition_second )?; }
+		if let Some(support_condition) = &self.effect_conditions[0] { support_condition.to_bytes( bytes.condition_first  )?; }
+		if let Some(support_condition) = &self.effect_conditions[1] { support_condition.to_bytes( bytes.condition_second )?; }
 		
 		// Support effects
-		if let Some(support_effect) = &self.effects[0] { support_effect.to_bytes( effect_first  )?; }
-		if let Some(support_effect) = &self.effects[1] { support_effect.to_bytes( effect_second )?; }
-		if let Some(support_effect) = &self.effects[2] { support_effect.to_bytes( effect_third  )?; }
+		if let Some(support_effect) = &self.effects[0] { support_effect.to_bytes( bytes.effect_first  )?; }
+		if let Some(support_effect) = &self.effects[1] { support_effect.to_bytes( bytes.effect_second )?; }
+		if let Some(support_effect) = &self.effects[2] { support_effect.to_bytes( bytes.effect_third  )?; }
 		
 		// Cross move
-		if let Some(move_cross) = self.cross_move_effect { move_cross.to_bytes( &mut cross_move_effect[0] )? };
+		if let Some(move_cross) = self.cross_move_effect { move_cross.to_bytes( bytes.cross_move_effect )? };
 		
 		// Unknown
-		unknown_e2[0] = self.unknown_e2;
+		*bytes.unknown_e2 = self.unknown_e2;
 		
 		// Support arrow color
-		if let Some(arrow_color) = self.effect_arrow_color { arrow_color.to_bytes( &mut effect_arrow_color[0] )? }
+		if let Some(arrow_color) = self.effect_arrow_color { arrow_color.to_bytes( bytes.effect_arrow_color )? }
 		
 		// effect_description
-		// Note: Each string is at most [char; 20], this cannot fail
-		effect_description[0x00..0x15].copy_from_slice( util::write_null_ascii_string(self.effect_description[0].as_ref().as_ref(), &mut [0u8; 21])
-			.expect("First line of effect description was too large for output buffer")
-		);
-		effect_description[0x15..0x2a].copy_from_slice( util::write_null_ascii_string(self.effect_description[1].as_ref().as_ref(), &mut [0u8; 21])
-			.expect("Second line of effect description was too large for output buffer")
-		);
-		effect_description[0x2a..0x3f].copy_from_slice( util::write_null_ascii_string(self.effect_description[2].as_ref().as_ref(), &mut [0u8; 21])
-			.expect("Third line of effect description was too large for output buffer")
-		);
-		effect_description[0x3f..0x54].copy_from_slice( util::write_null_ascii_string(self.effect_description[3].as_ref().as_ref(), &mut [0u8; 21])
-			.expect("Fourth line of effect description was too large for output buffer")
-		);
+		util::write_null_ascii_string(self.effect_description[0].as_ref(), bytes.effect_description_0)
+			.map_err(ToBytesError::EffectDescriptionFirst)?;
+		util::write_null_ascii_string(self.effect_description[1].as_ref(), bytes.effect_description_1)
+			.map_err(ToBytesError::EffectDescriptionSecond)?;
+		util::write_null_ascii_string(self.effect_description[2].as_ref(), bytes.effect_description_2)
+			.map_err(ToBytesError::EffectDescriptionThird)?;
+		util::write_null_ascii_string(self.effect_description[3].as_ref(), bytes.effect_description_3)
+			.map_err(ToBytesError::EffectDescriptionFourth)?;
 		
 		// Return Ok
 		Ok(())

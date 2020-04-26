@@ -291,36 +291,36 @@ impl Bytes for SupportEffect
 	fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError>
 	{
 		// Get all byte arrays we need
-		util::array_split_mut!(bytes,
-			0x0..0x01 => exists,
-			0x1..0x02 => effect_type,
-			0x2..0x03 => bytes_a,
-			0x3..0x04 => _,
-			0x4..0x05 => bytes_b,
-			0x5..0x06 => _,
-			0x6..0x07 => bytes_c,
-			0x7..0x0a => _,
-			0xa..0x0c => bytes_x,
-			0xc..0x0e => bytes_y,
-			0xe..0x0f => _,
-			0xf..0x10 => bytes_op,
+		let bytes = util::array_split_mut!(bytes,
+			exists     : 0x1,
+			effect_type: 0x1,
+			a          : 0x1,
+			_unknown_3 : 0x1,
+			b          : 0x1,
+			_unknown_5 : 0x1,
+			c          : 0x1,
+			_unknown_7 : [0x3],
+			x          : [0x2],
+			y          : [0x2],
+			_unknown_e : 0x1,
+			op         : 0x1,
 		);
 		
 		// Set that the effect exists
-		exists[0] = 1;
+		*bytes.exists = 1;
 		
 		// Check our variant and fill `bytes` with info
 		#[allow(clippy::unneeded_field_pattern)] // Placeholder
 		match self {
 			Self::ChangeProperty { property, a, b, c, x, y, op } => {
-				property.to_bytes(&mut effect_type[0])?;
-				effect_type[0] -= 1;
-				if let Some(a) = a { a.to_bytes(&mut bytes_a[0])?; }
-				if let Some(b) = b { b.to_bytes(&mut bytes_b[0])?; }
-				if let Some(c) = c { c.to_bytes(&mut bytes_c[0])?; }
-				LittleEndian::write_u16(bytes_x, *x);
-				LittleEndian::write_u16(bytes_y, *y);
-				op.to_bytes(&mut bytes_op[0])?;
+				property.to_bytes(bytes.effect_type)?;
+				*bytes.effect_type -= 1;
+				if let Some(a) = a { a.to_bytes(bytes.a)?; }
+				if let Some(b) = b { b.to_bytes(bytes.b)?; }
+				if let Some(c) = c { c.to_bytes(bytes.c)?; }
+				LittleEndian::write_u16(bytes.x, *x);
+				LittleEndian::write_u16(bytes.y, *y);
+				op.to_bytes(bytes.op)?;
 			},
 			
 			Self::UseAttack { player: _, attack: _ } => todo!(),

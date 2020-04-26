@@ -243,9 +243,9 @@ impl Table {
 		
 		
 		// If there are too many cards, return Err
-		let table_size =  digimon_cards * (0x3 + CardType::Digimon  .byte_size() + 0x1) +
-		                            item_cards * (0x3 + CardType::Item     .byte_size() + 0x1) +
-		                       digivolve_cards * (0x3 + CardType::Digivolve.byte_size() + 0x1);
+		let table_size =   digimon_cards * (0x3 + CardType::Digimon  .byte_size() + 0x1) +
+		                      item_cards * (0x3 + CardType::Item     .byte_size() + 0x1) +
+		                 digivolve_cards * (0x3 + CardType::Digivolve.byte_size() + 0x1);
 		log::debug!("[Table Header] {} total bytes of cards", table_size);
 		if table_size > Self::MAX_BYTE_SIZE { return Err( DeserializeError::TooManyCards {
 			  digimon_cards,
@@ -254,8 +254,8 @@ impl Table {
 		} ); }
 		
 		// Create the arrays with capacity
-		let mut digimons     = Vec::with_capacity(digimon_cards);
-		let mut items           = Vec::with_capacity(item_cards);
+		let mut digimons   = Vec::with_capacity(digimon_cards);
+		let mut items      = Vec::with_capacity(item_cards);
 		let mut digivolves = Vec::with_capacity(digivolve_cards);
 		
 		// Read until the table is over

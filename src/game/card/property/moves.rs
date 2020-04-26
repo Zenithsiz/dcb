@@ -9,7 +9,7 @@
 //! |--------|------|----------------------|---------------------------|------------------------|-----------------------------------|
 //! | 0x0    | 0x2  | `u16`                | Power                     | `power`                |                                   |
 //! | 0x2    | 0x4  | `u32`                | Unknown                   | `unknown`              | Most likely stores animation data |
-//! | 0x4    | 0x16 | `[char; 0x16]`       | Name                      | `name`                 | Null-terminated                   |
+//! | 0x6    | 0x16 | `[char; 0x16]`       | Name                      | `name`                 | Null-terminated                   |
 
 // byteorder
 use byteorder::{ByteOrder, LittleEndian};
@@ -23,7 +23,7 @@ use crate::game::{util, Bytes};
 pub struct Move
 {
 	/// The move's name
-	name: arrayvec::ArrayVec<[ascii::AsciiChar; 21]>,
+	name: ascii::AsciiString,
 	
 	/// The move's power
 	power: u16,
@@ -45,9 +45,9 @@ pub enum FromBytesError
 #[derive(Debug, derive_more::Display, err_impl::Error)]
 pub enum ToBytesError
 {
-	/// The name was too big to be written to file
-	#[display(fmt = "The name \"{}\" is too long to be written to file (max is 21)", _0)]
-	NameTooLong( String ),
+	/// Unable to write the move name
+	#[display(fmt = "Unable to write the move name")]
+	Name( #[error(source)] util::WriteNullAsciiStringError ),
 }
 
 // Bytes
@@ -60,7 +60,7 @@ impl Bytes for Move
 	{
 		// And return the move
 		Ok( Self {
-			name   : util::read_null_ascii_string( &bytes[0x0..0x15] )
+			name   : util::read_null_ascii_string( &bytes[0x6..0x1c] )
 				.map_err(FromBytesError::Name)?
 				.chars().collect(),
 			power  : LittleEndian::read_u16( &bytes[0x0..0x2] ),
@@ -68,26 +68,23 @@ impl Bytes for Move
 		})
 	}
 	
-	type ToError = !;
+	type ToError = ToBytesError;
 	fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError>
 	{
 		// Get all byte arrays we need
-		util::array_split_mut!(bytes,
-			0x0..0x02 => power,
-			0x2..0x04 => unknown,
-			0x4..0x1c => name,
+		let bytes = util::array_split_mut!(bytes,
+			power  : [0x2],
+			unknown: [0x4],
+			name   : [0x16],
 		);
 		
 		// Write the name
-		name.copy_from_slice(
-			// Note: `self.name` is at most [char; 21], this cannot fail
-			util::write_null_ascii_string(self.name.as_ref().as_ref(), &mut [0u8; 22])
-				.expect("Name was too large for output buffer")
-		);
+		util::write_null_ascii_string(self.name.as_ref(), bytes.name)
+			.map_err(ToBytesError::Name)?;
 		
 		// Then write the power and the unknown
-		LittleEndian::write_u16(power  , self.power  );
-		LittleEndian::write_u32(unknown, self.unknown);
+		LittleEndian::write_u16(bytes.power  , self.power  );
+		LittleEndian::write_u32(bytes.unknown, self.unknown);
 		
 		// And return Ok
 		Ok(())

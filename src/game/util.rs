@@ -6,38 +6,95 @@
 //! All items in this module will eventually be depracated and moved
 //! somewhere else, but this change might take some time.
 
-/// Splits an array into it's various element arrays
+
 pub macro array_split {
 	(
 		$arr:ident,
-		$( $start:literal..$end:literal => $name:tt),* $(,)?
-	) => {
+		$(
+			$(  $start:literal..$end:literal => $arr_name:tt )?
+			$( =$location:literal => $val_name:tt )?
+			,
+		)*
+	) => {{
+		#![allow(clippy::used_underscore_binding)]
+		
+		// Struct holding all fields
+		struct __Fields<'a, T> {
+			$(
+				$( $arr_name: &'a [T; $end - $start], )?
+				$( $val_name: &'a T, )?
+			)*
+		}
+		
+		// Get everything from `array_refs`
 		let (
 			$(
-				$name,
+				$( $arr_name, )?
+				$( $val_name, )?
 			)*
 		) = ::arrayref::array_refs!(
 			$arr,
-			$( $end - $start ),*
+			$(
+				$( $end - $start )?
+				$( 1 + (0 * $location) )?
+			),*
 		);
-	}
+		
+		// And return the fields
+		__Fields {
+			$(
+				$( $arr_name, )?
+				$( $val_name: &( $val_name[0] ), )?
+			)*
+		}
+	}}
 }
 
-/// Splits an array mutable into it's various element arrays
 pub macro array_split_mut {
 	(
 		$arr:ident,
-		$( $start:literal..$end:literal => $name:tt),* $(,)?
-	) => {
+		$(
+			$name:ident :
+			
+			$( [$arr_size:literal] )?
+			$(  $val_size:literal  )?
+			
+		),* $(,)?
+	) => {{
+		#![allow(clippy::used_underscore_binding)]
+		
+		// Struct holding all fields
+		struct __Fields<'a, T> {
+			$(
+				$name:
+				
+				$( &'a mut [T; $arr_size], )?
+				$( &'a mut T, #[cfg(os = "Os that does not exist")] __field: [u8; $val_size], )?
+			)*
+		}
+		
+		// Get everything from `array_refs`
 		let (
 			$(
-				$name,
-			)*
+				$name
+			),*
 		) = ::arrayref::mut_array_refs!(
 			$arr,
-			$( $end - $start ),*
+			$(
+				$( $arr_size )?
+				$( $val_size )?
+			),*
 		);
-	}
+		
+		// And return the fields
+		__Fields {
+			$(
+				$name
+				$( : &mut ( $name[$val_size - $val_size] ) )?
+				,
+			)*
+		}
+	}}
 }
 
 // Types
@@ -142,6 +199,8 @@ pub macro array_split_mut {
 	}
 //--------------------------------------------------------------------------------------------------
 
+
+
 /// Error type for [`read_null_ascii_string`]
 #[derive(Debug)]
 #[derive(derive_more::Display, err_impl::Error)]
@@ -174,7 +233,7 @@ pub fn read_null_ascii_string(mut buf: &[u8]) -> Result<&ascii::AsciiStr, ReadNu
 #[derive(derive_more::Display, err_impl::Error)]
 pub enum WriteNullAsciiStringError {
 	/// The input string was too large
-	#[display(fmt = "Input string was too large for buffer. ({} / {})", "input_len", "buffer_len")]
+	#[display(fmt = "Input string was too large for buffer. ({}+1 / {})", "input_len", "buffer_len")]
 	TooLarge {
 		input_len : usize,
 		buffer_len: usize,
@@ -183,7 +242,7 @@ pub enum WriteNullAsciiStringError {
 
 /// Writes a null-terminated ascii string to a buffer and returns it
 pub fn write_null_ascii_string<'a>(input: &ascii::AsciiStr, buf: &'a mut [u8]) -> Result<&'a mut [u8], WriteNullAsciiStringError> {
-	// If the input string is too large, return Err
+	// If the input string doesn't fit into the buffer (excluding the null byte), return Err
 	if input.len() >= buf.len() {
 		return Err(WriteNullAsciiStringError::TooLarge{ input_len: input.len(), buffer_len: buf.len() });
 	}

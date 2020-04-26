@@ -29,6 +29,7 @@
 	unsized_locals,
 	bool_to_option,
 	decl_macro,
+	stmt_expr_attributes,
 )]
 
 // Lints
