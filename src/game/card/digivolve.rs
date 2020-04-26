@@ -93,14 +93,14 @@ use serde::Deserialize;
 		SupportEffectCondition {
 			rank: &'static str,
 			digivolve_pos: u64,
-			err: crate::game::card::property::support_condition::FromBytesError,
+			err: crate::game::card::property::effect_condition::FromBytesError,
 		},
 		
 		/// Unable to read a support effect
 		#[display(fmt = "Unable to read the {} support effect", rank)]
 		SupportEffect {
 			rank: &'static str,
-			err: crate::game::card::property::support_effect::FromBytesError,
+			err: crate::game::card::property::effect::FromBytesError,
 		},
 	}
 	

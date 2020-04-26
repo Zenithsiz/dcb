@@ -1,15 +1,15 @@
 //! A digimon's support effect
 //! 
-//! This module contains the [`SupportEffect`] struct, which describes a support effect.
+//! This module contains the [`Effect`] struct, which describes a support effect.
 //! 
 //! # Layout
 //! Each support effect has a size of `0x10` bytes, and it's general layout is the following:
 //! 
-//! | Offset | Size | Type                 | Name                      | Location               | Details                                                       |
-//! |--------|------|----------------------|---------------------------|------------------------|---------------------------------------------------------------|
-//! | 0x0    | 0x1  | `bool`               | Exists                    | N/A                    | If `0`, the effect does not exist                             |
-//! | 0x1    | 0x1  | N/A                  | Effect Type               | N/A                    | Determines which [`SupportEffect`] variant is used.           |
-//! | 0x2    | 0xe  | N/A                  | Arguments                 | N/A                    | The arguments used for the current [`SupportEffect`] variant. |
+//! | Offset | Size | Type                 | Name                      | Location               | Details                                                |
+//! |--------|------|----------------------|---------------------------|------------------------|--------------------------------------------------------|
+//! | 0x0    | 0x1  | `bool`               | Exists                    | N/A                    | If `0`, the effect does not exist                      |
+//! | 0x1    | 0x1  | N/A                  | Effect Type               | N/A                    | Determines which [`Effect`] variant is used.           |
+//! | 0x2    | 0xe  | N/A                  | Arguments                 | N/A                    | The arguments used for the current [`Effect`] variant. |
 
 // byteorder
 use byteorder::{ByteOrder, LittleEndian};
@@ -19,7 +19,7 @@ use crate::game::{
 	Bytes,
 	util,
 	card::property::{
-		self, DigimonProperty, SupportEffectOperation, AttackType, PlayerType, Slot
+		self, DigimonProperty, EffectOperation, AttackType, PlayerType, Slot
 	},
 };
 
@@ -33,7 +33,7 @@ use crate::game::{
 #[serde(tag = "type")]
 // TODO: Move this `allow` to the variant once clippy allows
 #[allow(clippy::pub_enum_variant_names)] // `Effect` on `VoidOpponentSupportEffect` isn't refering to the enum
-pub enum SupportEffect
+pub enum Effect
 {
 	/// Changes a property of either digimon
 	/// 
@@ -63,7 +63,7 @@ pub enum SupportEffect
 		x: u16,
 		y: u16,
 		
-		op: SupportEffectOperation,
+		op: EffectOperation,
 	},
 	
 	/// A player uses an attack type
@@ -86,7 +86,7 @@ pub enum SupportEffect
 		b: Option<DigimonProperty>,
 		c: Option<DigimonProperty>,
 		
-		op: SupportEffectOperation,
+		op: EffectOperation,
 	},
 	
 	/// Moves cards from a slot to another
@@ -178,9 +178,9 @@ pub enum FromBytesError
 	
 	/// Unknown operation argument
 	#[display(fmt = "Unknown operation argument")]
-	Operation( #[error(source)] property::support_effect_operation::FromBytesError ),
+	Operation( #[error(source)] property::effect_operation::FromBytesError ),
 	
-	/// Unknown attack type for [`SupportEffect::UseAttack`]
+	/// Unknown attack type for [`Effect::UseAttack`]
 	#[display(fmt = "Unknown attack type")]
 	UseAttackAttackType( #[error(source)] property::attack_type::FromBytesError ),
 	
@@ -189,7 +189,7 @@ pub enum FromBytesError
 	EffectType { byte: u8 },
 }
 
-impl Bytes for SupportEffect
+impl Bytes for Effect
 {
 	type ByteArray = [u8; 0x10];
 	
@@ -218,6 +218,8 @@ impl Bytes for SupportEffect
 			.then(|| DigimonProperty::from_bytes( &bytes[0x6] ))
 			.transpose()
 			.map_err(FromBytesError::ThirdProperty);
+		
+		// Lower byte of `x` contains the attack type
 		let get_attack_type = || AttackType::from_bytes( &bytes[0xa] ) // Lower byte of `x`
 			.map_err(FromBytesError::UseAttackAttackType);
 		
@@ -226,7 +228,7 @@ impl Bytes for SupportEffect
 		let y = LittleEndian::read_u16( &bytes[0xc..0xe] );
 		
 		// The operation argument
-		let op = SupportEffectOperation::from_bytes( &bytes[0xf] )
+		let op = EffectOperation::from_bytes( &bytes[0xf] )
 			.map_err(FromBytesError::Operation)?;
 		
 		// Check what the effect type is
@@ -240,7 +242,6 @@ impl Bytes for SupportEffect
 			}),
 			
 			
-			// Lower byte of `x` contains the attack type
 			16 => Ok( Self::UseAttack{ player: Player  , attack: get_attack_type()? }),
 			17 => Ok( Self::UseAttack{ player: Opponent, attack: get_attack_type()? }),
 			
@@ -313,14 +314,14 @@ impl Bytes for SupportEffect
 		#[allow(clippy::unneeded_field_pattern)] // Placeholder
 		match self {
 			Self::ChangeProperty { property, a, b, c, x, y, op } => {
-				property.to_bytes(bytes.effect_type)?;
+				property.to_bytes(bytes.effect_type).into_ok();
 				*bytes.effect_type -= 1;
-				if let Some(a) = a { a.to_bytes(bytes.a)?; }
-				if let Some(b) = b { b.to_bytes(bytes.b)?; }
-				if let Some(c) = c { c.to_bytes(bytes.c)?; }
+				if let Some(a) = a { a.to_bytes(bytes.a).into_ok(); }
+				if let Some(b) = b { b.to_bytes(bytes.b).into_ok(); }
+				if let Some(c) = c { c.to_bytes(bytes.c).into_ok(); }
 				LittleEndian::write_u16(bytes.x, *x);
 				LittleEndian::write_u16(bytes.y, *y);
-				op.to_bytes(bytes.op)?;
+				op.to_bytes(bytes.op).into_ok();
 			},
 			
 			Self::UseAttack { player: _, attack: _ } => todo!(),

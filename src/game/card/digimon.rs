@@ -5,27 +5,27 @@
 //! # Layout
 //! The digimon card has a size of `0x138` bytes, and it's layout is the following:
 //! 
-//! | Offset | Size | Type                 | Name                      | Location               | Details                                                                             |
-//! |--------|------|----------------------|---------------------------|------------------------|-------------------------------------------------------------------------------------|
-//! | 0x0    | 0x15 | `[char; 0x15]`       | Name                      | `name`                 | Null-terminated                                                                     |
-//! | 0x15   | 0x2  | `u16`                | Unknown                   | `unknown_15`           | Most likely contains the digimon's model                                            |
-//! | 0x17   | 0x1  | `u8`                 | Speciality & Level        | `speciality level`     | The bottom nibble of this byte is the level, while the top nibble is the speciality |
-//! | 0x18   | 0x1  | `u8`                 | DP                        | `dp_cost`              |                                                                                     |
-//! | 0x19   | 0x1  | `u8`                 | +P                        | `dp_give`              |                                                                                     |
-//! | 0x1a   | 0x1  | `u8`                 | Unknown                   | `unknown_1a`           | Is `0` for all digimon                                                              |
-//! | 0x1b   | 0x2  | `u16`                | Health                    | `hp`                   |                                                                                     |
-//! | 0x1d   | 0x1c | [`Move`]             | Circle Move               | `move_circle`          |                                                                                     |
-//! | 0x39   | 0x1c | [`Move`]             | Triangle move             | `move_triangle`        |                                                                                     |
-//! | 0x55   | 0x1c | [`Move`]             | Cross move                | `move_cross`           |                                                                                     |
-//! | 0x71   | 0x20 | [`SupportCondition`] | First condition           | `effect_conditions[0]` |                                                                                     |
-//! | 0x91   | 0x20 | [`SupportCondition`] | Second condition          | `effect_conditions[1]` |                                                                                     |
-//! | 0xb1   | 0x10 | [`SupportEffect`]    | First effect              | `effects[0]`           |                                                                                     |
-//! | 0xc1   | 0x10 | [`SupportEffect`]    | Second effect             | `effects[1]`           |                                                                                     |
-//! | 0xd1   | 0x10 | [`SupportEffect`]    | Third effect              | `effects[2]`           |                                                                                     |
-//! | 0xe1   | 0x1  | [`CrossMoveEffect`]  | Cross move effect         | `cross_move_effect`    |                                                                                     |
-//! | 0xe2   | 0x1  | `u8`                 | Unknown                   | `unknown_e2`           |                                                                                     |
-//! | 0xe3   | 0x1  | [`ArrowColor`]       | Effect arrow color        | `effect_arrow_color`   |                                                                                     |
-//! | 0xe4   | 0x54 | `[[char; 0x15]; 4]`  | Effect description lines  | `effect_description`   | Each line is` 0x15` bytes, split over 4 lines, each null terminated                 |
+//! | Offset | Size | Type                | Name                      | Location               | Details                                                                             |
+//! |--------|------|---------------------|---------------------------|------------------------|-------------------------------------------------------------------------------------|
+//! | 0x0    | 0x15 | `[char; 0x15]`      | Name                      | `name`                 | Null-terminated                                                                     |
+//! | 0x15   | 0x2  | `u16`               | Unknown                   | `unknown_15`           | Most likely contains the digimon's model                                            |
+//! | 0x17   | 0x1  | `u8`                | Speciality & Level        | `speciality level`     | The bottom nibble of this byte is the level, while the top nibble is the speciality |
+//! | 0x18   | 0x1  | `u8`                | DP                        | `dp_cost`              |                                                                                     |
+//! | 0x19   | 0x1  | `u8`                | +P                        | `dp_give`              |                                                                                     |
+//! | 0x1a   | 0x1  | `u8`                | Unknown                   | `unknown_1a`           | Is `0` for all digimon                                                              |
+//! | 0x1b   | 0x2  | `u16`               | Health                    | `hp`                   |                                                                                     |
+//! | 0x1d   | 0x1c | [`Move`]            | Circle Move               | `move_circle`          |                                                                                     |
+//! | 0x39   | 0x1c | [`Move`]            | Triangle move             | `move_triangle`        |                                                                                     |
+//! | 0x55   | 0x1c | [`Move`]            | Cross move                | `move_cross`           |                                                                                     |
+//! | 0x71   | 0x20 | [`EffectCondition`] | First condition           | `effect_conditions[0]` |                                                                                     |
+//! | 0x91   | 0x20 | [`EffectCondition`] | Second condition          | `effect_conditions[1]` |                                                                                     |
+//! | 0xb1   | 0x10 | [`Effect`]          | First effect              | `effects[0]`           |                                                                                     |
+//! | 0xc1   | 0x10 | [`Effect`]          | Second effect             | `effects[1]`           |                                                                                     |
+//! | 0xd1   | 0x10 | [`Effect`]          | Third effect              | `effects[2]`           |                                                                                     |
+//! | 0xe1   | 0x1  | [`CrossMoveEffect`] | Cross move effect         | `cross_move_effect`    |                                                                                     |
+//! | 0xe2   | 0x1  | `u8`                | Unknown                   | `unknown_e2`           |                                                                                     |
+//! | 0xe3   | 0x1  | [`ArrowColor`]      | Effect arrow color        | `effect_arrow_color`   |                                                                                     |
+//! | 0xe4   | 0x54 | `[[char; 0x15]; 4]` | Effect description lines  | `effect_description`   | Each line is` 0x15` bytes, split over 4 lines, each null terminated                 |
 
 // byteorder
 use byteorder::{ByteOrder, LittleEndian};
@@ -40,8 +40,8 @@ use crate::game::{
 		Level,
 		Move,
 		CrossMoveEffect,
-		SupportCondition,
-		SupportEffect,
+		EffectCondition,
+		Effect,
 		ArrowColor,
 	}
 };
@@ -111,11 +111,11 @@ pub struct Digimon
 	
 	/// The effect conditions
 	#[serde(default)]
-	pub effect_conditions: [Option<SupportCondition>; 2],
+	pub effect_conditions: [Option<EffectCondition>; 2],
 	
 	/// The effects themselves
 	#[serde(default)]
-	pub effects: [Option<SupportEffect>; 3],
+	pub effects: [Option<Effect>; 3],
 }
 
 /// Error type for [`Bytes::from_bytes`]
@@ -173,23 +173,23 @@ pub enum FromBytesError
 	
 	/// Unable to read the first effect condition
 	#[display(fmt = "Unable to read the first effect condition")]
-	EffectConditionFirst( #[error(source)] property::support_condition::FromBytesError ),
+	EffectConditionFirst( #[error(source)] property::effect_condition::FromBytesError ),
 	
 	/// Unable to read the second effect condition
 	#[display(fmt = "Unable to read the second effect condition")]
-	EffectConditionSecond( #[error(source)] property::support_condition::FromBytesError ),
+	EffectConditionSecond( #[error(source)] property::effect_condition::FromBytesError ),
 	
 	/// Unable to read the first effect
 	#[display(fmt = "Unable to read the first effect")]
-	EffectFirst( #[error(source)] property::support_effect::FromBytesError ),
+	EffectFirst( #[error(source)] property::effect::FromBytesError ),
 	
 	/// Unable to read the second effect
 	#[display(fmt = "Unable to read the second effect")]
-	EffectSecond( #[error(source)] property::support_effect::FromBytesError ),
+	EffectSecond( #[error(source)] property::effect::FromBytesError ),
 	
 	/// Unable to read the third effect
 	#[display(fmt = "Unable to read the third effect")]
-	EffectThird( #[error(source)] property::support_effect::FromBytesError ),
+	EffectThird( #[error(source)] property::effect::FromBytesError ),
 }
 /// Error type for [`Bytes::to_bytes`]
 #[derive(Debug)]
@@ -238,25 +238,28 @@ impl Bytes for Digimon
 	{
 		// Get all byte arrays we need
 		let bytes = util::array_split!(bytes,
-			0x00..0x15  => name,
-			0x15..0x17  => unknown_15,
-			=0x17       => speciality_level,
-			=0x18       => dp_cost,
-			=0x19       => dp_give,
-			=0x1a       => unknown_1a,
-			0x1b..0x1d  => hp,
-			0x1d..0x39  => move_circle,
-			0x39..0x55  => move_triangle,
-			0x55..0x71  => move_cross,
-			0x71..0x91  => condition_first,
-			0x91..0xb1  => condition_second,
-			0xb1..0xc1  => effect_first,
-			0xc1..0xd1  => effect_second,
-			0xd1..0xe1  => effect_third,
-			0xe1..0xe2  => cross_move_effect,
-			0xe2..0xe3  => unknown_e2,
-			0xe3..0xe4  => effect_arrow_color,
-			0xe4..0x138 => effect_description,
+			name                : [0x15],
+			unknown_15          : [0x2],
+			speciality_level    : 0x1,
+			dp_cost             : 0x1,
+			dp_give             : 0x1,
+			unknown_1a          : 0x1,
+			hp                  : [0x2],
+			move_circle         : [0x1c],
+			move_triangle       : [0x1c],
+			move_cross          : [0x1c],
+			condition_first     : [0x20],
+			condition_second    : [0x20],
+			effect_first        : [0x10],
+			effect_second       : [0x10],
+			effect_third        : [0x10],
+			cross_move_effect   : 1,
+			unknown_e2          : 1,
+			effect_arrow_color  : 1,
+			effect_description_0: [0x15],
+			effect_description_1: [0x15],
+			effect_description_2: [0x15],
+			effect_description_3: [0x15],
 		);
 		
 		// Return the struct after building it
@@ -290,57 +293,53 @@ impl Bytes for Digimon
 			
 			// 0x71 - 0x138
 			effect_conditions: [
-				(bytes.condition_first[2] != 0)
-					.then(|| SupportCondition::from_bytes( bytes.condition_first ) )
-					.transpose()
+				Option::<EffectCondition>::from_bytes( bytes.condition_first )
 					.map_err(FromBytesError::EffectConditionFirst)?,
 				
-				(bytes.condition_second[2] != 0)
-					.then(|| SupportCondition::from_bytes( bytes.condition_second ) )
-					.transpose()
+				Option::<EffectCondition>::from_bytes( bytes.condition_second )
 					.map_err(FromBytesError::EffectConditionSecond)?,
 			],
 			
 			effects: [
-				(bytes.effect_first[0] != 0)
-					.then(|| SupportEffect::from_bytes( bytes.effect_first ) )
+				(bytes.effect_first[0x0] != 0)
+					.then(|| Effect::from_bytes( bytes.effect_first ) )
 					.transpose()
 					.map_err(FromBytesError::EffectFirst)?,
 				
-				(bytes.effect_second[0] != 0)
-					.then(|| SupportEffect::from_bytes( bytes.effect_second ) )
+				(bytes.effect_second[0x0] != 0)
+					.then(|| Effect::from_bytes( bytes.effect_second ) )
 					.transpose()
 					.map_err(FromBytesError::EffectSecond)?,
 				
-				(bytes.effect_third[0] != 0)
-					.then(|| SupportEffect::from_bytes( bytes.effect_third ) )
+				(bytes.effect_third[0x0] != 0)
+					.then(|| Effect::from_bytes( bytes.effect_third ) )
 					.transpose()
 					.map_err(FromBytesError::EffectThird)?,
 			],
 			
-			cross_move_effect: (bytes.cross_move_effect[0] != 0)
-				.then(|| CrossMoveEffect::from_bytes( &bytes.cross_move_effect[0] ) )
+			cross_move_effect: (*bytes.cross_move_effect != 0)
+				.then(|| CrossMoveEffect::from_bytes( bytes.cross_move_effect ) )
 				.transpose()
 				.map_err(FromBytesError::CrossMoveEffect)?,
 			
-			unknown_e2: bytes.unknown_e2[0],
+			unknown_e2: *bytes.unknown_e2,
 			
-			effect_arrow_color: (bytes.effect_arrow_color[0] != 0)
-				.then(|| ArrowColor::from_bytes( &bytes.effect_arrow_color[0] ) )
+			effect_arrow_color: (*bytes.effect_arrow_color != 0)
+				.then(|| ArrowColor::from_bytes( bytes.effect_arrow_color ) )
 				.transpose()
 				.map_err(FromBytesError::ArrowColor)?,
 			
 			effect_description: [
-				util::read_null_ascii_string( &bytes.effect_description[0x00..0x15] )
+				util::read_null_ascii_string( bytes.effect_description_0 )
 					.map_err(FromBytesError::EffectDescriptionFirst)?
 					.chars().collect(),
-				util::read_null_ascii_string( &bytes.effect_description[0x15..0x2a] )
+				util::read_null_ascii_string( bytes.effect_description_1 )
 					.map_err(FromBytesError::EffectDescriptionSecond)?
 					.chars().collect(),
-				util::read_null_ascii_string( &bytes.effect_description[0x2a..0x3f] )
+				util::read_null_ascii_string( bytes.effect_description_2 )
 					.map_err(FromBytesError::EffectDescriptionThird)?
 					.chars().collect(),
-				util::read_null_ascii_string( &bytes.effect_description[0x3f..0x54] )
+				util::read_null_ascii_string( bytes.effect_description_3 )
 					.map_err(FromBytesError::EffectDescriptionFourth)?
 					.chars().collect(),
 			],
@@ -410,16 +409,14 @@ impl Bytes for Digimon
 		self.move_triangle.to_bytes( bytes.move_triangle ).map_err(ToBytesError::MoveTriangle)?;
 		self.   move_cross.to_bytes( bytes.move_cross    ).map_err(ToBytesError::MoveCross   )?;
 	
-		// Support conditions
-		// Note: Although support conditions and effects aren't written if they're None,
-		//       a bit pattern of all 0s is a valid pattern and means "None" to the game.
-		if let Some(support_condition) = &self.effect_conditions[0] { support_condition.to_bytes( bytes.condition_first  )?; }
-		if let Some(support_condition) = &self.effect_conditions[1] { support_condition.to_bytes( bytes.condition_second )?; }
+		// Effect conditions
+		self.effect_conditions[0].to_bytes( bytes.condition_first  ).into_ok();
+		self.effect_conditions[1].to_bytes( bytes.condition_second ).into_ok();
 		
-		// Support effects
-		if let Some(support_effect) = &self.effects[0] { support_effect.to_bytes( bytes.effect_first  )?; }
-		if let Some(support_effect) = &self.effects[1] { support_effect.to_bytes( bytes.effect_second )?; }
-		if let Some(support_effect) = &self.effects[2] { support_effect.to_bytes( bytes.effect_third  )?; }
+		// Effects
+		if let Some(effect) = &self.effects[0] { effect.to_bytes( bytes.effect_first  )?; }
+		if let Some(effect) = &self.effects[1] { effect.to_bytes( bytes.effect_second )?; }
+		if let Some(effect) = &self.effects[2] { effect.to_bytes( bytes.effect_third  )?; }
 		
 		// Cross move
 		if let Some(move_cross) = self.cross_move_effect { move_cross.to_bytes( bytes.cross_move_effect )? };

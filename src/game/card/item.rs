@@ -5,8 +5,8 @@
 	// Game
 	use crate::game::util;
 	use crate::game::Bytes;
-	use crate::game::card::property::SupportCondition;
-	use crate::game::card::property::SupportEffect;
+	use crate::game::card::property::EffectCondition;
+	use crate::game::card::property::Effect;
 	use crate::game::card::property::ArrowColor;
 //--------------------------------------------------------------------------------------------------
 
@@ -56,16 +56,16 @@ use serde::Deserialize;
 	#[derive(Debug, Serialize, Deserialize)]
 	struct SupportEffects
 	{
-		first : Option<SupportEffect>,
-		second: Option<SupportEffect>,
-		third : Option<SupportEffect>,
+		first : Option<Effect>,
+		second: Option<Effect>,
+		third : Option<Effect>,
 	}
 	
 	#[derive(Debug, Serialize, Deserialize)]
 	struct SupportConditions
 	{
-		first : Option<SupportCondition>,
-		second: Option<SupportCondition>,
+		first : Option<EffectCondition>,
+		second: Option<EffectCondition>,
 	}
 	
 	/// The error type thrown by `FromBytes`
@@ -92,14 +92,14 @@ use serde::Deserialize;
 		SupportCondition {
 			rank: &'static str,
 			item_pos: u64,
-			err: crate::game::card::property::support_condition::FromBytesError,
+			err: crate::game::card::property::effect_condition::FromBytesError,
 		},
 		
 		/// Unable to read a support effect
 		#[display(fmt = "Unable to read the {} support effect", rank)]
 		SupportEffect {
 			rank: &'static str,
-			err: crate::game::card::property::support_effect::FromBytesError,
+			err: crate::game::card::property::effect::FromBytesError,
 		},
 	}
 	
@@ -176,26 +176,23 @@ use serde::Deserialize;
 					} else { None },
 					
 					conditions: SupportConditions {
-						first: if bytes[0x19] != 0 { Some(
-							SupportCondition::from_bytes( array_ref!(bytes, 0x19, 0x20) ).map_err(|err| FromBytesError::SupportCondition{ rank: "1st", item_pos: 0x19, err })?
-						)} else { None },
-						
-						second: if bytes[0x39] != 0 { Some(
-							SupportCondition::from_bytes( array_ref!(bytes, 0x39, 0x20) ).map_err(|err| FromBytesError::SupportCondition{ rank: "2nd", item_pos: 0x39, err })?
-						)} else { None },
+						first: Option::<EffectCondition>::from_bytes( array_ref!(bytes, 0x19, 0x20) )
+							.map_err(|err| FromBytesError::SupportCondition{ rank: "1st", item_pos: 0x19, err })?,
+						second: Option::<EffectCondition>::from_bytes( array_ref!(bytes, 0x39, 0x20) )
+							.map_err(|err| FromBytesError::SupportCondition{ rank: "2nd", item_pos: 0x39, err })?,
 					},
 					
 					effects: SupportEffects {
 						first: if bytes[0x59] != 0 { Some(
-							SupportEffect::from_bytes( array_ref!(bytes, 0x59, 0x10) ).map_err(|err| FromBytesError::SupportEffect{ rank: "1st", err })?
+							Effect::from_bytes( array_ref!(bytes, 0x59, 0x10) ).map_err(|err| FromBytesError::SupportEffect{ rank: "1st", err })?
 						)} else { None },
 						
 						second: if bytes[0x69] != 0 { Some(
-							SupportEffect::from_bytes( array_ref!(bytes, 0x69, 0x10) ).map_err(|err| FromBytesError::SupportEffect{ rank: "2nd", err })?
+							Effect::from_bytes( array_ref!(bytes, 0x69, 0x10) ).map_err(|err| FromBytesError::SupportEffect{ rank: "2nd", err })?
 						)} else { None },
 						
 						third: if bytes[0x79] != 0 { Some(
-							SupportEffect::from_bytes( array_ref!(bytes, 0x79, 0x10) ).map_err(|err| FromBytesError::SupportEffect{ rank: "3rd", err })?
+							Effect::from_bytes( array_ref!(bytes, 0x79, 0x10) ).map_err(|err| FromBytesError::SupportEffect{ rank: "3rd", err })?
 						)} else { None },
 					},
 				},
@@ -249,8 +246,8 @@ use serde::Deserialize;
 				if let Some(arrow_color) = self.effects.arrow_color { arrow_color.to_bytes( &mut bytes[0x89] ).expect("Unable to convert arrow color to bytes"); }
 				
 				// If they are None, 0 is a valid value for the conditions
-				if let Some(support_condition) = &self.effects.conditions.first  { support_condition.to_bytes( array_mut_ref!(bytes, 0x19, 0x20) )?; }
-				if let Some(support_condition) = &self.effects.conditions.second { support_condition.to_bytes( array_mut_ref!(bytes, 0x39, 0x20) )?; }
+				self.effects.conditions.first .to_bytes( array_mut_ref!(bytes, 0x19, 0x20) )?;
+				self.effects.conditions.second.to_bytes( array_mut_ref!(bytes, 0x39, 0x20) )?;
 				
 				
 				// If they are None, 0 is a valid value for the effects

@@ -9,42 +9,47 @@
 
 pub macro array_split {
 	(
-		$arr:ident,
+		$arr:expr,
 		$(
-			$(  $start:literal..$end:literal => $arr_name:tt )?
-			$( =$location:literal => $val_name:tt )?
-			,
-		)*
+			$name:ident :
+			
+			$( [$arr_size:expr]    )?
+			$(  $val_size:literal  )?
+			
+		),* $(,)?
 	) => {{
 		#![allow(clippy::used_underscore_binding)]
+		#![allow(clippy::ptr_offset_with_cast   )]
 		
 		// Struct holding all fields
-		struct __Fields<'a, T> {
+		struct Fields<'a, T> {
 			$(
-				$( $arr_name: &'a [T; $end - $start], )?
-				$( $val_name: &'a T, )?
+				$name:
+				
+				$( &'a [T; $arr_size], )?
+				$( &'a T, #[cfg(os = "Os that does not exist")] __field: [u8; $val_size], )?
 			)*
 		}
 		
 		// Get everything from `array_refs`
 		let (
 			$(
-				$( $arr_name, )?
-				$( $val_name, )?
-			)*
+				$name
+			),*
 		) = ::arrayref::array_refs!(
 			$arr,
 			$(
-				$( $end - $start )?
-				$( 1 + (0 * $location) )?
+				$( $arr_size )?
+				$( $val_size )?
 			),*
 		);
 		
 		// And return the fields
-		__Fields {
+		Fields {
 			$(
-				$( $arr_name, )?
-				$( $val_name: &( $val_name[0] ), )?
+				$name
+				$( : &( $name[$val_size - $val_size] ) )?
+				,
 			)*
 		}
 	}}
@@ -52,19 +57,20 @@ pub macro array_split {
 
 pub macro array_split_mut {
 	(
-		$arr:ident,
+		$arr:expr,
 		$(
 			$name:ident :
 			
-			$( [$arr_size:literal] )?
+			$( [$arr_size:expr]    )?
 			$(  $val_size:literal  )?
 			
 		),* $(,)?
 	) => {{
 		#![allow(clippy::used_underscore_binding)]
+		#![allow(clippy::ptr_offset_with_cast   )]
 		
 		// Struct holding all fields
-		struct __Fields<'a, T> {
+		struct Fields<'a, T> {
 			$(
 				$name:
 				
@@ -87,7 +93,7 @@ pub macro array_split_mut {
 		);
 		
 		// And return the fields
-		__Fields {
+		Fields {
 			$(
 				$name
 				$( : &mut ( $name[$val_size - $val_size] ) )?

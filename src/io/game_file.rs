@@ -239,7 +239,9 @@ impl<R: Read + Write + Seek> Seek for GameFile<R>
 					data_offset
 				))
 			),
-			SeekFrom::End(_) => { todo!(); }
+			SeekFrom::End(_) => {
+				todo!("SeekFrom::End isn't currently implemented");
+			}
 		};
 		
 		// Seek to the real position and get where we are right now

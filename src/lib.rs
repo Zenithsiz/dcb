@@ -30,6 +30,8 @@
 	bool_to_option,
 	decl_macro,
 	stmt_expr_attributes,
+	unwrap_infallible,
+	const_if_match,
 )]
 
 // Lints
@@ -50,8 +52,11 @@
 	clippy::identity_op,                    // Makes sense sometimes for symmetry
 	clippy::items_after_statements,         // Sometimes we only introduce items when we first use them.
 	clippy::unseparated_literal_suffix,     // We only separate them when they are long
-	clippy::diverging_sub_expression,       // We use `?` on `Result<T, !>` for extracting the result currently, once a method is done for it, we'll use it.
 	clippy::match_same_arms,                // Sometimes we separate them for clarify and order
+	clippy::missing_errors_doc,             // We provide documentation on errors on the error type itself
+	clippy::todo,                           // Code that is incomplete should be tagged as such.
+	clippy::unreachable,                    // Some code should be unreachable and panic when reached.
+	clippy::integer_arithmetic,             // Come on now, we need to use numbers to program
 	
 	// TODO: Deal with casts eventually
 	clippy::cast_possible_wrap,
@@ -62,10 +67,7 @@
 	clippy::missing_docs_in_private_items,
 	clippy::as_conversions,
 	clippy::indexing_slicing,
-	clippy::integer_arithmetic,
-	clippy::unreachable,
-	clippy::todo,
-	clippy::missing_errors_doc,
+	
 )]
 
 // Modules

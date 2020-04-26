@@ -1,6 +1,6 @@
 //! A digimon's move
 //! 
-//! This module contains the [`Move`] struct, which describes a generic move.
+//! This module contains the [`Move`] struct, which describes a generic move over the triangle, circle or cross.
 //! 
 //! # Layout
 //! Each move has a size of `0x1c` bytes, and it's layout is the following:
@@ -32,7 +32,7 @@ pub struct Move
 	unknown: u32,
 }
 
-/// Error type for [`Bytes::FromBytes`]
+/// Error type for [`Bytes::from_bytes`]
 #[derive(Debug, derive_more::Display, err_impl::Error)]
 pub enum FromBytesError
 {
@@ -41,7 +41,7 @@ pub enum FromBytesError
 	Name( #[error(source)] util::ReadNullAsciiStringError ),
 }
 
-/// Error type for [`Bytes::ToBytes`]
+/// Error type for [`Bytes::to_bytes`]
 #[derive(Debug, derive_more::Display, err_impl::Error)]
 pub enum ToBytesError
 {
@@ -58,9 +58,9 @@ impl Bytes for Move
 	type FromError = FromBytesError;
 	fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError>
 	{
-		// And return the move
+		// Return the move
 		Ok( Self {
-			name   : util::read_null_ascii_string( &bytes[0x6..0x1c] )
+			name : util::read_null_ascii_string( &bytes[0x6..0x1c] )
 				.map_err(FromBytesError::Name)?
 				.chars().collect(),
 			power  : LittleEndian::read_u16( &bytes[0x0..0x2] ),
@@ -83,7 +83,7 @@ impl Bytes for Move
 			.map_err(ToBytesError::Name)?;
 		
 		// Then write the power and the unknown
-		LittleEndian::write_u16(bytes.power  , self.power  );
+		LittleEndian::write_u16(bytes.power  , self.power);
 		LittleEndian::write_u32(bytes.unknown, self.unknown);
 		
 		// And return Ok
