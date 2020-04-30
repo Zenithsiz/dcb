@@ -189,7 +189,21 @@ pub enum FromBytesError
 	EffectType { byte: u8 },
 }
 
-impl Bytes for Effect
+/// Error type for [`Bytes::from_bytes`]
+#[derive(Debug)]
+#[derive(derive_more::Display, err_impl::Error)]
+pub enum ToBytesError
+{
+	/// Invalid move [`Effect::MoveCards`] effect
+	#[display(fmt = "Invalid move cards effect ({} => {})", source, destination)]
+	InvalidMoveCards {
+		source     : Slot,
+		destination: Slot,
+	}
+}
+
+#[allow(clippy::use_self)] // False positive
+impl Bytes for Option<Effect>
 {
 	type ByteArray = [u8; 0x10];
 	
@@ -202,95 +216,122 @@ impl Bytes for Effect
 		use PlayerType::{Player, Opponent};
 		use Slot::{Hand, Online as OnlineDeck, Offline as OfflineDeck, Dp as DpSlot};
 		
-		// The effect type byte
-		let effect_type_byte = bytes[0x1];
+		// Get all byte arrays we need
+		let bytes = util::array_split!(bytes,
+			exists     : 0x1,
+			effect_type: 0x1,
+			a          : 0x1,
+			_unknown_3 : 0x1,
+			b          : 0x1,
+			_unknown_5 : 0x1,
+			c          : 0x1,
+			_unknown_7 : [0x3],
+			x          : [0x2],
+			y          : [0x2],
+			_unknown_e : 0x1,
+			op         : 0x1,
+		);
 		
-		// The property argument getters
-		let get_a = || (bytes[0x2] != 0)
-			.then(|| DigimonProperty::from_bytes( &bytes[0x2] ))
+		// If the exists byte is 0, return None
+		if *bytes.exists == 0 {
+			return Ok(None);
+		}
+		
+		// Else create getters for all arguments
+		let get_a = || (*bytes.a != 0)
+			.then(|| DigimonProperty::from_bytes(bytes.a))
 			.transpose()
 			.map_err(FromBytesError::FirstProperty);
-		let get_b = || (bytes[0x4] != 0)
-			.then(|| DigimonProperty::from_bytes( &bytes[0x4] ))
+		let get_b = || (*bytes.b != 0)
+			.then(|| DigimonProperty::from_bytes(bytes.b))
 			.transpose()
 			.map_err(FromBytesError::SecondProperty);
-		let get_c = || (bytes[0x6] != 0)
-			.then(|| DigimonProperty::from_bytes( &bytes[0x6] ))
+		let get_c = || (*bytes.c != 0)
+			.then(|| DigimonProperty::from_bytes(bytes.c))
 			.transpose()
 			.map_err(FromBytesError::ThirdProperty);
 		
-		// Lower byte of `x` contains the attack type
-		let get_attack_type = || AttackType::from_bytes( &bytes[0xa] ) // Lower byte of `x`
+		// The number arguments
+		let x = LittleEndian::read_u16( bytes.x );
+		let y = LittleEndian::read_u16( bytes.y );
+		
+		// Attack type
+		// Lower byte of `x`
+		let get_attack_type = || AttackType::from_bytes( &x.to_le_bytes()[0] )
 			.map_err(FromBytesError::UseAttackAttackType);
 		
-		// The number arguments
-		let x = LittleEndian::read_u16( &bytes[0xa..0xc] );
-		let y = LittleEndian::read_u16( &bytes[0xc..0xe] );
-		
 		// The operation argument
-		let op = EffectOperation::from_bytes( &bytes[0xf] )
-			.map_err(FromBytesError::Operation)?;
+		let get_op = || EffectOperation::from_bytes( bytes.op )
+			.map_err(FromBytesError::Operation);
 		
-		// Check what the effect type is
-		match effect_type_byte
+		// And check what the effect type is
+		let effect = match bytes.effect_type
 		{
-			0..=13 => Ok( Self::ChangeProperty {
+			0..=13 => Effect::ChangeProperty {
 				// Note: unwrapping is fine here because we know that `effect_type_byte+1` is between 1 and 14 inclusive
-				property: DigimonProperty::from_bytes( &(effect_type_byte+1) )
+				property: DigimonProperty::from_bytes( &(bytes.effect_type+1) )
 					.expect("Unable to get digimon property from bytes"),
-				a: get_a()?, b: get_b()?, c: get_c()?, x, y, op,
-			}),
+				a: get_a()?, b: get_b()?, c: get_c()?, x, y, op: get_op()?,
+			},
 			
 			
-			16 => Ok( Self::UseAttack{ player: Player  , attack: get_attack_type()? }),
-			17 => Ok( Self::UseAttack{ player: Opponent, attack: get_attack_type()? }),
+			16 => Effect::UseAttack{ player: Player  , attack: get_attack_type()? },
+			17 => Effect::UseAttack{ player: Opponent, attack: get_attack_type()? },
 			
 			
-			25 => Ok( Self::SetTempSlot{ a: get_a()?, b: get_b()?, c: get_c()?, op } ),
+			25 => Effect::SetTempSlot{ a: get_a()?, b: get_b()?, c: get_c()?, op: get_op()? },
 			
-			26 => Ok( Self::MoveCards{ player: Player  , source: Hand, destination: OfflineDeck, count: y } ),
-			27 => Ok( Self::MoveCards{ player: Opponent, source: Hand, destination: OfflineDeck, count: y } ),
+			26 => Effect::MoveCards{ player: Player  , source: Hand, destination: OfflineDeck, count: y },
+			27 => Effect::MoveCards{ player: Opponent, source: Hand, destination: OfflineDeck, count: y },
 			
-			30 => Ok( Self::MoveCards{ player: Player  , source: Hand, destination: OnlineDeck, count: y } ),
-			31 => Ok( Self::MoveCards{ player: Opponent, source: Hand, destination: OnlineDeck, count: y } ),
+			30 => Effect::MoveCards{ player: Player  , source: Hand, destination: OnlineDeck, count: y },
+			31 => Effect::MoveCards{ player: Opponent, source: Hand, destination: OnlineDeck, count: y },
 			
-			32 => Ok( Self::MoveCards{ player: Player  , source: OnlineDeck, destination: OfflineDeck, count: y } ),
-			33 => Ok( Self::MoveCards{ player: Opponent, source: OnlineDeck, destination: OfflineDeck, count: y } ),
+			32 => Effect::MoveCards{ player: Player  , source: OnlineDeck, destination: OfflineDeck, count: y },
+			33 => Effect::MoveCards{ player: Opponent, source: OnlineDeck, destination: OfflineDeck, count: y },
 			
-			34 => Ok( Self::MoveCards{ player: Player  , source: OfflineDeck, destination: OnlineDeck, count: y } ),
-			35 => Ok( Self::MoveCards{ player: Opponent, source: OfflineDeck, destination: OnlineDeck, count: y } ),
+			34 => Effect::MoveCards{ player: Player  , source: OfflineDeck, destination: OnlineDeck, count: y },
+			35 => Effect::MoveCards{ player: Opponent, source: OfflineDeck, destination: OnlineDeck, count: y },
 			
-			36 => Ok( Self::MoveCards{ player: Player  , source: DpSlot, destination: OfflineDeck, count: y } ),
-			37 => Ok( Self::MoveCards{ player: Opponent, source: DpSlot, destination: OfflineDeck, count: y } ),
+			36 => Effect::MoveCards{ player: Player  , source: DpSlot, destination: OfflineDeck, count: y },
+			37 => Effect::MoveCards{ player: Opponent, source: DpSlot, destination: OfflineDeck, count: y },
 			
 			
-			42 => Ok( Self::ShuffleOnlineDeck{ player: Player   } ),
-			43 => Ok( Self::ShuffleOnlineDeck{ player: Opponent } ),
+			42 => Effect::ShuffleOnlineDeck{ player: Player   },
+			43 => Effect::ShuffleOnlineDeck{ player: Opponent },
 			
-			44 => Ok( Self::VoidOpponentSupportEffect       ),
-			45 => Ok( Self::VoidOpponentSupportOptionEffect ),
+			44 => Effect::VoidOpponentSupportEffect,
+			45 => Effect::VoidOpponentSupportOptionEffect,
 			
-			46 => Ok( Self::PickPartnerCard ),
+			46 => Effect::PickPartnerCard,
 			
-			47 => Ok( Self::CycleOpponentAttackType ),
+			47 => Effect::CycleOpponentAttackType,
 			
-			48 => Ok( Self::KoDigimonRevives{ health: y } ),
+			48 => Effect::KoDigimonRevives{ health: y },
 			
-			49 => Ok( Self::DrawCards{ player: Player  , count: y } ),
-			50 => Ok( Self::DrawCards{ player: Opponent, count: y } ),
+			49 => Effect::DrawCards{ player: Player  , count: y },
+			50 => Effect::DrawCards{ player: Opponent, count: y },
 			
-			51 => Ok( Self::OwnAttackBecomesEatUpHP ),
+			51 => Effect::OwnAttackBecomesEatUpHP,
 			
-			52 => Ok( Self::AttackFirst{ player: Player   } ),
-			53 => Ok( Self::AttackFirst{ player: Opponent } ),
+			52 => Effect::AttackFirst{ player: Player   },
+			53 => Effect::AttackFirst{ player: Opponent },
 			
-			_ => Err( FromBytesError::EffectType{ byte: effect_type_byte } ),
-		}
+			&byte => return Err( FromBytesError::EffectType { byte } ),
+		};
+		
+		// And return the effect
+		Ok( Some(effect) )
 	}
 	
-	type ToError = !;
+	type ToError = ToBytesError;
+	#[allow(clippy::too_many_lines)] // It's a single match, we can't really split it
 	fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError>
 	{
+		// Utility uses
+		use PlayerType::{Player, Opponent};
+		use Slot::{Hand, Online as OnlineDeck, Offline as OfflineDeck, Dp as DpSlot};
+		
 		// Get all byte arrays we need
 		let bytes = util::array_split_mut!(bytes,
 			exists     : 0x1,
@@ -307,46 +348,125 @@ impl Bytes for Effect
 			op         : 0x1,
 		);
 		
-		// Set that the effect exists
+		// Try to get the effect, if it doesn't exist, zero the exists byte and return
+		let effect = match self {
+			Some(effect) => effect,
+			None => {
+				*bytes.exists = 0;
+				return Ok(());
+			}
+		};
+		
+		// Else set that the effect exists
 		*bytes.exists = 1;
+		
+		// Setters
+		let bytes_a = bytes.a;
+		let bytes_b = bytes.b;
+		let bytes_c = bytes.c;
+		let mut set_a = |a: &Option<DigimonProperty>| if let Some(a) = a {
+			a.to_bytes(bytes_a).into_ok();
+		} else {
+			*bytes_a = 0;
+		};
+		let mut set_b = |b: &Option<DigimonProperty>| if let Some(b) = b {
+			b.to_bytes(bytes_b).into_ok();
+		} else {
+			*bytes_b = 0;
+		};
+		let mut set_c = |c: &Option<DigimonProperty>| if let Some(c) = c {
+			c.to_bytes(bytes_c).into_ok();
+		} else {
+			*bytes_c = 0;
+		};
+		let bytes_attack_type = &mut bytes.x[0];
+		let mut set_attack_type = |attack: &AttackType| attack.to_bytes( bytes_attack_type ).into_ok();
 		
 		// Check our variant and fill `bytes` with info
 		#[allow(clippy::unneeded_field_pattern)] // Placeholder
-		match self {
-			Self::ChangeProperty { property, a, b, c, x, y, op } => {
+		match effect {
+			Effect::ChangeProperty { property, a, b, c, x, y, op } => {
+				// Write the property minus one
 				property.to_bytes(bytes.effect_type).into_ok();
 				*bytes.effect_type -= 1;
-				if let Some(a) = a { a.to_bytes(bytes.a).into_ok(); }
-				if let Some(b) = b { b.to_bytes(bytes.b).into_ok(); }
-				if let Some(c) = c { c.to_bytes(bytes.c).into_ok(); }
+				
+				// Write all arguments
+				set_a(a);
+				set_b(b);
+				set_c(c);
 				LittleEndian::write_u16(bytes.x, *x);
 				LittleEndian::write_u16(bytes.y, *y);
 				op.to_bytes(bytes.op).into_ok();
 			},
 			
-			Self::UseAttack { player: _, attack: _ } => todo!(),
+			Effect::UseAttack { player, attack } => {
+				*bytes.effect_type = match player {
+					Player   => 16,
+					Opponent => 17,
+				};
+				set_attack_type(attack);
+			},
 			
-			Self::SetTempSlot { a: _, b: _, c: _, op: _ } => todo!(),
+			Effect::SetTempSlot { a, b, c, op } => {
+				*bytes.effect_type = 25;
+				set_a(a);
+				set_b(b);
+				set_c(c);
+				op.to_bytes(bytes.op).into_ok();
+			}
 			
-			Self::MoveCards { player: _, source: _, destination: _, count: _ } => todo!(),
+			Effect::MoveCards { player, source, destination, count } => {
+				*bytes.effect_type = match (player, source, destination) {
+					(Player  , Hand, OfflineDeck) => 26,
+					(Opponent, Hand, OfflineDeck) => 27,
+					
+					(Player  , Hand, OnlineDeck) => 30,
+					(Opponent, Hand, OnlineDeck) => 31,
+					
+					(Player  , OnlineDeck, OfflineDeck) => 32,
+					(Opponent, OnlineDeck, OfflineDeck) => 33,
+					
+					(Player  , OfflineDeck, OnlineDeck) => 34,
+					(Opponent, OfflineDeck, OnlineDeck) => 35,
+					
+					(Player  , DpSlot, OfflineDeck) => 36,
+					(Opponent, DpSlot, OfflineDeck) => 37,
+					
+					(_, &source, &destination) => return Err(ToBytesError::InvalidMoveCards { source, destination }),
+				};
+				LittleEndian::write_u16(bytes.y, *count);
+			}
 			
-			Self::ShuffleOnlineDeck { player: _ } => todo!(),
+			Effect::ShuffleOnlineDeck { player } => *bytes.effect_type = match player {
+				Player   => 42,
+				Opponent => 43,
+			},
 			
-			Self::VoidOpponentSupportEffect => todo!(),
+			Effect::VoidOpponentSupportEffect       => *bytes.effect_type = 42,
+			Effect::VoidOpponentSupportOptionEffect => *bytes.effect_type = 43,
 			
-			Self::VoidOpponentSupportOptionEffect => todo!(),
+			Effect::PickPartnerCard => *bytes.effect_type = 46,
 			
-			Self::PickPartnerCard => todo!(),
+			Effect::CycleOpponentAttackType => *bytes.effect_type = 47,
 			
-			Self::CycleOpponentAttackType => todo!(),
+			Effect::KoDigimonRevives { health } => {
+				LittleEndian::write_u16(bytes.y, *health);
+			},
 			
-			Self::KoDigimonRevives { health: _ } => todo!(),
+			Effect::DrawCards { player, count } => {
+				*bytes.effect_type = match player {
+					Player   => 49,
+					Opponent => 50,
+				};
+				LittleEndian::write_u16(bytes.y, *count);
+			}
 			
-			Self::DrawCards { player: _, count: _ } => todo!(),
+			Effect::OwnAttackBecomesEatUpHP => *bytes.effect_type = 51,
 			
-			Self::OwnAttackBecomesEatUpHP => todo!(),
-			
-			Self::AttackFirst { player: _ } => todo!(),
+			Effect::AttackFirst { player } => *bytes.effect_type = match player {
+				Player   => 52,
+				Opponent => 53,
+			},
 		}
 		
 		// And return Ok

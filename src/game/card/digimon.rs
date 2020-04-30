@@ -227,6 +227,18 @@ pub enum ToBytesError
 	/// Unable to write the cross move
 	#[display(fmt = "Unable to write the cross move")]
 	MoveCross( #[error(source)] property::moves::ToBytesError ),
+	
+	/// Unable to write the first effect
+	#[display(fmt = "Unable to write the first effect")]
+	EffectFirst( #[error(source)] property::effect::ToBytesError ),
+	
+	/// Unable to write the second effect
+	#[display(fmt = "Unable to write the second effect")]
+	EffectSecond( #[error(source)] property::effect::ToBytesError ),
+	
+	/// Unable to write the third effect
+	#[display(fmt = "Unable to write the third effect")]
+	EffectThird( #[error(source)] property::effect::ToBytesError ),
 }
 
 impl Bytes for Digimon
@@ -301,19 +313,13 @@ impl Bytes for Digimon
 			],
 			
 			effects: [
-				(bytes.effect_first[0x0] != 0)
-					.then(|| Effect::from_bytes( bytes.effect_first ) )
-					.transpose()
+				Option::<Effect>::from_bytes( bytes.effect_first )
 					.map_err(FromBytesError::EffectFirst)?,
-				
-				(bytes.effect_second[0x0] != 0)
-					.then(|| Effect::from_bytes( bytes.effect_second ) )
-					.transpose()
+					
+				Option::<Effect>::from_bytes( bytes.effect_second )
 					.map_err(FromBytesError::EffectSecond)?,
-				
-				(bytes.effect_third[0x0] != 0)
-					.then(|| Effect::from_bytes( bytes.effect_third ) )
-					.transpose()
+					
+				Option::<Effect>::from_bytes( bytes.effect_third )
 					.map_err(FromBytesError::EffectThird)?,
 			],
 			
@@ -414,9 +420,9 @@ impl Bytes for Digimon
 		self.effect_conditions[1].to_bytes( bytes.condition_second ).into_ok();
 		
 		// Effects
-		if let Some(effect) = &self.effects[0] { effect.to_bytes( bytes.effect_first  )?; }
-		if let Some(effect) = &self.effects[1] { effect.to_bytes( bytes.effect_second )?; }
-		if let Some(effect) = &self.effects[2] { effect.to_bytes( bytes.effect_third  )?; }
+		self.effects[0].to_bytes( bytes.effect_first  ).map_err(ToBytesError::EffectFirst )?;
+		self.effects[1].to_bytes( bytes.effect_second ).map_err(ToBytesError::EffectSecond)?;
+		self.effects[2].to_bytes( bytes.effect_third  ).map_err(ToBytesError::EffectThird )?;
 		
 		// Cross move
 		if let Some(move_cross) = self.cross_move_effect { move_cross.to_bytes( bytes.cross_move_effect )? };

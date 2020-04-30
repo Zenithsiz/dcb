@@ -183,17 +183,12 @@ use serde::Deserialize;
 					},
 					
 					effects: SupportEffects {
-						first: if bytes[0x59] != 0 { Some(
-							Effect::from_bytes( array_ref!(bytes, 0x59, 0x10) ).map_err(|err| FromBytesError::SupportEffect{ rank: "1st", err })?
-						)} else { None },
-						
-						second: if bytes[0x69] != 0 { Some(
-							Effect::from_bytes( array_ref!(bytes, 0x69, 0x10) ).map_err(|err| FromBytesError::SupportEffect{ rank: "2nd", err })?
-						)} else { None },
-						
-						third: if bytes[0x79] != 0 { Some(
-							Effect::from_bytes( array_ref!(bytes, 0x79, 0x10) ).map_err(|err| FromBytesError::SupportEffect{ rank: "3rd", err })?
-						)} else { None },
+						first: Option::<Effect>::from_bytes( array_ref!(bytes, 0x59, 0x10) )
+							.map_err(|err| FromBytesError::SupportEffect{ rank: "1st", err })?,
+						second: Option::<Effect>::from_bytes( array_ref!(bytes, 0x69, 0x10) )
+							.map_err(|err| FromBytesError::SupportEffect{ rank: "2nd", err })?,
+						third: Option::<Effect>::from_bytes( array_ref!(bytes, 0x79, 0x10) )
+							.map_err(|err| FromBytesError::SupportEffect{ rank: "3rd", err })?,
 					},
 				},
 			})
@@ -251,9 +246,9 @@ use serde::Deserialize;
 				
 				
 				// If they are None, 0 is a valid value for the effects
-				if let Some(support_effect) = &self.effects.effects.first  { support_effect.to_bytes( array_mut_ref!(bytes, 0x59, 0x10) )?; }
-				if let Some(support_effect) = &self.effects.effects.second { support_effect.to_bytes( array_mut_ref!(bytes, 0x69, 0x10) )?; }
-				if let Some(support_effect) = &self.effects.effects.third  { support_effect.to_bytes( array_mut_ref!(bytes, 0x79, 0x10) )?; }
+				self.effects.effects.first .to_bytes( array_mut_ref!(bytes, 0x59, 0x10) ).expect("TODO");
+				self.effects.effects.second.to_bytes( array_mut_ref!(bytes, 0x69, 0x10) ).expect("TODO");
+				self.effects.effects.third .to_bytes( array_mut_ref!(bytes, 0x79, 0x10) ).expect("TODO");
 			//--------------------------------------------------------------------------------------------------
 			
 			// Return the bytes
