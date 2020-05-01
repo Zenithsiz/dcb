@@ -453,7 +453,6 @@ impl Bytes for Effect
 	}
 }
 
-#[allow(clippy::use_self)] // False positive
 impl Bytes for Option<Effect>
 {
 	type ByteArray = [u8; 0x10];
@@ -478,7 +477,6 @@ impl Bytes for Option<Effect>
 	}
 	
 	type ToError = ToBytesError;
-	#[allow(clippy::too_many_lines)] // It's a single match, we can't really split it
 	fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError>
 	{
 		let bytes = util::array_split_mut!(bytes,

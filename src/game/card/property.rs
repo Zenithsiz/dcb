@@ -358,6 +358,31 @@ generate_enum_property_mod!(
 			
 			_ => "Unknown byte 0x{:x} for a digimon property",
 		}
+		
+		impl crate::game::Bytes for Option<DigimonProperty> {
+			type ByteArray = u8;
+			
+			type FromError = FromBytesError;
+			fn from_bytes(byte: &Self::ByteArray) -> Result<Self, Self::FromError>
+			{
+				match byte {
+					0 => Ok( None ),
+					_ => Ok( Some( DigimonProperty::from_bytes(byte)? ) ),
+				}
+			}
+			
+			type ToError = <DigimonProperty as crate::game::Bytes>::ToError;
+			#[allow(clippy::diverging_sub_expression)] // For if we ever change `CrossMoveEffect::ToError`
+			fn to_bytes(&self, byte: &mut Self::ByteArray) -> Result<(), Self::ToError>
+			{
+				match self {
+					Some(effect) => effect.to_bytes(byte)?,
+					None         => *byte = 0,
+				}
+				
+				Ok(())
+			}
+		}
 	}
 );
 
