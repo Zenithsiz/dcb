@@ -1,228 +1,183 @@
-//! Digivolve
+//! A digivolve card
+//! 
+//! This module contains the [`Digivolve`] struct, which describes a digivolve card.
+//! 
+//! # Layout
+//! The digivolve card has a size of `0x6c` bytes, and it's layout is the following:
+//! 
+//! | Offset | Size | Type                | Name                      | Location               | Details                                                                             |
+//! |--------|------|---------------------|---------------------------|------------------------|-------------------------------------------------------------------------------------|
+//! | 0x0    | 0x15 | `[char; 0x15]`      | Name                      | `name`                 | Null-terminated                                                                     |
+//! | 0x15   | 0x4  | `u32`               | Unknown                   | `unknown_15`           |                                                                                     |
+//! | 0x19   | 0x20 | [`EffectCondition`] | First condition           | `effect_conditions[0]` |                                                                                     |
+//! | 0x39   | 0x20 | [`EffectCondition`] | Second condition          | `effect_conditions[1]` |                                                                                     |
+//! | 0x59   | 0x10 | [`Effect`]          | First effect              | `effects[0]`           |                                                                                     |
+//! | 0x69   | 0x10 | [`Effect`]          | Second effect             | `effects[1]`           |                                                                                     |
+//! | 0x79   | 0x10 | [`Effect`]          | Third effect              | `effects[2]`           |                                                                                     |
+//! | 0x89   | 0x1  | [`ArrowColor`]      | Effect arrow color        | `effect_arrow_color`   |                                                                                     |
+//! | 0x8a   | 0x54 | `[[char; 0x15]; 4]` | Effect description lines  | `effect_description`   | Each line is` 0x15` bytes, split over 4 lines, each null terminated                 |
 
 // Crate
-//--------------------------------------------------------------------------------------------------
-	// Game
-	use crate::game::util;
-	use crate::game::Bytes;
-//--------------------------------------------------------------------------------------------------
+use crate::game::{
+	util,
+	Bytes,
+};
 
-// byteorder
-//use byteorder::ByteOrder;
-//use byteorder::LittleEndian;
+/// A digivolve card
+/// 
+/// Contains all information about each digivolve card stored in the [`Card Table`](crate::game::card::table::Table)
+#[derive(PartialEq, Eq, Clone, Hash, Debug)]
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct Digivolve
+{
+	/// The item's name
+	/// 
+	/// An ascii string with 20 characters at most
+	pub name: ascii::AsciiString,
+	
+	/// The effect's description.
+	/// 
+	/// The description is split along 4 lines, each
+	/// being an ascii string with 20 characters at most.
+	pub effect_description: [ascii::AsciiString; 4],
+	
+	pub value0: u8,
+	pub value1: u8,
+	pub value2: u8,
+}
 
-// Macros
-use serde::Serialize;
-use serde::Deserialize;
+/// Error type for [`Bytes::from_bytes`]
+#[derive(Debug)]
+#[derive(derive_more::Display, err_impl::Error)]
+pub enum FromBytesError
+{
+	/// Unable to read the digimon name
+	#[display(fmt = "Unable to read the digimon name")]
+	Name( #[error(source)] util::ReadNullAsciiStringError ),
+	
+	/// Unable to read the first support effect description
+	#[display(fmt = "Unable to read the first line of the effect description")]
+	EffectDescriptionFirst( #[error(source)] util::ReadNullAsciiStringError ),
+	
+	/// Unable to read the second support effect description
+	#[display(fmt = "Unable to read the second line of the effect description")]
+	EffectDescriptionSecond( #[error(source)] util::ReadNullAsciiStringError ),
+	
+	/// Unable to read the third support effect description
+	#[display(fmt = "Unable to read the third line of the effect description")]
+	EffectDescriptionThird( #[error(source)] util::ReadNullAsciiStringError ),
+	
+	/// Unable to read the fourth support effect description
+	#[display(fmt = "Unable to read the fourth line of the effect description")]
+	EffectDescriptionFourth( #[error(source)] util::ReadNullAsciiStringError ),
+}
 
-// Types
-//--------------------------------------------------------------------------------------------------
-	/// A digivolve card
-	#[derive(Debug, Serialize, Deserialize)]
-	pub struct Digivolve
-	{
-		/// The basic info of the digivolve
-		pub basic: Basic,
-		
-		/// The effects
-		pub effects: Effects,
-	}
+/// Error type for [`Bytes::to_bytes`]
+#[derive(Debug)]
+#[derive(derive_more::Display, err_impl::Error)]
+pub enum ToBytesError
+{
+	/// Unable to write the digimon name
+	#[display(fmt = "Unable to write the digimon name")]
+	Name( #[error(source)] util::WriteNullAsciiStringError ),
 	
-	/// The basic properties of a digivolve
-	#[derive(Debug, Serialize, Deserialize)]
-	pub struct Basic
-	{
-		pub name: String,
-		
-		//unknown: u16,
-	}
+	/// Unable to write the first support effect description
+	#[display(fmt = "Unable to write the first line of the effect description")]
+	EffectDescriptionFirst( #[error(source)] util::WriteNullAsciiStringError ),
 	
-	#[derive(Debug, Serialize, Deserialize)]
-	pub struct Effects
-	{
-		pub description: [String; 4],
-		
-		pub value0: u8,
-		pub value1: u8,
-		pub value2: u8,
-		
-		//arrow_color: Option<ArrowColor>,
-		
-		//conditions: SupportEffectConditions,
-		//effects   : SupportEffects,
-	}
+	/// Unable to write the second support effect description
+	#[display(fmt = "Unable to write the second line of the effect description")]
+	EffectDescriptionSecond( #[error(source)] util::WriteNullAsciiStringError ),
 	
-	/*
-	#[derive(Debug, Serialize, Deserialize)]
-	struct SupportEffects
-	{
-		first : Option<SupportEffect>,
-		second: Option<SupportEffect>,
-		third : Option<SupportEffect>,
-	}
+	/// Unable to write the third support effect description
+	#[display(fmt = "Unable to write the third line of the effect description")]
+	EffectDescriptionThird( #[error(source)] util::WriteNullAsciiStringError ),
 	
-	#[derive(Debug, Serialize, Deserialize)]
-	struct SupportEffectConditions
-	{
-		first : Option<SupportEffectCondition>,
-		second: Option<SupportEffectCondition>,
-	}
-	*/
-	
-	/// The error type thrown by `FromBytes`
-	#[derive(Debug, derive_more::Display)]
-	pub enum FromBytesError
-	{
-		/// Unable to convert name to a string
-		#[display(fmt = "Unable to convert name to a string")]
-		NameToString( util::ReadNullTerminatedStringError ),
-		
-		/// Unable to read the effect arrow color
-		#[display(fmt = "Unable to read the effect arrow color")]
-		EffectArrowColor( crate::game::card::property::arrow_color::FromBytesError ),
-		
-		/// Unable to convert one of the support effect descriptions to a string
-		#[display(fmt = "Unable to convert the {} support effect description to a string", rank)]
-		SupportEffectDescriptionToString {
-			rank: &'static str,
-			err: util::ReadNullTerminatedStringError,
-		},
-		
-		/// Unable to read a support effect condition
-		#[display(fmt = "Unable to read the {0} support effect condition [digivolve:0x{1:x}]", rank, digivolve_pos)]
-		SupportEffectCondition {
-			rank: &'static str,
-			digivolve_pos: u64,
-			err: crate::game::card::property::effect_condition::FromBytesError,
-		},
-		
-		/// Unable to read a support effect
-		#[display(fmt = "Unable to read the {} support effect", rank)]
-		SupportEffect {
-			rank: &'static str,
-			err: crate::game::card::property::effect::FromBytesError,
-		},
-	}
-	
-	impl std::error::Error for FromBytesError {
-		fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-			match self {
-				Self::NameToString(err) |
-				Self::SupportEffectDescriptionToString{err, ..} => Some(err),
-				
-				Self::EffectArrowColor(err) => Some(err),
-				
-				Self::SupportEffectCondition{err, ..} => Some(err),
-				Self::SupportEffect{err, ..} => Some(err),
-			}
-		}
-	}
-	
-	/// The error type thrown by `ToBytes`
-	#[derive(Debug, derive_more::Display)]
-	pub enum ToBytesError
-	{
-		/// The name was too big to be written to file
-		#[display(fmt = "The name \"{}\" is too long to be written to file (max is 20)", _0)]
-		NameTooLong( String ),
-		
-		/// The name was too big to be written to file
-		#[display(fmt = "The {0} support effect description \"{1}\" is too long to be written to file (max is 21)", rank, string)]
-		SupportEffectDescriptionTooLong {
-			rank: &'static str,
-			string: String,
-		},
-	}
-	
-	impl std::error::Error for ToBytesError {
-		fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-			match self {
-				Self::NameTooLong(..) |
-				Self::SupportEffectDescriptionTooLong{ .. } => None,
-			}
-		}
-	}
-//--------------------------------------------------------------------------------------------------
+	/// Unable to write the fourth support effect description
+	#[display(fmt = "Unable to write the fourth line of the effect description")]
+	EffectDescriptionFourth( #[error(source)] util::WriteNullAsciiStringError ),
+}
 
-// Impl
-//--------------------------------------------------------------------------------------------------
-	// Bytes
-	impl Bytes for Digivolve
+impl Bytes for Digivolve
+{
+	type ByteArray = [u8; 0x6c];
+	
+	type FromError = FromBytesError;
+	fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError>
 	{
-		type ByteArray = [u8; 0x6c];
+		// Split bytes
+		let bytes = util::array_split!(bytes,
+			name                : [0x15],
+			value0              : 1,
+			value1              : 1,
+			value2              : 1,
+			effect_description_0: [0x15],
+			effect_description_1: [0x15],
+			effect_description_2: [0x15],
+			effect_description_3: [0x15],
+		);
 		
-		type FromError = FromBytesError;
-		fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError>
-		{
-			Ok( Self {
-				basic: Basic {
-					name: util::read_null_terminated_string( &bytes[0x0..0x15] ).map_err(FromBytesError::NameToString)?.to_string(),
-				},
-				
-				effects: Effects {
-					description: [
-						util::read_null_terminated_string( &bytes[0x18..0x2d] ).map_err(|err| FromBytesError::SupportEffectDescriptionToString{ rank: "1st", err })?.to_string(),
-						util::read_null_terminated_string( &bytes[0x2d..0x42] ).map_err(|err| FromBytesError::SupportEffectDescriptionToString{ rank: "2nd", err })?.to_string(),
-						util::read_null_terminated_string( &bytes[0x42..0x57] ).map_err(|err| FromBytesError::SupportEffectDescriptionToString{ rank: "3rd", err })?.to_string(),
-						util::read_null_terminated_string( &bytes[0x57..0x6c] ).map_err(|err| FromBytesError::SupportEffectDescriptionToString{ rank: "4th", err })?.to_string(),
-					],
-					
-					value0: bytes[0x15],
-					value1: bytes[0x16],
-					value2: bytes[0x17],
-				}
-			})
-		}
-		
-		type ToError = ToBytesError;
-		fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError>
-		{
-			// Basic
-			//--------------------------------------------------------------------------------------------------
-				// Write the name
-				bytes[0x0..0x15].copy_from_slice( &{
-					// Check if our name is too big
-					if self.basic.name.len() >= 0x15 { return Err( ToBytesError::NameTooLong( self.basic.name.clone() ) ); }
-					
-					// Else make the buffer and copy everything over
-					let mut buf = [0u8; 0x15];
-					buf[ 0..self.basic.name.len() ].copy_from_slice( self.basic.name.as_bytes() );
-					buf
-				});
-			//--------------------------------------------------------------------------------------------------
+		Ok( Self {
+			name: util::read_null_ascii_string(bytes.name)
+				.map_err(FromBytesError::Name)?
+				.chars().collect(),
 			
-			// Effects
-			//--------------------------------------------------------------------------------------------------
-				// Write the support effects
-				for (index, line) in self.effects.description.iter().enumerate()
-				{
-					bytes[0x18 + (0x15 * index) .. 0x2d + (0x15 * index)].copy_from_slice( &{
-						// If the line is too big, return Err
-						if line.len() >= 0x15 {
-							return Err( ToBytesError::SupportEffectDescriptionTooLong {
-								rank: match index {
-									0 => "1st", 1 => "2nd",
-									2 => "3rd", 3 => "4th",
-									_ => unreachable!(),
-								},
-								
-								string: line.clone()
-							});
-						}
-						
-						let mut buf = [0u8; 0x15];
-						buf[ 0..line.len() ].copy_from_slice( line.as_bytes() );
-						buf
-					});
-				}
-				
-				bytes[0x15] = self.effects.value0;
-				bytes[0x16] = self.effects.value1;
-				bytes[0x17] = self.effects.value2;
-			//--------------------------------------------------------------------------------------------------
+			// Effect
+			value0: *bytes.value0,
+			value1: *bytes.value1,
+			value2: *bytes.value2,
 			
-			// Return the bytes
-			Ok(())
-		}
+			effect_description: [
+				util::read_null_ascii_string( bytes.effect_description_0 )
+					.map_err(FromBytesError::EffectDescriptionFirst)?
+					.chars().collect(),
+				util::read_null_ascii_string( bytes.effect_description_1 )
+					.map_err(FromBytesError::EffectDescriptionSecond)?
+					.chars().collect(),
+				util::read_null_ascii_string( bytes.effect_description_2 )
+					.map_err(FromBytesError::EffectDescriptionThird)?
+					.chars().collect(),
+				util::read_null_ascii_string( bytes.effect_description_3 )
+					.map_err(FromBytesError::EffectDescriptionFourth)?
+					.chars().collect(),
+			],
+		})
 	}
-//--------------------------------------------------------------------------------------------------
+	
+	type ToError = ToBytesError;
+	fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError>
+	{
+		// Split bytes
+		let bytes = util::array_split_mut!(bytes,
+			name                : [0x15],
+			value0              : 1,
+			value1              : 1,
+			value2              : 1,
+			effect_description_0: [0x15],
+			effect_description_1: [0x15],
+			effect_description_2: [0x15],
+			effect_description_3: [0x15],
+		);
+		
+		// Name
+		util::write_null_ascii_string(self.name.as_ref(), bytes.name)
+			.map_err(ToBytesError::Name)?;
+		
+		// Effects
+		*bytes.value0 = self.value0;
+		*bytes.value1 = self.value1;
+		*bytes.value2 = self.value2;
+		
+		util::write_null_ascii_string(self.effect_description[0].as_ref(), bytes.effect_description_0)
+			.map_err(ToBytesError::EffectDescriptionFirst)?;
+		util::write_null_ascii_string(self.effect_description[1].as_ref(), bytes.effect_description_1)
+			.map_err(ToBytesError::EffectDescriptionSecond)?;
+		util::write_null_ascii_string(self.effect_description[2].as_ref(), bytes.effect_description_2)
+			.map_err(ToBytesError::EffectDescriptionThird)?;
+		util::write_null_ascii_string(self.effect_description[3].as_ref(), bytes.effect_description_3)
+			.map_err(ToBytesError::EffectDescriptionFourth)?;
+		
+		// Return Ok
+		Ok(())
+	}
+}

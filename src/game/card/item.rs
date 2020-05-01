@@ -32,31 +32,33 @@ use crate::game::{
 	}
 };
 
-/// A item card
+/// An item card
+/// 
+/// Contains all information about each item card stored in the [`Card Table`](crate::game::card::table::Table)
 #[derive(PartialEq, Eq, Clone, Hash, Debug)]
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Item
 {
-	/// The digimon's name
+	/// The item's name
 	/// 
 	/// An ascii string with 20 characters at most
 	pub name: ascii::AsciiString,
 	
-	/// The digimon's effect description.
+	/// The effect's description.
 	/// 
 	/// The description is split along 4 lines, each
 	/// being an ascii string with 20 characters at most.
 	pub effect_description: [ascii::AsciiString; 4],
 	
-	/// The effect arrow color
+	/// The effect's arrow color
 	#[serde(default)]
 	pub effect_arrow_color: Option<ArrowColor>,
 	
-	/// The effect conditions
+	/// The effect's conditions
 	#[serde(default)]
 	pub effect_conditions: [Option<EffectCondition>; 2],
 	
-	/// The effects themselves
+	/// The effects
 	#[serde(default)]
 	pub effects: [Option<Effect>; 3],
 	
@@ -248,19 +250,16 @@ impl Bytes for Item
 		util::write_null_ascii_string(self.name.as_ref(), bytes.name)
 			.map_err(ToBytesError::Name)?;
 		
-		// Effect conditions
+		// Effects
 		self.effect_conditions[0].to_bytes( bytes.condition_first  ).into_ok();
 		self.effect_conditions[1].to_bytes( bytes.condition_second ).into_ok();
 		
-		// Effects
 		self.effects[0].to_bytes( bytes.effect_first  ).map_err(ToBytesError::EffectFirst )?;
 		self.effects[1].to_bytes( bytes.effect_second ).map_err(ToBytesError::EffectSecond)?;
 		self.effects[2].to_bytes( bytes.effect_third  ).map_err(ToBytesError::EffectThird )?;
 		
-		// Support arrow color
 		Option::<ArrowColor>::to_bytes(&self.effect_arrow_color, bytes.effect_arrow_color).into_ok();
 		
-		// effect_description
 		util::write_null_ascii_string(self.effect_description[0].as_ref(), bytes.effect_description_0)
 			.map_err(ToBytesError::EffectDescriptionFirst)?;
 		util::write_null_ascii_string(self.effect_description[1].as_ref(), bytes.effect_description_1)

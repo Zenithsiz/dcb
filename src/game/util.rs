@@ -103,58 +103,6 @@ pub macro array_split_mut {
 	}}
 }
 
-// Types
-//--------------------------------------------------------------------------------------------------
-	/// Error type for `read_null_terminated_string`
-	#[derive(Debug, derive_more::Display)]
-	pub enum ReadNullTerminatedStringError
-	{
-		/// No null was found on a string
-		#[display(fmt = "No null was found on a null terminated string")]
-		NoNull,
-		
-		/// A string could not be converted to utf8
-		#[display(fmt = "Could not convert the string to utf8")]
-		Utf8( std::str::Utf8Error ),
-	}
-	
-	impl std::error::Error for ReadNullTerminatedStringError {
-		fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-			match self {
-				Self::NoNull => None,
-				Self::Utf8(err) => Some(err),
-			}
-		}
-	}
-//--------------------------------------------------------------------------------------------------
-
-// Impl
-//--------------------------------------------------------------------------------------------------
-	
-//--------------------------------------------------------------------------------------------------
-
-// Functions
-//--------------------------------------------------------------------------------------------------
-	
-	
-	/// Reads a string from a buffer, stopping at the first null character found
-	/// 
-	/// # Errors
-	/// - `NoNull`: If no null character was found until the end of the buffer.
-	/// - `Utf8`: If the buffer was not valid utf8.
-	pub fn read_null_terminated_string(mut buf: &[u8]) -> Result<&str, ReadNullTerminatedStringError>
-	{
-		// Search for the first occurence of null and reduce the buffer to before it.
-		// If not found, then the string was not null terminated, so return Err
-		if let Some(first_null) = buf.iter().position(|&b| b == 0) { buf = &buf[0..first_null]; }
-		else { return Err( ReadNullTerminatedStringError::NoNull ); }
-		
-		// Else try to conver the buffer into a utf8 str.
-		Ok( std::str::from_utf8( buf ).map_err(ReadNullTerminatedStringError::Utf8)? )
-	}
-//--------------------------------------------------------------------------------------------------
-
-
 
 /// Error type for [`read_null_ascii_string`]
 #[derive(Debug)]

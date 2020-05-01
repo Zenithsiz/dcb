@@ -1,3 +1,4 @@
 /target
+/.vscode
+/resources
 Cargo.lock
-.vscode
