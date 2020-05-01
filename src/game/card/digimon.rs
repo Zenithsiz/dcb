@@ -1,6 +1,6 @@
 //! A digimon card
 //! 
-//! This module stores the [`Digimon`] struct, which describes a digimon card.
+//! This module contains the [`Digimon`] struct, which describes a digimon card.
 //! 
 //! # Layout
 //! The digimon card has a size of `0x138` bytes, and it's layout is the following:
@@ -8,7 +8,7 @@
 //! | Offset | Size | Type                | Name                      | Location               | Details                                                                             |
 //! |--------|------|---------------------|---------------------------|------------------------|-------------------------------------------------------------------------------------|
 //! | 0x0    | 0x15 | `[char; 0x15]`      | Name                      | `name`                 | Null-terminated                                                                     |
-//! | 0x15   | 0x2  | `u16`               | Unknown                   | `unknown_15`           | Most likely contains the digimon's model                                            |
+//! | 0x15   | 0x2  | `u16`               | Unknown                   | `unknown_15`           |                                                                                     |
 //! | 0x17   | 0x1  | `u8`                | Speciality & Level        | `speciality level`     | The bottom nibble of this byte is the level, while the top nibble is the speciality |
 //! | 0x18   | 0x1  | `u8`                | DP                        | `dp_cost`              |                                                                                     |
 //! | 0x19   | 0x1  | `u8`                | +P                        | `dp_give`              |                                                                                     |
@@ -81,11 +81,6 @@ pub struct Digimon
 	/// `+P` in the game.
 	pub dp_give: u8,
 	
-	// Unknown fields
-	pub unknown_1a: u8,
-	pub unknown_15: u16,
-	pub unknown_e2: u8,
-	
 	/// The digimon's circle move
 	pub move_circle: Move,
 	
@@ -116,6 +111,11 @@ pub struct Digimon
 	/// The effects themselves
 	#[serde(default)]
 	pub effects: [Option<Effect>; 3],
+	
+	// Unknown fields
+	pub unknown_1a: u8,
+	pub unknown_15: u16,
+	pub unknown_e2: u8,
 }
 
 /// Error type for [`Bytes::from_bytes`]
@@ -249,7 +249,7 @@ impl Bytes for Digimon
 	type FromError = FromBytesError;
 	fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError>
 	{
-		// Get all byte arrays we need
+		// Split bytes
 		let bytes = util::array_split!(bytes,
 			name                : [0x15],
 			unknown_15          : [0x2],
@@ -277,12 +277,9 @@ impl Bytes for Digimon
 		
 		// Return the struct after building it
 		Ok( Self {
-			// 0x0 - 0x1d
 			name: util::read_null_ascii_string(bytes.name)
 				.map_err(FromBytesError::Name)?
 				.chars().collect(),
-			
-			unknown_15: LittleEndian::read_u16(bytes.unknown_15),
 			
 			speciality: Speciality::from_bytes( &( (bytes.speciality_level & 0xF0) >> 4 ) )
 				.map_err(FromBytesError::Speciality)?,
@@ -292,11 +289,10 @@ impl Bytes for Digimon
 			
 			dp_cost   : *bytes.dp_cost,
 			dp_give   : *bytes.dp_give,
-			unknown_1a: *bytes.unknown_1a,
 			
 			hp: LittleEndian::read_u16( bytes.hp ),
 			
-			// 0x1d - 0x71
+			// Moves
 			move_circle: Move::from_bytes( bytes.move_circle )
 				.map_err(FromBytesError::MoveCircle)?,
 			move_triangle: Move::from_bytes( bytes.move_triangle )
@@ -304,7 +300,7 @@ impl Bytes for Digimon
 			move_cross: Move::from_bytes( bytes.move_cross )
 				.map_err(FromBytesError::MoveCross)?,
 			
-			// 0x71 - 0x138
+			// Effects
 			effect_conditions: [
 				Option::<EffectCondition>::from_bytes( bytes.condition_first )
 					.map_err(FromBytesError::EffectConditionFirst)?,
@@ -327,8 +323,6 @@ impl Bytes for Digimon
 			cross_move_effect: Option::<CrossMoveEffect>::from_bytes(bytes.cross_move_effect)
 				.map_err(FromBytesError::CrossMoveEffect)?,
 			
-			unknown_e2: *bytes.unknown_e2,
-			
 			effect_arrow_color: Option::<ArrowColor>::from_bytes(bytes.effect_arrow_color)
 				.map_err(FromBytesError::ArrowColor)?,
 			
@@ -346,13 +340,18 @@ impl Bytes for Digimon
 					.map_err(FromBytesError::EffectDescriptionFourth)?
 					.chars().collect(),
 			],
+			
+			// Unknown
+			unknown_15: LittleEndian::read_u16(bytes.unknown_15),
+			unknown_1a: *bytes.unknown_1a,
+			unknown_e2: *bytes.unknown_e2,
 		})
 	}
 	
 	type ToError = ToBytesError;
 	fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError>
 	{
-		// Get all byte arrays we need
+		// Split bytes
 		let bytes = util::array_split_mut!(bytes,
 			name                : [0x15],
 			unknown_15          : [0x2],
@@ -378,12 +377,9 @@ impl Bytes for Digimon
 			effect_description_3: [0x15],
 		);
 		
-		// name
+		// Name
 		util::write_null_ascii_string(self.name.as_ref(), bytes.name)
 			.map_err(ToBytesError::Name)?;
-		
-		// unknown_15
-		LittleEndian::write_u16(bytes.unknown_15, self.unknown_15);
 		
 		// Speciality / Level
 		{
@@ -400,9 +396,6 @@ impl Bytes for Digimon
 		// DP / +P
 		*bytes.dp_cost = self.dp_cost;
 		*bytes.dp_give = self.dp_give;
-		
-		// Unknown
-		*bytes.unknown_1a = self.unknown_1a;
 		
 		// Health
 		LittleEndian::write_u16(bytes.hp, self.hp);
@@ -424,9 +417,6 @@ impl Bytes for Digimon
 		// Cross move
 		Option::<CrossMoveEffect>::to_bytes(&self.cross_move_effect, bytes.cross_move_effect).into_ok();
 		
-		// Unknown
-		*bytes.unknown_e2 = self.unknown_e2;
-		
 		// Support arrow color
 		Option::<ArrowColor>::to_bytes(&self.effect_arrow_color, bytes.effect_arrow_color).into_ok();
 		
@@ -439,6 +429,11 @@ impl Bytes for Digimon
 			.map_err(ToBytesError::EffectDescriptionThird)?;
 		util::write_null_ascii_string(self.effect_description[3].as_ref(), bytes.effect_description_3)
 			.map_err(ToBytesError::EffectDescriptionFourth)?;
+		
+		// Unknown
+		LittleEndian::write_u16(bytes.unknown_15, self.unknown_15);
+		*bytes.unknown_1a = self.unknown_1a;
+		*bytes.unknown_e2 = self.unknown_e2;
 		
 		// Return Ok
 		Ok(())

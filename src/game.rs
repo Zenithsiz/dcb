@@ -15,7 +15,7 @@
 //#![allow(clippy::missing_docs_in_private_items)] // A lot of our private items are simple digimon types, so they don't need documentation
 
 // Modules
-#[macro_use] pub mod util;
+mod util;
 
 pub mod bytes;
 pub mod card;

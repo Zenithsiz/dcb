@@ -411,7 +411,7 @@ impl Bytes for Effect
 					(Player  , DpSlot, OfflineDeck) => 36,
 					(Opponent, DpSlot, OfflineDeck) => 37,
 					
-					(_, &source, &destination) => return Err(ToBytesError::InvalidMoveCards { source, destination }),
+					(_, &source, &destination) => return Err( ToBytesError::InvalidMoveCards { source, destination } ),
 				};
 				LittleEndian::write_u16(bytes.y, *count);
 			}

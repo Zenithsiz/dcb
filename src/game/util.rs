@@ -126,21 +126,6 @@ pub macro array_split_mut {
 			}
 		}
 	}
-	
-	/// Error type for `write_null_terminated_string`
-	#[derive(Debug, derive_more::Display)]
-	#[display(fmt = "The string was too long to write to the buffer ({0} / {1})", string_size, buf_size)]
-	pub struct WriteNullTerminatedStringError
-	{
-		/// The string size
-		string_size: usize,
-		
-		/// The buffer size
-		buf_size: usize,
-	}
-	
-	// No source
-	impl std::error::Error for WriteNullTerminatedStringError { }
 //--------------------------------------------------------------------------------------------------
 
 // Impl
@@ -166,42 +151,6 @@ pub macro array_split_mut {
 		
 		// Else try to conver the buffer into a utf8 str.
 		Ok( std::str::from_utf8( buf ).map_err(ReadNullTerminatedStringError::Utf8)? )
-	}
-	
-	/// Writes a string to a buffer with a null terminator and returns it
-	/// 
-	/// # Details
-	/// Will reserve the last byte after the string for a null, none of
-	/// the bytes after it will be touched.
-	/// 
-	/// # Errors
-	/// - `TooLong`: If the string is too long for the buffer
-	pub fn write_null_terminated_string<'a>(string: &'_ str, buf: &'a mut [u8]) -> Result<&'a mut [u8], WriteNullTerminatedStringError>
-	{
-		// Check if the string is too big
-		// Note: This also catches the case where they're both 0
-		if string.len() >= buf.len() { return Err( WriteNullTerminatedStringError{ string_size: string.len(), buf_size: buf.len() } ); }
-		
-		// Else copy everything over
-		buf[ 0..string.len() ].copy_from_slice( string.as_bytes() );
-		
-		// Set the last byte of the string as null
-		buf[ string.len() ] = 0;
-		
-		// And return the buffer
-		Ok( buf )
-	}
-	
-	/// Returns an ordinal string from a u64
-	#[must_use]
-	pub fn as_ordinal(num: u64) -> String
-	{
-		format!("{0}{1}", num, match num % 10 {
-			1 => "st",
-			2 => "nd",
-			3 => "rd",
-			_ => "th",
-		})
 	}
 //--------------------------------------------------------------------------------------------------
 
