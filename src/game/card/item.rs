@@ -169,7 +169,7 @@ impl Bytes for Item {
 
 		// And return the struct
 		Ok(Self {
-			name: util::read_null_ascii_string(bytes.name).map_err(FromBytesError::Name)?.chars().collect(),
+			name: util::read_null_ascii_string(bytes.name).map_err(FromBytesError::Name)?.to_ascii_string(),
 
 			// Effects
 			effect_conditions: [
@@ -188,20 +188,16 @@ impl Bytes for Item {
 			effect_description: [
 				util::read_null_ascii_string(bytes.effect_description_0)
 					.map_err(FromBytesError::EffectDescriptionFirst)?
-					.chars()
-					.collect(),
+					.to_ascii_string(),
 				util::read_null_ascii_string(bytes.effect_description_1)
 					.map_err(FromBytesError::EffectDescriptionSecond)?
-					.chars()
-					.collect(),
+					.to_ascii_string(),
 				util::read_null_ascii_string(bytes.effect_description_2)
 					.map_err(FromBytesError::EffectDescriptionThird)?
-					.chars()
-					.collect(),
+					.to_ascii_string(),
 				util::read_null_ascii_string(bytes.effect_description_3)
 					.map_err(FromBytesError::EffectDescriptionFourth)?
-					.chars()
-					.collect(),
+					.to_ascii_string(),
 			],
 
 			// Unknown
