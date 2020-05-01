@@ -1,8 +1,8 @@
 //! Card properties
 
-/// Defines a module and an enum inside of it representing a simple property
-/// 
-/// Both the enum and the error inherit the module's visibility
+/// Defines and implements a property enum
+// TODO: Make better documentation
+// TODO: Turn into a `macro` once they work
 macro_rules! generate_enum_property_mod
 {
 	// Entry point
@@ -33,13 +33,7 @@ macro_rules! generate_enum_property_mod
 						=>
 						
 						// Variant value
-						$enum_variant_value:literal
-						
-						// Other possible values
-						$(..  $enum_variant_value_rest      :literal)?
-						$(..= $enum_variant_value_rest_equal:literal)?
-						
-						,
+						$enum_variant_value:literal,
 					)*
 					
 					// Error
@@ -51,7 +45,7 @@ macro_rules! generate_enum_property_mod
 				// Any further definitions inside the module
 				$( $extra_defs:tt )*
 			}
-		)+
+		)*
 	) =>
 	{
 		// Modules
@@ -64,13 +58,12 @@ macro_rules! generate_enum_property_mod
 				#[derive(PartialEq, Eq, Clone, Copy, Hash, Debug)]
 				#[derive(::serde::Serialize, ::serde::Deserialize)]
 				#[derive(::derive_more::Display)]
-				$mod_vis enum $enum_name
+				pub enum $enum_name
 				{
 					$(
 						$( #[$enum_variant_attr] )*
 						#[serde(rename = $enum_variant_rename)]
 						#[display(fmt = $enum_variant_rename)]
-						// TODO: Possible only do `= ...` when we have no range
 						$enum_variant_name = $enum_variant_value,
 					)*
 				}
@@ -78,7 +71,7 @@ macro_rules! generate_enum_property_mod
 				/// Error type for [`$crate::game::Bytes::from_bytes`]
 				#[derive(Debug)]
 				#[derive(::derive_more::Display, ::err_impl::Error)]
-				$mod_vis enum FromBytesError {
+				pub enum FromBytesError {
 					
 					/// Unknown value
 					#[display(fmt = $error_unknown_value_display, "byte")]
@@ -96,15 +89,11 @@ macro_rules! generate_enum_property_mod
 					{
 						match byte {
 							$(
-								$enum_variant_value
-								$( .. $enum_variant_value_rest )?
-								$(..= $enum_variant_value_rest_equal )?
-								
-								=>
+								$enum_variant_value =>
 								Ok( <$enum_name>::$enum_variant_name ),
 							)*
 							
-							_ => Err( Self::FromError::UnknownValue{ byte: *byte } ),
+							&byte => Err( Self::FromError::UnknownValue{ byte } ),
 						}
 					}
 					
@@ -114,27 +103,7 @@ macro_rules! generate_enum_property_mod
 					{
 						*byte = match self {
 							$(
-								<$enum_name>::$enum_variant_name => {
-									$(
-										// If this enum has multiple values, we can't serialize it
-										panic!("No unique value to set for variant {}. Values range from {}..{}",
-											self,
-											$enum_variant_value,
-											$enum_variant_value_rest
-										);
-									)?
-									
-									$(
-										// If this enum has multiple values, we can't serialize it
-										panic!("No unique value to set for variant {}. Values range from {}..={}",
-											self,
-											$enum_variant_value,
-											$enum_variant_value_rest_equal
-										);
-									)?
-									
-									$enum_variant_value
-								},
+								<$enum_name>::$enum_variant_name => $enum_variant_value,
 							)*
 						};
 						
@@ -149,8 +118,10 @@ macro_rules! generate_enum_property_mod
 	}
 }
 
-/// Defines an implementation of [`Bytes`] for `Option<enum E>` where
-/// a value is used as a sentinel value to tell if it exists or not
+/// Implements [`Bytes`](crate::game::Bytes) for `Option<E>` where `E`
+/// is the first argument of this macro and an enum.
+/// 
+/// This is done by suppling a sentinel value which is read/written as `None`.
 macro generate_enum_property_option {
 	(
 		$( $enum_name:ty => $sentinel_value:literal ),* $(,)?
@@ -200,7 +171,7 @@ generate_enum_property_mod!(
 	}
 	
 	pub mod arrow_color {
-		/// A digimon effect's arrow color 
+		/// A digimon effect's arrow color
 		enum ArrowColor
 		{
 			Red  ("Red"  ) => 1,
@@ -382,29 +353,6 @@ generate_enum_property_mod!(
 			_ => "Unknown byte 0x{:x} for a digimon property",
 		}
 	}
-	
-	pub mod effect_type {
-		/// Support effect types
-		/// 
-		/// See [`Effect`](crate::game::card::property::Effect) for more details
-		enum EffectType {
-			ChangeProperty                 ("Change property"                    ) => 0 ..=13,
-			UseAttack                      ("Use attack"                         ) => 16..=17,
-			SetTempSlot                    ("Set temp slot"                      ) => 25,
-			MoveCards                      ("Move cards"                         ) => 26..=37,
-			ShuffleOnlineDeck              ("Shuffle online deck"                ) => 42..=43,
-			VoidOpponentSupportEffect      ("Void opponent support effect"       ) => 44,
-			VoidOpponentSupportOptionEffect("Void opponent support option effect") => 45,
-			PickPartnerCard                ("Pick partner card"                  ) => 46,
-			CycleOpponentAttackType        ("Cycle opponent attack type"         ) => 47,
-			KoDigimonRevives               ("Ko'd digimon revives"               ) => 48,
-			DrawCards                      ("Draw cards"                         ) => 49..=50,
-			OwnAttackBecomesEatUpHP        ("Own attack becomes Eat Up HP"       ) => 51,
-			AttackFirst                    ("Attack first"                       ) => 52..=53,
-			
-			_ => "Unknown byte 0x{:x} for an effect type",
-		}
-	}
 );
 
 generate_enum_property_option!(
@@ -433,4 +381,3 @@ pub use slot::Slot;
 pub use moves::Move;
 pub use effect::Effect;
 pub use effect_condition::EffectCondition;
-pub use effect_type::EffectType;

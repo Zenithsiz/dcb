@@ -14,9 +14,9 @@
 //! ```no_run
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! #   use std::fs::File;
-//!     let mut game_file = dcb::GameFile::from_reader( File::open("Digimon Digital Card Battle.bin")? )?;
-//!     let card_table = dcb::game::card::Table::deserialize( &mut game_file )?;
-//!     println!("Card table: {:?}", card_table);
+//! let mut game_file = dcb::GameFile::from_reader( File::open("Digimon Digital Card Battle.bin")? )?;
+//! let card_table = dcb::game::card::Table::deserialize( &mut game_file )?;
+//! println!("Card table: {:?}", card_table);
 //! #   Ok(())
 //! # }
 //! ```
@@ -58,6 +58,7 @@
 	clippy::todo,                           // Code that is incomplete should be tagged as such.
 	clippy::unreachable,                    // Some code should be unreachable and panic when reached.
 	clippy::integer_arithmetic,             // Come on now, we need to use numbers to program
+	clippy::shadow_same,                    // Useful when taking arguments such as `value: impl AsRef<T>` / `let value = value.as_ref();`
 	
 	// TODO: Deal with casts eventually
 	clippy::cast_possible_wrap,
