@@ -1,10 +1,10 @@
-//! `dcb` is a library for interacting with the game file of `Digital Card Battle`,
+//! `dcb` is a library for interacting with the game file of `Digimon Digital Card Battle`,
 //! a PSX game.
 //!
 //! # Modules
 //! `dcb` splits itself into 2 main modules, [`io`], which interacts with the game file
-//! as well as general input / output operations and [`game`], which is where most of
-//! the game's data types are defined.
+//! as well as general input / output operations and [`game`], where most of  the game's
+//! data types are defined.
 //!
 //! # Example
 //! 
@@ -14,8 +14,8 @@
 //! ```no_run
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! #   use std::fs::File;
-//!     let mut game_file = dcb::GameFile::from_reader( File::open("Digimon Digital Card Battle.bin")? );
-//!     let card_table = dcb::game::card::Table::new( &mut game_file )?;
+//!     let mut game_file = dcb::GameFile::from_reader( File::open("Digimon Digital Card Battle.bin")? )?;
+//!     let card_table = dcb::game::card::Table::deserialize( &mut game_file )?;
 //!     println!("Card table: {:?}", card_table);
 //! #   Ok(())
 //! # }

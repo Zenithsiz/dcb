@@ -237,8 +237,6 @@ impl Table {
 		// And calculate the number of cards
 		let cards_len = digimon_cards + item_cards + digivolve_cards;
 		
-		
-		
 		// If there are too many cards, return Err
 		let table_size =   digimon_cards * (0x3 + CardType::Digimon  .byte_size() + 0x1) +
 		                      item_cards * (0x3 + CardType::Item     .byte_size() + 0x1) +
@@ -334,8 +332,35 @@ impl Table {
 		} ); }
 		
 		// Seek to the beginning of the card table
-		file.seek( std::io::SeekFrom::Start( u64::from( Self::START_ADDRESS ) + 0x8 ) )
+		file.seek( std::io::SeekFrom::Start( u64::from( Self::START_ADDRESS ) ) )
 			.map_err(SerializeError::Seek)?;
+		
+		// Write header
+		let mut header_bytes = [0u8; 0x8];
+		{
+			let bytes = util::array_split_mut!(&mut header_bytes,
+				magic: [0x4],
+				
+				  digimons_len: [0x2],
+				     items_len: 1,
+				digivolves_len: 1,
+			);
+			
+			// Set magic
+			LittleEndian::write_u32(bytes.magic, Self::HEADER_MAGIC);
+			
+			// Write card lens
+			use std::convert::TryInto;
+			log::debug!("[Table Header] Writing {} digimon cards"  , self.digimons  .len());
+			log::debug!("[Table Header] Writing {} item cards"     , self.items     .len());
+			log::debug!("[Table Header] Writing {} digivolve cards", self.digivolves.len());
+			LittleEndian::write_u16( bytes.digimons_len, self.digimons.len().try_into().expect("Too many digimons"));
+			*bytes.     items_len = self.items     .len().try_into().expect("Too many items");
+			*bytes.digivolves_len = self.digivolves.len().try_into().expect("Too many digivolves");
+		}
+		
+		file.write_all(&header_bytes)
+			.map_err(SerializeError::WriteHeader)?;
 		
 		// Write all digimon, items and digivolves
 		for (rel_id, digimon) in self.digimons.iter().enumerate() {
@@ -362,6 +387,7 @@ impl Table {
 			// Write the footer
 			*bytes.footer = 0;
 			
+			log::debug!("[Card Header] Writing Digimon with id {}", cur_id);
 			file.write_all(&card_bytes)
 				.map_err(|err| SerializeError::WriteCard { id: cur_id, err })?;
 		}
@@ -389,6 +415,7 @@ impl Table {
 			// Write the footer
 			*bytes.footer = 0;
 			
+			log::debug!("[Card Header] Writing Item with id {}", cur_id);
 			file.write_all(&card_bytes)
 				.map_err(|err| SerializeError::WriteCard { id: cur_id, err })?;
 		}
@@ -416,6 +443,7 @@ impl Table {
 			// Write the footer
 			*bytes.footer = 0;
 			
+			log::debug!("[Card Header] Writing Digivolve with id {}", cur_id);
 			file.write_all(&card_bytes)
 				.map_err(|err| SerializeError::WriteCard { id: cur_id, err })?;
 		}
