@@ -7,7 +7,7 @@
 //! data types are defined.
 //!
 //! # Example
-//! 
+//!
 //! The following is an example of how to use the `dcb` library.
 //! This example extracts the card table and prints it to screen
 //!
@@ -32,15 +32,10 @@
 	stmt_expr_attributes,
 	unwrap_infallible,
 	const_if_match,
-	exclusive_range_pattern,
+	exclusive_range_pattern
 )]
-
 // Lints
-#![warn(
-	clippy::restriction,
-	clippy::pedantic,
-	clippy::nursery,
-)]
+#![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]
 #![allow(
 	clippy::missing_inline_in_public_items, // Dubious lint
 	clippy::implicit_return,                // We prefer tail returns where possible
@@ -59,22 +54,19 @@
 	clippy::unreachable,                    // Some code should be unreachable and panic when reached.
 	clippy::integer_arithmetic,             // Come on now, we need to use numbers to program
 	clippy::shadow_same,                    // Useful when taking arguments such as `value: impl AsRef<T>` / `let value = value.as_ref();`
-	
 	// TODO: Deal with casts eventually
 	clippy::cast_possible_wrap,
 	clippy::cast_sign_loss,
 	clippy::cast_possible_truncation,
-	
 	// TODO: Remove these once all modules are ported
 	clippy::missing_docs_in_private_items,
 	clippy::as_conversions,
 	clippy::indexing_slicing,
-	
 )]
 
 // Modules
-pub mod io;
 pub mod game;
+pub mod io;
 
 // Exports
 pub use io::GameFile;
