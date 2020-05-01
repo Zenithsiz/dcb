@@ -139,7 +139,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "dcb-extract"
+name = "dcb-tools"
 version = "0.1.0"
 dependencies = [
  "clap",
