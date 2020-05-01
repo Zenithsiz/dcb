@@ -32,6 +32,7 @@
 	stmt_expr_attributes,
 	unwrap_infallible,
 	const_if_match,
+	exclusive_range_pattern,
 )]
 
 // Lints

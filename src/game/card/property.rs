@@ -33,7 +33,13 @@ macro_rules! generate_enum_property_mod
 						=>
 						
 						// Variant value
-						$enum_variant_value:expr,
+						$enum_variant_value:literal
+						
+						// Other possible values
+						$(..  $enum_variant_value_rest      :literal)?
+						$(..= $enum_variant_value_rest_equal:literal)?
+						
+						,
 					)*
 					
 					// Error
@@ -64,6 +70,7 @@ macro_rules! generate_enum_property_mod
 						$( #[$enum_variant_attr] )*
 						#[serde(rename = $enum_variant_rename)]
 						#[display(fmt = $enum_variant_rename)]
+						// TODO: Possible only do `= ...` when we have no range
 						$enum_variant_name = $enum_variant_value,
 					)*
 				}
@@ -79,7 +86,7 @@ macro_rules! generate_enum_property_mod
 						byte: u8,
 					}
 				}
-				// Bytes
+				
 				impl $crate::game::Bytes for $enum_name
 				{
 					type ByteArray = u8;
@@ -88,17 +95,47 @@ macro_rules! generate_enum_property_mod
 					fn from_bytes(byte: &Self::ByteArray) -> Result<Self, Self::FromError>
 					{
 						match byte {
-							$( $enum_variant_value => Ok( <$enum_name>::$enum_variant_name ), )*
+							$(
+								$enum_variant_value
+								$( .. $enum_variant_value_rest )?
+								$(..= $enum_variant_value_rest_equal )?
+								
+								=>
+								Ok( <$enum_name>::$enum_variant_name ),
+							)*
 							
 							_ => Err( Self::FromError::UnknownValue{ byte: *byte } ),
 						}
 					}
 					
 					type ToError = !;
+					#[allow(unreachable_code, unused_variables)] // For when there are multiple values
 					fn to_bytes(&self, byte: &mut Self::ByteArray) -> Result<(), Self::ToError>
 					{
 						*byte = match self {
-							$( <$enum_name>::$enum_variant_name => $enum_variant_value, )*
+							$(
+								<$enum_name>::$enum_variant_name => {
+									$(
+										// If this enum has multiple values, we can't serialize it
+										panic!("No unique value to set for variant {}. Values range from {}..{}",
+											self,
+											$enum_variant_value,
+											$enum_variant_value_rest
+										);
+									)?
+									
+									$(
+										// If this enum has multiple values, we can't serialize it
+										panic!("No unique value to set for variant {}. Values range from {}..={}",
+											self,
+											$enum_variant_value,
+											$enum_variant_value_rest_equal
+										);
+									)?
+									
+									$enum_variant_value
+								},
+							)*
 						};
 						
 						Ok(())
@@ -111,6 +148,42 @@ macro_rules! generate_enum_property_mod
 		)*
 	}
 }
+
+/// Defines an implementation of [`Bytes`] for `Option<enum E>` where
+/// a value is used as a sentinel value to tell if it exists or not
+macro generate_enum_property_option {
+	(
+		$( $enum_name:ty => $sentinel_value:literal ),* $(,)?
+	) => {
+		$(
+			#[allow(clippy::diverging_sub_expression)] // Errors might be `!`
+			impl $crate::game::Bytes for Option<$enum_name> {
+				type ByteArray = <$enum_name as $crate::game::Bytes>::ByteArray;
+				
+				type FromError = <$enum_name as $crate::game::Bytes>::FromError;
+				fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError>
+				{
+					match bytes {
+						$sentinel_value => Ok( None ),
+						_               => Ok( Some( $crate::game::Bytes::from_bytes(bytes)? ) ),
+					}
+				}
+				
+				type ToError = <$enum_name as $crate::game::Bytes>::ToError;
+				fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError>
+				{
+					match self {
+						Some(value) => $crate::game::Bytes::to_bytes(value, bytes)?,
+						None        => *bytes = $sentinel_value,
+					}
+					
+					Ok(())
+				}
+			}
+		)*
+	}
+}
+
 
 generate_enum_property_mod!(
 	pub mod slot {
@@ -135,31 +208,6 @@ generate_enum_property_mod!(
 			Blue ("Blue" ) => 3,
 			
 			_ => "Unknown byte 0x{:x} for an arrow color"
-		}
-		
-		impl crate::game::Bytes for Option<ArrowColor> {
-			type ByteArray = u8;
-			
-			type FromError = FromBytesError;
-			fn from_bytes(byte: &Self::ByteArray) -> Result<Self, Self::FromError>
-			{
-				match byte {
-					0 => Ok( None ),
-					_ => Ok( Some( ArrowColor::from_bytes(byte)? ) ),
-				}
-			}
-			
-			type ToError = <ArrowColor as crate::game::Bytes>::ToError;
-			#[allow(clippy::diverging_sub_expression)] // For if we ever change `ArrowColor::ToError`
-			fn to_bytes(&self, byte: &mut Self::ByteArray) -> Result<(), Self::ToError>
-			{
-				match self {
-					Some(effect) => effect.to_bytes(byte)?,
-					None         => *byte = 0,
-				}
-				
-				Ok(())
-			}
 		}
 	}
 	
@@ -297,31 +345,6 @@ generate_enum_property_mod!(
 			
 			_ => "Unknown byte 0x{:x} for a cross move effect",
 		}
-		
-		impl crate::game::Bytes for Option<CrossMoveEffect> {
-			type ByteArray = u8;
-			
-			type FromError = FromBytesError;
-			fn from_bytes(byte: &Self::ByteArray) -> Result<Self, Self::FromError>
-			{
-				match byte {
-					0 => Ok( None ),
-					_ => Ok( Some( CrossMoveEffect::from_bytes(byte)? ) ),
-				}
-			}
-			
-			type ToError = <CrossMoveEffect as crate::game::Bytes>::ToError;
-			#[allow(clippy::diverging_sub_expression)] // For if we ever change `CrossMoveEffect::ToError`
-			fn to_bytes(&self, byte: &mut Self::ByteArray) -> Result<(), Self::ToError>
-			{
-				match self {
-					Some(effect) => effect.to_bytes(byte)?,
-					None         => *byte = 0,
-				}
-				
-				Ok(())
-			}
-		}
 	}
 	
 	pub mod digimon_property {
@@ -358,34 +381,37 @@ generate_enum_property_mod!(
 			
 			_ => "Unknown byte 0x{:x} for a digimon property",
 		}
-		
-		impl crate::game::Bytes for Option<DigimonProperty> {
-			type ByteArray = u8;
+	}
+	
+	pub mod effect_type {
+		/// Support effect types
+		/// 
+		/// See [`Effect`](crate::game::card::property::Effect) for more details
+		enum EffectType {
+			ChangeProperty                 ("Change property"                    ) => 0 ..=13,
+			UseAttack                      ("Use attack"                         ) => 16..=17,
+			SetTempSlot                    ("Set temp slot"                      ) => 25,
+			MoveCards                      ("Move cards"                         ) => 26..=37,
+			ShuffleOnlineDeck              ("Shuffle online deck"                ) => 42..=43,
+			VoidOpponentSupportEffect      ("Void opponent support effect"       ) => 44,
+			VoidOpponentSupportOptionEffect("Void opponent support option effect") => 45,
+			PickPartnerCard                ("Pick partner card"                  ) => 46,
+			CycleOpponentAttackType        ("Cycle opponent attack type"         ) => 47,
+			KoDigimonRevives               ("Ko'd digimon revives"               ) => 48,
+			DrawCards                      ("Draw cards"                         ) => 49..=50,
+			OwnAttackBecomesEatUpHP        ("Own attack becomes Eat Up HP"       ) => 51,
+			AttackFirst                    ("Attack first"                       ) => 52..=53,
 			
-			type FromError = FromBytesError;
-			fn from_bytes(byte: &Self::ByteArray) -> Result<Self, Self::FromError>
-			{
-				match byte {
-					0 => Ok( None ),
-					_ => Ok( Some( DigimonProperty::from_bytes(byte)? ) ),
-				}
-			}
-			
-			type ToError = <DigimonProperty as crate::game::Bytes>::ToError;
-			#[allow(clippy::diverging_sub_expression)] // For if we ever change `CrossMoveEffect::ToError`
-			fn to_bytes(&self, byte: &mut Self::ByteArray) -> Result<(), Self::ToError>
-			{
-				match self {
-					Some(effect) => effect.to_bytes(byte)?,
-					None         => *byte = 0,
-				}
-				
-				Ok(())
-			}
+			_ => "Unknown byte 0x{:x} for an effect type",
 		}
 	}
 );
 
+generate_enum_property_option!(
+	ArrowColor      => 0,
+	CrossMoveEffect => 0,
+	DigimonProperty => 0,
+);
 
 // Complex
 pub mod moves; // Note: Can't be `move`, as it's a keyword
@@ -407,3 +433,4 @@ pub use slot::Slot;
 pub use moves::Move;
 pub use effect::Effect;
 pub use effect_condition::EffectCondition;
+pub use effect_type::EffectType;

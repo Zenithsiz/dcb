@@ -408,9 +408,9 @@ impl Bytes for Digimon
 		LittleEndian::write_u16(bytes.hp, self.hp);
 		
 		// Moves
-		self.  move_circle.to_bytes( bytes.move_circle   ).map_err(ToBytesError::MoveCircle  )?;
+		self.move_circle  .to_bytes( bytes.move_circle   ).map_err(ToBytesError::MoveCircle  )?;
 		self.move_triangle.to_bytes( bytes.move_triangle ).map_err(ToBytesError::MoveTriangle)?;
-		self.   move_cross.to_bytes( bytes.move_cross    ).map_err(ToBytesError::MoveCross   )?;
+		self.move_cross   .to_bytes( bytes.move_cross    ).map_err(ToBytesError::MoveCross   )?;
 	
 		// Effect conditions
 		self.effect_conditions[0].to_bytes( bytes.condition_first  ).into_ok();
