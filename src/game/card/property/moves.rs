@@ -58,13 +58,20 @@ impl Bytes for Move
 	type FromError = FromBytesError;
 	fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError>
 	{
+		// Get all byte arrays we need
+		let bytes = util::array_split!(bytes,
+			power  : [0x2],
+			unknown: [0x4],
+			name   : [0x16],
+		);
+		
 		// Return the move
 		Ok( Self {
-			name : util::read_null_ascii_string( &bytes[0x6..0x1c] )
+			name : util::read_null_ascii_string( bytes.name )
 				.map_err(FromBytesError::Name)?
 				.chars().collect(),
-			power  : LittleEndian::read_u16( &bytes[0x0..0x2] ),
-			unknown: LittleEndian::read_u32( &bytes[0x2..0x6] ),
+			power  : LittleEndian::read_u16( bytes.power   ),
+			unknown: LittleEndian::read_u32( bytes.unknown ),
 		})
 	}
 	

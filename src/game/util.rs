@@ -221,13 +221,13 @@ pub enum ReadNullAsciiStringError {
 }
 
 /// Reads a null-terminated ascii string from a buffer.
-pub fn read_null_ascii_string(mut buf: &[u8]) -> Result<&ascii::AsciiStr, ReadNullAsciiStringError> {
+pub fn read_null_ascii_string(buf: &impl AsRef<[u8]>) -> Result<&ascii::AsciiStr, ReadNullAsciiStringError> {
 	// Find the first null and trim the buffer until it
-	if let Some(null_idx) = buf.iter().position(|&b| b == 0) {
-		buf = &buf[0..null_idx];
-	} else {
-		return Err( ReadNullAsciiStringError::NoNull );
-	}
+	let buf = buf.as_ref();
+	let buf = match buf.iter().position(|&b| b == 0) {
+		Some(null_idx) => &buf[0..null_idx],
+		None           => return Err( ReadNullAsciiStringError::NoNull ),
+	};
 	
 	// Then convert it from Ascii
 	ascii::AsciiStr::from_ascii(buf)
@@ -254,6 +254,7 @@ pub fn write_null_ascii_string<'a>(input: &ascii::AsciiStr, buf: &'a mut [u8]) -
 	}
 	
 	// Else copy everything over and set the last byte to null
+	// Note: We leave all other bytes as they are, no need to set them to 0
 	buf[ 0..input.len() ].copy_from_slice( input.as_bytes() );
 	buf[ input.len() ] = 0;
 	

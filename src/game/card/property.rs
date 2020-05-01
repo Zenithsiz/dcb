@@ -136,6 +136,31 @@ generate_enum_property_mod!(
 			
 			_ => "Unknown byte 0x{:x} for an arrow color"
 		}
+		
+		impl crate::game::Bytes for Option<ArrowColor> {
+			type ByteArray = u8;
+			
+			type FromError = FromBytesError;
+			fn from_bytes(byte: &Self::ByteArray) -> Result<Self, Self::FromError>
+			{
+				match byte {
+					0 => Ok( None ),
+					_ => Ok( Some( ArrowColor::from_bytes(byte)? ) ),
+				}
+			}
+			
+			type ToError = <ArrowColor as crate::game::Bytes>::ToError;
+			#[allow(clippy::diverging_sub_expression)] // For if we ever change `ArrowColor::ToError`
+			fn to_bytes(&self, byte: &mut Self::ByteArray) -> Result<(), Self::ToError>
+			{
+				match self {
+					Some(effect) => effect.to_bytes(byte)?,
+					None         => *byte = 0,
+				}
+				
+				Ok(())
+			}
+		}
 	}
 	
 	pub mod attack_type {
@@ -271,6 +296,31 @@ generate_enum_property_mod!(
 				RareFoe3x("Rare Foe x3"    ) => 15,
 			
 			_ => "Unknown byte 0x{:x} for a cross move effect",
+		}
+		
+		impl crate::game::Bytes for Option<CrossMoveEffect> {
+			type ByteArray = u8;
+			
+			type FromError = FromBytesError;
+			fn from_bytes(byte: &Self::ByteArray) -> Result<Self, Self::FromError>
+			{
+				match byte {
+					0 => Ok( None ),
+					_ => Ok( Some( CrossMoveEffect::from_bytes(byte)? ) ),
+				}
+			}
+			
+			type ToError = <CrossMoveEffect as crate::game::Bytes>::ToError;
+			#[allow(clippy::diverging_sub_expression)] // For if we ever change `CrossMoveEffect::ToError`
+			fn to_bytes(&self, byte: &mut Self::ByteArray) -> Result<(), Self::ToError>
+			{
+				match self {
+					Some(effect) => effect.to_bytes(byte)?,
+					None         => *byte = 0,
+				}
+				
+				Ok(())
+			}
 		}
 	}
 	

@@ -191,6 +191,7 @@ pub enum FromBytesError
 	#[display(fmt = "Unable to read the third effect")]
 	EffectThird( #[error(source)] property::effect::FromBytesError ),
 }
+
 /// Error type for [`Bytes::to_bytes`]
 #[derive(Debug)]
 #[derive(derive_more::Display, err_impl::Error)]
@@ -323,16 +324,12 @@ impl Bytes for Digimon
 					.map_err(FromBytesError::EffectThird)?,
 			],
 			
-			cross_move_effect: (*bytes.cross_move_effect != 0)
-				.then(|| CrossMoveEffect::from_bytes( bytes.cross_move_effect ) )
-				.transpose()
+			cross_move_effect: Option::<CrossMoveEffect>::from_bytes(bytes.cross_move_effect)
 				.map_err(FromBytesError::CrossMoveEffect)?,
 			
 			unknown_e2: *bytes.unknown_e2,
 			
-			effect_arrow_color: (*bytes.effect_arrow_color != 0)
-				.then(|| ArrowColor::from_bytes( bytes.effect_arrow_color ) )
-				.transpose()
+			effect_arrow_color: Option::<ArrowColor>::from_bytes(bytes.effect_arrow_color)
 				.map_err(FromBytesError::ArrowColor)?,
 			
 			effect_description: [
@@ -425,13 +422,13 @@ impl Bytes for Digimon
 		self.effects[2].to_bytes( bytes.effect_third  ).map_err(ToBytesError::EffectThird )?;
 		
 		// Cross move
-		if let Some(move_cross) = self.cross_move_effect { move_cross.to_bytes( bytes.cross_move_effect )? };
+		Option::<CrossMoveEffect>::to_bytes(&self.cross_move_effect, bytes.cross_move_effect).into_ok();
 		
 		// Unknown
 		*bytes.unknown_e2 = self.unknown_e2;
 		
 		// Support arrow color
-		if let Some(arrow_color) = self.effect_arrow_color { arrow_color.to_bytes( bytes.effect_arrow_color )? }
+		Option::<ArrowColor>::to_bytes(&self.effect_arrow_color, bytes.effect_arrow_color).into_ok();
 		
 		// effect_description
 		util::write_null_ascii_string(self.effect_description[0].as_ref(), bytes.effect_description_0)
