@@ -62,9 +62,6 @@ fn main() {
 	// Get all data from cli
 	let CliData { input_filename, output_dir } = CliData::new();
 	
-	let cur_working_dir = std::env::current_dir().expect("No cwd");
-	log::info!("cwd: {}", cur_working_dir.display());
-	
 	// Open the game file
 	let input_file = std::fs::File::open(&input_filename)
 		.panic_err_msg("Unable to open input file");
@@ -73,9 +70,10 @@ fn main() {
 	
 	// Get the cards table
 	let cards_table = CardTable::deserialize(&mut game_file)
-		.panic_err_msg("Unable to create cards table");
+		.panic_err_msg("Unable to deserialize cards table from game file");
 	let cards_table_yaml = serde_yaml::to_string(&cards_table)
-		.panic_err_msg("Unable to serialize cards table");
+		.panic_err_msg("Unable to serialize cards table to yaml");
+	
 	log::info!("Extracted {} cards", cards_table.card_count());
 	
 	// And output everything to the files
