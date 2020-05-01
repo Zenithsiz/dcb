@@ -1,16 +1,15 @@
-//! Data extractor
+//! Data patches
 //! 
 //! # Details
-//! Extracts data from the game file to several other files, that can be
-//! edited and then used by `Patcher` to modify the game file.
+//! Patches data to the game file from several other files.
 //! 
 //! # Syntax
-//! The executable may be called as `./extractor <game file> {-o <output directory>}`
+//! The executable may be called as `./patcher <game file> <directory>`
 //! 
-//! Use the command `./extractor --help` for more information.
+//! Use the command `./patcher --help` for more information.
 //! 
-//! # Data extracted
-//! Currently only the following is extracted:
+//! # Data patched
+//! Currently only the following is patched:
 //! - Card table
 
 // Features
@@ -51,7 +50,6 @@ use dcb::{
 // Errors
 use err_ext::ResultExt;
 use err_panic::ErrorExtPanic;
-use err_backtrace::ErrBacktraceExt;
 
 fn main() {
 	// Initialize the logger and set the panic handler
@@ -59,27 +57,26 @@ fn main() {
 	std::panic::set_hook(box panic::log_handler);
 	
 	// Get all data from cli
-	let CliData { input_filename, output_dir } = CliData::new();
+	let CliData { game_file_path, input_dir } = CliData::new();
+	
+	// Load the card table
+	let cards_table_file = std::fs::File::open( input_dir.join("cards.yaml") )
+		.panic_err_msg("Unable to open `cards.yaml`");
+	let cards_table: CardTable = serde_yaml::from_reader( cards_table_file )
+		.panic_err_msg("Unable to parse `cards.yaml`");
 	
 	// Open the game file
-	let input_file = std::fs::File::open(&input_filename)
-		.panic_err_msg("Unable to open input file");
-	let mut game_file = GameFile::from_reader(input_file)
-		.panic_err_msg("Unable to parse input file as dcb");
+	let game_file = std::fs::OpenOptions::new()
+		.write(true)
+		.truncate(false)
+		.open( game_file_path )
+		.panic_err_msg("Unable to open game file");
+	let mut game_file = GameFile::from_reader( game_file )
+		.panic_err_msg("Unable to initialize game file");
 	
-	// Get the cards table
-	let cards_table = CardTable::deserialize(&mut game_file)
-		.panic_err_msg("Unable to deserialize cards table from game file");
-	let cards_table_yaml = serde_yaml::to_string(&cards_table)
-		.panic_err_msg("Unable to serialize cards table to yaml");
-	
-	log::info!("Extracted {} cards", cards_table.card_count());
-	
-	// And output everything to the files
-	let cards_table_output_filename = output_dir.join("cards.yaml");
-	std::fs::write(&cards_table_output_filename, cards_table_yaml)
-		.map_err(|err| log::warn!("Unable to write output file {}:\n{}", cards_table_output_filename.display(), err.err_backtrace() ))
-		.ignore();
+	// And write the cards table
+	cards_table.serialize(&mut game_file)
+		.panic_err_msg("Unable to serialize cards table");
 }
 
 /// Initializes the global logger
