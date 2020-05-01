@@ -18,6 +18,9 @@ pub struct Deck {
 
 	/// All of the card ids that make up this deck
 	pub cards: [u16; 30],
+
+	// Unknown
+	unknown: [u8; 0xc],
 }
 
 /// Error type for [`Bytes::from_bytes`]
@@ -37,11 +40,11 @@ pub enum FromBytesError {
 pub enum ToBytesError {
 	/// Unable to write the deck name
 	#[display(fmt = "Unable to write the deck name")]
-	Name(#[error(source)] util::WriteNullAsciiStringError),
+	Name(#[error(source)] util::WriteMaybeNullAsciiStringError),
 
 	/// Unable to write the deck owner
 	#[display(fmt = "Unable to write the deck owner")]
-	Owner(#[error(source)] util::WriteNullAsciiStringError),
+	Owner(#[error(source)] util::WriteMaybeNullAsciiStringError),
 }
 
 impl Bytes for Deck {
@@ -51,12 +54,11 @@ impl Bytes for Deck {
 
 	fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError> {
 		// Split the bytes
-		let bytes = util::array_split!(&bytes,
-			deck : [0x3c],
-			name : [0x13],
-			owner: [0x13],
-
-			_unknown: [0xc],
+		let bytes = util::array_split!(bytes,
+			deck   : [0x3c],
+			name   : [0x13],
+			owner  : [0x13],
+			unknown: [0xc],
 		);
 
 		Ok(Self {
@@ -77,10 +79,33 @@ impl Bytes for Deck {
 
 				cards_buf
 			},
+
+			unknown: *bytes.unknown,
 		})
 	}
 
-	fn to_bytes(&self, _bytes: &mut Self::ByteArray) -> Result<(), Self::ToError> {
-		todo!();
+	fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError> {
+		// Split the bytes
+		let bytes = util::array_split_mut!(bytes,
+			deck   : [0x3c],
+			name   : [0x13],
+			owner  : [0x13],
+			unknown: [0xc],
+		);
+
+		// Nanme / Owner
+		util::write_maybe_null_ascii_string(&self.name, bytes.name).map_err(ToBytesError::Name)?;
+		util::write_maybe_null_ascii_string(&self.owner, bytes.owner).map_err(ToBytesError::Owner)?;
+
+		// Deck
+		for (card_id, card) in self.cards.iter().enumerate() {
+			LittleEndian::write_u16(&mut bytes.deck[0x0 + card_id * 2..0x2 + card_id * 2], *card);
+		}
+
+		// Unknown
+		*bytes.unknown = self.unknown;
+
+		// And return Ok
+		Ok(())
 	}
 }

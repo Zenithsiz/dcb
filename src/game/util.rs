@@ -183,3 +183,35 @@ pub fn write_null_ascii_string<'a>(input: &ascii::AsciiStr, buf: &'a mut [u8]) -
 	// And return Ok with the buffer
 	Ok(buf)
 }
+
+/// Error type for [`write_maybe_null_ascii_string`]
+#[derive(Debug)]
+#[derive(derive_more::Display, err_impl::Error)]
+pub enum WriteMaybeNullAsciiStringError {
+	/// The input string was too large
+	#[display(fmt = "Input string was too large for buffer. ({} / {})", "input_len", "buffer_len")]
+	TooLarge { input_len: usize, buffer_len: usize },
+}
+
+/// Writes a possibly null-terminated ascii string to a buffer and returns it
+pub fn write_maybe_null_ascii_string<'a>(input: &ascii::AsciiStr, buf: &'a mut [u8]) -> Result<&'a mut [u8], WriteMaybeNullAsciiStringError> {
+	// If the input string doesn't fit into the buffer, return Err
+	if input.len() > buf.len() {
+		return Err(WriteMaybeNullAsciiStringError::TooLarge {
+			input_len: input.len(),
+			buffer_len: buf.len(),
+		});
+	}
+
+	// Copy everything over to the slice
+	// Note: We leave all other bytes as they are, no need to set them to 0
+	buf[0..input.len()].copy_from_slice(input.as_bytes());
+
+	// If there's a character left, write it to null
+	if let Some(null_byte) = buf.get_mut(input.len()) {
+		*null_byte = 0;
+	}
+
+	// And return Ok with the buffer
+	Ok(buf)
+}
