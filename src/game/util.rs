@@ -134,6 +134,28 @@ pub fn read_null_ascii_string(buf: &impl AsRef<[u8]>) -> Result<&ascii::AsciiStr
 	ascii::AsciiStr::from_ascii(buf).map_err(ReadNullAsciiStringError::NotAscii)
 }
 
+/// Error type for [`read_maybe_null_ascii_string`]
+#[derive(Debug)]
+#[derive(derive_more::Display, err_impl::Error)]
+pub enum ReadMaybeNullAsciiStringError {
+	/// The string was not ascii
+	#[display(fmt = "The buffer did not contain valid Ascii")]
+	NotAscii(#[error(source)] ascii::AsAsciiStrError),
+}
+
+/// Reads a possibly null-terminated ascii string from a buffer.
+pub fn read_maybe_null_ascii_string(buf: &impl AsRef<[u8]>) -> Result<&ascii::AsciiStr, ReadMaybeNullAsciiStringError> {
+	// Find the first null and trim the buffer until it
+	let buf = buf.as_ref();
+	let buf = match buf.iter().position(|&b| b == 0) {
+		Some(null_idx) => &buf[0..null_idx],
+		None => buf,
+	};
+
+	// Then convert it from Ascii
+	ascii::AsciiStr::from_ascii(buf).map_err(ReadMaybeNullAsciiStringError::NotAscii)
+}
+
 /// Error type for [`write_null_ascii_string`]
 #[derive(Debug)]
 #[derive(derive_more::Display, err_impl::Error)]
