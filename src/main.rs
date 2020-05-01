@@ -46,14 +46,11 @@ use cli::CliData;
 // Dcb
 use dcb::{
 	GameFile,
-	game::{
-		card::Table as CardTable
-	},
-	//game::deck::Table as DeckTable,
+	game::card::Table as CardTable,
 };
 
 // Errors
-use err_ext::ErrorExt;
+use err_ext::ResultExt;
 use err_panic::ErrorExtPanic;
 use err_backtrace::ErrBacktraceExt;
 
@@ -63,7 +60,7 @@ fn main() {
 	std::panic::set_hook(box panic::log_handler);
 	
 	// Get all data from cli
-	let CliData{ input_filename, output_dir } = CliData::new();
+	let CliData { input_filename, output_dir } = CliData::new();
 	
 	let cur_working_dir = std::env::current_dir().expect("No cwd");
 	log::info!("cwd: {}", cur_working_dir.display());
@@ -81,26 +78,11 @@ fn main() {
 		.panic_err_msg("Unable to serialize cards table");
 	log::info!("Extracted {} cards", cards_table.card_count());
 	
-	/*
-	// Get the decks table
-	let decks_table = DeckTable::new(&mut game_file)
-		.panic_err_msg("Unable to create decks table");
-	let decks_table_yaml = serde_yaml::to_string(&decks_table)
-		.panic_err_msg("Unable to serialize decks table");
-		log::info!("Extracted {} decks", "[Unknown]");
-	*/
-	
 	// And output everything to the files
 	let cards_table_output_filename = output_dir.join("cards.yaml");
 	std::fs::write(&cards_table_output_filename, cards_table_yaml)
 		.map_err(|err| log::warn!("Unable to write output file {}:\n{}", cards_table_output_filename.display(), err.err_backtrace() ))
 		.ignore();
-	/*
-		let decks_table_output_filename = output_dir.join("decks.yaml");
-	std::fs::write(output_dir.join("decks.yaml"), decks_table_yaml)
-		.map_err(|err| log::warn!("Unable to write output file {}:\n{}", decks_table_output_filename.display(), err.err_backtrace() ))
-		.ignore();
-	*/
 }
 
 /// Initializes the global logger
