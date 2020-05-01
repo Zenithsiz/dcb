@@ -30,12 +30,11 @@ impl CliData {
 			.arg(ClapArg::with_name("GAME_FILE").help("Sets the game file to use").required(true).index(1))
 			.arg(
 				ClapArg::with_name("INPUT")
-					.help("Sets the output directory to use")
+					.help("Sets the input directory to use")
 					.short("i")
 					.long("input")
-					.index(2)
 					.takes_value(true)
-					.required(true),
+					.required(false),
 			)
 			.get_matches();
 
@@ -47,13 +46,11 @@ impl CliData {
 			.map(Path::to_path_buf)
 			.panic_msg("Unable to get required argument `GAME_FILE`");
 
-		// Get the input dir
-		// Note: required
+		// Get the input dir as either an input, the game file directory or the current directory
 		let input_dir = matches
 			.value_of("INPUT")
-			.map(Path::new)
-			.map(Path::to_path_buf)
-			.panic_msg("Unable to get required argument `INPUT`");
+			.map_or_else(|| game_file_path.parent().unwrap_or_else(|| Path::new(".")), Path::new)
+			.to_path_buf();
 
 		// Return the cli data
 		Self { game_file_path, input_dir }

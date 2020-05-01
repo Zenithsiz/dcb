@@ -34,10 +34,12 @@ mod panic;
 use cli::CliData;
 
 // Dcb
-use dcb::{game::card::Table as CardTable, GameFile};
+use dcb::{
+	game::{card::Table as CardTable, deck::Table as DeckTable},
+	GameFile,
+};
 
 // Errors
-use err_backtrace::ErrBacktraceExt;
 use err_ext::ResultExt;
 use err_panic::ErrorExtPanic;
 
@@ -56,20 +58,15 @@ fn main() {
 	// Get the cards table
 	let cards_table = CardTable::deserialize(&mut game_file).panic_err_msg("Unable to deserialize cards table from game file");
 	let cards_table_yaml = serde_yaml::to_string(&cards_table).panic_err_msg("Unable to serialize cards table to yaml");
-
 	log::info!("Extracted {} cards", cards_table.card_count());
 
+	// Get the decks table
+	let decks_table = DeckTable::deserialize(&mut game_file).panic_err_msg("Unable to deserialize decks table from game file");
+	let decks_table_yaml = serde_yaml::to_string(&decks_table).panic_err_msg("Unable to serialize decks table to yaml");
+
 	// And output everything to the files
-	let cards_table_output_filename = output_dir.join("cards.yaml");
-	std::fs::write(&cards_table_output_filename, cards_table_yaml)
-		.map_err(|err| {
-			log::warn!(
-				"Unable to write output file {}:\n{}",
-				cards_table_output_filename.display(),
-				err.err_backtrace()
-			)
-		})
-		.ignore();
+	std::fs::write(&output_dir.join("cards.yaml"), cards_table_yaml).panic_err_msg("Unable to write cards table to file");
+	std::fs::write(&output_dir.join("decks.yaml"), decks_table_yaml).panic_err_msg("Unable to write decks table to file");
 }
 
 /// Initializes the global logger

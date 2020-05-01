@@ -33,7 +33,10 @@ mod panic;
 use cli::CliData;
 
 // Dcb
-use dcb::{game::card::Table as CardTable, GameFile};
+use dcb::{
+	game::{card::Table as CardTable, deck::Table as DeckTable},
+	GameFile,
+};
 
 // Errors
 use err_ext::ResultExt;
@@ -51,6 +54,10 @@ fn main() {
 	let cards_table_file = std::fs::File::open(input_dir.join("cards.yaml")).panic_err_msg("Unable to open `cards.yaml`");
 	let cards_table: CardTable = serde_yaml::from_reader(cards_table_file).panic_err_msg("Unable to parse `cards.yaml`");
 
+	// Load the decks table
+	let decks_table_file = std::fs::File::open(input_dir.join("decks.yaml")).panic_err_msg("Unable to open `decks.yaml`");
+	let decks_table: DeckTable = serde_yaml::from_reader(decks_table_file).panic_err_msg("Unable to parse `decks.yaml`");
+
 	// Open the game file
 	let game_file = std::fs::OpenOptions::new()
 		.write(true)
@@ -59,8 +66,9 @@ fn main() {
 		.panic_err_msg("Unable to open game file");
 	let mut game_file = GameFile::from_reader(game_file).panic_err_msg("Unable to initialize game file");
 
-	// And write the cards table
+	// And write everything
 	cards_table.serialize(&mut game_file).panic_err_msg("Unable to serialize cards table");
+	decks_table.serialize(&mut game_file).panic_err_msg("Unable to serialize decks table");
 }
 
 /// Initializes the global logger
