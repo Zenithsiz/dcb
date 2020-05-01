@@ -54,14 +54,15 @@
 	clippy::unreachable,                    // Some code should be unreachable and panic when reached.
 	clippy::integer_arithmetic,             // Come on now, we need to use numbers to program
 	clippy::shadow_same,                    // Useful when taking arguments such as `value: impl AsRef<T>` / `let value = value.as_ref();`
+	clippy::module_inception,               // Sometimes module organization causes this
+	clippy::missing_docs_in_private_items,  // Not all private items are documented on purpose
+	clippy::indexing_slicing,               // False-positives on arrays
+	
 	// TODO: Deal with casts eventually
+	clippy::as_conversions,
 	clippy::cast_possible_wrap,
 	clippy::cast_sign_loss,
 	clippy::cast_possible_truncation,
-	// TODO: Remove these once all modules are ported
-	clippy::missing_docs_in_private_items,
-	clippy::as_conversions,
-	clippy::indexing_slicing,
 )]
 
 // Modules

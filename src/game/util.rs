@@ -17,8 +17,11 @@ pub macro array_split {
 
 		),* $(,)?
 	) => {{
-		#![allow(clippy::used_underscore_binding)]
-		#![allow(clippy::ptr_offset_with_cast   )]
+		#![allow(
+			clippy::used_underscore_binding,
+			clippy::ptr_offset_with_cast,
+			clippy::indexing_slicing,
+		)]
 
 		// Struct holding all fields
 		struct Fields<'a, T> {
@@ -65,8 +68,11 @@ pub macro array_split_mut {
 
 		),* $(,)?
 	) => {{
-		#![allow(clippy::used_underscore_binding)]
-		#![allow(clippy::ptr_offset_with_cast   )]
+		#![allow(
+			clippy::used_underscore_binding,
+			clippy::ptr_offset_with_cast,
+			clippy::indexing_slicing,
+		)]
 
 		// Struct holding all fields
 		struct Fields<'a, T> {

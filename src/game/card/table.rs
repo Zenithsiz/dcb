@@ -137,6 +137,40 @@ pub enum DeserializeError {
 		err: property::card_type::FromBytesError,
 	},
 
+	/// Unable to read a card
+	#[display(fmt = "Unable to read {} with id {}", card_type, id)]
+	ReadCard {
+		id: usize,
+		card_type: CardType,
+
+		#[error(source)]
+		err: std::io::Error,
+	},
+
+	/// Unable to deserialize a digimon card
+	#[display(fmt = "Unable to deserialize digimon card with id {}", id)]
+	DigimonCard {
+		id: usize,
+		#[error(source)]
+		err: card::digimon::FromBytesError,
+	},
+
+	/// Unable to deserialize an item card
+	#[display(fmt = "Unable to deserialize item card with id {}", id)]
+	ItemCard {
+		id: usize,
+		#[error(source)]
+		err: card::item::FromBytesError,
+	},
+
+	/// Unable to deserialize a digivolve card
+	#[display(fmt = "Unable to deserialize digivolve card with id {}", id)]
+	DigivolveCard {
+		id: usize,
+		#[error(source)]
+		err: card::digivolve::FromBytesError,
+	},
+
 	/// Unable to read card footer
 	#[display(fmt = "Unable to read card footer for card id {}", id)]
 	ReadCardFooter {
@@ -175,33 +209,49 @@ pub enum SerializeError {
 		digivolve_cards: usize,
 	},
 
-	/// Unable to write a card
-	#[display(fmt = "Unable to write card with id {}", id)]
-	WriteCard {
+	/// Unable to write a digimon card
+	#[display(fmt = "Unable to write digimon card with id {}", id)]
+	WriteDigimonCard {
 		id: usize,
 		#[error(source)]
 		err: std::io::Error,
 	},
 
-	/// Unable to serialize a digimon card
-	#[display(fmt = "Unable to serialize digimon card with id {}", id)]
-	DigimonCard {
+	/// Unable to write an item card
+	#[display(fmt = "Unable to write item card with id {}", id)]
+	WriteItemCard {
+		id: usize,
+		#[error(source)]
+		err: std::io::Error,
+	},
+
+	/// Unable to write a digivolve card
+	#[display(fmt = "Unable to write digivolve card with id {}", id)]
+	WriteDigivolveCard {
+		id: usize,
+		#[error(source)]
+		err: std::io::Error,
+	},
+
+	/// Unable to parse a digimon card
+	#[display(fmt = "Unable to parse digimon card with id {}", id)]
+	ParseDigimonCard {
 		id: usize,
 		#[error(source)]
 		err: card::digimon::ToBytesError,
 	},
 
-	/// Unable to write an item card
-	#[display(fmt = "Unable to write item card with id {}", id)]
-	ItemCard {
+	/// Unable to parse an item card
+	#[display(fmt = "Unable to parse item card with id {}", id)]
+	ParseItemCard {
 		id: usize,
 		#[error(source)]
 		err: card::item::ToBytesError,
 	},
 
-	/// Unable to write a digivolve card
-	#[display(fmt = "Unable to write digivolve card with id {}", id)]
-	DigivolveCard {
+	/// Unable to parse a digivolve card
+	#[display(fmt = "Unable to parse digivolve card with id {}", id)]
+	ParseDigivolveCard {
 		id: usize,
 		#[error(source)]
 		err: card::digivolve::ToBytesError,
@@ -275,20 +325,23 @@ impl Table {
 			match card_type {
 				CardType::Digimon => {
 					let mut digimon_bytes = [0; std::mem::size_of::<<Digimon as Bytes>::ByteArray>()];
-					file.read_exact(&mut digimon_bytes).expect("Unable to read digimon bytes");
-					let digimon = Digimon::from_bytes(&digimon_bytes).expect("Unable to parse digimon bytes");
+					file.read_exact(&mut digimon_bytes)
+						.map_err(|err| DeserializeError::ReadCard { id: cur_id, card_type, err })?;
+					let digimon = Digimon::from_bytes(&digimon_bytes).map_err(|err| DeserializeError::DigimonCard { id: cur_id, err })?;
 					digimons.push(digimon);
 				},
 				CardType::Item => {
 					let mut item_bytes = [0; std::mem::size_of::<<Item as Bytes>::ByteArray>()];
-					file.read_exact(&mut item_bytes).expect("Unable to read item bytes");
-					let item = Item::from_bytes(&item_bytes).expect("Unable to parse item bytes");
+					file.read_exact(&mut item_bytes)
+						.map_err(|err| DeserializeError::ReadCard { id: cur_id, card_type, err })?;
+					let item = Item::from_bytes(&item_bytes).map_err(|err| DeserializeError::ItemCard { id: cur_id, err })?;
 					items.push(item);
 				},
 				CardType::Digivolve => {
 					let mut digivolve_bytes = [0; std::mem::size_of::<<Digivolve as Bytes>::ByteArray>()];
-					file.read_exact(&mut digivolve_bytes).expect("Unable to read digivolve bytes");
-					let digivolve = Digivolve::from_bytes(&digivolve_bytes).expect("Unable to parse digivolve bytes");
+					file.read_exact(&mut digivolve_bytes)
+						.map_err(|err| DeserializeError::ReadCard { id: cur_id, card_type, err })?;
+					let digivolve = Digivolve::from_bytes(&digivolve_bytes).map_err(|err| DeserializeError::DigivolveCard { id: cur_id, err })?;
 					digivolves.push(digivolve);
 				},
 			}
@@ -372,13 +425,14 @@ impl Table {
 			// Write the digimon
 			digimon
 				.to_bytes(bytes.digimon)
-				.map_err(|err| SerializeError::DigimonCard { id: cur_id, err })?;
+				.map_err(|err| SerializeError::ParseDigimonCard { id: cur_id, err })?;
 
 			// Write the footer
 			*bytes.footer = 0;
 
 			log::debug!("[Card Header] Writing Digimon with id {}", cur_id);
-			file.write_all(&card_bytes).map_err(|err| SerializeError::WriteCard { id: cur_id, err })?;
+			file.write_all(&card_bytes)
+				.map_err(|err| SerializeError::WriteDigimonCard { id: cur_id, err })?;
 		}
 		for (rel_id, item) in self.items.iter().enumerate() {
 			// Current id through the whole table
@@ -398,13 +452,15 @@ impl Table {
 			CardType::Item.to_bytes(bytes.header_type)?;
 
 			// Write the item
-			item.to_bytes(bytes.item).map_err(|err| SerializeError::ItemCard { id: cur_id, err })?;
+			item.to_bytes(bytes.item)
+				.map_err(|err| SerializeError::ParseItemCard { id: cur_id, err })?;
 
 			// Write the footer
 			*bytes.footer = 0;
 
 			log::debug!("[Card Header] Writing Item with id {}", cur_id);
-			file.write_all(&card_bytes).map_err(|err| SerializeError::WriteCard { id: cur_id, err })?;
+			file.write_all(&card_bytes)
+				.map_err(|err| SerializeError::WriteItemCard { id: cur_id, err })?;
 		}
 		for (rel_id, digivolve) in self.digivolves.iter().enumerate() {
 			// Current id through the whole table
@@ -426,13 +482,14 @@ impl Table {
 			// Write the digivolve
 			digivolve
 				.to_bytes(bytes.item)
-				.map_err(|err| SerializeError::DigivolveCard { id: cur_id, err })?;
+				.map_err(|err| SerializeError::ParseDigivolveCard { id: cur_id, err })?;
 
 			// Write the footer
 			*bytes.footer = 0;
 
 			log::debug!("[Card Header] Writing Digivolve with id {}", cur_id);
-			file.write_all(&card_bytes).map_err(|err| SerializeError::WriteCard { id: cur_id, err })?;
+			file.write_all(&card_bytes)
+				.map_err(|err| SerializeError::WriteDigivolveCard { id: cur_id, err })?;
 		}
 
 		// And return Ok
