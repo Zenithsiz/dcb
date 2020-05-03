@@ -12,9 +12,21 @@ path = "src/extractor/main.rs"
 name = "patcher"
 path = "src/patcher/main.rs"
 
+[[bin]]
+name = "card-editor"
+path = "src/card-editor/main.rs"
+
 [dependencies]
 # Dcb
 dcb = { path = "../dcb" }
+
+# Text
+ascii = "1.0"
+strsim = "0.10"
+
+# Helpers
+float-ord = "0.2"
+itertools = "0.9"
 
 # Cmd
 clap = "2.33"
@@ -32,6 +44,16 @@ derive_more   = "0.99"
 
 # Serde
 serde_yaml = "0.8"
+
+# Window / Ui
+gfx = "0.18"
+gfx_device_gl = "0.16"
+gfx_window_glutin = "0.31"
+glutin = "0.21"
+#image = "0.23"
+imgui = "0.3"
+imgui-gfx-renderer = "0.3"
+imgui-winit-support = { version = "0.3", default-features = false, features = ["winit-19"] }
 
 # Build dependencies in release mode
 [profile.dev.package."*"]

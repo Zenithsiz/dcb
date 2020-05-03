@@ -27,6 +27,9 @@
 
 // Modules
 mod cli;
+#[path = "../logger.rs"]
+mod logger;
+#[path = "../panic.rs"]
 mod panic;
 
 // Exports
@@ -39,12 +42,11 @@ use dcb::{
 };
 
 // Errors
-use err_ext::ResultExt;
 use err_panic::ErrorExtPanic;
 
 fn main() {
 	// Initialize the logger and set the panic handler
-	init_logger();
+	logger::init();
 	std::panic::set_hook(box panic::log_handler);
 
 	// Get all data from cli
@@ -69,26 +71,4 @@ fn main() {
 	// And write everything
 	cards_table.serialize(&mut game_file).panic_err_msg("Unable to serialize cards table");
 	decks_table.serialize(&mut game_file).panic_err_msg("Unable to serialize decks table");
-}
-
-/// Initializes the global logger
-fn init_logger() {
-	use log::LevelFilter::{Info, Trace};
-	use simplelog::{CombinedLogger, Config, SharedLogger, TermLogger, TerminalMode, WriteLogger};
-	use std::convert::identity;
-	/// The type of logger required to pass to `CombinedLogger::init`
-	type BoxedLogger = Box<dyn SharedLogger>;
-
-	// All loggers to try and initialize
-	let loggers: Vec<Option<BoxedLogger>> = vec![
-		TermLogger::new(Info, Config::default(), TerminalMode::Mixed).map(|logger| BoxedLogger::from(logger)),
-		std::fs::File::create("latest.log")
-			.ok()
-			.map(|file| WriteLogger::new(Trace, Config::default(), file))
-			.map(|logger| BoxedLogger::from(logger)),
-	];
-
-	// Filter all logger that actually work and initialize them
-	CombinedLogger::init(loggers.into_iter().filter_map(identity).collect())
-		.ignore_with_err(|_| log::warn!("Logger was already initialized at the start of the program"));
 }
