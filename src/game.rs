@@ -23,5 +23,5 @@ pub mod deck;
 
 // Exports
 pub use bytes::Bytes;
-pub use card::{Digimon, Digivolve, Item};
-pub use deck::Deck;
+pub use card::{Digimon, Digivolve, Item, Table as CardTable};
+pub use deck::{Deck, Table as DeckTable};

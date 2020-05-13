@@ -1,5 +1,8 @@
 //! Interface for converting various structures to and from bytes
 
+// Std
+use std::{error::Error, fmt::Debug};
+
 /// Conversions to and from bytes for the game file
 pub trait Bytes
 where
@@ -11,10 +14,10 @@ where
 	type ByteArray: Sized;
 
 	/// The error type used for the operation
-	type FromError: std::fmt::Debug + std::error::Error;
+	type FromError: Debug + Error;
 
 	/// The error type used for the operation
-	type ToError: std::fmt::Debug + std::error::Error;
+	type ToError: Debug + Error;
 
 	/// Constructs this structure from `bytes`
 	fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError>;
