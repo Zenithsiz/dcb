@@ -1,5 +1,11 @@
 //! Interface for converting various structures to and from bytes
 
+// Modules
+pub mod validation;
+
+// Exports
+pub use validation::Validation;
+
 // Std
 use std::{error::Error, fmt::Debug};
 
@@ -24,4 +30,7 @@ where
 
 	/// Writes this structure to `bytes`
 	fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError>;
+
+	/// Validates this structure to be written to bytes.
+	fn validate(&self) -> Validation;
 }

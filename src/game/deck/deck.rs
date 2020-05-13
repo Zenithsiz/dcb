@@ -4,7 +4,7 @@
 use byteorder::{ByteOrder, LittleEndian};
 
 // Crate
-use crate::game::{util, Bytes};
+use crate::game::{bytes::Validation, util, Bytes};
 
 /// A deck
 #[derive(Debug)]
@@ -107,5 +107,9 @@ impl Bytes for Deck {
 
 		// And return Ok
 		Ok(())
+	}
+
+	fn validate(&self) -> Validation {
+		Validation::new()
 	}
 }

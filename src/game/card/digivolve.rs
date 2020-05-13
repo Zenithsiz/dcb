@@ -1,7 +1,7 @@
 #![doc(include = "digivolve.md")]
 
 // Crate
-use crate::game::{util, Bytes};
+use crate::game::{bytes::Validation, util, Bytes};
 
 /// A digivolve card
 ///
@@ -144,5 +144,9 @@ impl Bytes for Digivolve {
 
 		// Return Ok
 		Ok(())
+	}
+
+	fn validate(&self) -> Validation {
+		Validation::new()
 	}
 }

@@ -5,6 +5,7 @@ use byteorder::{ByteOrder, LittleEndian};
 
 // Crate
 use crate::game::{
+	bytes::Validation,
 	card::property::{self, ArrowColor, CrossMoveEffect, Effect, EffectCondition, Level, Move, Speciality},
 	util, Bytes,
 };
@@ -372,5 +373,9 @@ impl Bytes for Digimon {
 
 		// Return Ok
 		Ok(())
+	}
+
+	fn validate(&self) -> Validation {
+		Validation::new()
 	}
 }

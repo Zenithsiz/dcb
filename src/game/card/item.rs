@@ -5,6 +5,7 @@ use byteorder::{ByteOrder, LittleEndian};
 
 // Crate
 use crate::game::{
+	bytes::Validation,
 	card::property::{self, ArrowColor, Effect, EffectCondition},
 	util, Bytes,
 };
@@ -232,5 +233,9 @@ impl Bytes for Item {
 
 		// Return Ok
 		Ok(())
+	}
+
+	fn validate(&self) -> Validation {
+		Validation::new()
 	}
 }

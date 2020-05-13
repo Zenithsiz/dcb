@@ -15,7 +15,7 @@
 use byteorder::{ByteOrder, LittleEndian};
 
 // Crate
-use crate::game::{util, Bytes};
+use crate::game::{bytes::Validation, util, Bytes};
 
 /// A digimon's move
 #[derive(PartialEq, Eq, Clone, Hash, Debug)]
@@ -86,5 +86,9 @@ impl Bytes for Move {
 
 		// And return Ok
 		Ok(())
+	}
+
+	fn validate(&self) -> Validation {
+		Validation::new()
 	}
 }
