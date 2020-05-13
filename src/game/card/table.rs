@@ -33,6 +33,11 @@
 //! | 0x0    | 0x2  | u16          | Card id   | This card's ID                                   |
 //! | 0x2    | 0x1  | [`CardType`] | Card type | The card type ([Digimon], [Item] or [Digivolve]) |
 
+// Lints
+// False positive, we don't use any `unsafe` in impls
+// TODO: Remove this lint once it no longer triggers.
+#![allow(clippy::unsafe_derive_deserialize)]
+
 // Std
 use std::io::{Read, Seek, Write};
 
