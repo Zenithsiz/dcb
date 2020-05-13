@@ -34,6 +34,11 @@ macro_rules! generate_enum_property_mod
 
 						// Variant value
 						$enum_variant_value:literal,
+					)+
+
+					// Extra fields for `Bytes::from_bytes`.
+					$(
+						$from_bytes_value:literal => $from_bytes_body:tt,
 					)*
 
 					// Error
@@ -65,7 +70,7 @@ macro_rules! generate_enum_property_mod
 						#[serde(rename = $enum_variant_rename)]
 						#[display(fmt = $enum_variant_rename)]
 						$enum_variant_name = $enum_variant_value,
-					)*
+					)+
 				}
 
 				/// Error type for [`$crate::game::Bytes::from_bytes`]
@@ -91,6 +96,12 @@ macro_rules! generate_enum_property_mod
 							$(
 								$enum_variant_value =>
 								Ok( <$enum_name>::$enum_variant_name ),
+							)+
+
+							$(
+								$from_bytes_value => {
+									Ok( { $from_bytes_body } )
+								}
 							)*
 
 							&byte => Err( Self::FromError::UnknownValue{ byte } ),
@@ -104,7 +115,7 @@ macro_rules! generate_enum_property_mod
 						*byte = match self {
 							$(
 								<$enum_name>::$enum_variant_name => $enum_variant_value,
-							)*
+							)+
 						};
 
 						Ok(())
@@ -259,7 +270,7 @@ generate_enum_property_mod!(
 	}
 
 	pub mod effect_operation {
-		/// A digimon's support effect operation
+		/// A digimon's effect operation
 		enum EffectOperation
 		{
 			Addition      ("Addition"      ) => 0,
@@ -267,12 +278,12 @@ generate_enum_property_mod!(
 			Multiplication("Multiplication") => 2,
 			Division      ("Division"      ) => 3,
 
-			_ => "Unknown byte 0x{:x} for a support effect operation",
+			_ => "Unknown byte 0x{:x} for a effect operation",
 		}
 	}
 
 	pub mod effect_condition_operation {
-		/// A digimon's support condition operation
+		/// A digimon's effect condition operation
 		///
 		/// # Todo
 		/// These don't seem to be 100% right, the less than property, sometimes does less than number, might be a range check
@@ -285,7 +296,15 @@ generate_enum_property_mod!(
 			DifferentFromNumber("Different from number") => 4,
 			EqualToNumber      ("Equal to number"      ) => 5,
 
-			_ => "Unknown byte 0x{:x} for a support condition operation",
+			// Aquilamon bug in the original game file
+			0xFF => {
+				log::warn!("Found byte 0xFF for effect condition operation. Interpreting as `EqualToNumber`");
+				log::info!("The previous warning should only appear for \"Aquilamon\" in the original game file.");
+				log::info!("Once the file is patched for the first time, this warning should not appear again.");
+				Self::EqualToNumber
+			},
+
+			_ => "Unknown byte 0x{:x} for a effect condition operation",
 		}
 	}
 
