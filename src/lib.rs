@@ -57,7 +57,6 @@
 	clippy::module_inception,               // Sometimes module organization causes this
 	clippy::missing_docs_in_private_items,  // Not all private items are documented on purpose
 	clippy::indexing_slicing,               // False-positives on arrays
-	
 	// TODO: Deal with casts eventually
 	clippy::as_conversions,
 	clippy::cast_possible_wrap,
