@@ -1,22 +1,4 @@
-//! A digimon's effect condition
-//!
-//! This module contains the [`EffectCondition`] struct, which describes a condition for an effect.
-//!
-//! # Layout
-//! Each support condition has a size of `0x20` bytes, and it's layout is the following:
-//!
-//! | Offset | Size | Type                         | Name                      | Location       | Details                                                                            |
-//! |--------|------|------------------------------|---------------------------|--------------- |------------------------------------------------------------------------------------|
-//! | 0x0    | 0x1  | `bool`                       | Misfire                   | `misfire`      | If the condition throws a misfire when false                                       |
-//! | 0x1    | 0x1  | `u8`                         |                           | `unknown_1`    | Always zero                                                                        |
-//! | 0x2    | 0x1  | [`DigimonProperty`]          | Property compare          | `property_cmp` | The property to compare to for the condition (or 0 if the condition doesn't exist) |
-//! | 0x3    | 0x5  | `[u8; 0x5]`                  |                           | `unknown_3`    | Unknown                                                                            |
-//! | 0x8    | 0x1  | `DigimonProperty`            | Property argument         | `arg_property` | Property argument for the comparation                                              |
-//! | 0x9    | 0xb  | `[u8; 0xb]`                  |                           | `unknown_9`    | Unknown                                                                            |
-//! | 0x14   | 0x2  | `u16`                        | Number argument           | `arg_num`      | Number argument for the comparation                                                |
-//! | 0x16   | 0x4  | `[u8; 0x4]`                  |                           | `unknown_16`   | Unknown                                                                            |
-//! | 0x1a   | 0x1  | [`EffectConditionOperation`] | Operation                 | `operation`    | Operation to use for the comparation                                               |
-//! | 0x1b   | 0x5  | `[u8; 0x5]`                  |                           | `unknown_1b`   | Unknown                                                                            |
+#![doc(include = "effect_condition.md")]
 
 // byteorder
 use byteorder::{ByteOrder, LittleEndian};
@@ -47,9 +29,9 @@ pub struct EffectCondition {
 	operation: EffectConditionOperation,
 
 	// Unknown
-	unknown_1: u8,
-	unknown_3: [u8; 0x5],
-	unknown_9: [u8; 0xb],
+	unknown_1:  u8,
+	unknown_3:  [u8; 0x5],
+	unknown_9:  [u8; 0xb],
 	unknown_16: [u8; 0x4],
 	unknown_1b: [u8; 0x5],
 }
@@ -91,7 +73,7 @@ impl Bytes for EffectCondition {
 		);
 
 		Ok(Self {
-			misfire: (*bytes.misfire != 0),
+			misfire:      (*bytes.misfire != 0),
 			property_cmp: DigimonProperty::from_bytes(bytes.property_cmp).map_err(FromBytesError::Condition)?,
 
 			arg_property: Option::<DigimonProperty>::from_bytes(bytes.arg_property).map_err(FromBytesError::PropertyArgument)?,
@@ -100,9 +82,9 @@ impl Bytes for EffectCondition {
 
 			operation: EffectConditionOperation::from_bytes(bytes.operation).map_err(FromBytesError::Operation)?,
 
-			unknown_1: *bytes.unknown_1,
-			unknown_3: *bytes.unknown_3,
-			unknown_9: *bytes.unknown_9,
+			unknown_1:  *bytes.unknown_1,
+			unknown_3:  *bytes.unknown_3,
+			unknown_9:  *bytes.unknown_9,
 			unknown_16: *bytes.unknown_16,
 			unknown_1b: *bytes.unknown_1b,
 		})
@@ -151,7 +133,7 @@ impl Bytes for Option<EffectCondition> {
 	type ToError = <EffectCondition as crate::game::Bytes>::ToError;
 
 	fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError> {
-		// If we have no property comparation, return None
+		// If we have no property comparison, return None
 		if bytes[0x2] == 0 {
 			return Ok(None);
 		}

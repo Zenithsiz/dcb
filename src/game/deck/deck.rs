@@ -93,7 +93,7 @@ impl Bytes for Deck {
 			unknown: [0xc],
 		);
 
-		// Nanme / Owner
+		// Name / Owner
 		util::write_maybe_null_ascii_string(&self.name, bytes.name).map_err(ToBytesError::Name)?;
 		util::write_maybe_null_ascii_string(&self.owner, bytes.owner).map_err(ToBytesError::Owner)?;
 

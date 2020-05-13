@@ -63,8 +63,8 @@ impl Bytes for Move {
 
 		// Return the move
 		Ok(Self {
-			name: util::read_null_ascii_string(bytes.name).map_err(FromBytesError::Name)?.to_ascii_string(),
-			power: LittleEndian::read_u16(bytes.power),
+			name:    util::read_null_ascii_string(bytes.name).map_err(FromBytesError::Name)?.to_ascii_string(),
+			power:   LittleEndian::read_u16(bytes.power),
 			unknown: LittleEndian::read_u32(bytes.unknown),
 		})
 	}

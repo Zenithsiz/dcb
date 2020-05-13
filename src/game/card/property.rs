@@ -27,7 +27,7 @@ macro_rules! generate_enum_property_mod
 						// Note: Must have no data
 						$enum_variant_name:ident
 
-						// `Display` convertion name
+						// `Display` conversion name
 						($enum_variant_rename:literal)
 
 						=>
@@ -121,7 +121,7 @@ macro_rules! generate_enum_property_mod
 /// Implements [`Bytes`](crate::game::Bytes) for `Option<E>` where `E`
 /// is the first argument of this macro and an enum.
 ///
-/// This is done by suppling a sentinel value which is read/written as `None`.
+/// This is done by supplying a sentinel value which is read/written as `None`.
 macro generate_enum_property_option {
 	(
 		$( $enum_name:ty => $sentinel_value:literal ),* $(,)?

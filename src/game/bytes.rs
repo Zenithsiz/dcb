@@ -1,6 +1,6 @@
 //! Interface for converting various structures to and from bytes
 
-/// Convertions to and from bytes for the game file
+/// Conversions to and from bytes for the game file
 pub trait Bytes
 where
 	Self: Sized,

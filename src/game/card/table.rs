@@ -1,42 +1,4 @@
-//! The table of all digimon in the game
-//!
-//! # Details
-//! At address [0x216d000](Table::START_ADDRESS) of the game file, the card table begins
-//! with a small header of `0xb` and then the table itself.
-//!
-//! # Table Layout
-//! The digimon table has a max size of [0x14950](Table::MAX_BYTE_SIZE), but does not
-//! necessary use all of this space, but it does follow this layout:
-//!
-//! | Offset | Size     | Type            | Name                 | Details                                                                 |
-//! |--------|----------|-----------------|----------------------|-------------------------------------------------------------------------|
-//! | 0x0    | 0x4      | u32             | Magic                | Always contains the string "0ACD" (= [0x44434130](Table::HEADER_MAGIC)) |
-//! | 0x4    | 0x2      | u16             | Number of digimon    |                                                                         |
-//! | 0x6    | 0x1      | u8              | Number of items      |                                                                         |
-//! | 0x7    | 0x1      | u8              | Number of digivolves |                                                                         |
-//! | 0x8    | variable | \[`CardEntry`\] | Card Entries         | A contigous array of [Card Entry](#card-entry-layout)                   |
-//!
-//! # Card Entry Layout
-//! Each card entry consists of a header of the card
-//!
-//! | Offset | Size     | Type                                 | Name            | Details                                      |
-//! |--------|----------|--------------------------------------|-----------------|----------------------------------------------|
-//! | 0x0    | 0x3      | [`Card Header`](#card-header-layout) | Card Header     | The card's header                            |
-//! | 0x3    | variable |                                      | Card            | Either a [Digimon], [Item] or [Digivolve]    |
-//! | ...    | 0x1      | u8                                   | Null terminator | A null terminator for the card (must be `0`) |
-//!
-//! # Card Header Layout
-//! The card header determines which type of card this card entry has.
-//!
-//! | Offset | Size | Type         | Name      | Details                                          |
-//! |--------|------|--------------|-----------|--------------------------------------------------|
-//! | 0x0    | 0x2  | u16          | Card id   | This card's ID                                   |
-//! | 0x2    | 0x1  | [`CardType`] | Card type | The card type ([Digimon], [Item] or [Digivolve]) |
-
-// Lints
-// False positive, we don't use any `unsafe` in impls
-// TODO: Remove this lint once it no longer triggers.
-#![allow(clippy::unsafe_derive_deserialize)]
+#![doc(include = "table.md")]
 
 // Std
 use std::io::{Read, Seek, Write};
@@ -121,15 +83,15 @@ pub enum DeserializeError {
 		Table::MAX_BYTE_SIZE
 	)]
 	TooManyCards {
-		digimon_cards: usize,
-		item_cards: usize,
+		digimon_cards:   usize,
+		item_cards:      usize,
 		digivolve_cards: usize,
 	},
 
 	/// Unable to read card header
 	#[display(fmt = "Unable to read card header for card id {}", id)]
 	ReadCardHeader {
-		id: usize,
+		id:  usize,
 		#[error(source)]
 		err: std::io::Error,
 	},
@@ -137,7 +99,7 @@ pub enum DeserializeError {
 	/// An unknown card type was found
 	#[display(fmt = "Unknown card type for card id {}", id)]
 	UnknownCardType {
-		id: usize,
+		id:  usize,
 		#[error(source)]
 		err: property::card_type::FromBytesError,
 	},
@@ -145,7 +107,7 @@ pub enum DeserializeError {
 	/// Unable to read a card
 	#[display(fmt = "Unable to read {} with id {}", card_type, id)]
 	ReadCard {
-		id: usize,
+		id:        usize,
 		card_type: CardType,
 
 		#[error(source)]
@@ -155,7 +117,7 @@ pub enum DeserializeError {
 	/// Unable to deserialize a digimon card
 	#[display(fmt = "Unable to deserialize digimon card with id {}", id)]
 	DigimonCard {
-		id: usize,
+		id:  usize,
 		#[error(source)]
 		err: card::digimon::FromBytesError,
 	},
@@ -163,7 +125,7 @@ pub enum DeserializeError {
 	/// Unable to deserialize an item card
 	#[display(fmt = "Unable to deserialize item card with id {}", id)]
 	ItemCard {
-		id: usize,
+		id:  usize,
 		#[error(source)]
 		err: card::item::FromBytesError,
 	},
@@ -171,7 +133,7 @@ pub enum DeserializeError {
 	/// Unable to deserialize a digivolve card
 	#[display(fmt = "Unable to deserialize digivolve card with id {}", id)]
 	DigivolveCard {
-		id: usize,
+		id:  usize,
 		#[error(source)]
 		err: card::digivolve::FromBytesError,
 	},
@@ -179,7 +141,7 @@ pub enum DeserializeError {
 	/// Unable to read card footer
 	#[display(fmt = "Unable to read card footer for card id {}", id)]
 	ReadCardFooter {
-		id: usize,
+		id:  usize,
 		#[error(source)]
 		err: std::io::Error,
 	},
@@ -209,15 +171,15 @@ pub enum SerializeError {
 		Table::MAX_BYTE_SIZE
 	)]
 	TooManyCards {
-		digimon_cards: usize,
-		item_cards: usize,
+		digimon_cards:   usize,
+		item_cards:      usize,
 		digivolve_cards: usize,
 	},
 
 	/// Unable to write a digimon card
 	#[display(fmt = "Unable to write digimon card with id {}", id)]
 	WriteDigimonCard {
-		id: usize,
+		id:  usize,
 		#[error(source)]
 		err: std::io::Error,
 	},
@@ -225,7 +187,7 @@ pub enum SerializeError {
 	/// Unable to write an item card
 	#[display(fmt = "Unable to write item card with id {}", id)]
 	WriteItemCard {
-		id: usize,
+		id:  usize,
 		#[error(source)]
 		err: std::io::Error,
 	},
@@ -233,7 +195,7 @@ pub enum SerializeError {
 	/// Unable to write a digivolve card
 	#[display(fmt = "Unable to write digivolve card with id {}", id)]
 	WriteDigivolveCard {
-		id: usize,
+		id:  usize,
 		#[error(source)]
 		err: std::io::Error,
 	},
@@ -241,7 +203,7 @@ pub enum SerializeError {
 	/// Unable to parse a digimon card
 	#[display(fmt = "Unable to parse digimon card with id {}", id)]
 	ParseDigimonCard {
-		id: usize,
+		id:  usize,
 		#[error(source)]
 		err: card::digimon::ToBytesError,
 	},
@@ -249,7 +211,7 @@ pub enum SerializeError {
 	/// Unable to parse an item card
 	#[display(fmt = "Unable to parse item card with id {}", id)]
 	ParseItemCard {
-		id: usize,
+		id:  usize,
 		#[error(source)]
 		err: card::item::ToBytesError,
 	},
@@ -257,7 +219,7 @@ pub enum SerializeError {
 	/// Unable to parse a digivolve card
 	#[display(fmt = "Unable to parse digivolve card with id {}", id)]
 	ParseDigivolveCard {
-		id: usize,
+		id:  usize,
 		#[error(source)]
 		err: card::digivolve::ToBytesError,
 	},
@@ -373,8 +335,8 @@ impl Table {
 		// If the total table size is bigger than the max, return Err
 		if table_size > Self::MAX_BYTE_SIZE {
 			return Err(SerializeError::TooManyCards {
-				digimon_cards: self.digimons.len(),
-				item_cards: self.items.len(),
+				digimon_cards:   self.digimons.len(),
+				item_cards:      self.items.len(),
 				digivolve_cards: self.digivolves.len(),
 			});
 		}

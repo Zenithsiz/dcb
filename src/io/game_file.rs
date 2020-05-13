@@ -69,7 +69,7 @@ impl<R: Read + Write + Seek> Read for GameFile<R> {
 		// While the buffer isn't empty
 		while !buf.is_empty() {
 			// Get the current real address we're at in the reader
-			// Note: If we can't get the position, we return immediatly
+			// Note: If we can't get the position, we return immediately
 			let cur_real_address = RealAddress::from(self.reader.stream_position()?);
 
 			// Get the data section end
@@ -77,7 +77,7 @@ impl<R: Read + Write + Seek> Read for GameFile<R> {
 
 			// If we're at the end of the data section, seek to the next data section
 			if cur_real_address == data_section_end {
-				// Seek ahead by skiping the footer and next header
+				// Seek ahead by skipping the footer and next header
 				self.reader.seek(std::io::SeekFrom::Current(
 					(RealAddress::FOOTER_BYTE_SIZE + RealAddress::HEADER_BYTE_SIZE) as i64,
 				))?;
@@ -106,7 +106,7 @@ impl<R: Read + Write + Seek> Read for GameFile<R> {
 			}
 
 			// Read either until the end of the data section or until buffer is full
-			// Note: If any fail, we immediatly return Err
+			// Note: If any fail, we immediately return Err
 			let bytes_read = self.reader.read(&mut buf[0..bytes_to_read])?;
 
 			// If 0 bytes were read, EOF was reached, so return with however many we've read
@@ -137,7 +137,7 @@ impl<R: Read + Write + Seek> Write for GameFile<R> {
 		// While the buffer isn't empty
 		while !buf.is_empty() {
 			// Get the current real address we're at in the reader
-			// Note: If we can't get the position, we return immediatly
+			// Note: If we can't get the position, we return immediately
 			let cur_real_address = RealAddress::from(self.reader.stream_position()?);
 
 			// Get the data section end
@@ -145,7 +145,7 @@ impl<R: Read + Write + Seek> Write for GameFile<R> {
 
 			// If we're at the end of the data section, seek to the next data section
 			if cur_real_address == data_section_end {
-				// Seek ahead by skiping the footer and next header
+				// Seek ahead by skipping the footer and next header
 				self.reader.seek(std::io::SeekFrom::Current(
 					(RealAddress::FOOTER_BYTE_SIZE + RealAddress::HEADER_BYTE_SIZE) as i64,
 				))?;
@@ -174,7 +174,7 @@ impl<R: Read + Write + Seek> Write for GameFile<R> {
 			}
 
 			// Write either until the end of the data section or until buffer runs out
-			// Note: If this fails, we immediatly return Err
+			// Note: If this fails, we immediately return Err
 			let bytes_written = self.reader.write(&buf[0..bytes_to_write])?;
 
 			// If 0 bytes were written, EOF was reached, so return with however many we've read

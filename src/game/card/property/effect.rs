@@ -1,15 +1,4 @@
-//! A digimon's support effect
-//!
-//! This module contains the [`Effect`] struct, which describes a support effect.
-//!
-//! # Layout
-//! Each support effect has a size of `0x10` bytes, and it's general layout is the following:
-//!
-//! | Offset | Size | Type                 | Name                      | Location               | Details                                                |
-//! |--------|------|----------------------|---------------------------|------------------------|--------------------------------------------------------|
-//! | 0x0    | 0x1  | `bool`               | Exists                    | N/A                    | If `0`, the effect does not exist                      |
-//! | 0x1    | 0x1  | N/A                  | Effect Type               | N/A                    | Determines which [`Effect`] variant is used.           |
-//! | 0x2    | 0xe  | N/A                  | Arguments                 | N/A                    | The arguments used for the current [`Effect`] variant. |
+#![doc(include = "effect.md")]
 
 // byteorder
 use byteorder::{ByteOrder, LittleEndian};
@@ -23,13 +12,13 @@ use crate::game::{
 /// A digimon's support effects
 ///
 /// As this type is wildly volatile in which arguments it uses and from where,
-/// it is an `enum` with struct variants instead of a struct. This simplifices argument
+/// it is an `enum` with struct variants instead of a struct. This simplifies argument
 /// verification and, from a language perspective, makes more sense as an implementation.
 #[derive(PartialEq, Eq, Clone, Copy, Hash, Debug)]
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(tag = "type")]
 // TODO: Move this `allow` to the variant once clippy allows
-#[allow(clippy::pub_enum_variant_names)] // `Effect` on `VoidOpponentSupportEffect` isn't refering to the enum
+#[allow(clippy::pub_enum_variant_names)] // `Effect` on `VoidOpponentSupportEffect` isn't referring to the enum
 pub enum Effect {
 	/// Changes a property of either digimon
 	///
@@ -75,10 +64,9 @@ pub enum Effect {
 	/// `<temp slot> = <A> + (<B> <op> <C>)`
 	#[serde(rename = "Set temp slot")]
 	SetTempSlot {
-		a: Option<DigimonProperty>,
-		b: Option<DigimonProperty>,
-		c: Option<DigimonProperty>,
-
+		a:  Option<DigimonProperty>,
+		b:  Option<DigimonProperty>,
+		c:  Option<DigimonProperty>,
 		op: EffectOperation,
 	},
 
@@ -93,11 +81,10 @@ pub enum Effect {
 	/// - `Dp`      -> `Offline`
 	#[serde(rename = "Move cards")]
 	MoveCards {
-		player: PlayerType,
-		source: Slot,
+		player:      PlayerType,
+		source:      Slot,
 		destination: Slot,
-
-		count: u16,
+		count:       u16,
 	},
 
 	/// Shuffles a player's online deck

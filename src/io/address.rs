@@ -39,10 +39,10 @@ impl std::convert::TryFrom<Real> for Data {
 		// The data address is just converting the real_sector
 		// to a data_sector and subtracting the header from the
 		// real offset to get the data offset
+		#[rustfmt::skip]
 		Ok(Self::from(
-			Real::SECTOR_BYTE_SIZE * real_sector +      // Base of data sector
-			real_sector_offset -
-				Real::HEADER_BYTE_SIZE, // Data offset
+			Real::SECTOR_BYTE_SIZE * real_sector +       // Base of data sector
+			real_sector_offset - Real::HEADER_BYTE_SIZE, // Data offset (skipping header)
 		))
 	}
 }
@@ -54,12 +54,13 @@ impl From<Data> for Real {
 		let data_sector = data_address.sector();
 		let data_sector_offset = data_address.offset();
 
-		// Then the real address is just convering the data_sector
+		// Then the real address is just converting the data_sector
 		// to a real_sector and adding the header plus the offset
+		#[rustfmt::skip]
 		Self::from(
 			Self::SECTOR_BYTE_SIZE * data_sector + // Base of real sector
 			Self::HEADER_BYTE_SIZE               + // Skip header
-			data_sector_offset, // Offset inside data sector
+			data_sector_offset,                    // Offset inside data sector
 		)
 	}
 }

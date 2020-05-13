@@ -42,7 +42,7 @@ pub enum DeserializeError {
 	/// Could not read a deck entry
 	#[display(fmt = "Unable to read deck entry with id {}", "id")]
 	ReadDeck {
-		id: usize,
+		id:  usize,
 		#[error(source)]
 		err: std::io::Error,
 	},
@@ -50,7 +50,7 @@ pub enum DeserializeError {
 	/// Could not deserialize a deck entry
 	#[display(fmt = "Unable to serialize deck entry with id {}", "id")]
 	DeserializeDeck {
-		id: usize,
+		id:  usize,
 		#[error(source)]
 		err: deck::FromBytesError,
 	},
@@ -71,7 +71,7 @@ pub enum SerializeError {
 	/// Could not deserialize a deck entry
 	#[display(fmt = "Unable to deserialize deck entry with id {}", "id")]
 	SerializeDeck {
-		id: usize,
+		id:  usize,
 		#[error(source)]
 		err: deck::ToBytesError,
 	},
@@ -79,7 +79,7 @@ pub enum SerializeError {
 	/// Could not write a deck entry
 	#[display(fmt = "Unable to read deck entry with id {}", "id")]
 	WriteDeck {
-		id: usize,
+		id:  usize,
 		#[error(source)]
 		err: std::io::Error,
 	},

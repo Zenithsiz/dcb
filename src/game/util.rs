@@ -3,7 +3,7 @@
 //! This modules is used for miscellaneous macros, functions that have
 //! not been moved to a more permanent location.
 //!
-//! All items in this module will eventually be depracated and moved
+//! All items in this module will eventually be deprecated and moved
 //! somewhere else, but this change might take some time.
 
 pub macro array_split {
@@ -170,7 +170,7 @@ pub fn write_null_ascii_string<'a>(input: &ascii::AsciiStr, buf: &'a mut [u8]) -
 	// If the input string doesn't fit into the buffer (excluding the null byte), return Err
 	if input.len() >= buf.len() {
 		return Err(WriteNullAsciiStringError::TooLarge {
-			input_len: input.len(),
+			input_len:  input.len(),
 			buffer_len: buf.len(),
 		});
 	}
@@ -198,7 +198,7 @@ pub fn write_maybe_null_ascii_string<'a>(input: &ascii::AsciiStr, buf: &'a mut [
 	// If the input string doesn't fit into the buffer, return Err
 	if input.len() > buf.len() {
 		return Err(WriteMaybeNullAsciiStringError::TooLarge {
-			input_len: input.len(),
+			input_len:  input.len(),
 			buffer_len: buf.len(),
 		});
 	}

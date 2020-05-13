@@ -47,6 +47,7 @@ impl Real {
 		let real_sector = self.sector();
 
 		// The end of the real data section is after the header and data sections
+		#[rustfmt::skip]
 		Self::from(
 			Self::SECTOR_BYTE_SIZE * real_sector + // Beginning of sector
 			Self::HEADER_BYTE_SIZE               + // Skip Header

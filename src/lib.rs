@@ -1,10 +1,16 @@
-//! `dcb` is a library for interacting with the game file of `Digimon Digital Card Battle`,
-//! a PSX game.
+//! `dcb` is a library for interacting with the game file of `Digimon Digital Card Battle`.
 //!
 //! # Modules
-//! `dcb` splits itself into 2 main modules, [`io`], which interacts with the game file
-//! as well as general input / output operations and [`game`], where most of  the game's
-//! data types are defined.
+//! `dcb` is split across 2 main modules, [`io`] and [`game`].
+//!
+//! ## Io
+//! The Io module is responsible for interacting with the game file. In the future it may be responsible
+//! for also interacting with the game extracted database, once work on that is complete.
+//!
+//! ## Game
+//! The game module is responsible for representing in-game structures such as cards, sprites, text, and
+//! others. The trait has various interfaces to be able to deserialize these structures from both the game
+//! file, database or even other sources, depending on the structure.
 //!
 //! # Example
 //!
@@ -32,36 +38,65 @@
 	stmt_expr_attributes,
 	unwrap_infallible,
 	const_if_match,
-	exclusive_range_pattern
+	exclusive_range_pattern,
+	external_doc
 )]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]
+// Necessary items may be inlined using `LTO`, so we don't need to mark them as inline
+#![allow(clippy::missing_inline_in_public_items)]
+// We prefer tail returns where possible, as they help with code readability in most cases.
+#![allow(clippy::implicit_return)]
+// Very useful for arguments such as `arg: impl Into<U>`, then used
+// with `let arg = arg.into()`. As well as just going from `Option<T>`
+// to `T` without needing to change their names.
+#![allow(clippy::shadow_reuse, clippy::shadow_same)]
+// We use `.expect("...")` when we either know we cannot panic or it
+// is the safest alternative, as proceeding would corrupt the program state.
+#![allow(clippy::result_expect_used, clippy::option_expect_used)]
+// Like-wise with `.expect()`, we use `unreachable!` when we know a branch
+// if unreachable, and if it ever does get reached, panicking would be the
+// safest option
+#![allow(clippy::unreachable)]
+// We find it more important to be able to copy paste literals such as `0xabcd1234` than
+// being able to read them, which does not provide many benefits
+#![allow(clippy::unreadable_literal, clippy::unseparated_literal_suffix)]
+// We separate implementations per their functionality usually, such as constructors, getters, setters, and others.
+#![allow(clippy::multiple_inherent_impl)]
+// Many operations we need to repeat, and to keep symmetry
+#![allow(clippy::identity_op)]
+// We only introduce items before their first usage, which sometimes is half-way through the code
+#![allow(clippy::items_after_statements)]
+// Useful for when they either change a lot with new variants / data,
+// or for symmetry purposes
+#![allow(clippy::match_same_arms)]
+// In this library we have very grain-level error types, each function
+// will have it's own error type ideally, so any errors are explicit
+// by the type, without needing a section for them
+#![allow(clippy::missing_errors_doc)]
+// Incomplete code should be tagged as `todo`. In future versions of the library,
+// this lint may be removed, as incomplete code should not lie on a master branch.
+#![allow(clippy::todo)]
+// Although we generally try to avoid this, this can happen due to our module organization.
+// In the future, this lint should be removed globally and only enabled for modules which
+// actually require the use of it.
+#![allow(clippy::module_inception)]
+// False positives:
+// TODO: Remove them in the future once they are no longer triggered.
+// We only slice arrays, which are verified at compile time. This
+// lint currently triggers for `&[T; N]`, which we pass around a lot.
+#![allow(clippy::indexing_slicing)]
+// We don't have any `unsafe` impl for types that derive `Deserialize`.
+#![allow(clippy::unsafe_derive_deserialize)]
+// Banning arithmetic is too strict for this project
+#![allow(clippy::integer_arithmetic)]
+// TODO: Remove once fixed
 #![allow(
-	clippy::missing_inline_in_public_items, // Dubious lint
-	clippy::implicit_return,                // We prefer tail returns where possible
-	clippy::shadow_reuse,                   // Very useful for arguments `arg: impl Into<U>; let arg = arg.into()`
-	clippy::if_not_else,                    // Sometimes it's easier to read with a negation
-	clippy::result_expect_used,
-	clippy::option_expect_used,             // We use `.expect` when there is no safe alternative and the program is corrupt
-	clippy::unreadable_literal,             // More important to be able to copy the number with no formatting than it being readable
-	clippy::multiple_inherent_impl,         // We prefer to separate certain methods by type and insert error types in between methods
-	clippy::identity_op,                    // Makes sense sometimes for symmetry
-	clippy::items_after_statements,         // Sometimes we only introduce items when we first use them.
-	clippy::unseparated_literal_suffix,     // We only separate them when they are long
-	clippy::match_same_arms,                // Sometimes we separate them for clarify and order
-	clippy::missing_errors_doc,             // We provide documentation on errors on the error type itself
-	clippy::todo,                           // Code that is incomplete should be tagged as such.
-	clippy::unreachable,                    // Some code should be unreachable and panic when reached.
-	clippy::integer_arithmetic,             // Come on now, we need to use numbers to program
-	clippy::shadow_same,                    // Useful when taking arguments such as `value: impl AsRef<T>` / `let value = value.as_ref();`
-	clippy::module_inception,               // Sometimes module organization causes this
-	clippy::missing_docs_in_private_items,  // Not all private items are documented on purpose
-	clippy::indexing_slicing,               // False-positives on arrays
-	// TODO: Deal with casts eventually
+	clippy::missing_docs_in_private_items,
 	clippy::as_conversions,
 	clippy::cast_possible_wrap,
 	clippy::cast_sign_loss,
-	clippy::cast_possible_truncation,
+	clippy::cast_possible_truncation
 )]
 
 // Modules
