@@ -32,6 +32,7 @@ impl<'a> Default for Validation<'a> {
 	}
 }
 
+// Constructors
 impl<'a> Validation<'a> {
 	/// Create an empty successful validation, with no warnings or errors
 	#[must_use]
@@ -41,5 +42,42 @@ impl<'a> Validation<'a> {
 			warnings: vec![],
 			errors:   vec![],
 		}
+	}
+}
+
+// Adders
+impl<'a> Validation<'a> {
+	/// Adds a new warning to this validation.
+	pub fn add_warning(&mut self, warning: impl Into<Cow<'a, str>>) {
+		self.warnings.push(warning.into());
+	}
+
+	/// Adds a new error to this validation.
+	///
+	/// This also turns the validation unsuccessful.
+	pub fn add_error(&mut self, error: impl Into<Cow<'a, str>>) {
+		self.errors.push(error.into());
+		self.success = false;
+	}
+}
+
+// Getters
+impl<'a> Validation<'a> {
+	/// Returns if this validation was successful
+	#[must_use]
+	pub const fn successful(&self) -> bool {
+		self.success
+	}
+
+	/// Returns all warnings
+	#[must_use]
+	pub fn warnings(&self) -> &[impl AsRef<str> + 'a] {
+		&self.warnings
+	}
+
+	/// Returns all errors
+	#[must_use]
+	pub fn errors(&self) -> &[impl AsRef<str> + 'a] {
+		&self.errors
 	}
 }
