@@ -4,7 +4,7 @@
 use std::borrow::Cow;
 
 
-/// Validation for [`bytes::validate`]
+/// Validation for (`Bytes::validate`)[`crate::Bytes::validate`]
 #[derive(Debug, PartialEq, Clone)]
 pub struct Validation<'a> {
 	/// If the validation was successful.
