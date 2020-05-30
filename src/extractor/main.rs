@@ -27,6 +27,7 @@
 )]
 
 // Modules
+// TODO: `cargo fmt` cannot use this syntax, possibly change it once possible
 mod cli;
 #[path = "../logger.rs"]
 mod logger;
