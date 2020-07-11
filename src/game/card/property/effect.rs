@@ -155,7 +155,7 @@ pub enum FromBytesError {
 	UseAttackAttackType(#[source] property::attack_type::FromBytesError),
 
 	/// Unknown effect type
-	#[error("Unknown byte for an effect type: {}", "byte")]
+	#[error("Unknown byte for an effect type: {}", byte)]
 	EffectType { byte: u8 },
 }
 

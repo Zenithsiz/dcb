@@ -39,7 +39,7 @@ pub enum DeserializeError {
 	ReadHeader(#[source] std::io::Error),
 
 	/// Could not read a deck entry
-	#[error("Unable to read deck entry with id {}", "id")]
+	#[error("Unable to read deck entry with id {}", id)]
 	ReadDeck {
 		id:  usize,
 		#[source]
@@ -47,7 +47,7 @@ pub enum DeserializeError {
 	},
 
 	/// Could not deserialize a deck entry
-	#[error("Unable to serialize deck entry with id {}", "id")]
+	#[error("Unable to serialize deck entry with id {}", id)]
 	DeserializeDeck {
 		id:  usize,
 		#[source]
@@ -67,7 +67,7 @@ pub enum SerializeError {
 	WriteHeader(#[source] std::io::Error),
 
 	/// Could not deserialize a deck entry
-	#[error("Unable to deserialize deck entry with id {}", "id")]
+	#[error("Unable to deserialize deck entry with id {}", id)]
 	SerializeDeck {
 		id:  usize,
 		#[source]
@@ -75,7 +75,7 @@ pub enum SerializeError {
 	},
 
 	/// Could not write a deck entry
-	#[error("Unable to read deck entry with id {}", "id")]
+	#[error("Unable to read deck entry with id {}", id)]
 	WriteDeck {
 		id:  usize,
 		#[source]

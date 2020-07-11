@@ -17,7 +17,7 @@ pub use real::Real;
 #[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
 pub enum RealToDataError {
 	/// Occurs when the Real is outside of the data section of the sector
-	#[error("The real address {} could not be converted to a data address as it is not in the data section", _0)]
+	#[error("The real address {} could not be converted to a data address as it is not in the data section", .0)]
 	OutsideDataSection(Real),
 }
 

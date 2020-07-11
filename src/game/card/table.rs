@@ -73,12 +73,12 @@ pub enum DeserializeError {
 	/// There were too many cards
 	#[error(
 		"Too many cards in table ({} digimon, {} item, {} digivolve, {} / {} bytes max)",
-		"digimon_cards",
-		"item_cards",
-		"digivolve_cards",
-		" digimon_cards * (0x3 + CardType::Digimon  .byte_size() + 0x1) +
+		digimon_cards,
+		item_cards,
+		digivolve_cards,
+		  digimon_cards * (0x3 + CardType::Digimon  .byte_size() + 0x1) +
 		     item_cards * (0x3 + CardType::Item     .byte_size() + 0x1) +
-		digivolve_cards * (0x3 + CardType::Digivolve.byte_size() + 0x1)",
+		digivolve_cards * (0x3 + CardType::Digivolve.byte_size() + 0x1),
 		Table::MAX_BYTE_SIZE
 	)]
 	TooManyCards {
@@ -160,12 +160,12 @@ pub enum SerializeError {
 	/// There were too many cards
 	#[error(
 		"Too many cards in table ({} digimon, {} item, {} digivolve, {} / {} bytes max)",
-		"digimon_cards",
-		"item_cards",
-		"digivolve_cards",
-		" digimon_cards * (0x3 + CardType::Digimon  .byte_size() + 0x1) +
+		digimon_cards,
+		item_cards,
+		digivolve_cards,
+		  digimon_cards * (0x3 + CardType::Digimon  .byte_size() + 0x1) +
 		     item_cards * (0x3 + CardType::Item     .byte_size() + 0x1) +
-		digivolve_cards * (0x3 + CardType::Digivolve.byte_size() + 0x1)",
+		digivolve_cards * (0x3 + CardType::Digivolve.byte_size() + 0x1),
 		Table::MAX_BYTE_SIZE
 	)]
 	TooManyCards {

@@ -29,7 +29,7 @@ pub macro array_split {
 				$name:
 
 				$( &'a [T; $arr_size], )?
-				$( &'a T, #[cfg(os = "Os that does not exist")] __field: [u8; $val_size], )?
+				$( &'a T, #[cfg(invalid)] __field: [u8; $val_size], )?
 			)*
 		}
 
@@ -80,7 +80,7 @@ pub macro array_split_mut {
 				$name:
 
 				$( &'a mut [T; $arr_size], )?
-				$( &'a mut T, #[cfg(os = "Os that does not exist")] __field: [u8; $val_size], )?
+				$( &'a mut T, #[cfg(invalid)] __field: [u8; $val_size], )?
 			)*
 		}
 
@@ -158,7 +158,7 @@ pub fn read_maybe_null_ascii_string(buf: &impl AsRef<[u8]>) -> Result<&ascii::As
 #[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
 pub enum WriteNullAsciiStringError {
 	/// The input string was too large
-	#[error("Input string was too large for buffer. ({}+1 / {})", "input_len", "buffer_len")]
+	#[error("Input string was too large for buffer. ({}+1 / {})", input_len, buffer_len)]
 	TooLarge { input_len: usize, buffer_len: usize },
 }
 
@@ -185,7 +185,7 @@ pub fn write_null_ascii_string<'a>(input: &ascii::AsciiStr, buf: &'a mut [u8]) -
 #[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
 pub enum WriteMaybeNullAsciiStringError {
 	/// The input string was too large
-	#[error("Input string was too large for buffer. ({} / {})", "input_len", "buffer_len")]
+	#[error("Input string was too large for buffer. ({} / {})", input_len, buffer_len)]
 	TooLarge { input_len: usize, buffer_len: usize },
 }
 
