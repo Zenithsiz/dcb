@@ -14,11 +14,10 @@ pub use data::Data;
 pub use real::Real;
 
 /// Error type for `TryFrom<Real> for Data`
-#[derive(Debug)]
-#[derive(derive_more::Display, err_impl::Error)]
+#[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
 pub enum RealToDataError {
 	/// Occurs when the Real is outside of the data section of the sector
-	#[display(fmt = "The real address {} could not be converted to a data address as it is not in the data section", _0)]
+	#[error("The real address {} could not be converted to a data address as it is not in the data section", _0)]
 	OutsideDataSection(Real),
 }
 

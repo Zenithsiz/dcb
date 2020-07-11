@@ -132,41 +132,39 @@ pub enum Effect {
 }
 
 /// Error type for [`Bytes::from_bytes`]
-#[derive(Debug)]
-#[derive(derive_more::Display, err_impl::Error)]
+#[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
 pub enum FromBytesError {
 	/// Unknown property for first property argument
-	#[display(fmt = "Unknown property for first property argument")]
-	FirstProperty(#[error(source)] property::digimon_property::FromBytesError),
+	#[error("Unknown property for first property argument")]
+	FirstProperty(#[source] property::digimon_property::FromBytesError),
 
 	/// Unknown property for second property argument
-	#[display(fmt = "Unknown property for second property argument")]
-	SecondProperty(#[error(source)] property::digimon_property::FromBytesError),
+	#[error("Unknown property for second property argument")]
+	SecondProperty(#[source] property::digimon_property::FromBytesError),
 
 	/// Unknown property for third property argument
-	#[display(fmt = "Unknown property for third property argument")]
-	ThirdProperty(#[error(source)] property::digimon_property::FromBytesError),
+	#[error("Unknown property for third property argument")]
+	ThirdProperty(#[source] property::digimon_property::FromBytesError),
 
 	/// Unknown operation argument
-	#[display(fmt = "Unknown operation argument")]
-	Operation(#[error(source)] property::effect_operation::FromBytesError),
+	#[error("Unknown operation argument")]
+	Operation(#[source] property::effect_operation::FromBytesError),
 
 	/// Unknown attack type for [`Effect::UseAttack`]
-	#[display(fmt = "Unknown attack type")]
-	UseAttackAttackType(#[error(source)] property::attack_type::FromBytesError),
+	#[error("Unknown attack type")]
+	UseAttackAttackType(#[source] property::attack_type::FromBytesError),
 
 	/// Unknown effect type
-	#[display(fmt = "Unknown byte for an effect type: {}", "byte")]
+	#[error("Unknown byte for an effect type: {}", "byte")]
 	EffectType { byte: u8 },
 }
 
 /// Error type for [`Bytes::from_bytes`]
-#[derive(Debug)]
-#[derive(derive_more::Display, err_impl::Error)]
+#[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
 pub enum ToBytesError {
 	/// Invalid move [`Effect::MoveCards`] effect
-	#[display(fmt = "Invalid move cards effect ({} => {})", source, destination)]
-	InvalidMoveCards { source: Slot, destination: Slot },
+	#[error("Invalid move cards effect ({} => {})", from, to)]
+	InvalidMoveCards { from: Slot, to: Slot },
 }
 
 impl Bytes for Effect {
@@ -381,7 +379,7 @@ impl Bytes for Effect {
 					(Player  , DpSlot, OfflineDeck) => 36,
 					(Opponent, DpSlot, OfflineDeck) => 37,
 
-					(_, &source, &destination) => return Err( ToBytesError::InvalidMoveCards { source, destination } ),
+					(_, &from, &to) => return Err( ToBytesError::InvalidMoveCards { from, to } ),
 				};
 				LittleEndian::write_u16(bytes.y, *count);
 			}

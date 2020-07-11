@@ -74,12 +74,11 @@ macro_rules! generate_enum_property_mod
 				}
 
 				/// Error type for [`$crate::game::Bytes::from_bytes`]
-				#[derive(Debug)]
-				#[derive(::derive_more::Display, ::err_impl::Error)]
+				#[derive(PartialEq, Eq, Clone, Copy, ::std::fmt::Debug, ::thiserror::Error)]
 				pub enum FromBytesError {
 
 					/// Unknown value
-					#[display(fmt = $error_unknown_value_display, "byte")]
+					#[error($error_unknown_value_display, byte)]
 					UnknownValue {
 						byte: u8,
 					}

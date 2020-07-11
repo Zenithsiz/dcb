@@ -38,20 +38,19 @@ pub struct EffectCondition {
 }
 
 /// The error type thrown by `FromBytes`
-#[derive(Debug)]
-#[derive(derive_more::Display, err_impl::Error)]
+#[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
 pub enum FromBytesError {
 	/// Unable to read the condition
-	#[display(fmt = "Unable to read the effect condition")]
-	Condition(#[error(source)] property::digimon_property::FromBytesError),
+	#[error("Unable to read the effect condition")]
+	Condition(#[source] property::digimon_property::FromBytesError),
 
 	/// Unable to read a property argument
-	#[display(fmt = "Unable to read the property argument")]
-	PropertyArgument(#[error(source)] property::digimon_property::FromBytesError),
+	#[error("Unable to read the property argument")]
+	PropertyArgument(#[source] property::digimon_property::FromBytesError),
 
 	/// Unable to read the effect operation
-	#[display(fmt = "Unable to read the effect operation")]
-	Operation(#[error(source)] property::effect_condition_operation::FromBytesError),
+	#[error("Unable to read the effect operation")]
+	Operation(#[source] property::effect_condition_operation::FromBytesError),
 }
 
 impl Bytes for EffectCondition {

@@ -28,59 +28,57 @@ impl Table {
 }
 
 /// Error type for [`Table::deserialize`]
-#[derive(Debug)]
-#[derive(derive_more::Display, err_impl::Error)]
+#[derive(Debug, thiserror::Error)]
 pub enum DeserializeError {
 	/// Unable to seek game file
-	#[display(fmt = "Unable to seek game file to card table")]
-	Seek(#[error(source)] std::io::Error),
+	#[error("Unable to seek game file to card table")]
+	Seek(#[source] std::io::Error),
 
 	/// Unable to read table header
-	#[display(fmt = "Unable to read table header")]
-	ReadHeader(#[error(source)] std::io::Error),
+	#[error("Unable to read table header")]
+	ReadHeader(#[source] std::io::Error),
 
 	/// Could not read a deck entry
-	#[display(fmt = "Unable to read deck entry with id {}", "id")]
+	#[error("Unable to read deck entry with id {}", "id")]
 	ReadDeck {
 		id:  usize,
-		#[error(source)]
+		#[source]
 		err: std::io::Error,
 	},
 
 	/// Could not deserialize a deck entry
-	#[display(fmt = "Unable to serialize deck entry with id {}", "id")]
+	#[error("Unable to serialize deck entry with id {}", "id")]
 	DeserializeDeck {
 		id:  usize,
-		#[error(source)]
+		#[source]
 		err: deck::FromBytesError,
 	},
 }
 
 /// Error type for [`Table::serialize`]
-#[derive(Debug)]
-#[derive(derive_more::Display, err_impl::Error)]
+#[derive(Debug, thiserror::Error)]
 pub enum SerializeError {
 	/// Unable to seek game file
-	#[display(fmt = "Unable to seek game file to card table")]
-	Seek(#[error(source)] std::io::Error),
+	#[error("Unable to seek game file to card table")]
+	Seek(#[source] std::io::Error),
 
 	/// Unable to read table header
-	#[display(fmt = "Unable to read table header")]
-	WriteHeader(#[error(source)] std::io::Error),
+	#[error("Unable to read table header")]
+	WriteHeader(#[source] std::io::Error),
 
 	/// Could not deserialize a deck entry
-	#[display(fmt = "Unable to deserialize deck entry with id {}", "id")]
+	#[error("Unable to deserialize deck entry with id {}", "id")]
 	SerializeDeck {
 		id:  usize,
-		#[error(source)]
+		#[source]
 		err: deck::ToBytesError,
 	},
 
 	/// Could not write a deck entry
-	#[display(fmt = "Unable to read deck entry with id {}", "id")]
+	#[error("Unable to read deck entry with id {}", "id")]
 	WriteDeck {
 		id:  usize,
-		#[error(source)]
+		#[source]
 		err: std::io::Error,
 	},
 }

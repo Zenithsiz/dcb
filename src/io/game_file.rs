@@ -34,12 +34,11 @@ pub struct GameFile<R: Read + Write + Seek> {
 }
 
 /// Error type for [`GameFile::from_reader`]
-#[derive(Debug)]
-#[derive(derive_more::Display, err_impl::Error)]
+#[derive(Debug, thiserror::Error)]
 pub enum NewGameFileError {
 	/// Unable to seek reader to data section
-	#[display(fmt = "Unable to seek reader to data section")]
-	SeekData(#[error(source)] std::io::Error),
+	#[error("Unable to seek reader to data section")]
+	SeekData(#[source] std::io::Error),
 }
 
 // Constructors
@@ -197,10 +196,9 @@ impl<R: Read + Write + Seek> Write for GameFile<R> {
 
 /// Error type for `Seek for GameFile`.
 /// Returned when, after seeking, we ended up in a non-data section
-#[derive(Debug)]
-#[derive(derive_more::Display, err_impl::Error)]
-#[display(fmt = "Reader seeked into a non-data section")]
-pub struct SeekNonDataError(#[error(source)] RealToDataError);
+#[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
+#[error("Reader seeked into a non-data section")]
+pub struct SeekNonDataError(#[source] RealToDataError);
 
 impl<R: Read + Write + Seek> Seek for GameFile<R> {
 	fn seek(&mut self, data_pos: std::io::SeekFrom) -> std::io::Result<u64> {

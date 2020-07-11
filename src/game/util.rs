@@ -109,16 +109,15 @@ pub macro array_split_mut {
 }
 
 /// Error type for [`read_null_ascii_string`]
-#[derive(Debug)]
-#[derive(derive_more::Display, err_impl::Error)]
+#[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
 pub enum ReadNullAsciiStringError {
 	/// No null was found in the string
-	#[display(fmt = "No null was found on the buffer")]
+	#[error("No null was found on the buffer")]
 	NoNull,
 
 	/// The string was not ascii
-	#[display(fmt = "The buffer did not contain valid Ascii")]
-	NotAscii(#[error(source)] ascii::AsAsciiStrError),
+	#[error("The buffer did not contain valid Ascii")]
+	NotAscii(#[source] ascii::AsAsciiStrError),
 }
 
 /// Reads a null-terminated ascii string from a buffer.
@@ -135,12 +134,11 @@ pub fn read_null_ascii_string(buf: &impl AsRef<[u8]>) -> Result<&ascii::AsciiStr
 }
 
 /// Error type for [`read_maybe_null_ascii_string`]
-#[derive(Debug)]
-#[derive(derive_more::Display, err_impl::Error)]
+#[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
 pub enum ReadMaybeNullAsciiStringError {
 	/// The string was not ascii
-	#[display(fmt = "The buffer did not contain valid Ascii")]
-	NotAscii(#[error(source)] ascii::AsAsciiStrError),
+	#[error("The buffer did not contain valid Ascii")]
+	NotAscii(#[source] ascii::AsAsciiStrError),
 }
 
 /// Reads a possibly null-terminated ascii string from a buffer.
@@ -157,11 +155,10 @@ pub fn read_maybe_null_ascii_string(buf: &impl AsRef<[u8]>) -> Result<&ascii::As
 }
 
 /// Error type for [`write_null_ascii_string`]
-#[derive(Debug)]
-#[derive(derive_more::Display, err_impl::Error)]
+#[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
 pub enum WriteNullAsciiStringError {
 	/// The input string was too large
-	#[display(fmt = "Input string was too large for buffer. ({}+1 / {})", "input_len", "buffer_len")]
+	#[error("Input string was too large for buffer. ({}+1 / {})", "input_len", "buffer_len")]
 	TooLarge { input_len: usize, buffer_len: usize },
 }
 
@@ -185,11 +182,10 @@ pub fn write_null_ascii_string<'a>(input: &ascii::AsciiStr, buf: &'a mut [u8]) -
 }
 
 /// Error type for [`write_maybe_null_ascii_string`]
-#[derive(Debug)]
-#[derive(derive_more::Display, err_impl::Error)]
+#[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
 pub enum WriteMaybeNullAsciiStringError {
 	/// The input string was too large
-	#[display(fmt = "Input string was too large for buffer. ({} / {})", "input_len", "buffer_len")]
+	#[error("Input string was too large for buffer. ({} / {})", "input_len", "buffer_len")]
 	TooLarge { input_len: usize, buffer_len: usize },
 }
 

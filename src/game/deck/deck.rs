@@ -24,27 +24,27 @@ pub struct Deck {
 }
 
 /// Error type for [`Bytes::from_bytes`]
-#[derive(Debug, derive_more::Display, err_impl::Error)]
+#[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
 pub enum FromBytesError {
 	/// Unable to read the deck name
-	#[display(fmt = "Unable to read the deck name")]
-	Name(#[error(source)] util::ReadMaybeNullAsciiStringError),
+	#[error("Unable to read the deck name")]
+	Name(#[source] util::ReadMaybeNullAsciiStringError),
 
 	/// Unable to read the deck owner
-	#[display(fmt = "Unable to read the deck owner")]
-	Owner(#[error(source)] util::ReadMaybeNullAsciiStringError),
+	#[error("Unable to read the deck owner")]
+	Owner(#[source] util::ReadMaybeNullAsciiStringError),
 }
 
 /// Error type for [`Bytes::to_bytes`]
-#[derive(Debug, derive_more::Display, err_impl::Error)]
+#[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
 pub enum ToBytesError {
 	/// Unable to write the deck name
-	#[display(fmt = "Unable to write the deck name")]
-	Name(#[error(source)] util::WriteMaybeNullAsciiStringError),
+	#[error("Unable to write the deck name")]
+	Name(#[source] util::WriteMaybeNullAsciiStringError),
 
 	/// Unable to write the deck owner
-	#[display(fmt = "Unable to write the deck owner")]
-	Owner(#[error(source)] util::WriteMaybeNullAsciiStringError),
+	#[error("Unable to write the deck owner")]
+	Owner(#[source] util::WriteMaybeNullAsciiStringError),
 }
 
 impl Bytes for Deck {

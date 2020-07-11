@@ -56,24 +56,23 @@ impl Table {
 }
 
 /// Error type for [`Table::deserialize`]
-#[derive(Debug)]
-#[derive(derive_more::Display, err_impl::Error)]
+#[derive(Debug, thiserror::Error)]
 pub enum DeserializeError {
 	/// Unable to seek game file
-	#[display(fmt = "Unable to seek game file to card table")]
-	Seek(#[error(source)] std::io::Error),
+	#[error("Unable to seek game file to card table")]
+	Seek(#[source] std::io::Error),
 
 	/// Unable to read table header
-	#[display(fmt = "Unable to read table header")]
-	ReadHeader(#[error(source)] std::io::Error),
+	#[error("Unable to read table header")]
+	ReadHeader(#[source] std::io::Error),
 
 	/// The magic of the table was wrong
-	#[display(fmt = "Found wrong table header magic (expected {:x}, found {:x})", Table::HEADER_MAGIC, "magic")]
+	#[error("Found wrong table header magic (expected {:x}, found {:x})", Table::HEADER_MAGIC, magic)]
 	HeaderMagic { magic: u32 },
 
 	/// There were too many cards
-	#[display(
-		fmt = "Too many cards in table ({} digimon, {} item, {} digivolve, {} / {} bytes max)",
+	#[error(
+		"Too many cards in table ({} digimon, {} item, {} digivolve, {} / {} bytes max)",
 		"digimon_cards",
 		"item_cards",
 		"digivolve_cards",
@@ -89,79 +88,78 @@ pub enum DeserializeError {
 	},
 
 	/// Unable to read card header
-	#[display(fmt = "Unable to read card header for card id {}", id)]
+	#[error("Unable to read card header for card id {}", id)]
 	ReadCardHeader {
 		id:  usize,
-		#[error(source)]
+		#[source]
 		err: std::io::Error,
 	},
 
 	/// An unknown card type was found
-	#[display(fmt = "Unknown card type for card id {}", id)]
+	#[error("Unknown card type for card id {}", id)]
 	UnknownCardType {
 		id:  usize,
-		#[error(source)]
+		#[source]
 		err: property::card_type::FromBytesError,
 	},
 
 	/// Unable to read a card
-	#[display(fmt = "Unable to read {} with id {}", card_type, id)]
+	#[error("Unable to read {} with id {}", card_type, id)]
 	ReadCard {
 		id:        usize,
 		card_type: CardType,
 
-		#[error(source)]
+		#[source]
 		err: std::io::Error,
 	},
 
 	/// Unable to deserialize a digimon card
-	#[display(fmt = "Unable to deserialize digimon card with id {}", id)]
+	#[error("Unable to deserialize digimon card with id {}", id)]
 	DigimonCard {
 		id:  usize,
-		#[error(source)]
+		#[source]
 		err: card::digimon::FromBytesError,
 	},
 
 	/// Unable to deserialize an item card
-	#[display(fmt = "Unable to deserialize item card with id {}", id)]
+	#[error("Unable to deserialize item card with id {}", id)]
 	ItemCard {
 		id:  usize,
-		#[error(source)]
+		#[source]
 		err: card::item::FromBytesError,
 	},
 
 	/// Unable to deserialize a digivolve card
-	#[display(fmt = "Unable to deserialize digivolve card with id {}", id)]
+	#[error("Unable to deserialize digivolve card with id {}", id)]
 	DigivolveCard {
 		id:  usize,
-		#[error(source)]
+		#[source]
 		err: card::digivolve::FromBytesError,
 	},
 
 	/// Unable to read card footer
-	#[display(fmt = "Unable to read card footer for card id {}", id)]
+	#[error("Unable to read card footer for card id {}", id)]
 	ReadCardFooter {
 		id:  usize,
-		#[error(source)]
+		#[source]
 		err: std::io::Error,
 	},
 }
 
 /// Error type for [`Table::serialize`]
-#[derive(Debug)]
-#[derive(derive_more::Display, err_impl::Error)]
+#[derive(Debug, thiserror::Error)]
 pub enum SerializeError {
 	/// Unable to seek game file
-	#[display(fmt = "Unable to seek game file to card table")]
-	Seek(#[error(source)] std::io::Error),
+	#[error("Unable to seek game file to card table")]
+	Seek(#[source] std::io::Error),
 
 	/// Unable to write table header
-	#[display(fmt = "Unable to write table header")]
-	WriteHeader(#[error(source)] std::io::Error),
+	#[error("Unable to write table header")]
+	WriteHeader(#[source] std::io::Error),
 
 	/// There were too many cards
-	#[display(
-		fmt = "Too many cards in table ({} digimon, {} item, {} digivolve, {} / {} bytes max)",
+	#[error(
+		"Too many cards in table ({} digimon, {} item, {} digivolve, {} / {} bytes max)",
 		"digimon_cards",
 		"item_cards",
 		"digivolve_cards",
@@ -177,50 +175,50 @@ pub enum SerializeError {
 	},
 
 	/// Unable to write a digimon card
-	#[display(fmt = "Unable to write digimon card with id {}", id)]
+	#[error("Unable to write digimon card with id {}", id)]
 	WriteDigimonCard {
 		id:  usize,
-		#[error(source)]
+		#[source]
 		err: std::io::Error,
 	},
 
 	/// Unable to write an item card
-	#[display(fmt = "Unable to write item card with id {}", id)]
+	#[error("Unable to write item card with id {}", id)]
 	WriteItemCard {
 		id:  usize,
-		#[error(source)]
+		#[source]
 		err: std::io::Error,
 	},
 
 	/// Unable to write a digivolve card
-	#[display(fmt = "Unable to write digivolve card with id {}", id)]
+	#[error("Unable to write digivolve card with id {}", id)]
 	WriteDigivolveCard {
 		id:  usize,
-		#[error(source)]
+		#[source]
 		err: std::io::Error,
 	},
 
 	/// Unable to parse a digimon card
-	#[display(fmt = "Unable to parse digimon card with id {}", id)]
+	#[error("Unable to parse digimon card with id {}", id)]
 	ParseDigimonCard {
 		id:  usize,
-		#[error(source)]
+		#[source]
 		err: card::digimon::ToBytesError,
 	},
 
 	/// Unable to parse an item card
-	#[display(fmt = "Unable to parse item card with id {}", id)]
+	#[error("Unable to parse item card with id {}", id)]
 	ParseItemCard {
 		id:  usize,
-		#[error(source)]
+		#[source]
 		err: card::item::ToBytesError,
 	},
 
 	/// Unable to parse a digivolve card
-	#[display(fmt = "Unable to parse digivolve card with id {}", id)]
+	#[error("Unable to parse digivolve card with id {}", id)]
 	ParseDigivolveCard {
 		id:  usize,
-		#[error(source)]
+		#[source]
 		err: card::digivolve::ToBytesError,
 	},
 }

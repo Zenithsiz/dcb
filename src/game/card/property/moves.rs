@@ -25,19 +25,19 @@ pub struct Move {
 }
 
 /// Error type for [`Bytes::from_bytes`]
-#[derive(Debug, derive_more::Display, err_impl::Error)]
+#[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
 pub enum FromBytesError {
 	/// Unable to read the move name
-	#[display(fmt = "Unable to read the move name")]
-	Name(#[error(source)] util::ReadNullAsciiStringError),
+	#[error("Unable to read the move name")]
+	Name(#[source] util::ReadNullAsciiStringError),
 }
 
 /// Error type for [`Bytes::to_bytes`]
-#[derive(Debug, derive_more::Display, err_impl::Error)]
+#[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
 pub enum ToBytesError {
 	/// Unable to write the move name
-	#[display(fmt = "Unable to write the move name")]
-	Name(#[error(source)] util::WriteNullAsciiStringError),
+	#[error("Unable to write the move name")]
+	Name(#[source] util::WriteNullAsciiStringError),
 }
 
 // Bytes

@@ -44,89 +44,87 @@ pub struct Item {
 }
 
 /// Error type for [`Bytes::from_bytes`]
-#[derive(Debug)]
-#[derive(derive_more::Display, err_impl::Error)]
+#[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
 pub enum FromBytesError {
 	/// Unable to read the digimon name
-	#[display(fmt = "Unable to read the digimon name")]
-	Name(#[error(source)] util::ReadNullAsciiStringError),
+	#[error("Unable to read the digimon name")]
+	Name(#[source] util::ReadNullAsciiStringError),
 
 	/// Unable to read the first support effect description
-	#[display(fmt = "Unable to read the first line of the effect description")]
-	EffectDescriptionFirst(#[error(source)] util::ReadNullAsciiStringError),
+	#[error("Unable to read the first line of the effect description")]
+	EffectDescriptionFirst(#[source] util::ReadNullAsciiStringError),
 
 	/// Unable to read the second support effect description
-	#[display(fmt = "Unable to read the second line of the effect description")]
-	EffectDescriptionSecond(#[error(source)] util::ReadNullAsciiStringError),
+	#[error("Unable to read the second line of the effect description")]
+	EffectDescriptionSecond(#[source] util::ReadNullAsciiStringError),
 
 	/// Unable to read the third support effect description
-	#[display(fmt = "Unable to read the third line of the effect description")]
-	EffectDescriptionThird(#[error(source)] util::ReadNullAsciiStringError),
+	#[error("Unable to read the third line of the effect description")]
+	EffectDescriptionThird(#[source] util::ReadNullAsciiStringError),
 
 	/// Unable to read the fourth support effect description
-	#[display(fmt = "Unable to read the fourth line of the effect description")]
-	EffectDescriptionFourth(#[error(source)] util::ReadNullAsciiStringError),
+	#[error("Unable to read the fourth line of the effect description")]
+	EffectDescriptionFourth(#[source] util::ReadNullAsciiStringError),
 
 	/// An unknown effect arrow color was found
-	#[display(fmt = "Unknown effect arrow color found")]
-	ArrowColor(#[error(source)] property::arrow_color::FromBytesError),
+	#[error("Unknown effect arrow color found")]
+	ArrowColor(#[source] property::arrow_color::FromBytesError),
 
 	/// Unable to read the first effect condition
-	#[display(fmt = "Unable to read the first effect condition")]
-	EffectConditionFirst(#[error(source)] property::effect_condition::FromBytesError),
+	#[error("Unable to read the first effect condition")]
+	EffectConditionFirst(#[source] property::effect_condition::FromBytesError),
 
 	/// Unable to read the second effect condition
-	#[display(fmt = "Unable to read the second effect condition")]
-	EffectConditionSecond(#[error(source)] property::effect_condition::FromBytesError),
+	#[error("Unable to read the second effect condition")]
+	EffectConditionSecond(#[source] property::effect_condition::FromBytesError),
 
 	/// Unable to read the first effect
-	#[display(fmt = "Unable to read the first effect")]
-	EffectFirst(#[error(source)] property::effect::FromBytesError),
+	#[error("Unable to read the first effect")]
+	EffectFirst(#[source] property::effect::FromBytesError),
 
 	/// Unable to read the second effect
-	#[display(fmt = "Unable to read the second effect")]
-	EffectSecond(#[error(source)] property::effect::FromBytesError),
+	#[error("Unable to read the second effect")]
+	EffectSecond(#[source] property::effect::FromBytesError),
 
 	/// Unable to read the third effect
-	#[display(fmt = "Unable to read the third effect")]
-	EffectThird(#[error(source)] property::effect::FromBytesError),
+	#[error("Unable to read the third effect")]
+	EffectThird(#[source] property::effect::FromBytesError),
 }
 
 /// Error type for [`Bytes::to_bytes`]
-#[derive(Debug)]
-#[derive(derive_more::Display, err_impl::Error)]
+#[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
 pub enum ToBytesError {
 	/// Unable to write the digimon name
-	#[display(fmt = "Unable to write the digimon name")]
-	Name(#[error(source)] util::WriteNullAsciiStringError),
+	#[error("Unable to write the digimon name")]
+	Name(#[source] util::WriteNullAsciiStringError),
 
 	/// Unable to write the first support effect description
-	#[display(fmt = "Unable to write the first line of the effect description")]
-	EffectDescriptionFirst(#[error(source)] util::WriteNullAsciiStringError),
+	#[error("Unable to write the first line of the effect description")]
+	EffectDescriptionFirst(#[source] util::WriteNullAsciiStringError),
 
 	/// Unable to write the second support effect description
-	#[display(fmt = "Unable to write the second line of the effect description")]
-	EffectDescriptionSecond(#[error(source)] util::WriteNullAsciiStringError),
+	#[error("Unable to write the second line of the effect description")]
+	EffectDescriptionSecond(#[source] util::WriteNullAsciiStringError),
 
 	/// Unable to write the third support effect description
-	#[display(fmt = "Unable to write the third line of the effect description")]
-	EffectDescriptionThird(#[error(source)] util::WriteNullAsciiStringError),
+	#[error("Unable to write the third line of the effect description")]
+	EffectDescriptionThird(#[source] util::WriteNullAsciiStringError),
 
 	/// Unable to write the fourth support effect description
-	#[display(fmt = "Unable to write the fourth line of the effect description")]
-	EffectDescriptionFourth(#[error(source)] util::WriteNullAsciiStringError),
+	#[error("Unable to write the fourth line of the effect description")]
+	EffectDescriptionFourth(#[source] util::WriteNullAsciiStringError),
 
 	/// Unable to write the first effect
-	#[display(fmt = "Unable to write the first effect")]
-	EffectFirst(#[error(source)] property::effect::ToBytesError),
+	#[error("Unable to write the first effect")]
+	EffectFirst(#[source] property::effect::ToBytesError),
 
 	/// Unable to write the second effect
-	#[display(fmt = "Unable to write the second effect")]
-	EffectSecond(#[error(source)] property::effect::ToBytesError),
+	#[error("Unable to write the second effect")]
+	EffectSecond(#[source] property::effect::ToBytesError),
 
 	/// Unable to write the third effect
-	#[display(fmt = "Unable to write the third effect")]
-	EffectThird(#[error(source)] property::effect::ToBytesError),
+	#[error("Unable to write the third effect")]
+	EffectThird(#[source] property::effect::ToBytesError),
 }
 
 impl Bytes for Item {

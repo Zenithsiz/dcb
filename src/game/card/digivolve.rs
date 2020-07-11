@@ -25,53 +25,51 @@ pub struct Digivolve {
 }
 
 /// Error type for [`Bytes::from_bytes`]
-#[derive(Debug)]
-#[derive(derive_more::Display, err_impl::Error)]
+#[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
 pub enum FromBytesError {
 	/// Unable to read the digimon name
-	#[display(fmt = "Unable to read the digimon name")]
-	Name(#[error(source)] util::ReadNullAsciiStringError),
+	#[error("Unable to read the digimon name")]
+	Name(#[source] util::ReadNullAsciiStringError),
 
 	/// Unable to read the first support effect description
-	#[display(fmt = "Unable to read the first line of the effect description")]
-	EffectDescriptionFirst(#[error(source)] util::ReadNullAsciiStringError),
+	#[error("Unable to read the first line of the effect description")]
+	EffectDescriptionFirst(#[source] util::ReadNullAsciiStringError),
 
 	/// Unable to read the second support effect description
-	#[display(fmt = "Unable to read the second line of the effect description")]
-	EffectDescriptionSecond(#[error(source)] util::ReadNullAsciiStringError),
+	#[error("Unable to read the second line of the effect description")]
+	EffectDescriptionSecond(#[source] util::ReadNullAsciiStringError),
 
 	/// Unable to read the third support effect description
-	#[display(fmt = "Unable to read the third line of the effect description")]
-	EffectDescriptionThird(#[error(source)] util::ReadNullAsciiStringError),
+	#[error("Unable to read the third line of the effect description")]
+	EffectDescriptionThird(#[source] util::ReadNullAsciiStringError),
 
 	/// Unable to read the fourth support effect description
-	#[display(fmt = "Unable to read the fourth line of the effect description")]
-	EffectDescriptionFourth(#[error(source)] util::ReadNullAsciiStringError),
+	#[error("Unable to read the fourth line of the effect description")]
+	EffectDescriptionFourth(#[source] util::ReadNullAsciiStringError),
 }
 
 /// Error type for [`Bytes::to_bytes`]
-#[derive(Debug)]
-#[derive(derive_more::Display, err_impl::Error)]
+#[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
 pub enum ToBytesError {
 	/// Unable to write the digimon name
-	#[display(fmt = "Unable to write the digimon name")]
-	Name(#[error(source)] util::WriteNullAsciiStringError),
+	#[error("Unable to write the digimon name")]
+	Name(#[source] util::WriteNullAsciiStringError),
 
 	/// Unable to write the first support effect description
-	#[display(fmt = "Unable to write the first line of the effect description")]
-	EffectDescriptionFirst(#[error(source)] util::WriteNullAsciiStringError),
+	#[error("Unable to write the first line of the effect description")]
+	EffectDescriptionFirst(#[source] util::WriteNullAsciiStringError),
 
 	/// Unable to write the second support effect description
-	#[display(fmt = "Unable to write the second line of the effect description")]
-	EffectDescriptionSecond(#[error(source)] util::WriteNullAsciiStringError),
+	#[error("Unable to write the second line of the effect description")]
+	EffectDescriptionSecond(#[source] util::WriteNullAsciiStringError),
 
 	/// Unable to write the third support effect description
-	#[display(fmt = "Unable to write the third line of the effect description")]
-	EffectDescriptionThird(#[error(source)] util::WriteNullAsciiStringError),
+	#[error("Unable to write the third line of the effect description")]
+	EffectDescriptionThird(#[source] util::WriteNullAsciiStringError),
 
 	/// Unable to write the fourth support effect description
-	#[display(fmt = "Unable to write the fourth line of the effect description")]
-	EffectDescriptionFourth(#[error(source)] util::WriteNullAsciiStringError),
+	#[error("Unable to write the fourth line of the effect description")]
+	EffectDescriptionFourth(#[source] util::WriteNullAsciiStringError),
 }
 
 impl Bytes for Digivolve {
