@@ -1,5 +1,9 @@
 #![doc(include = "move.md")]
 
+// Modules
+#[cfg(test)]
+mod test;
+
 // byteorder
 use byteorder::{ByteOrder, LittleEndian};
 
