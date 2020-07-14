@@ -10,7 +10,7 @@ use crate::game::{
 		array_split, array_split_mut,
 		null_ascii_string::{self, NullAsciiString},
 	},
-	Bytes,
+	Bytes, Validatable, Validation,
 };
 use byteorder::{ByteOrder, LittleEndian};
 
@@ -44,7 +44,6 @@ pub enum ToBytesError {
 	Name(#[source] null_ascii_string::WriteError),
 }
 
-// Bytes
 impl Bytes for Move {
 	type ByteArray = [u8; 0x1c];
 	type FromError = FromBytesError;
@@ -84,26 +83,47 @@ impl Bytes for Move {
 		// And return Ok
 		Ok(())
 	}
+}
 
-	/*
-	fn validate(&self) -> Validation {
+impl Validatable for Move {
+	type Error = ValidationError;
+	type Warning = ValidationWarning;
+
+	fn validate(&self) -> Validation<Self::Error, Self::Warning> {
 		// Create the initial validation
 		let mut validation = Validation::new();
 
 		// If our name is longer or equal to `0x16` bytes, emit error
 		if self.name.len() >= 0x16 {
-			validation.add_error("Name must be at most 21 characters.");
+			validation.emit_error(ValidationError::NameTooLong);
 		}
 
 		// If the power isn't a multiple of 10, warn, as we don't know how the game handles
 		// powers that aren't multiples of 10.
 		// TODO: Verify if the game can handle non-multiple of 10 powers.
 		if self.power % 10 != 0 {
-			validation.add_warning("Powers that are not a multiple of 10 are not fully supported.");
+			validation.emit_warning(ValidationWarning::PowerMultiple10);
 		}
 
 		// And return the validation
 		validation
 	}
-	*/
+}
+
+/// All warnings for [`Move`] validation
+#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(derive_more::Display)]
+pub enum ValidationWarning {
+	/// Power is not a multiple of 10
+	#[display(fmt = "Power is not a multiple of 10.")]
+	PowerMultiple10,
+}
+
+/// All errors for [`Move`] validation
+#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(derive_more::Display)]
+pub enum ValidationError {
+	/// Name length
+	#[display(fmt = "Name is too long. Must be at most 21 characters")]
+	NameTooLong,
 }

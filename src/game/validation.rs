@@ -13,37 +13,69 @@
 /// 2. It provides warnings alongside the errors. These are also provided via `log::warn`, but
 ///    these cannot be sent to the user easily.
 pub trait Validatable {
-	/// Validation type
-	type Output: Validation;
+	/// Error type for this validation
+	type Error;
+
+	/// Warning type for this validation
+	type Warning;
 
 	/// Validates this structure
-	fn validate(&self) -> Self::Output;
+	fn validate(&self) -> Validation<Self::Error, Self::Warning>;
 }
 
-/// A validation type.
-///
-/// This is the output of structures which may be validated.
-/// It is a trait to offer more flexibility to each structure to report
-/// errors and warnings in it's preferred manner.
-pub trait Validation: Clone {
-	/// Warnings type
-	type Warnings;
+/// A validation
+#[derive(PartialEq, Eq, Clone, Debug)]
+pub struct Validation<Error, Warning> {
+	/// All warnings
+	warnings: Vec<Warning>,
 
-	/// Errors type
-	type Errors;
+	/// All errors
+	errors: Vec<Error>,
+}
 
-	/// If this validation was successful.
-	///
-	/// A successful validation is one that, although may emit warnings, did not emit
-	/// any errors. Conversely, this also indicates that calling [`to_bytes`] will _not_
-	/// produce a `Err` value.
-	fn successful(&self) -> bool {
-		self.errors().is_none()
+impl<Error, Warning> Default for Validation<Error, Warning> {
+	fn default() -> Self {
+		Self {
+			warnings: vec![],
+			errors:   vec![],
+		}
+	}
+}
+
+impl<Error, Warning> Validation<Error, Warning> {
+	/// Creates an empty validation
+	#[must_use]
+	pub fn new() -> Self {
+		Self::default()
 	}
 
-	/// Returns any warnings
-	fn warnings(&self) -> Option<Self::Warnings>;
+	/// Emits a warning
+	pub fn emit_warning(&mut self, warning: Warning) {
+		self.warnings.push(warning);
+	}
 
-	/// Returns any errors
-	fn errors(&self) -> Option<Self::Errors>;
+	/// Emits an error
+	pub fn emit_error(&mut self, error: Error) {
+		self.errors.push(error);
+	}
+
+	/// Returns all warnings
+	#[must_use]
+	pub fn warnings(&self) -> &[Warning] {
+		&self.warnings
+	}
+
+	/// Returns all errors
+	#[must_use]
+	pub fn errors(&self) -> &[Error] {
+		&self.errors
+	}
+
+	/// Returns if this validation was successful
+	///
+	/// A validation is considered successful if no errors occurred.
+	#[must_use]
+	pub fn successful(&self) -> bool {
+		self.errors.is_empty()
+	}
 }
