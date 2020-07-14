@@ -1,7 +1,10 @@
 //! File data-only addresses
 
 // Imports
-use crate::io::address::Real;
+use crate::{
+	io::address::Real,
+	util::{abs_diff, signed_offset},
+};
 
 /// A type for defining addresses on the data parts of `.bin` file.
 ///
@@ -49,11 +52,7 @@ impl std::ops::Add<i64> for Data {
 	type Output = Self;
 
 	fn add(self, offset: i64) -> Self {
-		if offset > 0 {
-			self + (offset as u64)
-		} else {
-			self - (-offset as u64)
-		}
+		Self::from(signed_offset(self.0, offset))
 	}
 }
 
@@ -101,7 +100,7 @@ impl std::ops::Sub<Data> for Data {
 	type Output = i64;
 
 	fn sub(self, address: Self) -> i64 {
-		self.0 as i64 - address.0 as i64
+		abs_diff(self.0, address.0)
 	}
 }
 

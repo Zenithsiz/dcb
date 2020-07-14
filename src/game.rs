@@ -18,7 +18,6 @@
 pub mod bytes;
 pub mod card;
 pub mod deck;
-mod util;
 pub mod validation;
 
 // Exports

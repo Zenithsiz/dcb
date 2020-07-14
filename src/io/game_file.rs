@@ -4,7 +4,10 @@
 
 // Imports
 use crate::io::address::{Data as DataAddress, Real as RealAddress, RealToDataError};
-use std::io::{Read, Seek, Write};
+use std::{
+	convert::TryInto,
+	io::{Read, Seek, Write},
+};
 
 /// A type that abstracts over a the game reader.
 ///
@@ -76,7 +79,9 @@ impl<R: Read + Write + Seek> Read for GameFile<R> {
 			if cur_real_address == data_section_end {
 				// Seek ahead by skipping the footer and next header
 				self.reader.seek(std::io::SeekFrom::Current(
-					(RealAddress::FOOTER_BYTE_SIZE + RealAddress::HEADER_BYTE_SIZE) as i64,
+					(RealAddress::FOOTER_BYTE_SIZE + RealAddress::HEADER_BYTE_SIZE)
+						.try_into()
+						.expect("Sector offset didn't fit into `u64`"),
 				))?;
 
 				// And restart this loop
@@ -95,7 +100,10 @@ impl<R: Read + Write + Seek> Read for GameFile<R> {
 			);
 
 			// Check how many bytes we can read
-			let mut bytes_to_read = (data_section_end - cur_real_address) as usize;
+			// Note: Cannot overflow, max is `2048`, so an error means `cur_real_address` was past the data section end
+			let mut bytes_to_read = (data_section_end - cur_real_address)
+				.try_into()
+				.expect("Current address is past end of data");
 
 			// If we were to read more bytes than the buffer has, read less
 			if bytes_to_read > buf.len() {
@@ -144,7 +152,9 @@ impl<R: Read + Write + Seek> Write for GameFile<R> {
 			if cur_real_address == data_section_end {
 				// Seek ahead by skipping the footer and next header
 				self.reader.seek(std::io::SeekFrom::Current(
-					(RealAddress::FOOTER_BYTE_SIZE + RealAddress::HEADER_BYTE_SIZE) as i64,
+					(RealAddress::FOOTER_BYTE_SIZE + RealAddress::HEADER_BYTE_SIZE)
+						.try_into()
+						.expect("Sector offset didn't fit into `u64`"),
 				))?;
 
 				// And restart this loop
@@ -162,8 +172,10 @@ impl<R: Read + Write + Seek> Write for GameFile<R> {
 				cur_real_address.offset()
 			);
 
-			// Check how many bytes we can write
-			let mut bytes_to_write = (data_section_end - cur_real_address) as usize;
+			// Check how many bytes we can write, up to the buffer's len
+			let mut bytes_to_write = (data_section_end - cur_real_address)
+				.try_into()
+				.expect("Current address is past end of data");
 
 			// If we were to write more bytes than the buffer has, write less
 			if bytes_to_write > buf.len() {

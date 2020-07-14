@@ -1,12 +1,12 @@
 #![doc(include = "digivolve.md")]
 
 // Imports
-use crate::game::{
+use crate::{
+	game::Bytes,
 	util::{
 		array_split, array_split_mut,
 		null_ascii_string::{self, NullAsciiString},
 	},
-	Bytes,
 };
 
 /// A digivolve card

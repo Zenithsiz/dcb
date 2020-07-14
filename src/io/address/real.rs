@@ -1,5 +1,8 @@
 //! File real addresses
 
+// Imports
+use crate::util::{abs_diff, signed_offset};
+
 /// A type for defining addresses on the `.bin` file.
 ///
 /// All real addresses will depict the actual position
@@ -68,7 +71,7 @@ impl std::ops::Add<i64> for Real {
 	type Output = Self;
 
 	fn add(self, offset: i64) -> Self {
-		Self::from((u64::from(self) as i64 + offset) as u64)
+		Self::from(signed_offset(self.into(), offset))
 	}
 }
 
@@ -84,7 +87,7 @@ impl std::ops::Sub<Real> for Real {
 	type Output = i64;
 
 	fn sub(self, address: Self) -> i64 {
-		u64::from(self) as i64 - u64::from(address) as i64
+		abs_diff(u64::from(self), u64::from(address))
 	}
 }
 

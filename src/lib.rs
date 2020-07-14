@@ -46,17 +46,16 @@
 #![allow(clippy::missing_inline_in_public_items)]
 // We prefer tail returns where possible, as they help with code readability in most cases.
 #![allow(clippy::implicit_return)]
-// Very useful for arguments such as `arg: impl Into<U>`, then used
-// with `let arg = arg.into()`. As well as just going from `Option<T>`
-// to `T` without needing to change their names.
+// We're fine with shadowing, as long as the variable is used for the same purpose.
+// Hence why `clippy::shadow_unrelated` isn't allowed.
 #![allow(clippy::shadow_reuse, clippy::shadow_same)]
-// We use `.expect("...")` when we either know we cannot panic or it
-// is the safest alternative, as proceeding would corrupt the program state.
+// We use `.expect("...")` when we either know it cannot panic or if
+// it is the safest alternative.
 #![allow(clippy::expect_used)]
-// Like-wise with `.expect()`, we use `unreachable!` when we know a branch
+// Like-wise with `.expect("...")`, we use `unreachable!` / `todo!` when we know a branch
 // if unreachable, and if it ever does get reached, panicking would be the
 // safest option
-#![allow(clippy::unreachable)]
+#![allow(clippy::unreachable, clippy::todo)]
 // We find it more important to be able to copy paste literals such as `0xabcd1234` than
 // being able to read them, which does not provide many benefits
 #![allow(clippy::unreadable_literal, clippy::unseparated_literal_suffix)]
@@ -64,7 +63,8 @@
 #![allow(clippy::multiple_inherent_impl)]
 // Many operations we need to repeat, and to keep symmetry
 #![allow(clippy::identity_op)]
-// We only introduce items before their first usage, which sometimes is half-way through the code
+// We only introduce items before their first usage, which sometimes is half-way through the code.
+// We make sure that we only use the item after introduced, however.
 #![allow(clippy::items_after_statements)]
 // Useful for when they either change a lot with new variants / data,
 // or for symmetry purposes
@@ -73,13 +73,12 @@
 // will have it's own error type ideally, so any errors are explicit
 // by the type, without needing a section for them
 #![allow(clippy::missing_errors_doc)]
-// Incomplete code should be tagged as `todo`. In future versions of the library,
-// this lint may be removed, as incomplete code should not lie on a master branch.
-#![allow(clippy::todo)]
 // Although we generally try to avoid this, this can happen due to our module organization.
 // In the future, this lint should be removed globally and only enabled for modules which
 // actually require the use of it.
 #![allow(clippy::module_inception, clippy::module_name_repetitions)]
+// Banning arithmetic is too strict for this project
+#![allow(clippy::integer_arithmetic)]
 // False positives:
 // TODO: Remove them in the future once they are no longer triggered.
 // We only slice arrays, which are verified at compile time. This
@@ -87,19 +86,11 @@
 #![allow(clippy::indexing_slicing)]
 // We don't have any `unsafe` impl for types that derive `Deserialize`.
 #![allow(clippy::unsafe_derive_deserialize)]
-// Banning arithmetic is too strict for this project
-#![allow(clippy::integer_arithmetic)]
-// TODO: Remove once fixed
-#![allow(
-	clippy::as_conversions,
-	clippy::cast_possible_wrap,
-	clippy::cast_sign_loss,
-	clippy::cast_possible_truncation
-)]
 
 // Modules
 pub mod game;
 pub mod io;
+mod util;
 
 // Exports
 pub use game::{Bytes, CardTable, Deck, DeckTable, Digimon, Digivolve, Item, Validatable, Validation};

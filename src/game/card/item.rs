@@ -1,13 +1,15 @@
 #![doc(include = "item.md")]
 
 // Imports
-use crate::game::{
-	card::property::{self, ArrowColor, Effect, EffectCondition},
+use crate::{
+	game::{
+		card::property::{self, ArrowColor, Effect, EffectCondition},
+		Bytes,
+	},
 	util::{
 		array_split, array_split_mut,
 		null_ascii_string::{self, NullAsciiString},
 	},
-	Bytes,
 };
 use byteorder::{ByteOrder, LittleEndian};
 

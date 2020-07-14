@@ -1,10 +1,12 @@
 #![doc(include = "effect.md")]
 
 // Imports
-use crate::game::{
-	card::property::{self, AttackType, DigimonProperty, EffectOperation, PlayerType, Slot},
+use crate::{
+	game::{
+		card::property::{self, AttackType, DigimonProperty, EffectOperation, PlayerType, Slot},
+		Bytes,
+	},
 	util::{array_split, array_split_mut},
-	Bytes,
 };
 use byteorder::{ByteOrder, LittleEndian};
 

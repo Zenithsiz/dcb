@@ -1,13 +1,15 @@
 #![doc(include = "digimon.md")]
 
 // Imports
-use crate::game::{
-	card::property::{self, ArrowColor, CrossMoveEffect, Effect, EffectCondition, Level, Move, Speciality},
+use crate::{
+	game::{
+		card::property::{self, ArrowColor, CrossMoveEffect, Effect, EffectCondition, Level, Move, Speciality},
+		Bytes,
+	},
 	util::{
 		array_split, array_split_mut,
 		null_ascii_string::{self, NullAsciiString},
 	},
-	Bytes,
 };
 use byteorder::{ByteOrder, LittleEndian};
 

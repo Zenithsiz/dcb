@@ -8,13 +8,16 @@ use crate::{
 			property::{self, CardType},
 			Digimon, Digivolve, Item,
 		},
-		util::array_split_mut,
 		Bytes,
 	},
 	io::{address::Data, GameFile},
+	util::array_split_mut,
 };
 use byteorder::{ByteOrder, LittleEndian};
-use std::io::{Read, Seek, Write};
+use std::{
+	convert::TryInto,
+	io::{Read, Seek, Write},
+};
 
 /// The table storing all cards
 #[derive(Debug)]
@@ -291,9 +294,9 @@ impl Table {
 		}
 
 		// Then check the number of each card
-		let digimon_cards = LittleEndian::read_u16(&header_bytes[0x4..0x6]) as usize;
-		let item_cards = header_bytes[0x6] as usize;
-		let digivolve_cards = header_bytes[0x7] as usize;
+		let digimon_cards: usize = LittleEndian::read_u16(&header_bytes[0x4..0x6]).into();
+		let item_cards: usize = header_bytes[0x6].into();
+		let digivolve_cards: usize = header_bytes[0x7].into();
 		log::debug!("[Table Header] Found {} digimon cards", digimon_cards);
 		log::debug!("[Table Header] Found {} item cards", item_cards);
 		log::debug!("[Table Header] Found {} digivolve cards", digivolve_cards);
@@ -409,13 +412,15 @@ impl Table {
 			LittleEndian::write_u32(bytes.magic, Self::HEADER_MAGIC);
 
 			// Write card lens
-			use std::convert::TryInto;
 			log::debug!("[Table Header] Writing {} digimon cards", self.digimons.len());
 			log::debug!("[Table Header] Writing {} item cards", self.items.len());
 			log::debug!("[Table Header] Writing {} digivolve cards", self.digivolves.len());
-			LittleEndian::write_u16(bytes.digimons_len, self.digimons.len().try_into().expect("Too many digimons"));
-			*bytes.items_len = self.items.len().try_into().expect("Too many items");
-			*bytes.digivolves_len = self.digivolves.len().try_into().expect("Too many digivolves");
+			LittleEndian::write_u16(
+				bytes.digimons_len,
+				self.digimons.len().try_into().expect("Number of digimon cards exceeded `u16`"),
+			);
+			*bytes.items_len = self.items.len().try_into().expect("Number of item cards exceeded `u8`");
+			*bytes.digivolves_len = self.digivolves.len().try_into().expect("Number of digivolve cards exceeded `u8`");
 		}
 
 		file.write_all(&header_bytes).map_err(SerializeError::WriteHeader)?;
@@ -435,7 +440,7 @@ impl Table {
 			);
 
 			// Write the header
-			LittleEndian::write_u16(bytes.header_id, cur_id as u16);
+			LittleEndian::write_u16(bytes.header_id, cur_id.try_into().expect("Card ID exceeded `u16`"));
 			CardType::Digimon.to_bytes(bytes.header_type)?;
 
 			// Write the digimon
@@ -464,7 +469,7 @@ impl Table {
 			);
 
 			// Write the header
-			LittleEndian::write_u16(bytes.header_id, cur_id as u16);
+			LittleEndian::write_u16(bytes.header_id, cur_id.try_into().expect("Card ID exceeded `u16`"));
 			CardType::Item.to_bytes(bytes.header_type)?;
 
 			// Write the item
@@ -492,7 +497,7 @@ impl Table {
 			);
 
 			// Write the header
-			LittleEndian::write_u16(bytes.header_id, cur_id as u16);
+			LittleEndian::write_u16(bytes.header_id, cur_id.try_into().expect("Card ID exceeded `u16`"));
 			CardType::Digivolve.to_bytes(bytes.header_type)?;
 
 			// Write the digivolve
