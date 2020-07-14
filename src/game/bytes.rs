@@ -16,7 +16,7 @@ where
 {
 	/// The type of array required by this structure
 	///
-	/// *MUST* be a `[u8; N]`
+	/// *MUST* be a `[u8; N]` or `u8`
 	type ByteArray: Sized;
 
 	/// The error type used for the operation

@@ -156,6 +156,7 @@ pub fn read_maybe_null_ascii_string(buf: &impl AsRef<[u8]>) -> Result<&ascii::As
 
 /// Error type for [`write_null_ascii_string`]
 #[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
+#[allow(clippy::missing_docs_in_private_items)]
 pub enum WriteNullAsciiStringError {
 	/// The input string was too large
 	#[error("Input string was too large for buffer. ({}+1 / {})", input_len, buffer_len)]

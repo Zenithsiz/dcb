@@ -37,7 +37,6 @@
 	decl_macro,
 	stmt_expr_attributes,
 	unwrap_infallible,
-	const_if_match,
 	exclusive_range_pattern,
 	external_doc
 )]
@@ -53,7 +52,7 @@
 #![allow(clippy::shadow_reuse, clippy::shadow_same)]
 // We use `.expect("...")` when we either know we cannot panic or it
 // is the safest alternative, as proceeding would corrupt the program state.
-#![allow(clippy::result_expect_used, clippy::option_expect_used)]
+#![allow(clippy::expect_used)]
 // Like-wise with `.expect()`, we use `unreachable!` when we know a branch
 // if unreachable, and if it ever does get reached, panicking would be the
 // safest option
@@ -92,7 +91,6 @@
 #![allow(clippy::integer_arithmetic)]
 // TODO: Remove once fixed
 #![allow(
-	clippy::missing_docs_in_private_items,
 	clippy::as_conversions,
 	clippy::cast_possible_wrap,
 	clippy::cast_sign_loss,
