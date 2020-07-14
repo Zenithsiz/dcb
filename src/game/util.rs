@@ -187,7 +187,13 @@ pub fn write_null_ascii_string<'a>(input: &ascii::AsciiStr, buf: &'a mut [u8]) -
 pub enum WriteMaybeNullAsciiStringError {
 	/// The input string was too large
 	#[error("Input string was too large for buffer. ({} / {})", input_len, buffer_len)]
-	TooLarge { input_len: usize, buffer_len: usize },
+	TooLarge {
+		/// Length of input string
+		input_len: usize,
+
+		/// Length of buffer
+		buffer_len: usize,
+	},
 }
 
 /// Writes a possibly null-terminated ascii string to a buffer and returns it

@@ -5,7 +5,6 @@ use byteorder::{ByteOrder, LittleEndian};
 
 // Crate
 use crate::game::{
-	bytes::Validation,
 	card::property::{self, ArrowColor, Effect, EffectCondition},
 	util, Bytes,
 };
@@ -39,7 +38,7 @@ pub struct Item {
 	#[serde(default)]
 	pub effects: [Option<Effect>; 3],
 
-	// Unknown fields
+	/// Unknown field at `0x15`
 	pub unknown_15: u32,
 }
 
@@ -231,9 +230,5 @@ impl Bytes for Item {
 
 		// Return Ok
 		Ok(())
-	}
-
-	fn validate(&self) -> Validation {
-		Validation::new()
 	}
 }

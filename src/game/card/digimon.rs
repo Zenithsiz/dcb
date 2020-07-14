@@ -5,7 +5,6 @@ use byteorder::{ByteOrder, LittleEndian};
 
 // Crate
 use crate::game::{
-	bytes::Validation,
 	card::property::{self, ArrowColor, CrossMoveEffect, Effect, EffectCondition, Level, Move, Speciality},
 	util, Bytes,
 };
@@ -75,9 +74,13 @@ pub struct Digimon {
 	#[serde(default)]
 	pub effects: [Option<Effect>; 3],
 
-	// Unknown fields
+	/// Unknown field at `0x1a`
 	pub unknown_1a: u8,
+
+	/// Unknown field at `0x15`
 	pub unknown_15: u16,
+
+	/// Unknown field at `0xe2`
 	pub unknown_e2: u8,
 }
 
@@ -371,9 +374,5 @@ impl Bytes for Digimon {
 
 		// Return Ok
 		Ok(())
-	}
-
-	fn validate(&self) -> Validation {
-		Validation::new()
 	}
 }

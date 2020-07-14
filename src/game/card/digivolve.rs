@@ -1,7 +1,7 @@
 #![doc(include = "digivolve.md")]
 
 // Crate
-use crate::game::{bytes::Validation, util, Bytes};
+use crate::game::{util, Bytes};
 
 /// A digivolve card
 ///
@@ -20,7 +20,7 @@ pub struct Digivolve {
 	/// being an ascii string with 20 characters at most.
 	pub effect_description: [ascii::AsciiString; 4],
 
-	// Unknown
+	/// Unknown field at `0x15`
 	pub unknown_15: [u8; 3],
 }
 
@@ -142,9 +142,5 @@ impl Bytes for Digivolve {
 
 		// Return Ok
 		Ok(())
-	}
-
-	fn validate(&self) -> Validation {
-		Validation::new()
 	}
 }

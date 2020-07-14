@@ -4,7 +4,7 @@
 use byteorder::{ByteOrder, LittleEndian};
 
 // Crate
-use crate::game::{bytes::Validation, util, Bytes};
+use crate::game::{util, Bytes};
 
 /// A deck
 #[derive(Debug)]
@@ -19,7 +19,7 @@ pub struct Deck {
 	/// All of the card ids that make up this deck
 	pub cards: [u16; 30],
 
-	// Unknown
+	/// Unknown data
 	unknown: [u8; 0xc],
 }
 
@@ -107,9 +107,5 @@ impl Bytes for Deck {
 
 		// And return Ok
 		Ok(())
-	}
-
-	fn validate(&self) -> Validation {
-		Validation::new()
 	}
 }

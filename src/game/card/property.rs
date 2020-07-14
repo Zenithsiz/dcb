@@ -119,10 +119,6 @@ macro_rules! generate_enum_property_mod
 
 						Ok(())
 					}
-
-					fn validate(&self) -> $crate::game::bytes::Validation {
-						$crate::game::bytes::Validation::new()
-					}
 				}
 
 				// Extra definitions
@@ -163,10 +159,6 @@ macro generate_enum_property_option {
 					}
 
 					Ok(())
-				}
-
-				fn validate(&self) -> $crate::game::bytes::Validation {
-					$crate::game::bytes::Validation::new()
 				}
 			}
 		)*

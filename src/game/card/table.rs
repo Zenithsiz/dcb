@@ -68,7 +68,10 @@ pub enum DeserializeError {
 
 	/// The magic of the table was wrong
 	#[error("Found wrong table header magic (expected {:x}, found {:x})", Table::HEADER_MAGIC, magic)]
-	HeaderMagic { magic: u32 },
+	HeaderMagic {
+		/// Magic we found
+		magic: u32,
+	},
 
 	/// There were too many cards
 	#[error(
@@ -82,15 +85,23 @@ pub enum DeserializeError {
 		Table::MAX_BYTE_SIZE
 	)]
 	TooManyCards {
-		digimon_cards:   usize,
-		item_cards:      usize,
+		/// Number of digimon cards
+		digimon_cards: usize,
+
+		/// Number of item cards
+		item_cards: usize,
+
+		/// Number of digivolve cards
 		digivolve_cards: usize,
 	},
 
 	/// Unable to read card header
 	#[error("Unable to read card header for card id {}", id)]
 	ReadCardHeader {
-		id:  usize,
+		/// Id of card
+		id: usize,
+
+		/// Underlying error
 		#[source]
 		err: std::io::Error,
 	},
@@ -98,7 +109,10 @@ pub enum DeserializeError {
 	/// An unknown card type was found
 	#[error("Unknown card type for card id {}", id)]
 	UnknownCardType {
-		id:  usize,
+		/// Id of card
+		id: usize,
+
+		/// Underlying error
 		#[source]
 		err: property::card_type::FromBytesError,
 	},
@@ -106,9 +120,13 @@ pub enum DeserializeError {
 	/// Unable to read a card
 	#[error("Unable to read {} with id {}", card_type, id)]
 	ReadCard {
-		id:        usize,
+		/// Id of card
+		id: usize,
+
+		/// Card type
 		card_type: CardType,
 
+		/// Underlying error
 		#[source]
 		err: std::io::Error,
 	},
@@ -116,7 +134,10 @@ pub enum DeserializeError {
 	/// Unable to deserialize a digimon card
 	#[error("Unable to deserialize digimon card with id {}", id)]
 	DigimonCard {
-		id:  usize,
+		/// Id of card
+		id: usize,
+
+		/// Underlying error
 		#[source]
 		err: card::digimon::FromBytesError,
 	},
@@ -124,7 +145,10 @@ pub enum DeserializeError {
 	/// Unable to deserialize an item card
 	#[error("Unable to deserialize item card with id {}", id)]
 	ItemCard {
-		id:  usize,
+		/// Id of card
+		id: usize,
+
+		/// Underlying error
 		#[source]
 		err: card::item::FromBytesError,
 	},
@@ -132,7 +156,10 @@ pub enum DeserializeError {
 	/// Unable to deserialize a digivolve card
 	#[error("Unable to deserialize digivolve card with id {}", id)]
 	DigivolveCard {
-		id:  usize,
+		/// Id of card
+		id: usize,
+
+		/// Underlying error
 		#[source]
 		err: card::digivolve::FromBytesError,
 	},
@@ -140,7 +167,10 @@ pub enum DeserializeError {
 	/// Unable to read card footer
 	#[error("Unable to read card footer for card id {}", id)]
 	ReadCardFooter {
-		id:  usize,
+		/// Id of card
+		id: usize,
+
+		/// Underlying error
 		#[source]
 		err: std::io::Error,
 	},
@@ -169,15 +199,23 @@ pub enum SerializeError {
 		Table::MAX_BYTE_SIZE
 	)]
 	TooManyCards {
-		digimon_cards:   usize,
-		item_cards:      usize,
+		/// Number of digimon cards
+		digimon_cards: usize,
+
+		/// Number of item cards
+		item_cards: usize,
+
+		/// Number of digivolve cards
 		digivolve_cards: usize,
 	},
 
 	/// Unable to write a digimon card
 	#[error("Unable to write digimon card with id {}", id)]
 	WriteDigimonCard {
-		id:  usize,
+		/// Id of card
+		id: usize,
+
+		/// Underlying error
 		#[source]
 		err: std::io::Error,
 	},
@@ -185,7 +223,10 @@ pub enum SerializeError {
 	/// Unable to write an item card
 	#[error("Unable to write item card with id {}", id)]
 	WriteItemCard {
-		id:  usize,
+		/// Id of card
+		id: usize,
+
+		/// Underlying error
 		#[source]
 		err: std::io::Error,
 	},
@@ -193,7 +234,10 @@ pub enum SerializeError {
 	/// Unable to write a digivolve card
 	#[error("Unable to write digivolve card with id {}", id)]
 	WriteDigivolveCard {
-		id:  usize,
+		/// Id of card
+		id: usize,
+
+		/// Underlying error
 		#[source]
 		err: std::io::Error,
 	},
@@ -201,7 +245,10 @@ pub enum SerializeError {
 	/// Unable to parse a digimon card
 	#[error("Unable to parse digimon card with id {}", id)]
 	ParseDigimonCard {
-		id:  usize,
+		/// Id of card
+		id: usize,
+
+		/// Underlying error
 		#[source]
 		err: card::digimon::ToBytesError,
 	},
@@ -209,7 +256,10 @@ pub enum SerializeError {
 	/// Unable to parse an item card
 	#[error("Unable to parse item card with id {}", id)]
 	ParseItemCard {
-		id:  usize,
+		/// Id of card
+		id: usize,
+
+		/// Underlying error
 		#[source]
 		err: card::item::ToBytesError,
 	},
@@ -217,7 +267,10 @@ pub enum SerializeError {
 	/// Unable to parse a digivolve card
 	#[error("Unable to parse digivolve card with id {}", id)]
 	ParseDigivolveCard {
-		id:  usize,
+		/// Id of card
+		id: usize,
+
+		/// Underlying error
 		#[source]
 		err: card::digivolve::ToBytesError,
 	},
@@ -324,6 +377,7 @@ impl Table {
 		Ok(Self { digimons, items, digivolves })
 	}
 
+	/// Serializes this card table to `file`.
 	pub fn serialize<R: Read + Write + Seek>(&self, file: &mut GameFile<R>) -> Result<(), SerializeError> {
 		// Get the final table size
 		let table_size = self.digimons.len() * (0x3 + CardType::Digimon.byte_size() + 0x1) +

@@ -5,7 +5,6 @@ use byteorder::{ByteOrder, LittleEndian};
 
 // Crate
 use crate::game::{
-	bytes::Validation,
 	card::property::{self, AttackType, DigimonProperty, EffectOperation, PlayerType, Slot},
 	util, Bytes,
 };
@@ -39,6 +38,7 @@ pub enum Effect {
 	///
 	/// `<property> = ( <A> + <Y> ) + ( <C> <op> ( <B> + <X> ) )`
 	#[serde(rename = "Change property")]
+	#[allow(clippy::missing_docs_in_private_items)] // Explained the formula
 	ChangeProperty {
 		property: DigimonProperty,
 
@@ -54,7 +54,13 @@ pub enum Effect {
 
 	/// A player uses an attack type
 	#[serde(rename = "Use attack")]
-	UseAttack { player: PlayerType, attack: AttackType },
+	UseAttack {
+		/// Player being forced to use `attack`
+		player: PlayerType,
+
+		/// Attack being forced to be used
+		attack: AttackType,
+	},
 
 	/// Set the temp slot
 	///
@@ -64,6 +70,7 @@ pub enum Effect {
 	///
 	/// `<temp slot> = <A> + (<B> <op> <C>)`
 	#[serde(rename = "Set temp slot")]
+	#[allow(clippy::missing_docs_in_private_items)] // Explained the formula
 	SetTempSlot {
 		a:  Option<DigimonProperty>,
 		b:  Option<DigimonProperty>,
@@ -82,15 +89,25 @@ pub enum Effect {
 	/// - `Dp`      -> `Offline`
 	#[serde(rename = "Move cards")]
 	MoveCards {
-		player:      PlayerType,
-		source:      Slot,
+		/// Which player has their cards moved
+		player: PlayerType,
+
+		/// Source slot
+		source: Slot,
+
+		/// Destination slot
 		destination: Slot,
-		count:       u16,
+
+		/// Number of cards
+		count: u16,
 	},
 
 	/// Shuffles a player's online deck
 	#[serde(rename = "Shuffle online deck")]
-	ShuffleOnlineDeck { player: PlayerType },
+	ShuffleOnlineDeck {
+		/// Player to shuffle the deck of
+		player: PlayerType,
+	},
 
 	/// Voids the opponent's support effect
 	#[serde(rename = "Void opponent support effect")]
@@ -116,11 +133,20 @@ pub enum Effect {
 
 	/// If the digimon is Ko'd it revives with health
 	#[serde(rename = "Ko'd digimon revives")]
-	KoDigimonRevives { health: u16 },
+	KoDigimonRevives {
+		/// Health to revive with
+		health: u16,
+	},
 
 	/// A player draws cards
 	#[serde(rename = "Draw cards")]
-	DrawCards { player: PlayerType, count: u16 },
+	DrawCards {
+		/// Player drawing the cards
+		player: PlayerType,
+
+		/// How many cards to draw
+		count: u16,
+	},
 
 	/// Own attack becomes Eat Up HP
 	#[serde(rename = "Own attack becomes Eat Up HP")]
@@ -128,7 +154,10 @@ pub enum Effect {
 
 	/// A player attacks first
 	#[serde(rename = "Attack first")]
-	AttackFirst { player: PlayerType },
+	AttackFirst {
+		/// Player attacking first
+		player: PlayerType,
+	},
 }
 
 /// Error type for [`Bytes::from_bytes`]
@@ -156,7 +185,10 @@ pub enum FromBytesError {
 
 	/// Unknown effect type
 	#[error("Unknown byte for an effect type: {}", byte)]
-	EffectType { byte: u8 },
+	EffectType {
+		/// Unknown byte
+		byte: u8,
+	},
 }
 
 /// Error type for [`Bytes::from_bytes`]
@@ -164,7 +196,13 @@ pub enum FromBytesError {
 pub enum ToBytesError {
 	/// Invalid move [`Effect::MoveCards`] effect
 	#[error("Invalid move cards effect ({} => {})", from, to)]
-	InvalidMoveCards { from: Slot, to: Slot },
+	InvalidMoveCards {
+		/// Slot we tried to move from
+		from: Slot,
+
+		/// Slot we tried to move to
+		to: Slot,
+	},
 }
 
 impl Bytes for Effect {
@@ -419,10 +457,6 @@ impl Bytes for Effect {
 		// And return Ok
 		Ok(())
 	}
-
-	fn validate(&self) -> Validation {
-		Validation::new()
-	}
 }
 
 impl Bytes for Option<Effect> {
@@ -465,9 +499,5 @@ impl Bytes for Option<Effect> {
 
 		// An return Ok
 		Ok(())
-	}
-
-	fn validate(&self) -> Validation {
-		Validation::new()
 	}
 }

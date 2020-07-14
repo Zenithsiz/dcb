@@ -18,6 +18,7 @@ use crate::{
 #[derive(Debug)]
 #[derive(::serde::Serialize, ::serde::Deserialize)]
 pub struct Table {
+	/// All decks
 	decks: Vec<Deck>,
 }
 
@@ -41,7 +42,10 @@ pub enum DeserializeError {
 	/// Could not read a deck entry
 	#[error("Unable to read deck entry with id {}", id)]
 	ReadDeck {
-		id:  usize,
+		/// Id of card
+		id: usize,
+
+		/// Underlying error
 		#[source]
 		err: std::io::Error,
 	},
@@ -49,7 +53,10 @@ pub enum DeserializeError {
 	/// Could not deserialize a deck entry
 	#[error("Unable to serialize deck entry with id {}", id)]
 	DeserializeDeck {
-		id:  usize,
+		/// Id of card
+		id: usize,
+
+		/// Underlying error
 		#[source]
 		err: deck::FromBytesError,
 	},
@@ -69,7 +76,10 @@ pub enum SerializeError {
 	/// Could not deserialize a deck entry
 	#[error("Unable to deserialize deck entry with id {}", id)]
 	SerializeDeck {
-		id:  usize,
+		/// Id of card
+		id: usize,
+
+		/// Underlying error
 		#[source]
 		err: deck::ToBytesError,
 	},
@@ -77,14 +87,18 @@ pub enum SerializeError {
 	/// Could not write a deck entry
 	#[error("Unable to read deck entry with id {}", id)]
 	WriteDeck {
-		id:  usize,
+		/// Id of card
+		id: usize,
+
+		/// Underlying error
 		#[source]
 		err: std::io::Error,
 	},
 }
 
 impl Table {
-	pub fn deserialize<R>(game_file: &mut GameFile<R>) -> Result<Self, DeserializeError>
+	/// Deserializes the deck table from `file`.
+	pub fn deserialize<R>(file: &mut GameFile<R>) -> Result<Self, DeserializeError>
 	where
 		R: Read + Write + Seek,
 	{
@@ -92,15 +106,14 @@ impl Table {
 		let mut decks = vec![];
 
 		// Seek to the beginning of the deck table
-		game_file
-			.seek(std::io::SeekFrom::Start(u64::from(Self::DECK_TABLE_START_ADDRESS)))
+		file.seek(std::io::SeekFrom::Start(u64::from(Self::DECK_TABLE_START_ADDRESS)))
 			.map_err(DeserializeError::Seek)?;
 
 		// Then get each deck
 		for id in 0..159 {
 			// Read all bytes of the deck
 			let mut bytes = [0; 0x6e];
-			game_file.read_exact(&mut bytes).map_err(|err| DeserializeError::ReadDeck { id, err })?;
+			file.read_exact(&mut bytes).map_err(|err| DeserializeError::ReadDeck { id, err })?;
 
 			// And try to serialize the deck
 			let deck = Deck::from_bytes(&bytes).map_err(|err| DeserializeError::DeserializeDeck { id, err })?;
@@ -113,13 +126,13 @@ impl Table {
 		Ok(Self { decks })
 	}
 
-	pub fn serialize<R>(&self, game_file: &mut GameFile<R>) -> Result<(), SerializeError>
+	/// Serializes the deck table to `file`
+	pub fn serialize<R>(&self, file: &mut GameFile<R>) -> Result<(), SerializeError>
 	where
 		R: Read + Write + Seek,
 	{
 		// Seek to the beginning of the deck table
-		game_file
-			.seek(std::io::SeekFrom::Start(u64::from(Self::DECK_TABLE_START_ADDRESS)))
+		file.seek(std::io::SeekFrom::Start(u64::from(Self::DECK_TABLE_START_ADDRESS)))
 			.map_err(SerializeError::Seek)?;
 
 		// Then get each deck
@@ -129,7 +142,7 @@ impl Table {
 			deck.to_bytes(&mut bytes).map_err(|err| SerializeError::SerializeDeck { id, err })?;
 
 			// And write them to file
-			game_file.write(&bytes).map_err(|err| SerializeError::WriteDeck { id, err })?;
+			file.write(&bytes).map_err(|err| SerializeError::WriteDeck { id, err })?;
 		}
 
 		// And return Ok

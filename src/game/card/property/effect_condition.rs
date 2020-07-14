@@ -5,7 +5,6 @@ use byteorder::{ByteOrder, LittleEndian};
 
 // Crate
 use crate::game::{
-	bytes::Validation,
 	card::property::{self, DigimonProperty, EffectConditionOperation},
 	util, Bytes,
 };
@@ -29,11 +28,19 @@ pub struct EffectCondition {
 	/// The operation
 	operation: EffectConditionOperation,
 
-	// Unknown
-	unknown_1:  u8,
-	unknown_3:  [u8; 0x5],
-	unknown_9:  [u8; 0xb],
+	/// Unknown field at `0x1`
+	unknown_1: u8,
+
+	/// Unknown field at `0x3`
+	unknown_3: [u8; 0x5],
+
+	/// Unknown field at `0x9`
+	unknown_9: [u8; 0xb],
+
+	/// Unknown field at `0x16`
 	unknown_16: [u8; 0x4],
+
+	/// Unknown field at `0x1b`
 	unknown_1b: [u8; 0x5],
 }
 
@@ -125,10 +132,6 @@ impl Bytes for EffectCondition {
 		// And return OK
 		Ok(())
 	}
-
-	fn validate(&self) -> Validation {
-		Validation::new()
-	}
 }
 
 impl Bytes for Option<EffectCondition> {
@@ -156,9 +159,5 @@ impl Bytes for Option<EffectCondition> {
 
 		// And return Ok
 		Ok(())
-	}
-
-	fn validate(&self) -> Validation {
-		Validation::new()
 	}
 }
