@@ -31,13 +31,10 @@
 #![feature(
 	seek_convenience,
 	never_type,
-	trait_alias,
-	unsized_locals,
 	bool_to_option,
 	decl_macro,
 	stmt_expr_attributes,
 	unwrap_infallible,
-	exclusive_range_pattern,
 	external_doc
 )]
 // Lints
