@@ -5,7 +5,13 @@
 mod test;
 
 // Imports
-use crate::game::{util, Bytes};
+use crate::game::{
+	util::{
+		array_split, array_split_mut,
+		null_ascii_string::{self, NullAsciiString},
+	},
+	Bytes,
+};
 use byteorder::{ByteOrder, LittleEndian};
 
 /// A digimon's move
@@ -27,7 +33,7 @@ pub struct Move {
 pub enum FromBytesError {
 	/// Unable to read the move name
 	#[error("Unable to read the move name")]
-	Name(#[source] util::ReadNullAsciiStringError),
+	Name(#[source] null_ascii_string::ReadError),
 }
 
 /// Error type for [`Bytes::to_bytes`]
@@ -35,7 +41,7 @@ pub enum FromBytesError {
 pub enum ToBytesError {
 	/// Unable to write the move name
 	#[error("Unable to write the move name")]
-	Name(#[source] util::WriteNullAsciiStringError),
+	Name(#[source] null_ascii_string::WriteError),
 }
 
 // Bytes
@@ -46,7 +52,7 @@ impl Bytes for Move {
 
 	fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError> {
 		// Get all byte arrays we need
-		let bytes = util::array_split!(bytes,
+		let bytes = array_split!(bytes,
 			power  : [0x2],
 			unknown: [0x4],
 			name   : [0x16],
@@ -54,7 +60,7 @@ impl Bytes for Move {
 
 		// Return the move
 		Ok(Self {
-			name:    util::read_null_ascii_string(bytes.name).map_err(FromBytesError::Name)?.to_ascii_string(),
+			name:    bytes.name.read_string().map_err(FromBytesError::Name)?.to_ascii_string(),
 			power:   LittleEndian::read_u16(bytes.power),
 			unknown: LittleEndian::read_u32(bytes.unknown),
 		})
@@ -62,14 +68,14 @@ impl Bytes for Move {
 
 	fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError> {
 		// Get all byte arrays we need
-		let bytes = util::array_split_mut!(bytes,
+		let bytes = array_split_mut!(bytes,
 			power  : [0x2],
 			unknown: [0x4],
 			name   : [0x16],
 		);
 
 		// Write the name
-		util::write_null_ascii_string(self.name.as_ref(), bytes.name).map_err(ToBytesError::Name)?;
+		bytes.name.write_string(&self.name).map_err(ToBytesError::Name)?;
 
 		// Then write the power and the unknown
 		LittleEndian::write_u16(bytes.power, self.power);

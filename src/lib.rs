@@ -79,7 +79,7 @@
 // Although we generally try to avoid this, this can happen due to our module organization.
 // In the future, this lint should be removed globally and only enabled for modules which
 // actually require the use of it.
-#![allow(clippy::module_inception)]
+#![allow(clippy::module_inception, clippy::module_name_repetitions)]
 // False positives:
 // TODO: Remove them in the future once they are no longer triggered.
 // We only slice arrays, which are verified at compile time. This

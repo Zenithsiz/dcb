@@ -3,7 +3,11 @@
 // Imports
 use crate::game::{
 	card::property::{self, ArrowColor, CrossMoveEffect, Effect, EffectCondition, Level, Move, Speciality},
-	util, Bytes,
+	util::{
+		array_split, array_split_mut,
+		null_ascii_string::{self, NullAsciiString},
+	},
+	Bytes,
 };
 use byteorder::{ByteOrder, LittleEndian};
 
@@ -87,23 +91,23 @@ pub struct Digimon {
 pub enum FromBytesError {
 	/// Unable to read the digimon name
 	#[error("Unable to read the digimon name")]
-	Name(#[source] util::ReadNullAsciiStringError),
+	Name(#[source] null_ascii_string::ReadError),
 
 	/// Unable to read the first support effect description
 	#[error("Unable to read the first line of the effect description")]
-	EffectDescriptionFirst(#[source] util::ReadNullAsciiStringError),
+	EffectDescriptionFirst(#[source] null_ascii_string::ReadError),
 
 	/// Unable to read the second support effect description
 	#[error("Unable to read the second line of the effect description")]
-	EffectDescriptionSecond(#[source] util::ReadNullAsciiStringError),
+	EffectDescriptionSecond(#[source] null_ascii_string::ReadError),
 
 	/// Unable to read the third support effect description
 	#[error("Unable to read the third line of the effect description")]
-	EffectDescriptionThird(#[source] util::ReadNullAsciiStringError),
+	EffectDescriptionThird(#[source] null_ascii_string::ReadError),
 
 	/// Unable to read the fourth support effect description
 	#[error("Unable to read the fourth line of the effect description")]
-	EffectDescriptionFourth(#[source] util::ReadNullAsciiStringError),
+	EffectDescriptionFourth(#[source] null_ascii_string::ReadError),
 
 	/// An unknown speciality was found
 	#[error("Unknown speciality found")]
@@ -159,23 +163,23 @@ pub enum FromBytesError {
 pub enum ToBytesError {
 	/// Unable to write the digimon name
 	#[error("Unable to write the digimon name")]
-	Name(#[source] util::WriteNullAsciiStringError),
+	Name(#[source] null_ascii_string::WriteError),
 
 	/// Unable to write the first support effect description
 	#[error("Unable to write the first line of the effect description")]
-	EffectDescriptionFirst(#[source] util::WriteNullAsciiStringError),
+	EffectDescriptionFirst(#[source] null_ascii_string::WriteError),
 
 	/// Unable to write the second support effect description
 	#[error("Unable to write the second line of the effect description")]
-	EffectDescriptionSecond(#[source] util::WriteNullAsciiStringError),
+	EffectDescriptionSecond(#[source] null_ascii_string::WriteError),
 
 	/// Unable to write the third support effect description
 	#[error("Unable to write the third line of the effect description")]
-	EffectDescriptionThird(#[source] util::WriteNullAsciiStringError),
+	EffectDescriptionThird(#[source] null_ascii_string::WriteError),
 
 	/// Unable to write the fourth support effect description
 	#[error("Unable to write the fourth line of the effect description")]
-	EffectDescriptionFourth(#[source] util::WriteNullAsciiStringError),
+	EffectDescriptionFourth(#[source] null_ascii_string::WriteError),
 
 	/// Unable to write the circle move
 	#[error("Unable to write the circle move")]
@@ -209,7 +213,7 @@ impl Bytes for Digimon {
 
 	fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError> {
 		// Split bytes
-		let bytes = util::array_split!(bytes,
+		let bytes = array_split!(bytes,
 			name                : [0x15],
 			unknown_15          : [0x2],
 			speciality_level    : 0x1,
@@ -236,7 +240,7 @@ impl Bytes for Digimon {
 
 		// Return the struct after building it
 		Ok(Self {
-			name: util::read_null_ascii_string(bytes.name).map_err(FromBytesError::Name)?.to_ascii_string(),
+			name: bytes.name.read_string().map_err(FromBytesError::Name)?.to_ascii_string(),
 
 			speciality: Speciality::from_bytes(&((bytes.speciality_level & 0xF0) >> 4)).map_err(FromBytesError::Speciality)?,
 
@@ -269,16 +273,24 @@ impl Bytes for Digimon {
 			effect_arrow_color: Option::<ArrowColor>::from_bytes(bytes.effect_arrow_color).map_err(FromBytesError::ArrowColor)?,
 
 			effect_description: [
-				util::read_null_ascii_string(bytes.effect_description_0)
+				bytes
+					.effect_description_0
+					.read_string()
 					.map_err(FromBytesError::EffectDescriptionFirst)?
 					.to_ascii_string(),
-				util::read_null_ascii_string(bytes.effect_description_1)
+				bytes
+					.effect_description_1
+					.read_string()
 					.map_err(FromBytesError::EffectDescriptionSecond)?
 					.to_ascii_string(),
-				util::read_null_ascii_string(bytes.effect_description_2)
+				bytes
+					.effect_description_2
+					.read_string()
 					.map_err(FromBytesError::EffectDescriptionThird)?
 					.to_ascii_string(),
-				util::read_null_ascii_string(bytes.effect_description_3)
+				bytes
+					.effect_description_3
+					.read_string()
 					.map_err(FromBytesError::EffectDescriptionFourth)?
 					.to_ascii_string(),
 			],
@@ -292,7 +304,7 @@ impl Bytes for Digimon {
 
 	fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError> {
 		// Split bytes
-		let bytes = util::array_split_mut!(bytes,
+		let bytes = array_split_mut!(bytes,
 			name                : [0x15],
 			unknown_15          : [0x2],
 			speciality_level    : 0x1,
@@ -318,7 +330,7 @@ impl Bytes for Digimon {
 		);
 
 		// Name
-		util::write_null_ascii_string(self.name.as_ref(), bytes.name).map_err(ToBytesError::Name)?;
+		bytes.name.write_string(&self.name).map_err(ToBytesError::Name)?;
 
 		// Speciality / Level
 		{
@@ -356,13 +368,21 @@ impl Bytes for Digimon {
 
 		Option::<ArrowColor>::to_bytes(&self.effect_arrow_color, bytes.effect_arrow_color).into_ok();
 
-		util::write_null_ascii_string(self.effect_description[0].as_ref(), bytes.effect_description_0)
+		bytes
+			.effect_description_0
+			.write_string(&self.effect_description[0])
 			.map_err(ToBytesError::EffectDescriptionFirst)?;
-		util::write_null_ascii_string(self.effect_description[1].as_ref(), bytes.effect_description_1)
+		bytes
+			.effect_description_1
+			.write_string(&self.effect_description[1])
 			.map_err(ToBytesError::EffectDescriptionSecond)?;
-		util::write_null_ascii_string(self.effect_description[2].as_ref(), bytes.effect_description_2)
+		bytes
+			.effect_description_2
+			.write_string(&self.effect_description[2])
 			.map_err(ToBytesError::EffectDescriptionThird)?;
-		util::write_null_ascii_string(self.effect_description[3].as_ref(), bytes.effect_description_3)
+		bytes
+			.effect_description_3
+			.write_string(&self.effect_description[3])
 			.map_err(ToBytesError::EffectDescriptionFourth)?;
 
 		// Unknown

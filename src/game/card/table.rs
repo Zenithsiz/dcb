@@ -8,7 +8,8 @@ use crate::{
 			property::{self, CardType},
 			Digimon, Digivolve, Item,
 		},
-		util, Bytes,
+		util::array_split_mut,
+		Bytes,
 	},
 	io::{address::Data, GameFile},
 };
@@ -396,7 +397,7 @@ impl Table {
 		// Write header
 		let mut header_bytes = [0u8; 0x8];
 		{
-			let bytes = util::array_split_mut!(&mut header_bytes,
+			let bytes = array_split_mut!(&mut header_bytes,
 				magic: [0x4],
 
 				digimons_len: [0x2],
@@ -426,7 +427,7 @@ impl Table {
 
 			// Card bytes
 			let mut card_bytes = [0; 0x3 + CardType::Digimon.byte_size() + 0x1];
-			let bytes = util::array_split_mut!(&mut card_bytes,
+			let bytes = array_split_mut!(&mut card_bytes,
 				header_id  : [0x2],
 				header_type: 1,
 				digimon    : [CardType::Digimon.byte_size()],
@@ -455,7 +456,7 @@ impl Table {
 
 			// Card bytes
 			let mut card_bytes = [0; 0x3 + CardType::Item.byte_size() + 0x1];
-			let bytes = util::array_split_mut!(&mut card_bytes,
+			let bytes = array_split_mut!(&mut card_bytes,
 				header_id  : [0x2],
 				header_type: 1,
 				item       : [CardType::Item.byte_size()],
@@ -483,7 +484,7 @@ impl Table {
 
 			// Card bytes
 			let mut card_bytes = [0; 0x3 + CardType::Digivolve.byte_size() + 0x1];
-			let bytes = util::array_split_mut!(&mut card_bytes,
+			let bytes = array_split_mut!(&mut card_bytes,
 				header_id  : [0x2],
 				header_type: 1,
 				item       : [CardType::Digivolve.byte_size()],

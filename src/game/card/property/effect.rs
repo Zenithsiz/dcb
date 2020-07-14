@@ -3,7 +3,8 @@
 // Imports
 use crate::game::{
 	card::property::{self, AttackType, DigimonProperty, EffectOperation, PlayerType, Slot},
-	util, Bytes,
+	util::{array_split, array_split_mut},
+	Bytes,
 };
 use byteorder::{ByteOrder, LittleEndian};
 
@@ -214,7 +215,7 @@ impl Bytes for Effect {
 		use Slot::{Dp as DpSlot, Hand, Offline as OfflineDeck, Online as OnlineDeck};
 
 		// Get all byte arrays we need
-		let bytes = util::array_split!(bytes,
+		let bytes = array_split!(bytes,
 			effect_type: 0x1,
 			a          : 0x1,
 			_unknown_3 : 0x1,
@@ -323,7 +324,7 @@ impl Bytes for Effect {
 		use Slot::{Dp as DpSlot, Hand, Offline as OfflineDeck, Online as OnlineDeck};
 
 		// Get all byte arrays we need
-		let bytes = util::array_split_mut!(bytes,
+		let bytes = array_split_mut!(bytes,
 			effect_type: 0x1,
 			a          : 0x1,
 			_unknown_3 : 0x1,
@@ -464,7 +465,7 @@ impl Bytes for Option<Effect> {
 
 	// `bytes` should include the `exists` byte
 	fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError> {
-		let bytes = util::array_split!(bytes,
+		let bytes = array_split!(bytes,
 			exists : 0x1,
 			effect : [0xf],
 		);
@@ -479,7 +480,7 @@ impl Bytes for Option<Effect> {
 	}
 
 	fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError> {
-		let bytes = util::array_split_mut!(bytes,
+		let bytes = array_split_mut!(bytes,
 			exists: 0x1,
 			effect: [0xf],
 		);

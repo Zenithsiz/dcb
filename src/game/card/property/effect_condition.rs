@@ -3,7 +3,8 @@
 // Imports
 use crate::game::{
 	card::property::{self, DigimonProperty, EffectConditionOperation},
-	util, Bytes,
+	util::{array_split, array_split_mut},
+	Bytes,
 };
 use byteorder::{ByteOrder, LittleEndian};
 
@@ -64,7 +65,7 @@ impl Bytes for EffectCondition {
 	type ToError = !;
 
 	fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError> {
-		let bytes = util::array_split!(bytes,
+		let bytes = array_split!(bytes,
 			misfire     : 0x1,
 			unknown_1   : 0x1,
 			property_cmp: 0x1,
@@ -96,7 +97,7 @@ impl Bytes for EffectCondition {
 	}
 
 	fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError> {
-		let bytes = util::array_split_mut!(bytes,
+		let bytes = array_split_mut!(bytes,
 			misfire     : 0x1,
 			unknown_1   : 0x1,
 			property_cmp: 0x1,
