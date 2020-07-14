@@ -1,5 +1,11 @@
 #![doc(include = "table.md")]
 
+// Modules
+pub mod error;
+
+// Exports
+pub use error::{DeserializeError, SerializeError};
+
 // Imports
 use crate::{
 	game::{
@@ -55,227 +61,6 @@ impl Table {
 	}
 }
 
-/// Error type for [`Table::deserialize`]
-#[derive(Debug, thiserror::Error)]
-pub enum DeserializeError {
-	/// Unable to seek game file
-	#[error("Unable to seek game file to card table")]
-	Seek(#[source] std::io::Error),
-
-	/// Unable to read table header
-	#[error("Unable to read table header")]
-	ReadHeader(#[source] std::io::Error),
-
-	/// The magic of the table was wrong
-	#[error("Found wrong table header magic (expected {:x}, found {:x})", Table::HEADER_MAGIC, magic)]
-	HeaderMagic {
-		/// Magic we found
-		magic: u32,
-	},
-
-	/// There were too many cards
-	#[error(
-		"Too many cards in table ({} digimon, {} item, {} digivolve, {} / {} bytes max)",
-		digimon_cards,
-		item_cards,
-		digivolve_cards,
-		  digimon_cards * (0x3 + CardType::Digimon  .byte_size() + 0x1) +
-		     item_cards * (0x3 + CardType::Item     .byte_size() + 0x1) +
-		digivolve_cards * (0x3 + CardType::Digivolve.byte_size() + 0x1),
-		Table::MAX_BYTE_SIZE
-	)]
-	TooManyCards {
-		/// Number of digimon cards
-		digimon_cards: usize,
-
-		/// Number of item cards
-		item_cards: usize,
-
-		/// Number of digivolve cards
-		digivolve_cards: usize,
-	},
-
-	/// Unable to read card header
-	#[error("Unable to read card header for card id {}", id)]
-	ReadCardHeader {
-		/// Id of card
-		id: usize,
-
-		/// Underlying error
-		#[source]
-		err: std::io::Error,
-	},
-
-	/// An unknown card type was found
-	#[error("Unknown card type for card id {}", id)]
-	UnknownCardType {
-		/// Id of card
-		id: usize,
-
-		/// Underlying error
-		#[source]
-		err: property::card_type::FromBytesError,
-	},
-
-	/// Unable to read a card
-	#[error("Unable to read {} with id {}", card_type, id)]
-	ReadCard {
-		/// Id of card
-		id: usize,
-
-		/// Card type
-		card_type: CardType,
-
-		/// Underlying error
-		#[source]
-		err: std::io::Error,
-	},
-
-	/// Unable to deserialize a digimon card
-	#[error("Unable to deserialize digimon card with id {}", id)]
-	DigimonCard {
-		/// Id of card
-		id: usize,
-
-		/// Underlying error
-		#[source]
-		err: card::digimon::FromBytesError,
-	},
-
-	/// Unable to deserialize an item card
-	#[error("Unable to deserialize item card with id {}", id)]
-	ItemCard {
-		/// Id of card
-		id: usize,
-
-		/// Underlying error
-		#[source]
-		err: card::item::FromBytesError,
-	},
-
-	/// Unable to deserialize a digivolve card
-	#[error("Unable to deserialize digivolve card with id {}", id)]
-	DigivolveCard {
-		/// Id of card
-		id: usize,
-
-		/// Underlying error
-		#[source]
-		err: card::digivolve::FromBytesError,
-	},
-
-	/// Unable to read card footer
-	#[error("Unable to read card footer for card id {}", id)]
-	ReadCardFooter {
-		/// Id of card
-		id: usize,
-
-		/// Underlying error
-		#[source]
-		err: std::io::Error,
-	},
-}
-
-/// Error type for [`Table::serialize`]
-#[derive(Debug, thiserror::Error)]
-pub enum SerializeError {
-	/// Unable to seek game file
-	#[error("Unable to seek game file to card table")]
-	Seek(#[source] std::io::Error),
-
-	/// Unable to write table header
-	#[error("Unable to write table header")]
-	WriteHeader(#[source] std::io::Error),
-
-	/// There were too many cards
-	#[error(
-		"Too many cards in table ({} digimon, {} item, {} digivolve, {} / {} bytes max)",
-		digimon_cards,
-		item_cards,
-		digivolve_cards,
-		  digimon_cards * (0x3 + CardType::Digimon  .byte_size() + 0x1) +
-		     item_cards * (0x3 + CardType::Item     .byte_size() + 0x1) +
-		digivolve_cards * (0x3 + CardType::Digivolve.byte_size() + 0x1),
-		Table::MAX_BYTE_SIZE
-	)]
-	TooManyCards {
-		/// Number of digimon cards
-		digimon_cards: usize,
-
-		/// Number of item cards
-		item_cards: usize,
-
-		/// Number of digivolve cards
-		digivolve_cards: usize,
-	},
-
-	/// Unable to write a digimon card
-	#[error("Unable to write digimon card with id {}", id)]
-	WriteDigimonCard {
-		/// Id of card
-		id: usize,
-
-		/// Underlying error
-		#[source]
-		err: std::io::Error,
-	},
-
-	/// Unable to write an item card
-	#[error("Unable to write item card with id {}", id)]
-	WriteItemCard {
-		/// Id of card
-		id: usize,
-
-		/// Underlying error
-		#[source]
-		err: std::io::Error,
-	},
-
-	/// Unable to write a digivolve card
-	#[error("Unable to write digivolve card with id {}", id)]
-	WriteDigivolveCard {
-		/// Id of card
-		id: usize,
-
-		/// Underlying error
-		#[source]
-		err: std::io::Error,
-	},
-
-	/// Unable to parse a digimon card
-	#[error("Unable to parse digimon card with id {}", id)]
-	ParseDigimonCard {
-		/// Id of card
-		id: usize,
-
-		/// Underlying error
-		#[source]
-		err: card::digimon::ToBytesError,
-	},
-
-	/// Unable to parse an item card
-	#[error("Unable to parse item card with id {}", id)]
-	ParseItemCard {
-		/// Id of card
-		id: usize,
-
-		/// Underlying error
-		#[source]
-		err: card::item::ToBytesError,
-	},
-
-	/// Unable to parse a digivolve card
-	#[error("Unable to parse digivolve card with id {}", id)]
-	ParseDigivolveCard {
-		/// Id of card
-		id: usize,
-
-		/// Underlying error
-		#[source]
-		err: card::digivolve::ToBytesError,
-	},
-}
-
 impl Table {
 	/// Deserializes the card table from a game file
 	pub fn deserialize<R: Read + Write + Seek>(file: &mut GameFile<R>) -> Result<Self, DeserializeError> {
@@ -297,9 +82,9 @@ impl Table {
 		let digimon_cards: usize = LittleEndian::read_u16(&header_bytes[0x4..0x6]).into();
 		let item_cards: usize = header_bytes[0x6].into();
 		let digivolve_cards: usize = header_bytes[0x7].into();
-		log::debug!("[Table Header] Found {} digimon cards", digimon_cards);
-		log::debug!("[Table Header] Found {} item cards", item_cards);
-		log::debug!("[Table Header] Found {} digivolve cards", digivolve_cards);
+		log::trace!("Found {} digimon cards", digimon_cards);
+		log::trace!("Found {} item cards", item_cards);
+		log::trace!("Found {} digivolve cards", digivolve_cards);
 
 		// And calculate the number of cards
 		let cards_len = digimon_cards + item_cards + digivolve_cards;
@@ -308,7 +93,7 @@ impl Table {
 		let table_size = digimon_cards * (0x3 + CardType::Digimon.byte_size() + 0x1) +
 			item_cards * (0x3 + CardType::Item.byte_size() + 0x1) +
 			digivolve_cards * (0x3 + CardType::Digivolve.byte_size() + 0x1);
-		log::debug!("[Table Header] {} total bytes of cards", table_size);
+		log::trace!("{} total bytes of cards", table_size);
 		if table_size > Self::MAX_BYTE_SIZE {
 			return Err(DeserializeError::TooManyCards {
 				digimon_cards,
@@ -333,7 +118,7 @@ impl Table {
 			let card_id = LittleEndian::read_u16(&card_header_bytes[0x0..0x2]);
 			let card_type = CardType::from_bytes(&card_header_bytes[0x2]).map_err(|err| DeserializeError::UnknownCardType { id: cur_id, err })?;
 
-			log::debug!("[Card Header] Found {} with id {}", card_type, card_id);
+			log::trace!("Found {} with id {}", card_type, card_id);
 
 			// If the card id isn't what we expected, log warning
 			if usize::from(card_id) != cur_id {
@@ -412,9 +197,9 @@ impl Table {
 			LittleEndian::write_u32(bytes.magic, Self::HEADER_MAGIC);
 
 			// Write card lens
-			log::debug!("[Table Header] Writing {} digimon cards", self.digimons.len());
-			log::debug!("[Table Header] Writing {} item cards", self.items.len());
-			log::debug!("[Table Header] Writing {} digivolve cards", self.digivolves.len());
+			log::trace!("Writing {} digimon cards", self.digimons.len());
+			log::trace!("Writing {} item cards", self.items.len());
+			log::trace!("Writing {} digivolve cards", self.digivolves.len());
 			LittleEndian::write_u16(
 				bytes.digimons_len,
 				self.digimons.len().try_into().expect("Number of digimon cards exceeded `u16`"),
@@ -451,7 +236,7 @@ impl Table {
 			// Write the footer
 			*bytes.footer = 0;
 
-			log::debug!("[Card Header] Writing Digimon with id {}", cur_id);
+			log::trace!("Writing Digimon with id {}", cur_id);
 			file.write_all(&card_bytes)
 				.map_err(|err| SerializeError::WriteDigimonCard { id: cur_id, err })?;
 		}
@@ -479,7 +264,7 @@ impl Table {
 			// Write the footer
 			*bytes.footer = 0;
 
-			log::debug!("[Card Header] Writing Item with id {}", cur_id);
+			log::trace!("Writing Item with id {}", cur_id);
 			file.write_all(&card_bytes)
 				.map_err(|err| SerializeError::WriteItemCard { id: cur_id, err })?;
 		}
@@ -508,7 +293,7 @@ impl Table {
 			// Write the footer
 			*bytes.footer = 0;
 
-			log::debug!("[Card Header] Writing Digivolve with id {}", cur_id);
+			log::trace!("Writing Digivolve with id {}", cur_id);
 			file.write_all(&card_bytes)
 				.map_err(|err| SerializeError::WriteDigivolveCard { id: cur_id, err })?;
 		}
