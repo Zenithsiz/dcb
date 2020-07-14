@@ -1,13 +1,11 @@
 #![doc(include = "effect.md")]
 
-// byteorder
-use byteorder::{ByteOrder, LittleEndian};
-
-// Crate
+// Imports
 use crate::game::{
 	card::property::{self, AttackType, DigimonProperty, EffectOperation, PlayerType, Slot},
 	util, Bytes,
 };
+use byteorder::{ByteOrder, LittleEndian};
 
 /// A digimon's support effects
 ///

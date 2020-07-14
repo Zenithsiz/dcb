@@ -1,13 +1,11 @@
 #![doc(include = "effect_condition.md")]
 
-// byteorder
-use byteorder::{ByteOrder, LittleEndian};
-
-// Crate
+// Imports
 use crate::game::{
 	card::property::{self, DigimonProperty, EffectConditionOperation},
 	util, Bytes,
 };
+use byteorder::{ByteOrder, LittleEndian};
 
 /// A digimon's support effect condition
 #[derive(PartialEq, Eq, Clone, Copy, Hash, Debug)]

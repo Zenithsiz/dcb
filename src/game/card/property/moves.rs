@@ -4,11 +4,9 @@
 #[cfg(test)]
 mod test;
 
-// byteorder
-use byteorder::{ByteOrder, LittleEndian};
-
-// Crate
+// Imports
 use crate::game::{util, Bytes};
+use byteorder::{ByteOrder, LittleEndian};
 
 /// A digimon's move
 #[derive(PartialEq, Eq, Clone, Hash, Debug)]

@@ -1,13 +1,11 @@
 #![doc(include = "item.md")]
 
-// byteorder
-use byteorder::{ByteOrder, LittleEndian};
-
-// Crate
+// Imports
 use crate::game::{
 	card::property::{self, ArrowColor, Effect, EffectCondition},
 	util, Bytes,
 };
+use byteorder::{ByteOrder, LittleEndian};
 
 /// An item card
 ///

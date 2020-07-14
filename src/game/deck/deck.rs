@@ -1,10 +1,8 @@
 //! Decks
 
-// byteorder
-use byteorder::{ByteOrder, LittleEndian};
-
-// Crate
+// Imports
 use crate::game::{util, Bytes};
+use byteorder::{ByteOrder, LittleEndian};
 
 /// A deck
 #[derive(Debug)]

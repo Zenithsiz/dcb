@@ -1,6 +1,6 @@
 #![doc(include = "digivolve.md")]
 
-// Crate
+// Imports
 use crate::game::{util, Bytes};
 
 /// A digivolve card

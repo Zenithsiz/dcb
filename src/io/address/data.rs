@@ -1,6 +1,6 @@
 //! File data-only addresses
 
-// Address
+// Imports
 use crate::io::address::Real;
 
 /// A type for defining addresses on the data parts of `.bin` file.

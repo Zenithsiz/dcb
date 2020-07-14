@@ -1,6 +1,6 @@
 //! Interface for converting various structures to and from bytes
 
-// Std
+// Imports
 use std::{error::Error, fmt::Debug};
 
 /// Conversions to and from bytes for the game file

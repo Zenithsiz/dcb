@@ -1,13 +1,11 @@
 //! The table of all decks in the game
 
-// Std
-use std::io::{Read, Seek, Write};
-
-// Crate
+// Imports
 use crate::{
 	game::{deck::deck, Bytes, Deck},
 	io::{address::Data, GameFile},
 };
+use std::io::{Read, Seek, Write};
 
 /// The decks table, where all decks are stored
 ///

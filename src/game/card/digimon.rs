@@ -1,13 +1,11 @@
 #![doc(include = "digimon.md")]
 
-// byteorder
-use byteorder::{ByteOrder, LittleEndian};
-
-// Crate
+// Imports
 use crate::game::{
 	card::property::{self, ArrowColor, CrossMoveEffect, Effect, EffectCondition, Level, Move, Speciality},
 	util, Bytes,
 };
+use byteorder::{ByteOrder, LittleEndian};
 
 /// A digimon card
 ///

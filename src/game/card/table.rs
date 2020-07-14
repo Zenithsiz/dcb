@@ -1,12 +1,6 @@
 #![doc(include = "table.md")]
 
-// Std
-use std::io::{Read, Seek, Write};
-
-// byteorder
-use byteorder::{ByteOrder, LittleEndian};
-
-// Crate
+// Imports
 use crate::{
 	game::{
 		card::{
@@ -18,6 +12,8 @@ use crate::{
 	},
 	io::{address::Data, GameFile},
 };
+use byteorder::{ByteOrder, LittleEndian};
+use std::io::{Read, Seek, Write};
 
 /// The table storing all cards
 #[derive(Debug)]

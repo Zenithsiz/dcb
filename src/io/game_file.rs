@@ -2,10 +2,8 @@
 //!
 //! See [`GameFile`] for details
 
-// Addresses
+// Imports
 use crate::io::address::{Data as DataAddress, Real as RealAddress, RealToDataError};
-
-// Read / Write
 use std::io::{Read, Seek, Write};
 
 /// A type that abstracts over a the game reader.
