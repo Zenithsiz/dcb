@@ -21,7 +21,7 @@
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! #   use std::fs::File;
 //! let mut game_file = dcb::GameFile::from_reader( File::open("Digimon Digital Card Battle.bin")? )?;
-//! let card_table = dcb::game::card::Table::deserialize( &mut game_file )?;
+//! let card_table = dcb::game::CardTable::deserialize(&mut game_file)?;
 //! println!("Card table: {:?}", card_table);
 //! #   Ok(())
 //! # }
