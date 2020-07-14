@@ -102,5 +102,5 @@ pub mod game;
 pub mod io;
 
 // Exports
-pub use game::{Bytes, CardTable, Deck, DeckTable, Digimon, Digivolve, Item};
+pub use game::{Bytes, CardTable, Deck, DeckTable, Digimon, Digivolve, Item, Validatable, Validation};
 pub use io::GameFile;

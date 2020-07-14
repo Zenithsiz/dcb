@@ -1,11 +1,5 @@
 //! Interface for converting various structures to and from bytes
 
-// Modules
-pub mod validation;
-
-// Exports
-pub use validation::Validation;
-
 // Std
 use std::{error::Error, fmt::Debug};
 
