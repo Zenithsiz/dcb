@@ -8,13 +8,8 @@ use crate::{
 use std::io::{Read, Seek, Write};
 
 /// The decks table, where all decks are stored
-///
-/// # Details
-/// This type serves as an interface to this table, being able to read
-/// and write to it, it is the only type able to do so, as each deck
-/// type may only be converted to and from bytes.
-#[derive(Debug)]
-#[derive(::serde::Serialize, ::serde::Deserialize)]
+#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Table {
 	/// All decks
 	decks: Vec<Deck>,

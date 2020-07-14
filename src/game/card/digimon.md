@@ -7,7 +7,7 @@ The digimon card has a size of `0x138` bytes, and it's layout is the following:
 
 | Offset | Size | Type                | Name                     | Location               | Details                                                                             |
 | ------ | ---- | ------------------- | ------------------------ | ---------------------- | ----------------------------------------------------------------------------------- |
-| 0x0    | 0x15 | `[char; 0x15]`      | Name                     | `name`                 | Null-terminated                                                                     |
+| 0x0    | 0x15 | `[u8; 0x15]`        | Name                     | `name`                 | Null-terminated                                                                     |
 | 0x15   | 0x2  | `u16`               | Unknown                  | `unknown_15`           |                                                                                     |
 | 0x17   | 0x1  | `u8`                | Speciality & Level       | `speciality level`     | The bottom nibble of this byte is the level, while the top nibble is the speciality |
 | 0x18   | 0x1  | `u8`                | DP                       | `dp_cost`              |                                                                                     |
@@ -25,4 +25,4 @@ The digimon card has a size of `0x138` bytes, and it's layout is the following:
 | 0xe1   | 0x1  | [`CrossMoveEffect`] | Cross move effect        | `cross_move_effect`    |                                                                                     |
 | 0xe2   | 0x1  | `u8`                | Unknown                  | `unknown_e2`           |                                                                                     |
 | 0xe3   | 0x1  | [`ArrowColor`]      | Effect arrow color       | `effect_arrow_color`   |                                                                                     |
-| 0xe4   | 0x54 | `[[char; 0x15]; 4]` | Effect description lines | `effect_description`   | Each line is` 0x15` bytes, split over 4 lines, each null terminated                 |
+| 0xe4   | 0x54 | `[[u8; 0x15]; 4]`   | Effect description lines | `effect_description`   | Each line is` 0x15` bytes, split over 4 lines, each null terminated                 |

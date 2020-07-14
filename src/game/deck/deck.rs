@@ -10,9 +10,12 @@ use crate::{
 };
 use byteorder::{ByteOrder, LittleEndian};
 
+/// Card id type
+pub type CardId = u16;
+
 /// A deck
-#[derive(Debug)]
-#[derive(::serde::Serialize, ::serde::Deserialize)]
+#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Deck {
 	/// Name of this deck
 	pub name: ascii::AsciiString,
@@ -21,10 +24,10 @@ pub struct Deck {
 	pub owner: ascii::AsciiString,
 
 	/// All of the card ids that make up this deck
-	pub cards: [u16; 30],
+	pub cards: [CardId; 30],
 
-	/// Unknown data
-	unknown: [u8; 0xc],
+	/// Unknown data at `0x62`
+	unknown_62: [u8; 0xc],
 }
 
 /// Error type for [`Bytes::from_bytes`]
@@ -59,38 +62,35 @@ impl Bytes for Deck {
 	fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError> {
 		// Split the bytes
 		let bytes = array_split!(bytes,
-			deck   : [0x3c],
-			name   : [0x13],
-			owner  : [0x13],
-			unknown: [0xc],
+			deck      : [0x3c],
+			name      : [0x13],
+			owner     : [0x13],
+			unknown_62: [0xc],
 		);
+
+		let mut cards = [0; 30];
+		for (card_id, card) in cards.iter_mut().enumerate() {
+			/// Size of [`CardId`]
+			const CARD_ID_SIZE: usize = std::mem::size_of::<CardId>();
+			let offset = card_id * CARD_ID_SIZE;
+			*card = LittleEndian::read_u16(&bytes.deck[offset..offset + CARD_ID_SIZE]);
+		}
 
 		Ok(Self {
 			name: bytes.name.read_string().map_err(FromBytesError::Name)?.to_ascii_string(),
-
 			owner: bytes.owner.read_string().map_err(FromBytesError::Owner)?.to_ascii_string(),
-
-			cards: {
-				let mut cards_buf = [0; 0x1e];
-
-				for (card_id, card) in cards_buf.iter_mut().enumerate() {
-					*card = LittleEndian::read_u16(&bytes.deck[0x0 + card_id * 2..0x2 + card_id * 2]);
-				}
-
-				cards_buf
-			},
-
-			unknown: *bytes.unknown,
+			cards,
+			unknown_62: *bytes.unknown_62,
 		})
 	}
 
 	fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError> {
 		// Split the bytes
 		let bytes = array_split_mut!(bytes,
-			deck   : [0x3c],
-			name   : [0x13],
-			owner  : [0x13],
-			unknown: [0xc],
+			deck      : [0x3c],
+			name      : [0x13],
+			owner     : [0x13],
+			unknown_62: [0xc],
 		);
 
 		// Name / Owner
@@ -99,11 +99,14 @@ impl Bytes for Deck {
 
 		// Deck
 		for (card_id, card) in self.cards.iter().enumerate() {
-			LittleEndian::write_u16(&mut bytes.deck[0x0 + card_id * 2..0x2 + card_id * 2], *card);
+			/// Size of [`CardId`]
+			const CARD_ID_SIZE: usize = std::mem::size_of::<CardId>();
+			let offset = card_id * CARD_ID_SIZE;
+			LittleEndian::write_u16(&mut bytes.deck[offset..offset + CARD_ID_SIZE], *card);
 		}
 
 		// Unknown
-		*bytes.unknown = self.unknown;
+		*bytes.unknown_62 = self.unknown_62;
 
 		// And return Ok
 		Ok(())

@@ -26,7 +26,7 @@ use std::{
 };
 
 /// The table storing all cards
-#[derive(Debug)]
+#[derive(PartialEq, Eq, Clone, Debug)]
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Table {
 	/// All digimons in this table
