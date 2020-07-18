@@ -35,7 +35,8 @@
 	decl_macro,
 	stmt_expr_attributes,
 	unwrap_infallible,
-	external_doc
+	external_doc,
+	format_args_capture
 )]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]
@@ -50,7 +51,7 @@
 // it is the safest alternative.
 #![allow(clippy::expect_used)]
 // Like-wise with `.expect("...")`, we use `unreachable!` / `todo!` when we know a branch
-// if unreachable, and if it ever does get reached, panicking would be the
+// if unreachable or not yet finished, and if it ever does get reached, panicking would be the
 // safest option
 #![allow(clippy::unreachable, clippy::todo)]
 // We find it more important to be able to copy paste literals such as `0xabcd1234` than

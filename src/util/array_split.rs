@@ -69,6 +69,7 @@ pub macro array_split_mut {
 			clippy::used_underscore_binding,
 			clippy::ptr_offset_with_cast,
 			clippy::indexing_slicing,
+			dead_code
 		)]
 
 		// Struct holding all fields

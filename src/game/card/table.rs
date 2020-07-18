@@ -17,7 +17,7 @@ use crate::{
 		Bytes,
 	},
 	io::{address::Data, GameFile},
-	util::array_split_mut,
+	util::{array_split, array_split_mut},
 };
 use byteorder::{ByteOrder, LittleEndian};
 use std::{
@@ -26,6 +26,9 @@ use std::{
 };
 
 /// The table storing all cards
+///
+/// See the [module containing](self) this struct for more details
+/// on where the table is deserialized from and it's features / restrictions.
 #[derive(PartialEq, Eq, Clone, Debug)]
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Table {
@@ -44,6 +47,7 @@ impl Table {
 	/// Table header size
 	pub const HEADER_BYTE_SIZE: usize = 0x8;
 	/// The magic in the table header
+	/// = "0ACD"
 	pub const HEADER_MAGIC: u32 = 0x44434130;
 	/// The max size of the card table
 	// TODO: Check the theoretical max, which is currently thought to be `0x14ff5`
@@ -59,6 +63,15 @@ impl Table {
 	pub fn card_count(&self) -> usize {
 		self.digimons.len() + self.items.len() + self.digivolves.len()
 	}
+
+	/// Returns the byte size of all cards in this table
+	#[must_use]
+	#[rustfmt::skip]
+	pub fn cards_byte_size(&self) -> usize {
+		self.digimons  .len() * (0x3 + CardType::Digimon  .byte_size() + 0x1) +
+		self.items     .len() * (0x3 + CardType::Item     .byte_size() + 0x1) +
+		self.digivolves.len() * (0x3 + CardType::Digivolve.byte_size() + 0x1)
+	}
 }
 
 impl Table {
@@ -69,22 +82,27 @@ impl Table {
 			.map_err(DeserializeError::Seek)?;
 
 		// Read header
-		let mut header_bytes = [0u8; 0x8];
+		let mut header_bytes = [0u8; Self::HEADER_BYTE_SIZE];
 		file.read_exact(&mut header_bytes).map_err(DeserializeError::ReadHeader)?;
+		let header = array_split! {&header_bytes,
+			magic: [0x4],
+
+			digimons_len: [0x2],
+			items_len: 1,
+			digivolves_len: 1,
+		};
 
 		// Check if the magic is right
-		let magic = LittleEndian::read_u32(&header_bytes[0x0..0x4]);
+		let magic = LittleEndian::read_u32(header.magic);
 		if magic != Self::HEADER_MAGIC {
 			return Err(DeserializeError::HeaderMagic { magic });
 		}
 
 		// Then check the number of each card
-		let digimon_cards: usize = LittleEndian::read_u16(&header_bytes[0x4..0x6]).into();
-		let item_cards: usize = header_bytes[0x6].into();
-		let digivolve_cards: usize = header_bytes[0x7].into();
-		log::trace!("Found {} digimon cards", digimon_cards);
-		log::trace!("Found {} item cards", item_cards);
-		log::trace!("Found {} digivolve cards", digivolve_cards);
+		let digimon_cards: usize = LittleEndian::read_u16(header.digimons_len).into();
+		let item_cards: usize = (*header.items_len).into();
+		let digivolve_cards: usize = (*header.digivolves_len).into();
+		log::trace!("Found {digimon_cards} digimon, {item_cards} item, {digivolve_cards} digivolve cards");
 
 		// And calculate the number of cards
 		let cards_len = digimon_cards + item_cards + digivolve_cards;
@@ -93,7 +111,6 @@ impl Table {
 		let table_size = digimon_cards * (0x3 + CardType::Digimon.byte_size() + 0x1) +
 			item_cards * (0x3 + CardType::Item.byte_size() + 0x1) +
 			digivolve_cards * (0x3 + CardType::Digivolve.byte_size() + 0x1);
-		log::trace!("{} total bytes of cards", table_size);
 		if table_size > Self::MAX_BYTE_SIZE {
 			return Err(DeserializeError::TooManyCards {
 				digimon_cards,
@@ -118,7 +135,7 @@ impl Table {
 			let card_id = LittleEndian::read_u16(&card_header_bytes[0x0..0x2]);
 			let card_type = CardType::from_bytes(&card_header_bytes[0x2]).map_err(|err| DeserializeError::UnknownCardType { id: cur_id, err })?;
 
-			log::trace!("Found {} with id {}", card_type, card_id);
+			log::trace!("Found #{}: {}", card_id, card_type);
 
 			// If the card id isn't what we expected, log warning
 			if usize::from(card_id) != cur_id {
@@ -165,9 +182,7 @@ impl Table {
 	/// Serializes this card table to `file`.
 	pub fn serialize<R: Read + Write + Seek>(&self, file: &mut GameFile<R>) -> Result<(), SerializeError> {
 		// Get the final table size
-		let table_size = self.digimons.len() * (0x3 + CardType::Digimon.byte_size() + 0x1) +
-			self.items.len() * (0x3 + CardType::Item.byte_size() + 0x1) +
-			self.digivolves.len() * (0x3 + CardType::Digivolve.byte_size() + 0x1);
+		let table_size = self.cards_byte_size();
 
 		// If the total table size is bigger than the max, return Err
 		if table_size > Self::MAX_BYTE_SIZE {
@@ -184,118 +199,75 @@ impl Table {
 
 		// Write header
 		let mut header_bytes = [0u8; 0x8];
-		{
-			let bytes = array_split_mut!(&mut header_bytes,
-				magic: [0x4],
+		let header = array_split_mut!(&mut header_bytes,
+			magic: [0x4],
 
-				digimons_len: [0x2],
-				items_len: 1,
-				digivolves_len: 1,
-			);
+			digimons_len: [0x2],
+			items_len: 1,
+			digivolves_len: 1,
+		);
 
-			// Set magic
-			LittleEndian::write_u32(bytes.magic, Self::HEADER_MAGIC);
+		// Set magic
+		LittleEndian::write_u32(header.magic, Self::HEADER_MAGIC);
 
-			// Write card lens
-			log::trace!("Writing {} digimon cards", self.digimons.len());
-			log::trace!("Writing {} item cards", self.items.len());
-			log::trace!("Writing {} digivolve cards", self.digivolves.len());
-			LittleEndian::write_u16(
-				bytes.digimons_len,
-				self.digimons.len().try_into().expect("Number of digimon cards exceeded `u16`"),
-			);
-			*bytes.items_len = self.items.len().try_into().expect("Number of item cards exceeded `u8`");
-			*bytes.digivolves_len = self.digivolves.len().try_into().expect("Number of digivolve cards exceeded `u8`");
-		}
+		// Write card lens
+		log::trace!("Writing {} digimon cards", self.digimons.len());
+		log::trace!("Writing {} item cards", self.items.len());
+		log::trace!("Writing {} digivolve cards", self.digivolves.len());
+		LittleEndian::write_u16(
+			header.digimons_len,
+			self.digimons.len().try_into().expect("Number of digimon cards exceeded `u16`"),
+		);
+		*header.items_len = self.items.len().try_into().expect("Number of item cards exceeded `u8`");
+		*header.digivolves_len = self.digivolves.len().try_into().expect("Number of digivolve cards exceeded `u8`");
 
+		// And write the header
 		file.write_all(&header_bytes).map_err(SerializeError::WriteHeader)?;
 
-		// Write all digimon, items and digivolves
-		for (rel_id, digimon) in self.digimons.iter().enumerate() {
-			// Current id through the whole table
-			let cur_id = rel_id;
+		// Macro to help write all cards to file
+		macro_rules! write_card {
+			($cards:expr, $prev_ids:expr, $card_type:ident, $ErrVariant:ident) => {
+				for (rel_id, card) in $cards.iter().enumerate() {
+					// Current id through the whole table
+					let cur_id = $prev_ids + rel_id;
 
-			// Card bytes
-			let mut card_bytes = [0; 0x3 + CardType::Digimon.byte_size() + 0x1];
-			let bytes = array_split_mut!(&mut card_bytes,
-				header_id  : [0x2],
-				header_type: 1,
-				digimon    : [CardType::Digimon.byte_size()],
-				footer     : 1,
-			);
+					// Card bytes
+					let mut card_bytes = [0; 0x3 + CardType::$card_type.byte_size() + 0x1];
+					let bytes = array_split_mut!(&mut card_bytes,
+						header_id  : [0x2],
+						header_type: 1,
+						card       : [CardType::$card_type.byte_size()],
+						footer     : 1,
+					);
 
-			// Write the header
-			LittleEndian::write_u16(bytes.header_id, cur_id.try_into().expect("Card ID exceeded `u16`"));
-			CardType::Digimon.to_bytes(bytes.header_type)?;
+					// Write the header
+					LittleEndian::write_u16(bytes.header_id, cur_id.try_into().expect("Card ID exceeded `u16`"));
+					CardType::$card_type.to_bytes(bytes.header_type)?;
 
-			// Write the digimon
-			digimon
-				.to_bytes(bytes.digimon)
-				.map_err(|err| SerializeError::ParseDigimonCard { id: cur_id, err })?;
+					// Write the card
+					card
+						.to_bytes(bytes.card)
+						.map_err(|err| SerializeError::$ErrVariant { id: cur_id, err })?;
 
-			// Write the footer
-			*bytes.footer = 0;
+					// Write the footer
+					*bytes.footer = 0;
 
-			log::trace!("Writing Digimon with id {}", cur_id);
-			file.write_all(&card_bytes)
-				.map_err(|err| SerializeError::WriteDigimonCard { id: cur_id, err })?;
+					log::trace!("#{}: Writing {}", cur_id, CardType::$card_type);
+					file.write_all(&card_bytes)
+						.map_err(|err| SerializeError::WriteCard {
+							id: cur_id,
+							card_type: CardType::$card_type,
+							err
+						})?;
+				}
+			}
 		}
-		for (rel_id, item) in self.items.iter().enumerate() {
-			// Current id through the whole table
-			let cur_id = self.digimons.len() + rel_id;
 
-			// Card bytes
-			let mut card_bytes = [0; 0x3 + CardType::Item.byte_size() + 0x1];
-			let bytes = array_split_mut!(&mut card_bytes,
-				header_id  : [0x2],
-				header_type: 1,
-				item       : [CardType::Item.byte_size()],
-				footer     : 1,
-			);
-
-			// Write the header
-			LittleEndian::write_u16(bytes.header_id, cur_id.try_into().expect("Card ID exceeded `u16`"));
-			CardType::Item.to_bytes(bytes.header_type)?;
-
-			// Write the item
-			item.to_bytes(bytes.item)
-				.map_err(|err| SerializeError::ParseItemCard { id: cur_id, err })?;
-
-			// Write the footer
-			*bytes.footer = 0;
-
-			log::trace!("Writing Item with id {}", cur_id);
-			file.write_all(&card_bytes)
-				.map_err(|err| SerializeError::WriteItemCard { id: cur_id, err })?;
-		}
-		for (rel_id, digivolve) in self.digivolves.iter().enumerate() {
-			// Current id through the whole table
-			let cur_id = self.digimons.len() + self.items.len() + rel_id;
-
-			// Card bytes
-			let mut card_bytes = [0; 0x3 + CardType::Digivolve.byte_size() + 0x1];
-			let bytes = array_split_mut!(&mut card_bytes,
-				header_id  : [0x2],
-				header_type: 1,
-				item       : [CardType::Digivolve.byte_size()],
-				footer     : 1,
-			);
-
-			// Write the header
-			LittleEndian::write_u16(bytes.header_id, cur_id.try_into().expect("Card ID exceeded `u16`"));
-			CardType::Digivolve.to_bytes(bytes.header_type)?;
-
-			// Write the digivolve
-			digivolve
-				.to_bytes(bytes.item)
-				.map_err(|err| SerializeError::ParseDigivolveCard { id: cur_id, err })?;
-
-			// Write the footer
-			*bytes.footer = 0;
-
-			log::trace!("Writing Digivolve with id {}", cur_id);
-			file.write_all(&card_bytes)
-				.map_err(|err| SerializeError::WriteDigivolveCard { id: cur_id, err })?;
+		// Write all cards
+		#[rustfmt::skip] {
+			write_card! { self.digimons  , 0                                     , Digimon  , SerializeDigimonCard   }
+			write_card! { self.items     , self.digimons.len()                   , Item     , SerializeItemCard      }
+			write_card! { self.digivolves, self.digimons.len() + self.items.len(), Digivolve, SerializeDigivolveCard }
 		}
 
 		// And return Ok
