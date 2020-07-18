@@ -175,7 +175,7 @@ generate_enum_property_mod!(
 			Online ("Online" ) => 2,
 			Offline("Offline") => 3,
 
-			_ => "Unknown byte 0x{:x} for a slot"
+			_ => "Unknown byte {:#x} for a slot"
 		}
 	}
 
@@ -187,7 +187,7 @@ generate_enum_property_mod!(
 			Green("Green") => 2,
 			Blue ("Blue" ) => 3,
 
-			_ => "Unknown byte 0x{:x} for an arrow color"
+			_ => "Unknown byte {:#x} for an arrow color"
 		}
 	}
 
@@ -199,7 +199,7 @@ generate_enum_property_mod!(
 			Triangle("Triangle") => 1,
 			Cross   ("Cross"   ) => 2,
 
-			_ => "Unknown byte 0x{:x} for an attack type"
+			_ => "Unknown byte {:#x} for an attack type"
 		}
 	}
 
@@ -211,7 +211,7 @@ generate_enum_property_mod!(
 			Item     ("Item"     ) => 1,
 			Digivolve("Digivolve") => 2,
 
-			_ => "Unknown byte 0x{:x} for a card type"
+			_ => "Unknown byte {:#x} for a card type"
 		}
 
 		impl CardType
@@ -237,7 +237,7 @@ generate_enum_property_mod!(
 			Opponent("Opponent") => 0,
 			Player  ("Player"  ) => 1,
 
-			_ => "Unknown byte 0x{:x} for a player type",
+			_ => "Unknown byte {:#x} for a player type",
 		}
 	}
 
@@ -250,7 +250,7 @@ generate_enum_property_mod!(
 			Champion("Champion") => 2,
 			Ultimate("Ultimate") => 3,
 
-			_ => "Unknown byte 0x{:x} for a level",
+			_ => "Unknown byte {:#x} for a level",
 		}
 	}
 
@@ -264,7 +264,7 @@ generate_enum_property_mod!(
 			Darkness("Darkness") => 3,
 			Rare    ("Rare"    ) => 4,
 
-			_ => "Unknown byte 0x{:x} for a speciality",
+			_ => "Unknown byte {:#x} for a speciality",
 		}
 	}
 
@@ -277,7 +277,7 @@ generate_enum_property_mod!(
 			Multiplication("Multiplication") => 2,
 			Division      ("Division"      ) => 3,
 
-			_ => "Unknown byte 0x{:x} for a effect operation",
+			_ => "Unknown byte {:#x} for a effect operation",
 		}
 	}
 
@@ -303,7 +303,7 @@ generate_enum_property_mod!(
 				Self::EqualToNumber
 			},
 
-			_ => "Unknown byte 0x{:x} for a effect condition operation",
+			_ => "Unknown byte {:#x} for a effect condition operation",
 		}
 	}
 
@@ -331,7 +331,7 @@ generate_enum_property_mod!(
 			DarknessFoe3x("Darkness Foe x3") => 14,
 				RareFoe3x("Rare Foe x3"    ) => 15,
 
-			_ => "Unknown byte 0x{:x} for a cross move effect",
+			_ => "Unknown byte {:#x} for a cross move effect",
 		}
 	}
 
@@ -367,7 +367,7 @@ generate_enum_property_mod!(
 			CardsInOwnOnDeck ("Cards in own online deck"     ) => 27,
 			CardsInOpnOnDeck ("Cards in opponent online deck") => 28,
 
-			_ => "Unknown byte 0x{:x} for a digimon property",
+			_ => "Unknown byte {:#x} for a digimon property",
 		}
 	}
 );
