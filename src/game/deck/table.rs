@@ -37,7 +37,7 @@ impl Table {
 	// TODO: Verify this
 	pub const MAX_BYTE_SIZE: usize = 0x4452;
 	/// The start address of the decks table
-	const START_ADDRESS: Data = Data::from_u64(0x21a6808);
+	const START_ADDRESS: Data = Data::from_u64(0x21a6800);
 }
 
 impl Table {

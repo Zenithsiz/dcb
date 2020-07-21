@@ -9,6 +9,8 @@
 // Modules
 pub mod array_split;
 pub mod null_ascii_string;
+#[macro_use]
+pub mod impl_bytes;
 
 // Exports
 pub use array_split::{array_split, array_split_mut};
