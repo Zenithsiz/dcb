@@ -14,6 +14,7 @@ pub mod impl_bytes;
 
 // Exports
 pub use array_split::{array_split, array_split_mut};
+pub use impl_bytes::generate_enum_property_option;
 
 
 /// Returns the absolute different between `a` and `b`, `a - b` as a `i64`.

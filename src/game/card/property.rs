@@ -1,6 +1,7 @@
 //! Card properties
 
-use crate::{generate_enum_property_mod, util::impl_bytes::generate_enum_property_option};
+// Imports
+use crate::{generate_enum_property_mod, util};
 
 generate_enum_property_mod!(
 	pub mod slot {
@@ -209,7 +210,7 @@ generate_enum_property_mod!(
 	}
 );
 
-generate_enum_property_option!(
+util::generate_enum_property_option!(
 	ArrowColor      => 0,
 	CrossMoveEffect => 0,
 	DigimonProperty => 0,
