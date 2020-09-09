@@ -38,7 +38,8 @@
 	external_doc,
 	format_args_capture,
 	const_fn,
-	const_panic
+	const_panic,
+	min_const_generics
 )]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]

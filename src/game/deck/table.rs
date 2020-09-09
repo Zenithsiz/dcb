@@ -41,6 +41,7 @@ impl Table {
 	const START_ADDRESS: Data = Data::from_u64(0x21a6800);
 }
 
+#[allow(clippy::use_self)] // TODO: Remove once `min_const_generics` allows us to use it
 impl Table {
 	/// Deserializes the deck table from `file`.
 	pub fn deserialize<R>(file: &mut GameFile<R>) -> Result<Self, DeserializeError>
@@ -52,7 +53,7 @@ impl Table {
 			.map_err(DeserializeError::Seek)?;
 
 		// Read header
-		let mut header_bytes = [0u8; Self::HEADER_BYTE_SIZE];
+		let mut header_bytes = [0u8; Table::HEADER_BYTE_SIZE];
 		file.read_exact(&mut header_bytes).map_err(DeserializeError::ReadHeader)?;
 
 		// Check if the magic is right

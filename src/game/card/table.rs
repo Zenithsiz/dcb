@@ -75,6 +75,7 @@ impl Table {
 	}
 }
 
+#[allow(clippy::use_self)] // TODO: Remove once `min_const_generics` allows us to use it
 impl Table {
 	/// Deserializes the card table from a game file
 	pub fn deserialize<R: Read + Write + Seek>(file: &mut GameFile<R>) -> Result<Self, DeserializeError> {
@@ -83,7 +84,7 @@ impl Table {
 			.map_err(DeserializeError::Seek)?;
 
 		// Read header
-		let mut header_bytes = [0u8; Self::HEADER_BYTE_SIZE];
+		let mut header_bytes = [0u8; Table::HEADER_BYTE_SIZE];
 		file.read_exact(&mut header_bytes).map_err(DeserializeError::ReadHeader)?;
 		let header = array_split! {&header_bytes,
 			magic: [0x4],
