@@ -30,28 +30,39 @@ impl Real {
 }
 
 impl Real {
+	/// Creates a real address from a `u64`
+	#[must_use]
+	pub const fn from_u64(address: u64) -> Self {
+		Self(address)
+	}
+
+	/// Returns this address as a `u64`
+	#[must_use]
+	pub const fn as_u64(self) -> u64 {
+		self.0
+	}
+
 	/// Returns the real sector associated with this address
 	#[must_use]
-	#[allow(clippy::integer_division)] // We want to get the whole division
-	pub fn sector(self) -> u64 {
-		u64::from(self) / Self::SECTOR_BYTE_SIZE
+	pub const fn sector(self) -> u64 {
+		self.as_u64() / Self::SECTOR_BYTE_SIZE
 	}
 
 	/// Returns the offset into the sector of this address
 	#[must_use]
-	pub fn offset(self) -> u64 {
-		u64::from(self) % Self::SECTOR_BYTE_SIZE
+	pub const fn offset(self) -> u64 {
+		self.as_u64() % Self::SECTOR_BYTE_SIZE
 	}
 
 	/// Returns the address of the end of the data section in this sector.
 	#[must_use]
-	pub fn data_section_end(self) -> Self {
+	pub const fn data_section_end(self) -> Self {
 		// Get the sector
 		let real_sector = self.sector();
 
 		// The end of the real data section is after the header and data sections
 		#[rustfmt::skip]
-		Self::from(
+		Self::from_u64(
 			Self::SECTOR_BYTE_SIZE * real_sector + // Beginning of sector
 			Self::HEADER_BYTE_SIZE               + // Skip Header
 			Self::  DATA_BYTE_SIZE, // Skip Data
@@ -60,9 +71,11 @@ impl Real {
 
 	/// Checks if this address is within the real data section
 	#[must_use]
-	pub fn in_data_section(self) -> bool {
+	pub const fn in_data_section(self) -> bool {
 		// If our offset is within the data range
-		Self::DATA_RANGE.contains(&self.offset())
+		// TODO: Replace with `Self::DATA_RANGE.contains(&self.offset())` once it's `const`.
+		let offset = self.offset();
+		offset >= Self::DATA_RANGE.start && offset < Self::DATA_RANGE.end
 	}
 }
 
@@ -79,6 +92,25 @@ impl std::ops::Add<i64> for Real {
 impl std::ops::AddAssign<i64> for Real {
 	fn add_assign(&mut self, offset: i64) {
 		*self = *self + offset;
+	}
+}
+
+// Real - Offset
+impl std::ops::Sub<i64> for Real {
+	type Output = Self;
+
+	fn sub(self, offset: i64) -> Self {
+		if offset == i64::MIN {
+			panic!("Unable to offset `i64::MIN`")
+		}
+		Self::from(signed_offset(self.into(), -offset))
+	}
+}
+
+// Real += Offset
+impl std::ops::SubAssign<i64> for Real {
+	fn sub_assign(&mut self, offset: i64) {
+		*self = *self - offset;
 	}
 }
 

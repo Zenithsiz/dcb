@@ -21,7 +21,7 @@ pub use array_split::{array_split, array_split_mut};
 /// If the result would not fit into a `i64`, a panic occurs.
 #[allow(clippy::as_conversions)] // We check every operation
 #[allow(clippy::panic)] // Rust panics on failed arithmetic operations by default
-pub fn abs_diff(a: u64, b: u64) -> i64 {
+pub const fn abs_diff(a: u64, b: u64) -> i64 {
 	let diff = if a > b { a - b } else { b - a };
 
 	if diff > i64::MAX as u64 {
@@ -42,11 +42,14 @@ pub fn abs_diff(a: u64, b: u64) -> i64 {
 #[allow(clippy::as_conversions)] // We check every operation
 #[allow(clippy::panic)] // Rust panics on failed arithmetic operations by default
 #[allow(clippy::cast_sign_loss)] // We've verify it's positive
-pub fn signed_offset(a: u64, b: i64) -> u64 {
+pub const fn signed_offset(a: u64, b: i64) -> u64 {
 	// If `b` is positive, check for overflows. Else check for underflows
 	if b > 0 {
 		// Note: Cast is safe, as a positive `i64` fits into a `u64`.
-		a.checked_add(b as u64).expect("Overflow evaluating `u64 + i64`")
+		match a.checked_add(b as u64) {
+			Some(res) => res,
+			None => panic!("Overflow evaluating `u64 + i64`"),
+		}
 	} else {
 		// Note: On `i64::MIN`, `-b` would overflow
 		if b == i64::MIN || a < (-b) as u64 {

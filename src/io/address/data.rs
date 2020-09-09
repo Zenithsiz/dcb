@@ -15,23 +15,28 @@ use crate::{
 pub struct Data(u64);
 
 impl Data {
-	/// Constructs a data address from it's `u64` representation
+	/// Creates a data address from a `u64`
 	#[must_use]
 	pub const fn from_u64(address: u64) -> Self {
 		Self(address)
 	}
 
+	/// Returns this address as a `u64`
+	#[must_use]
+	pub const fn as_u64(self) -> u64 {
+		self.0
+	}
+
 	/// Returns the sector associated with this address
 	#[must_use]
-	#[allow(clippy::integer_division)] // We want to get the whole division
-	pub fn sector(self) -> u64 {
-		u64::from(self) / Real::DATA_BYTE_SIZE
+	pub const fn sector(self) -> u64 {
+		self.as_u64() / Real::DATA_BYTE_SIZE
 	}
 
 	/// Returns the offset into the data section of this address
 	#[must_use]
-	pub fn offset(self) -> u64 {
-		u64::from(self) % Real::DATA_BYTE_SIZE
+	pub const fn offset(self) -> u64 {
+		self.as_u64() % Real::DATA_BYTE_SIZE
 	}
 }
 

@@ -36,7 +36,9 @@
 	stmt_expr_attributes,
 	unwrap_infallible,
 	external_doc,
-	format_args_capture
+	format_args_capture,
+	const_fn,
+	const_panic
 )]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]
@@ -72,8 +74,8 @@
 // In the future, this lint should be removed globally and only enabled for modules which
 // actually require the use of it.
 #![allow(clippy::module_inception, clippy::module_name_repetitions)]
-// Banning arithmetic is too strict for this project
-#![allow(clippy::integer_arithmetic)]
+// We use integer arithmetic and operations with the correct intent
+#![allow(clippy::integer_arithmetic, clippy::integer_division)]
 // We prefer using match ergonomic where possible
 #![allow(clippy::pattern_type_mismatch)]
 // False positives:
