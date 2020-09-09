@@ -11,7 +11,7 @@ where
 	/// The type of array required by this structure
 	///
 	/// *MUST* be a `[u8; N]` or `u8`
-	type ByteArray: Sized;
+	type ByteArray: ByteArray + Sized;
 
 	/// The error type used for the operation
 	type FromError: Debug + Error;
@@ -24,4 +24,18 @@ where
 
 	/// Writes this structure to `bytes`
 	fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError>;
+}
+
+/// A trait for restricting `Bytes::ByteArray`
+pub trait ByteArray {
+	/// Size of this array
+	const SIZE: usize;
+}
+
+impl<const N: usize> ByteArray for [u8; N] {
+	const SIZE: usize = N;
+}
+
+impl ByteArray for u8 {
+	const SIZE: usize = 1;
 }
