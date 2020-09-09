@@ -31,6 +31,7 @@ use std::{
 /// on where the table is deserialized from and it's features / restrictions.
 #[derive(PartialEq, Eq, Clone, Debug)]
 #[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::unsafe_derive_deserialize)] // We don't have any `unsafe` methods
 pub struct Table {
 	/// All digimons in this table
 	pub digimons: Vec<Digimon>,

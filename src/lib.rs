@@ -40,6 +40,8 @@
 )]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]
+// We'll disable the ones we don't need
+#![allow(clippy::blanket_clippy_restriction_lints)]
 // Necessary items may be inlined using `LTO`, so we don't need to mark them as inline
 #![allow(clippy::missing_inline_in_public_items)]
 // We prefer tail returns where possible, as they help with code readability in most cases.
@@ -47,13 +49,8 @@
 // We're fine with shadowing, as long as the variable is used for the same purpose.
 // Hence why `clippy::shadow_unrelated` isn't allowed.
 #![allow(clippy::shadow_reuse, clippy::shadow_same)]
-// We use `.expect("...")` when we either know it cannot panic or if
-// it is the safest alternative.
-#![allow(clippy::expect_used)]
-// Like-wise with `.expect("...")`, we use `unreachable!` / `todo!` when we know a branch
-// if unreachable or not yet finished, and if it ever does get reached, panicking would be the
-// safest option
-#![allow(clippy::unreachable, clippy::todo)]
+// We panic when we know it won't happen, or if it does happen, then a panic is the best option
+#![allow(clippy::panic, clippy::expect_used, clippy::unreachable, clippy::todo)]
 // We find it more important to be able to copy paste literals such as `0xabcd1234` than
 // being able to read them, which does not provide many benefits
 #![allow(clippy::unreadable_literal, clippy::unseparated_literal_suffix)]
@@ -77,13 +74,13 @@
 #![allow(clippy::module_inception, clippy::module_name_repetitions)]
 // Banning arithmetic is too strict for this project
 #![allow(clippy::integer_arithmetic)]
+// We prefer using match ergonomic where possible
+#![allow(clippy::pattern_type_mismatch)]
 // False positives:
 // TODO: Remove them in the future once they are no longer triggered.
 // We only slice arrays, which are verified at compile time. This
 // lint currently triggers for `&[T; N]`, which we pass around a lot.
 #![allow(clippy::indexing_slicing)]
-// We don't have any `unsafe` impl for types that derive `Deserialize`.
-#![allow(clippy::unsafe_derive_deserialize)]
 
 // Modules
 pub mod game;
