@@ -27,6 +27,23 @@ impl Data {
 		self.0
 	}
 
+	/// Converts this data offset to a real offset
+	#[must_use]
+	pub const fn to_real(self) -> Real {
+		// Get the sector and offset
+		let data_sector = self.sector();
+		let data_sector_offset = self.offset();
+
+		// Then the real address is just converting the data_sector
+		// to a real_sector and adding the header plus the offset
+		#[rustfmt::skip]
+		Real::from_u64(
+			Real::SECTOR_BYTE_SIZE * data_sector + // Base of real sector
+			Real::HEADER_BYTE_SIZE                        + // Skip header
+			data_sector_offset,                             // Offset inside data sector
+		)
+	}
+
 	/// Returns the sector associated with this address
 	#[must_use]
 	pub const fn sector(self) -> u64 {
@@ -113,5 +130,11 @@ impl std::ops::Sub<Data> for Data {
 impl std::fmt::Display for Data {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		write!(f, "{:x}", u64::from(*self))
+	}
+}
+
+impl From<Data> for Real {
+	fn from(data_address: Data) -> Self {
+		data_address.to_real()
 	}
 }

@@ -3,10 +3,10 @@
 //! See [`GameFile`] for details
 
 // Imports
-use crate::io::address::{Data as DataAddress, Real as RealAddress, RealToDataError};
+use crate::io::address::{real, Data as DataAddress, Real as RealAddress};
 use std::{
 	convert::TryInto,
-	io::{Read, Seek, Write},
+	io::{Read, Seek, SeekFrom, Write},
 };
 
 /// A type that abstracts over a the game reader.
@@ -28,6 +28,14 @@ use std::{
 /// `GameFile` is generic over `R`, this being any type that implements
 /// `Read`, `Write` and `Seek`, thus being able to read from either a
 /// reader, a buffer in memory or even some remote network location.
+///
+/// # Read/Write Strategy
+/// The strategy this employs for reading and writing currently is to
+/// get the current 2048 byte block and work on it until it is exhausted,
+/// then to get a new 2048 byte block until the operation is complete.
+/// This will require an `io` call for every single 2048 byte block instead
+/// of an unique call for all of the block, but due to the invariants required,
+/// this is the strategy employed.
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Default, Hash, Debug)]
 pub struct GameFile<R: Read + Write + Seek> {
 	/// The type to read and write from
@@ -48,7 +56,7 @@ impl<R: Read + Write + Seek> GameFile<R> {
 	pub fn from_reader(mut reader: R) -> Result<Self, NewGameFileError> {
 		// Seek the reader to the beginning of the data section
 		reader
-			.seek(std::io::SeekFrom::Start(RealAddress::DATA_START))
+			.seek(SeekFrom::Start(DataAddress::from_u64(0).to_real().as_u64()))
 			.map_err(NewGameFileError::SeekData)?;
 
 		Ok(Self { reader })
@@ -78,7 +86,7 @@ impl<R: Read + Write + Seek> Read for GameFile<R> {
 			// If we're at the end of the data section, seek to the next data section
 			if cur_real_address == data_section_end {
 				// Seek ahead by skipping the footer and next header
-				self.reader.seek(std::io::SeekFrom::Current(
+				self.reader.seek(SeekFrom::Current(
 					(RealAddress::FOOTER_BYTE_SIZE + RealAddress::HEADER_BYTE_SIZE)
 						.try_into()
 						.expect("Sector offset didn't fit into `u64`"),
@@ -151,7 +159,7 @@ impl<R: Read + Write + Seek> Write for GameFile<R> {
 			// If we're at the end of the data section, seek to the next data section
 			if cur_real_address == data_section_end {
 				// Seek ahead by skipping the footer and next header
-				self.reader.seek(std::io::SeekFrom::Current(
+				self.reader.seek(SeekFrom::Current(
 					(RealAddress::FOOTER_BYTE_SIZE + RealAddress::HEADER_BYTE_SIZE)
 						.try_into()
 						.expect("Sector offset didn't fit into `u64`"),
@@ -208,35 +216,42 @@ impl<R: Read + Write + Seek> Write for GameFile<R> {
 /// Returned when, after seeking, we ended up in a non-data section
 #[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
 #[error("Reader seeked into a non-data section")]
-pub struct SeekNonDataError(#[source] RealToDataError);
+pub struct SeekNonDataError(#[source] real::ToDataError);
 
 impl<R: Read + Write + Seek> Seek for GameFile<R> {
-	fn seek(&mut self, data_pos: std::io::SeekFrom) -> std::io::Result<u64> {
-		use std::{convert::TryFrom, io::SeekFrom};
+	fn seek(&mut self, data_pos: SeekFrom) -> std::io::Result<u64> {
+		// Imports
+		use std::ops::Add;
 
 		// Calculate the real position
 		let real_pos = match data_pos {
-			SeekFrom::Start(data_address) => SeekFrom::Start(u64::from(RealAddress::from(DataAddress::from(data_address)))),
-			SeekFrom::Current(data_offset) => SeekFrom::Start(u64::from(RealAddress::from(
-				DataAddress::try_from(RealAddress::from(self.reader.stream_position()?))
-					.map_err(SeekNonDataError)
-					.map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err))? +
-					data_offset,
-			))),
+			SeekFrom::Start(data_address) => SeekFrom::Start(
+				// Parse the address as data, then convert it to real
+				DataAddress::from(data_address).to_real().as_u64(),
+			),
+			SeekFrom::Current(data_offset) => SeekFrom::Start(
+				// Get the real address, convert it to data, add the offset in data units, then convert it back into real
+				RealAddress::from(self.reader.stream_position()?)
+					.try_to_data()
+					.map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, SeekNonDataError(err)))?
+					.add(data_offset)
+					.to_real()
+					.as_u64(),
+			),
 			SeekFrom::End(_) => {
-				todo!("SeekFrom::End isn't currently implemented");
+				todo!("`SeekFrom::End` seeking isn't currently implemented");
 			},
 		};
 
 		// Seek to the real position and get where we are right now
-		let cur_real_address = self.reader.seek(real_pos)?;
+		let cur_real_address = RealAddress::from(self.reader.seek(real_pos)?);
 
 		// Get the data address
-		let data_address = DataAddress::try_from(RealAddress::from(cur_real_address))
-			.map_err(SeekNonDataError)
-			.map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err))?;
+		let data_address = cur_real_address
+			.try_to_data()
+			.map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, SeekNonDataError(err)))?;
 
 		// And return the new data address
-		Ok(u64::from(data_address))
+		Ok(data_address.as_u64())
 	}
 }

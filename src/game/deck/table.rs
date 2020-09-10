@@ -49,7 +49,7 @@ impl Table {
 		R: Read + Write + Seek,
 	{
 		// Seek to the beginning of the deck table
-		file.seek(std::io::SeekFrom::Start(u64::from(Self::START_ADDRESS)))
+		file.seek(std::io::SeekFrom::Start(Self::START_ADDRESS.as_u64()))
 			.map_err(DeserializeError::Seek)?;
 
 		// Read header
@@ -105,7 +105,7 @@ impl Table {
 		}
 
 		// Seek to the beginning of the deck table
-		file.seek(std::io::SeekFrom::Start(u64::from(Self::START_ADDRESS)))
+		file.seek(std::io::SeekFrom::Start(Self::START_ADDRESS.as_u64()))
 			.map_err(SerializeError::Seek)?;
 
 		// Write header

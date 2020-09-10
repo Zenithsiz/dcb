@@ -1,7 +1,10 @@
 //! File real addresses
 
 // Imports
-use crate::util::{abs_diff, signed_offset};
+use crate::{
+	io::address::Data,
+	util::{abs_diff, signed_offset},
+};
 
 /// A type for defining addresses on the `.bin` file.
 ///
@@ -10,6 +13,14 @@ use crate::util::{abs_diff, signed_offset};
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 #[derive(derive_more::From, derive_more::Into)]
 pub struct Real(u64);
+
+/// Error type for [`Real::to_data`]
+#[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
+pub enum ToDataError {
+	/// Occurs when the Real is outside of the data section of the sector
+	#[error("Unable to convert real address {} to a data address, as it was not in the data section", .0)]
+	OutsideDataSection(Real),
+}
 
 // Constants
 impl Real {
@@ -40,6 +51,27 @@ impl Real {
 	#[must_use]
 	pub const fn as_u64(self) -> u64 {
 		self.0
+	}
+
+	/// Converts this real sector into a data sector
+	pub const fn try_to_data(self) -> Result<Data, ToDataError> {
+		// If the real address isn't in the data section, then return err
+		if !self.in_data_section() {
+			return Err(ToDataError::OutsideDataSection(self));
+		}
+
+		// Else get the sector and offset
+		let real_sector = self.sector();
+		let real_sector_offset = self.offset();
+
+		// The data address is just converting the real_sector
+		// to a data_sector and subtracting the header from the
+		// real offset to get the data offset
+		#[rustfmt::skip]
+		Ok(Data::from_u64(
+			Self::SECTOR_BYTE_SIZE * real_sector + // Base of data sector
+			real_sector_offset - Self::HEADER_BYTE_SIZE,    // Data offset (skipping header)
+		))
 	}
 
 	/// Returns the real sector associated with this address
@@ -119,13 +151,22 @@ impl std::ops::Sub<Real> for Real {
 	type Output = i64;
 
 	fn sub(self, address: Self) -> i64 {
-		abs_diff(u64::from(self), u64::from(address))
+		abs_diff(self.as_u64(), address.as_u64())
 	}
 }
 
 // Display
 impl std::fmt::Display for Real {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		write!(f, "{:x}", u64::from(*self))
+		write!(f, "{:x}", self.as_u64())
+	}
+}
+
+// Real -> Data
+impl std::convert::TryFrom<Real> for Data {
+	type Error = ToDataError;
+
+	fn try_from(real_address: Real) -> Result<Self, Self::Error> {
+		real_address.try_to_data()
 	}
 }

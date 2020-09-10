@@ -80,7 +80,7 @@ impl Table {
 	/// Deserializes the card table from a game file
 	pub fn deserialize<R: Read + Write + Seek>(file: &mut GameFile<R>) -> Result<Self, DeserializeError> {
 		// Seek to the table
-		file.seek(std::io::SeekFrom::Start(u64::from(Self::START_ADDRESS)))
+		file.seek(std::io::SeekFrom::Start(Self::START_ADDRESS.as_u64()))
 			.map_err(DeserializeError::Seek)?;
 
 		// Read header
@@ -196,7 +196,7 @@ impl Table {
 		}
 
 		// Seek to the beginning of the card table
-		file.seek(std::io::SeekFrom::Start(u64::from(Self::START_ADDRESS)))
+		file.seek(std::io::SeekFrom::Start(Self::START_ADDRESS.as_u64()))
 			.map_err(SerializeError::Seek)?;
 
 		// Write header
@@ -267,6 +267,7 @@ impl Table {
 
 		// Write all cards
 		#[rustfmt::skip] {
+			//            Buffer         , Offset                                , Type     , Error variant
 			write_card! { self.digimons  , 0                                     , Digimon  , SerializeDigimonCard   }
 			write_card! { self.items     , self.digimons.len()                   , Item     , SerializeItemCard      }
 			write_card! { self.digivolves, self.digimons.len() + self.items.len(), Digivolve, SerializeDigivolveCard }
