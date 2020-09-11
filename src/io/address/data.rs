@@ -1,6 +1,8 @@
 //! File data-only addresses
 
 // Imports
+use std::convert::TryInto;
+
 use crate::{
 	io::address::Real,
 	util::{abs_diff, signed_offset},
@@ -42,6 +44,15 @@ impl Data {
 			Real::HEADER_BYTE_SIZE                        + // Skip header
 			data_sector_offset,                             // Offset inside data sector
 		)
+	}
+
+	/// Returns the remaining bytes in this data section
+	#[must_use]
+	pub fn remaining_bytes(self) -> u64 {
+		// Note: This can't panic, as we know it's positive.
+		(self.to_real().cur_sector_data_section_end() - self.to_real())
+			.try_into()
+			.expect("Offset was negative")
 	}
 
 	/// Returns the sector associated with this address

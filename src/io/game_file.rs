@@ -2,6 +2,10 @@
 //!
 //! See [`GameFile`] for details
 
+// Modules
+#[cfg(test)]
+mod test;
+
 // Imports
 use crate::io::address::{real, Data as DataAddress, Real as RealAddress};
 use std::{
@@ -36,6 +40,9 @@ use std::{
 /// This will require an `io` call for every single 2048 byte block instead
 /// of an unique call for all of the block, but due to the invariants required,
 /// this is the strategy employed.
+///
+/// # Seek
+/// All seeks are done in data addresses, the stream position is also in data addresses.
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Default, Hash, Debug)]
 pub struct GameFile<R: Read + Write + Seek> {
 	/// The type to read and write from
@@ -53,6 +60,8 @@ pub enum NewGameFileError {
 // Constructors
 impl<R: Read + Write + Seek> GameFile<R> {
 	/// Constructs a `GameFile` given a reader
+	///
+	/// This seeks the reader to the start of the data section on the first sector
 	pub fn from_reader(mut reader: R) -> Result<Self, NewGameFileError> {
 		// Seek the reader to the beginning of the data section
 		reader
@@ -74,49 +83,34 @@ impl<R: Read + Write + Seek> Read for GameFile<R> {
 		// Total length of the buffer to fill
 		let total_buf_len = buf.len();
 
+		// Current address
+		let mut cur_address = RealAddress::from_u64(self.reader.stream_position()?);
+
 		// While the buffer isn't empty
 		while !buf.is_empty() {
-			// Get the current real address we're at in the reader
-			// Note: If we can't get the position, we return immediately
-			let cur_real_address = RealAddress::from(self.reader.stream_position()?);
-
-			// Get the data section end
-			let data_section_end = cur_real_address.data_section_end();
-
-			// If we're at the end of the data section, seek to the next data section
-			if cur_real_address == data_section_end {
-				// Seek ahead by skipping the footer and next header
-				self.reader.seek(SeekFrom::Current(
-					(RealAddress::FOOTER_BYTE_SIZE + RealAddress::HEADER_BYTE_SIZE)
-						.try_into()
-						.expect("Sector offset didn't fit into `u64`"),
-				))?;
-
-				// And restart this loop
+			// If we're at the end of the current data section, seek to the start of the next data data section and restart
+			if cur_address == cur_address.cur_sector_data_section_end() {
+				cur_address = RealAddress::from_u64(
+					self.reader.seek(SeekFrom::Start(
+						cur_address
+							.next_sector_data_section_start()
+							.try_into()
+							.expect("Sector offset didn't fit into `i64`"),
+					))?,
+				);
 				continue;
 			}
 
-			// We always guarantee that the current address lies within the data sections
-			// Note: We only check it here, because `cur_real_address` may be `data_section_end`
-			//       during seeking.
-			assert!(
-				cur_real_address.in_data_section(),
-				"Real offset {} [Sector {}, Offset {}] could not be read as it was not in the data section",
-				cur_real_address,
-				cur_real_address.sector(),
-				cur_real_address.offset()
-			);
-
-			// Check how many bytes we can read
-			// Note: Cannot overflow, max is `2048`, so an error means `cur_real_address` was past the data section end
-			let mut bytes_to_read = (data_section_end - cur_real_address)
+			// Get how many bytes we can read, The minimum between the end of the data section and the size of the buffer
+			// Note: Can't overflow, max is `2048`
+			// Note: At this point, `cur_address` must be within the data section
+			let bytes_to_read = cur_address
+				.try_to_data()
+				.expect("Address wasn't in data section")
+				.remaining_bytes()
+				.min(buf.len().try_into().expect("Unable to convert `usize` to `u64`"))
 				.try_into()
-				.expect("Current address is past end of data");
-
-			// If we were to read more bytes than the buffer has, read less
-			if bytes_to_read > buf.len() {
-				bytes_to_read = buf.len();
-			}
+				.expect("Unable to convert number 0..2048 to `i64`");
 
 			// Read either until the end of the data section or until buffer is full
 			// Note: If any fail, we immediately return Err
@@ -127,8 +121,10 @@ impl<R: Read + Write + Seek> Read for GameFile<R> {
 				return Ok(total_buf_len - buf.len());
 			}
 
-			// Discard what we've already read
-			buf = &mut buf[bytes_read..]; // If `bytes_to_read == buf.len()` this does not panic
+			// And discard what we've already read
+			// Note: This slice can't panic, as `bytes_to_read` is at most `buf.len()`
+			buf = &mut buf[bytes_read..];
+			cur_address = cur_address.next_sector_data_section_start();
 		}
 
 		// And return the bytes we read
@@ -147,60 +143,48 @@ impl<R: Read + Write + Seek> Write for GameFile<R> {
 		// Total length of the buffer to write
 		let total_buf_len = buf.len();
 
+		// Current address
+		let mut cur_address = RealAddress::from_u64(self.reader.stream_position()?);
+
 		// While the buffer isn't empty
 		while !buf.is_empty() {
-			// Get the current real address we're at in the reader
-			// Note: If we can't get the position, we return immediately
-			let cur_real_address = RealAddress::from(self.reader.stream_position()?);
-
-			// Get the data section end
-			let data_section_end = cur_real_address.data_section_end();
-
-			// If we're at the end of the data section, seek to the next data section
-			if cur_real_address == data_section_end {
-				// Seek ahead by skipping the footer and next header
-				self.reader.seek(SeekFrom::Current(
-					(RealAddress::FOOTER_BYTE_SIZE + RealAddress::HEADER_BYTE_SIZE)
-						.try_into()
-						.expect("Sector offset didn't fit into `u64`"),
-				))?;
-
-				// And restart this loop
+			// If we're at the end of the current data section, seek to the start of the next data data section and restart
+			if cur_address == cur_address.cur_sector_data_section_end() {
+				cur_address = RealAddress::from_u64(
+					self.reader.seek(SeekFrom::Start(
+						cur_address
+							.next_sector_data_section_start()
+							.try_into()
+							.expect("Sector offset didn't fit into `i64`"),
+					))?,
+				);
 				continue;
 			}
 
-			// We always guarantee that the current address lies within the data sections
-			// Note: We only check it here, because `cur_real_address` may be `data_section_end`
-			//       during seeking.
-			assert!(
-				cur_real_address.in_data_section(),
-				"Real offset {} [Sector {}, Offset {}] could not be written as it was not in the data section",
-				cur_real_address,
-				cur_real_address.sector(),
-				cur_real_address.offset()
-			);
-
-			// Check how many bytes we can write, up to the buffer's len
-			let mut bytes_to_write = (data_section_end - cur_real_address)
+			// Get how many bytes we can write, The minimum between the end of the data section and the size of the buffer
+			// Note: Can't overflow, max is `2048`
+			// Note: At this point, `cur_address` must be within the data section
+			let bytes_to_write = cur_address
+				.try_to_data()
+				.expect("Address wasn't in data section")
+				.remaining_bytes()
+				.min(buf.len().try_into().expect("Unable to convert `usize` to `u64`"))
 				.try_into()
-				.expect("Current address is past end of data");
+				.expect("Unable to convert number 0..2048 to `i64`");
 
-			// If we were to write more bytes than the buffer has, write less
-			if bytes_to_write > buf.len() {
-				bytes_to_write = buf.len();
-			}
-
-			// Write either until the end of the data section or until buffer runs out
-			// Note: If this fails, we immediately return Err
+			// Write either until the end of the data section or until buffer is full
+			// Note: If any fail, we immediately return Err
 			let bytes_written = self.reader.write(&buf[0..bytes_to_write])?;
 
-			// If 0 bytes were written, EOF was reached, so return with however many we've read
+			// If 0 bytes were read, EOF was reached, so return with however many we've read
 			if bytes_written == 0 {
 				return Ok(total_buf_len - buf.len());
 			}
 
-			// Discard what we've already written
-			buf = &buf[bytes_to_write..]; // If `bytes_to_write == buf.len()` this does not panic
+			// And discard what we've already read
+			// Note: This slice can't panic, as `bytes_to_read` is at most `buf.len()`
+			buf = &buf[bytes_written..];
+			cur_address = cur_address.next_sector_data_section_start();
 		}
 
 		// And return the bytes we read
@@ -219,12 +203,12 @@ impl<R: Read + Write + Seek> Write for GameFile<R> {
 pub struct SeekNonDataError(#[source] real::ToDataError);
 
 impl<R: Read + Write + Seek> Seek for GameFile<R> {
-	fn seek(&mut self, data_pos: SeekFrom) -> std::io::Result<u64> {
+	fn seek(&mut self, data_seek: SeekFrom) -> std::io::Result<u64> {
 		// Imports
 		use std::ops::Add;
 
-		// Calculate the real position
-		let real_pos = match data_pos {
+		// Calculate the real seek
+		let real_seek = match data_seek {
 			SeekFrom::Start(data_address) => SeekFrom::Start(
 				// Parse the address as data, then convert it to real
 				DataAddress::from(data_address).to_real().as_u64(),
@@ -244,7 +228,7 @@ impl<R: Read + Write + Seek> Seek for GameFile<R> {
 		};
 
 		// Seek to the real position and get where we are right now
-		let cur_real_address = RealAddress::from(self.reader.seek(real_pos)?);
+		let cur_real_address = RealAddress::from(self.reader.seek(real_seek)?);
 
 		// Get the data address
 		let data_address = cur_real_address

@@ -69,7 +69,7 @@ impl Real {
 		// real offset to get the data offset
 		#[rustfmt::skip]
 		Ok(Data::from_u64(
-			Self::SECTOR_BYTE_SIZE * real_sector + // Base of data sector
+			Self::DATA_BYTE_SIZE * real_sector + // Base of data sector
 			real_sector_offset - Self::HEADER_BYTE_SIZE,    // Data offset (skipping header)
 		))
 	}
@@ -86,18 +86,26 @@ impl Real {
 		self.as_u64() % Self::SECTOR_BYTE_SIZE
 	}
 
-	/// Returns the address of the end of the data section in this sector.
+	/// Returns the address of the end of the data section in the current sector.
 	#[must_use]
-	pub const fn data_section_end(self) -> Self {
-		// Get the sector
-		let real_sector = self.sector();
-
+	pub const fn cur_sector_data_section_end(self) -> Self {
 		// The end of the real data section is after the header and data sections
 		#[rustfmt::skip]
 		Self::from_u64(
-			Self::SECTOR_BYTE_SIZE * real_sector + // Beginning of sector
-			Self::HEADER_BYTE_SIZE               + // Skip Header
-			Self::  DATA_BYTE_SIZE, // Skip Data
+			Self::SECTOR_BYTE_SIZE * self.sector() + // Beginning of sector
+			Self::HEADER_BYTE_SIZE                          + // Skip Header
+			Self::  DATA_BYTE_SIZE,                           // Skip Data
+		)
+	}
+
+	/// Returns the start address of the data section on the next sector
+	#[must_use]
+	pub const fn next_sector_data_section_start(self) -> Self {
+		// The start is after the header in the next sector
+		#[rustfmt::skip]
+		Self::from_u64(
+			Self::SECTOR_BYTE_SIZE * (self.sector() + 1) + // Beginning of sector
+			Self::HEADER_BYTE_SIZE                                  // Skip header
 		)
 	}
 
