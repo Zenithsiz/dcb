@@ -111,19 +111,17 @@ impl Validatable for Move {
 }
 
 /// All warnings for [`Move`] validation
-#[derive(PartialEq, Eq, Clone, Debug)]
-#[derive(derive_more::Display)]
+#[derive(PartialEq, Eq, Clone, Debug, thiserror::Error)]
 pub enum ValidationWarning {
 	/// Power is not a multiple of 10
-	#[display(fmt = "Power is not a multiple of 10.")]
+	#[error("Power is not a multiple of 10.")]
 	PowerMultiple10,
 }
 
 /// All errors for [`Move`] validation
-#[derive(PartialEq, Eq, Clone, Debug)]
-#[derive(derive_more::Display)]
+#[derive(PartialEq, Eq, Clone, Debug, thiserror::Error)]
 pub enum ValidationError {
 	/// Name length
-	#[display(fmt = "Name is too long. Must be at most 21 characters")]
+	#[error("Name is too long. Must be at most 21 characters")]
 	NameTooLong,
 }

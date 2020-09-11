@@ -14,6 +14,7 @@ use crate::{
 /// All addresses of type `Data` will represent the position
 /// within *only* the data sections on the file.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(derive_more::From, derive_more::Into)]
 pub struct Data(u64);
 
 impl Data {
@@ -65,18 +66,6 @@ impl Data {
 	#[must_use]
 	pub const fn offset(self) -> u64 {
 		self.as_u64() % Real::DATA_BYTE_SIZE
-	}
-}
-
-// Conversions from and into u64
-impl From<Data> for u64 {
-	fn from(address: Data) -> Self {
-		address.0
-	}
-}
-impl From<u64> for Data {
-	fn from(address: u64) -> Self {
-		Self(address)
 	}
 }
 
