@@ -166,7 +166,7 @@ impl std::ops::Sub<Real> for Real {
 // Display
 impl std::fmt::Display for Real {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		write!(f, "{:x}", self.as_u64())
+		write!(f, "{:#x}", self.as_u64())
 	}
 }
 

@@ -129,7 +129,7 @@ impl std::ops::Sub<Data> for Data {
 // Display
 impl std::fmt::Display for Data {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		write!(f, "{:x}", u64::from(*self))
+		write!(f, "{:#x}", u64::from(*self))
 	}
 }
 

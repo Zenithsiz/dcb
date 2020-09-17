@@ -121,10 +121,12 @@ impl<R: Read + Write + Seek> Read for GameFile<R> {
 				return Ok(total_buf_len - buf.len());
 			}
 
+			// Else seek into the next data section start
+			cur_address = RealAddress::from_u64(self.reader.seek(SeekFrom::Start(cur_address.next_sector_data_section_start().as_u64()))?);
+
 			// And discard what we've already read
-			// Note: This slice can't panic, as `bytes_to_read` is at most `buf.len()`
+			// Note: This slice can't panic, as `bytes_read` is at most `buf.len()`
 			buf = &mut buf[bytes_read..];
-			cur_address = cur_address.next_sector_data_section_start();
 		}
 
 		// And return the bytes we read
@@ -181,10 +183,12 @@ impl<R: Read + Write + Seek> Write for GameFile<R> {
 				return Ok(total_buf_len - buf.len());
 			}
 
-			// And discard what we've already read
-			// Note: This slice can't panic, as `bytes_to_read` is at most `buf.len()`
+			// Else seek into the next data section start
+			cur_address = RealAddress::from_u64(self.reader.seek(SeekFrom::Start(cur_address.next_sector_data_section_start().as_u64()))?);
+
+			// And discard what we've already written
+			// Note: This slice can't panic, as `bytes_written` is at most `buf.len()`
 			buf = &buf[bytes_written..];
-			cur_address = cur_address.next_sector_data_section_start();
 		}
 
 		// And return the bytes we read

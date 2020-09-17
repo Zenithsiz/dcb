@@ -39,10 +39,13 @@
 	format_args_capture,
 	const_fn,
 	const_panic,
-	min_const_generics
+	min_const_generics,
+	exclusive_range_pattern
 )]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]
+// Instead of `unwrap`, we must use `expect` and provide a reason
+#![forbid(clippy::unwrap_used)]
 // We'll disable the ones we don't need
 #![allow(clippy::blanket_clippy_restriction_lints)]
 // Necessary items may be inlined using `LTO`, so we don't need to mark them as inline
@@ -54,6 +57,8 @@
 #![allow(clippy::shadow_reuse, clippy::shadow_same)]
 // We panic when we know it won't happen, or if it does happen, then a panic is the best option
 #![allow(clippy::panic, clippy::expect_used, clippy::unreachable, clippy::todo)]
+// We use `expect` even in functions that return a `Result` / `Option` if there is a logic error
+#![allow(clippy::unwrap_in_result)]
 // We find it more important to be able to copy paste literals such as `0xabcd1234` than
 // being able to read them, which does not provide many benefits
 #![allow(clippy::unreadable_literal, clippy::unseparated_literal_suffix)]
