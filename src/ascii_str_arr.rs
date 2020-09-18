@@ -2,6 +2,7 @@
 
 // Modules
 pub mod error;
+pub mod slice;
 mod visitor;
 
 // Exports
@@ -19,6 +20,8 @@ pub struct AsciiStrArr<const N: usize> {
 	chars: [AsciiChar; N],
 
 	/// Size
+	///
+	/// Invariant: Must be `< N`
 	len: usize,
 }
 
@@ -38,12 +41,14 @@ impl<const N: usize> AsciiStrArr<N> {
 	/// Converts this string to a `&[AsciiStr]`
 	#[must_use]
 	pub fn as_ascii_str(&self) -> &AsciiStr {
+		// Note: Cannot panic due to our invariant
 		<&AsciiStr>::from(&self.chars[..self.len])
 	}
 
 	/// Converts this string to a `&mut [AsciiStr]`
 	#[must_use]
 	pub fn as_ascii_str_mut(&mut self) -> &mut AsciiStr {
+		// Note: Cannot panic due to our invariant
 		<&mut AsciiStr>::from(&mut self.chars[..self.len])
 	}
 
@@ -58,18 +63,6 @@ impl<const N: usize> AsciiStrArr<N> {
 	pub fn as_str(&self) -> &str {
 		self.as_ascii_str().as_str()
 	}
-
-	/// Returns the `n`th character
-	#[must_use]
-	pub fn get(&self, n: usize) -> Option<&AsciiChar> {
-		self.chars.get(n)
-	}
-
-	/// Returns the `n`th character mutably
-	#[must_use]
-	pub fn get_mut(&mut self, n: usize) -> Option<&mut AsciiChar> {
-		self.chars.get_mut(n)
-	}
 }
 
 impl<const N: usize> AsRef<AsciiStr> for AsciiStrArr<N> {
@@ -81,20 +74,6 @@ impl<const N: usize> AsRef<AsciiStr> for AsciiStrArr<N> {
 impl<const N: usize> AsMut<AsciiStr> for AsciiStrArr<N> {
 	fn as_mut(&mut self) -> &mut AsciiStr {
 		self.as_ascii_str_mut()
-	}
-}
-
-impl<const N: usize> std::ops::Index<usize> for AsciiStrArr<N> {
-	type Output = AsciiChar;
-
-	fn index(&self, idx: usize) -> &Self::Output {
-		self.get(idx).expect("Invalid index access")
-	}
-}
-
-impl<const N: usize> std::ops::IndexMut<usize> for AsciiStrArr<N> {
-	fn index_mut(&mut self, idx: usize) -> &mut Self::Output {
-		self.get_mut(idx).expect("Invalid index access")
 	}
 }
 
@@ -206,6 +185,16 @@ impl<const N: usize> TryFrom<&[u8]> for AsciiStrArr<N> {
 
 	fn try_from(byte_str: &[u8]) -> Result<Self, Self::Error> {
 		let ascii_str = AsciiStr::from_ascii(byte_str).map_err(FromByteStringError::NotAscii)?;
+
+		Self::try_from(ascii_str).map_err(FromByteStringError::TooLong)
+	}
+}
+
+impl<const N: usize> TryFrom<&str> for AsciiStrArr<N> {
+	type Error = FromByteStringError<N>;
+
+	fn try_from(string: &str) -> Result<Self, Self::Error> {
+		let ascii_str = AsciiStr::from_ascii(string).map_err(FromByteStringError::NotAscii)?;
 
 		Self::try_from(ascii_str).map_err(FromByteStringError::TooLong)
 	}
