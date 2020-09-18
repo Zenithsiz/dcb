@@ -267,11 +267,17 @@ impl Table {
 		}
 
 		// Write all cards
-		#[rustfmt::skip] {
-			//            Buffer         , Offset                                , Type     , Error variant
-			write_card! { self.digimons  , 0                                     , Digimon  , |err, cur_id| SerializeError::SerializeDigimonCard { id: cur_id, err } }
-			write_card! { self.items     , self.digimons.len()                   , Item     , |err, cur_id| SerializeError::SerializeItemCard    { id: cur_id, err } }
-			write_card! { self.digivolves, self.digimons.len() + self.items.len(), Digivolve, |err, _| err }
+		{
+			// Buffer, Offset, Type, Error closure
+			write_card! { self.digimons  , 0                                     , Digimon  ,
+				|err, cur_id| SerializeError::SerializeDigimonCard { id: cur_id, err }
+			}
+			write_card! { self.items     , self.digimons.len()                   , Item     ,
+				|err, cur_id| SerializeError::SerializeItemCard    { id: cur_id, err }
+			}
+			write_card! { self.digivolves, self.digimons.len() + self.items.len(), Digivolve,
+				|err, _| err
+			}
 		}
 
 		// And return Ok
