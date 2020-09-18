@@ -13,9 +13,9 @@ pub struct NotAsciiError {
 	pub pos: usize,
 }
 
-/// Error returned from [`TryFrom<&[u8]> for AsciiStrArr<N>`]
+/// Error returned when converting a `&[u8]` to a `AsciiStrArr`
 #[derive(Debug, thiserror::Error)]
-pub enum FromByteStringError<const LEN: usize> {
+pub enum FromBytesError<const LEN: usize> {
 	/// Too long
 	#[error("String was too long")]
 	TooLong(TooLongError<LEN>),
