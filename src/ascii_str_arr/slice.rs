@@ -39,19 +39,21 @@ where
 	type Output = <Self as std::slice::SliceIndex<[AsciiChar]>>::Output;
 
 	fn get<const N: usize>(self, ascii_str: &AsciiStrArr<N>) -> Option<&Self::Output> {
-		ascii_str.as_ascii().as_slice().get(self)
+		ascii_str.as_ascii_slice().get(self)
 	}
 
 	fn get_mut<const N: usize>(self, ascii_str: &mut AsciiStrArr<N>) -> Option<&mut Self::Output> {
-		ascii_str.as_ascii_mut().as_mut_slice().get_mut(self)
+		ascii_str.as_ascii_slice_mut().get_mut(self)
 	}
 
 	unsafe fn get_unchecked<const N: usize>(self, ascii_str: &AsciiStrArr<N>) -> &Self::Output {
-		ascii_str.as_ascii().as_slice().get_unchecked(self)
+		// SAFETY: Index is guaranteed to be in bounds by the caller
+		unsafe { ascii_str.as_ascii_slice().get_unchecked(self) }
 	}
 
 	unsafe fn get_unchecked_mut<const N: usize>(self, ascii_str: &mut AsciiStrArr<N>) -> &mut Self::Output {
-		ascii_str.as_ascii_mut().as_mut_slice().get_unchecked_mut(self)
+		// SAFETY: Index is guaranteed to be in bounds by the caller
+		unsafe { ascii_str.as_ascii_slice_mut().get_unchecked_mut(self) }
 	}
 }
 

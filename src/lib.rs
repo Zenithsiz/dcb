@@ -40,12 +40,19 @@
 	const_fn,
 	const_panic,
 	min_const_generics,
-	exclusive_range_pattern
+	exclusive_range_pattern,
+	unsafe_block_in_unsafe_fn,
+	maybe_uninit_uninit_array,
+	maybe_uninit_slice,
+	array_map
 )]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]
 // Instead of `unwrap`, we must use `expect` and provide a reason
 #![forbid(clippy::unwrap_used)]
+// We must use `unsafe` in unsafe `fn`s and specify if the guarantee is
+// made by the caller or by us.
+#![forbid(unsafe_op_in_unsafe_fn)]
 // We'll disable the ones we don't need
 #![allow(clippy::blanket_clippy_restriction_lints)]
 // Necessary items may be inlined using `LTO`, so we don't need to mark them as inline

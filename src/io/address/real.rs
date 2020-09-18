@@ -14,7 +14,7 @@ use crate::{
 #[derive(derive_more::From, derive_more::Into)]
 pub struct Real(u64);
 
-/// Error type for [`Real::to_data`]
+/// Error type for [`Real::try_to_data`]
 #[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
 pub enum ToDataError {
 	/// Occurs when the Real is outside of the data section of the sector
