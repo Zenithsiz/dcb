@@ -20,7 +20,7 @@ use visitor::DeserializerVisitor;
 #[derive(Clone, Copy)]
 pub struct AsciiStrArr<const N: usize> {
 	/// Characters
-	// Invariant
+	// Invariant: First `len` elements are initialized.
 	chars: [MaybeUninit<AsciiChar>; N],
 
 	/// Size
