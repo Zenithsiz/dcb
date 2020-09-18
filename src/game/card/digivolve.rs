@@ -7,7 +7,15 @@ use crate::{
 		array_split, array_split_mut,
 		null_ascii_string::{self, NullAsciiString},
 	},
+	AsciiStrArr,
 };
+
+// TODO: Remove these
+/// Name alias for [`Digimon`]
+type NameString = AsciiStrArr<0x14>;
+
+/// Effect description alias for [`Digimon`]
+type EffectDescriptionString = AsciiStrArr<0x14>;
 
 /// A digivolve card
 ///
@@ -16,15 +24,12 @@ use crate::{
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Digivolve {
 	/// The item's name
-	///
-	/// An ascii string with 20 characters at most
-	pub name: ascii::AsciiString,
+	pub name: NameString,
 
 	/// The effect's description.
 	///
-	/// The description is split along 4 lines, each
-	/// being an ascii string with 20 characters at most.
-	pub effect_description: [ascii::AsciiString; 4],
+	/// The description is split along 4 lines
+	pub effect_description: [EffectDescriptionString; 4],
 
 	/// Unknown field at `0x15`
 	pub unknown_15: [u8; 3],
@@ -39,49 +44,25 @@ pub enum FromBytesError {
 
 	/// Unable to read the first support effect description
 	#[error("Unable to read the first line of the effect description")]
-	EffectDescriptionFirst(#[source] null_ascii_string::ReadError),
+	EffectDescription1(#[source] null_ascii_string::ReadError),
 
 	/// Unable to read the second support effect description
 	#[error("Unable to read the second line of the effect description")]
-	EffectDescriptionSecond(#[source] null_ascii_string::ReadError),
+	EffectDescription2(#[source] null_ascii_string::ReadError),
 
 	/// Unable to read the third support effect description
 	#[error("Unable to read the third line of the effect description")]
-	EffectDescriptionThird(#[source] null_ascii_string::ReadError),
+	EffectDescription3(#[source] null_ascii_string::ReadError),
 
 	/// Unable to read the fourth support effect description
 	#[error("Unable to read the fourth line of the effect description")]
-	EffectDescriptionFourth(#[source] null_ascii_string::ReadError),
-}
-
-/// Error type for [`Bytes::to_bytes`]
-#[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
-pub enum ToBytesError {
-	/// Unable to write the digimon name
-	#[error("Unable to write the digimon name")]
-	Name(#[source] null_ascii_string::WriteError),
-
-	/// Unable to write the first support effect description
-	#[error("Unable to write the first line of the effect description")]
-	EffectDescriptionFirst(#[source] null_ascii_string::WriteError),
-
-	/// Unable to write the second support effect description
-	#[error("Unable to write the second line of the effect description")]
-	EffectDescriptionSecond(#[source] null_ascii_string::WriteError),
-
-	/// Unable to write the third support effect description
-	#[error("Unable to write the third line of the effect description")]
-	EffectDescriptionThird(#[source] null_ascii_string::WriteError),
-
-	/// Unable to write the fourth support effect description
-	#[error("Unable to write the fourth line of the effect description")]
-	EffectDescriptionFourth(#[source] null_ascii_string::WriteError),
+	EffectDescription4(#[source] null_ascii_string::ReadError),
 }
 
 impl Bytes for Digivolve {
 	type ByteArray = [u8; 0x6c];
 	type FromError = FromBytesError;
-	type ToError = ToBytesError;
+	type ToError = !;
 
 	fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError> {
 		// Split bytes
@@ -96,30 +77,14 @@ impl Bytes for Digivolve {
 
 		Ok(Self {
 			// Name
-			name: bytes.name.read_string().map_err(FromBytesError::Name)?.to_ascii_string(),
+			name: bytes.name.read_string().map_err(FromBytesError::Name)?,
 
 			// Effect
 			effect_description: [
-				bytes
-					.effect_description_0
-					.read_string()
-					.map_err(FromBytesError::EffectDescriptionFirst)?
-					.to_ascii_string(),
-				bytes
-					.effect_description_1
-					.read_string()
-					.map_err(FromBytesError::EffectDescriptionSecond)?
-					.to_ascii_string(),
-				bytes
-					.effect_description_2
-					.read_string()
-					.map_err(FromBytesError::EffectDescriptionThird)?
-					.to_ascii_string(),
-				bytes
-					.effect_description_3
-					.read_string()
-					.map_err(FromBytesError::EffectDescriptionFourth)?
-					.to_ascii_string(),
+				bytes.effect_description_0.read_string().map_err(FromBytesError::EffectDescription1)?,
+				bytes.effect_description_1.read_string().map_err(FromBytesError::EffectDescription2)?,
+				bytes.effect_description_2.read_string().map_err(FromBytesError::EffectDescription3)?,
+				bytes.effect_description_3.read_string().map_err(FromBytesError::EffectDescription4)?,
 			],
 
 			// Unknown
@@ -139,25 +104,13 @@ impl Bytes for Digivolve {
 		);
 
 		// Name
-		bytes.name.write_string(&self.name).map_err(ToBytesError::Name)?;
+		bytes.name.write_string(&self.name);
 
 		// Effects
-		bytes
-			.effect_description_0
-			.write_string(&self.effect_description[0])
-			.map_err(ToBytesError::EffectDescriptionFirst)?;
-		bytes
-			.effect_description_1
-			.write_string(&self.effect_description[1])
-			.map_err(ToBytesError::EffectDescriptionSecond)?;
-		bytes
-			.effect_description_2
-			.write_string(&self.effect_description[2])
-			.map_err(ToBytesError::EffectDescriptionThird)?;
-		bytes
-			.effect_description_3
-			.write_string(&self.effect_description[3])
-			.map_err(ToBytesError::EffectDescriptionFourth)?;
+		bytes.effect_description_0.write_string(&self.effect_description[0]);
+		bytes.effect_description_1.write_string(&self.effect_description[1]);
+		bytes.effect_description_2.write_string(&self.effect_description[2]);
+		bytes.effect_description_3.write_string(&self.effect_description[3]);
 
 		// Unknown
 		*bytes.unknown_15 = self.unknown_15;

@@ -186,15 +186,4 @@ pub enum SerializeError {
 		#[source]
 		err: card::item::ToBytesError,
 	},
-
-	/// Unable to serialize a digivolve card
-	#[error("Unable to serialize digivolve card with id {}", id)]
-	SerializeDigivolveCard {
-		/// Id of card
-		id: usize,
-
-		/// Underlying error
-		#[source]
-		err: card::digivolve::ToBytesError,
-	},
 }

@@ -10,8 +10,16 @@ use crate::{
 		array_split, array_split_mut,
 		null_ascii_string::{self, NullAsciiString},
 	},
+	AsciiStrArr,
 };
 use byteorder::{ByteOrder, LittleEndian};
+
+// TODO: Remove these
+/// Name alias for [`Digimon`]
+type NameString = AsciiStrArr<0x14>;
+
+/// Effect description alias for [`Digimon`]
+type EffectDescriptionString = AsciiStrArr<0x14>;
 
 /// An item card
 ///
@@ -22,13 +30,13 @@ pub struct Item {
 	/// The item's name
 	///
 	/// An ascii string with 20 characters at most
-	pub name: ascii::AsciiString,
+	pub name: NameString,
 
 	/// The effect's description.
 	///
 	/// The description is split along 4 lines, each
 	/// being an ascii string with 20 characters at most.
-	pub effect_description: [ascii::AsciiString; 4],
+	pub effect_description: [EffectDescriptionString; 4],
 
 	/// The effect's arrow color
 	#[serde(default)]
@@ -55,19 +63,19 @@ pub enum FromBytesError {
 
 	/// Unable to read the first support effect description
 	#[error("Unable to read the first line of the effect description")]
-	EffectDescriptionFirst(#[source] null_ascii_string::ReadError),
+	EffectDescription1(#[source] null_ascii_string::ReadError),
 
 	/// Unable to read the second support effect description
 	#[error("Unable to read the second line of the effect description")]
-	EffectDescriptionSecond(#[source] null_ascii_string::ReadError),
+	EffectDescription2(#[source] null_ascii_string::ReadError),
 
 	/// Unable to read the third support effect description
 	#[error("Unable to read the third line of the effect description")]
-	EffectDescriptionThird(#[source] null_ascii_string::ReadError),
+	EffectDescription3(#[source] null_ascii_string::ReadError),
 
 	/// Unable to read the fourth support effect description
 	#[error("Unable to read the fourth line of the effect description")]
-	EffectDescriptionFourth(#[source] null_ascii_string::ReadError),
+	EffectDescription4(#[source] null_ascii_string::ReadError),
 
 	/// An unknown effect arrow color was found
 	#[error("Unknown effect arrow color found")]
@@ -96,27 +104,8 @@ pub enum FromBytesError {
 
 /// Error type for [`Bytes::to_bytes`]
 #[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
+#[allow(clippy::pub_enum_variant_names)] // This is a general error, not a specific effect error
 pub enum ToBytesError {
-	/// Unable to write the digimon name
-	#[error("Unable to write the digimon name")]
-	Name(#[source] null_ascii_string::WriteError),
-
-	/// Unable to write the first support effect description
-	#[error("Unable to write the first line of the effect description")]
-	EffectDescriptionFirst(#[source] null_ascii_string::WriteError),
-
-	/// Unable to write the second support effect description
-	#[error("Unable to write the second line of the effect description")]
-	EffectDescriptionSecond(#[source] null_ascii_string::WriteError),
-
-	/// Unable to write the third support effect description
-	#[error("Unable to write the third line of the effect description")]
-	EffectDescriptionThird(#[source] null_ascii_string::WriteError),
-
-	/// Unable to write the fourth support effect description
-	#[error("Unable to write the fourth line of the effect description")]
-	EffectDescriptionFourth(#[source] null_ascii_string::WriteError),
-
 	/// Unable to write the first effect
 	#[error("Unable to write the first effect")]
 	EffectFirst(#[source] property::effect::ToBytesError),
@@ -154,7 +143,7 @@ impl Bytes for Item {
 
 		// And return the struct
 		Ok(Self {
-			name: bytes.name.read_string().map_err(FromBytesError::Name)?.to_ascii_string(),
+			name: bytes.name.read_string().map_err(FromBytesError::Name)?,
 
 			// Effects
 			effect_conditions: [
@@ -171,26 +160,10 @@ impl Bytes for Item {
 			effect_arrow_color: Option::<ArrowColor>::from_bytes(bytes.effect_arrow_color).map_err(FromBytesError::ArrowColor)?,
 
 			effect_description: [
-				bytes
-					.effect_description_0
-					.read_string()
-					.map_err(FromBytesError::EffectDescriptionFirst)?
-					.to_ascii_string(),
-				bytes
-					.effect_description_1
-					.read_string()
-					.map_err(FromBytesError::EffectDescriptionSecond)?
-					.to_ascii_string(),
-				bytes
-					.effect_description_2
-					.read_string()
-					.map_err(FromBytesError::EffectDescriptionThird)?
-					.to_ascii_string(),
-				bytes
-					.effect_description_3
-					.read_string()
-					.map_err(FromBytesError::EffectDescriptionFourth)?
-					.to_ascii_string(),
+				bytes.effect_description_0.read_string().map_err(FromBytesError::EffectDescription1)?,
+				bytes.effect_description_1.read_string().map_err(FromBytesError::EffectDescription2)?,
+				bytes.effect_description_2.read_string().map_err(FromBytesError::EffectDescription3)?,
+				bytes.effect_description_3.read_string().map_err(FromBytesError::EffectDescription4)?,
 			],
 
 			// Unknown
@@ -216,7 +189,7 @@ impl Bytes for Item {
 		);
 
 		// Name
-		bytes.name.write_string(&self.name).map_err(ToBytesError::Name)?;
+		bytes.name.write_string(&self.name);
 
 		// Effects
 		self.effect_conditions[0].to_bytes(bytes.condition_first).into_ok();
@@ -228,22 +201,10 @@ impl Bytes for Item {
 
 		Option::<ArrowColor>::to_bytes(&self.effect_arrow_color, bytes.effect_arrow_color).into_ok();
 
-		bytes
-			.effect_description_0
-			.write_string(&self.effect_description[0])
-			.map_err(ToBytesError::EffectDescriptionFirst)?;
-		bytes
-			.effect_description_1
-			.write_string(&self.effect_description[1])
-			.map_err(ToBytesError::EffectDescriptionSecond)?;
-		bytes
-			.effect_description_2
-			.write_string(&self.effect_description[2])
-			.map_err(ToBytesError::EffectDescriptionThird)?;
-		bytes
-			.effect_description_3
-			.write_string(&self.effect_description[3])
-			.map_err(ToBytesError::EffectDescriptionFourth)?;
+		bytes.effect_description_0.write_string(&self.effect_description[0]);
+		bytes.effect_description_1.write_string(&self.effect_description[1]);
+		bytes.effect_description_2.write_string(&self.effect_description[2]);
+		bytes.effect_description_3.write_string(&self.effect_description[3]);
 
 		// Unknown
 		LittleEndian::write_u32(bytes.unknown_15, self.unknown_15);

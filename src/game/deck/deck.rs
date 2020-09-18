@@ -10,21 +10,29 @@ use crate::{
 		array_split, array_split_mut,
 		null_ascii_string::{self, NullAsciiString},
 	},
+	AsciiStrArr,
 };
 use byteorder::{ByteOrder, LittleEndian};
 
 /// Card id type
 pub type CardId = u16;
 
+// TODO: Remove these
+/// Name alias for [`Digimon`]
+type NameString = AsciiStrArr<0x12>;
+
+/// Owner alias for [`Digimon`]
+type OwnerString = AsciiStrArr<0x14>;
+
 /// A deck
 #[derive(PartialEq, Eq, Clone, Debug)]
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Deck {
 	/// Name of this deck
-	pub name: ascii::AsciiString,
+	pub name: NameString,
 
 	/// Digimon who plays this deck
-	pub owner: ascii::AsciiString,
+	pub owner: OwnerString,
 
 	/// All of the card ids that make up this deck
 	pub cards: [CardId; 30],
@@ -79,22 +87,10 @@ pub enum FromBytesError {
 	PolygonMusic(#[source] music::FromBytesError),
 }
 
-/// Error type for [`Bytes::to_bytes`]
-#[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
-pub enum ToBytesError {
-	/// Unable to write the deck name
-	#[error("Unable to write the deck name")]
-	Name(#[source] null_ascii_string::WriteError),
-
-	/// Unable to write the deck owner
-	#[error("Unable to write the deck owner")]
-	Owner(#[source] null_ascii_string::WriteError),
-}
-
 impl Bytes for Deck {
 	type ByteArray = [u8; 0x6e];
 	type FromError = FromBytesError;
-	type ToError = ToBytesError;
+	type ToError = !;
 
 	fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError> {
 		// Split the bytes
@@ -120,8 +116,8 @@ impl Bytes for Deck {
 		}
 
 		Ok(Self {
-			name: bytes.name.read_string().map_err(FromBytesError::Name)?.to_ascii_string(),
-			owner: bytes.owner.read_string().map_err(FromBytesError::Owner)?.to_ascii_string(),
+			name: bytes.name.read_string().map_err(FromBytesError::Name)?,
+			owner: bytes.owner.read_string().map_err(FromBytesError::Owner)?,
 			cards,
 			city: Option::<City>::from_bytes(bytes.city).map_err(FromBytesError::City)?,
 			armor_evo: Option::<ArmorEvo>::from_bytes(bytes.armor_evo).map_err(FromBytesError::ArmorEvo)?,
@@ -149,8 +145,8 @@ impl Bytes for Deck {
 		);
 
 		// Name / Owner
-		bytes.name.write_string(&self.name).map_err(ToBytesError::Name)?;
-		bytes.owner.write_string(&self.owner).map_err(ToBytesError::Owner)?;
+		bytes.name.write_string(&self.name);
+		bytes.owner.write_string(&self.owner);
 
 		// Deck
 		for (card_id, card) in self.cards.iter().enumerate() {

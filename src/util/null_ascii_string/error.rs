@@ -11,12 +11,3 @@ pub enum ReadError {
 	#[error("The buffer did not contain valid Ascii")]
 	NotAscii(#[source] ascii::AsAsciiStrError),
 }
-
-/// Error type for [`write`](super::read)
-#[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
-#[allow(clippy::missing_docs_in_private_items)]
-pub enum WriteError {
-	/// The input string was too large
-	#[error("Input string was too large for buffer. ({}+1 / {})", input_len, buffer_len)]
-	TooLarge { input_len: usize, buffer_len: usize },
-}

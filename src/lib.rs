@@ -91,10 +91,12 @@
 #![allow(clippy::indexing_slicing)]
 
 // Modules
+pub mod ascii_str_arr;
 pub mod game;
 pub mod io;
 mod util;
 
 // Exports
+pub use ascii_str_arr::AsciiStrArr;
 pub use game::{Bytes, CardTable, Deck, DeckTable, Digimon, Digivolve, Item, Validatable, Validation};
 pub use io::GameFile;

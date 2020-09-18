@@ -4,6 +4,8 @@
 #![allow(clippy::panic)] // Unit tests are supposed to panic on error.
 
 // Imports
+use std::convert::TryFrom;
+
 use super::*;
 use crate::Validatable;
 
@@ -11,10 +13,11 @@ use crate::Validatable;
 fn valid_bytes() {
 	// Valid moves with no warnings
 	#[rustfmt::skip]
+	#[allow(clippy::as_conversions)]
 	let valid_moves: &[(Move, <Move as Bytes>::ByteArray)] = &[
 		(
 			Move {
-				name:    ascii::AsciiString::from_ascii("Digimon").expect("Unable to convert string to ascii"),
+				name:    AsciiStrArr::try_from(b"Digimon" as &[u8]).expect("Unable to convert string to ascii"),
 				power:   LittleEndian::read_u16(&[4, 1]),
 				unknown: LittleEndian::read_u32(&[1, 2, 3, 4]),
 			},
@@ -27,7 +30,7 @@ fn valid_bytes() {
 		),
 		(
 			Move {
-				name:    ascii::AsciiString::from_ascii("123456789012345678901").expect("Unable to convert string to ascii"),
+				name:    AsciiStrArr::try_from(b"123456789012345678901" as &[u8]).expect("Unable to convert string to ascii"),
 				power:   0,
 				unknown: 0,
 			},

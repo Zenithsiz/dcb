@@ -131,7 +131,7 @@ impl Table {
 		for (id, deck) in self.decks.iter().enumerate() {
 			// Parse each deck into bytes
 			let mut bytes = [0; 0x6e];
-			deck.to_bytes(&mut bytes).map_err(|err| SerializeError::SerializeDeck { id, err })?;
+			deck.to_bytes(&mut bytes).into_ok();
 
 			// And write them to file
 			file.write(&bytes).map_err(|err| SerializeError::WriteDeck { id, err })?;

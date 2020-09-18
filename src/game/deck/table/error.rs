@@ -78,17 +78,6 @@ pub enum SerializeError {
 	#[error("Unable to write table header")]
 	WriteHeader(#[source] std::io::Error),
 
-	/// Could not deserialize a deck entry
-	#[error("Unable to deserialize deck entry with id {}", id)]
-	SerializeDeck {
-		/// Id of card
-		id: usize,
-
-		/// Underlying error
-		#[source]
-		err: deck::ToBytesError,
-	},
-
 	/// Could not write a deck entry
 	#[error("Unable to read deck entry with id {}", id)]
 	WriteDeck {

@@ -11,15 +11,20 @@ use crate::{
 		array_split, array_split_mut,
 		null_ascii_string::{self, NullAsciiString},
 	},
+	AsciiStrArr,
 };
 use byteorder::{ByteOrder, LittleEndian};
+
+// TODO: Remove these
+/// Name alias for [`Digimon`]
+type NameString = AsciiStrArr<0x15>;
 
 /// A digimon's move
 #[derive(PartialEq, Eq, Clone, Hash, Debug)]
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Move {
 	/// The move's name
-	name: ascii::AsciiString,
+	name: NameString,
 
 	/// The move's power
 	power: u16,
@@ -36,18 +41,10 @@ pub enum FromBytesError {
 	Name(#[source] null_ascii_string::ReadError),
 }
 
-/// Error type for [`Bytes::to_bytes`]
-#[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
-pub enum ToBytesError {
-	/// Unable to write the move name
-	#[error("Unable to write the move name")]
-	Name(#[source] null_ascii_string::WriteError),
-}
-
 impl Bytes for Move {
 	type ByteArray = [u8; 0x1c];
 	type FromError = FromBytesError;
-	type ToError = ToBytesError;
+	type ToError = !;
 
 	fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError> {
 		// Get all byte arrays we need
@@ -59,7 +56,7 @@ impl Bytes for Move {
 
 		// Return the move
 		Ok(Self {
-			name:    bytes.name.read_string().map_err(FromBytesError::Name)?.to_ascii_string(),
+			name:    bytes.name.read_string().map_err(FromBytesError::Name)?,
 			power:   LittleEndian::read_u16(bytes.power),
 			unknown: LittleEndian::read_u32(bytes.unknown),
 		})
@@ -74,7 +71,7 @@ impl Bytes for Move {
 		);
 
 		// Write the name
-		bytes.name.write_string(&self.name).map_err(ToBytesError::Name)?;
+		bytes.name.write_string(&self.name);
 
 		// Then write the power and the unknown
 		LittleEndian::write_u16(bytes.power, self.power);
@@ -92,11 +89,6 @@ impl Validatable for Move {
 	fn validate(&self) -> Validation<Self::Error, Self::Warning> {
 		// Create the initial validation
 		let mut validation = Validation::new();
-
-		// If our name is longer or equal to `0x16` bytes, emit error
-		if self.name.len() >= 0x16 {
-			validation.emit_error(ValidationError::NameTooLong);
-		}
 
 		// If the power isn't a multiple of 10, warn, as we don't know how the game handles
 		// powers that aren't multiples of 10.

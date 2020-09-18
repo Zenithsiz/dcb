@@ -4,44 +4,56 @@
 pub mod error;
 
 // Exports
-pub use error::{ReadError, WriteError};
+pub use error::ReadError;
+
+// Imports
+use crate::AsciiStrArr;
+use std::convert::TryInto;
 
 /// Trait for reading null terminated ascii strings from a buffer
-pub trait NullAsciiString {
+pub trait NullAsciiString<const N: usize> {
 	/// Reads a null terminated ascii string from this buffer and returns it
-	fn read_string(&self) -> Result<&ascii::AsciiStr, ReadError>;
+	fn read_string(&self) -> Result<AsciiStrArr<N>, ReadError>;
 
 	/// Writes a null terminated ascii string to this buffer and returns it
-	fn write_string(&mut self, s: &ascii::AsciiStr) -> Result<&Self, WriteError>;
+	fn write_string(&mut self, s: &AsciiStrArr<N>);
 }
 
-impl NullAsciiString for [u8] {
-	fn read_string(&self) -> Result<&ascii::AsciiStr, ReadError> {
-		// Find the first null and trim the buffer until it
-		let buf = match self.iter().position(|&b| b == b'\0') {
-			Some(idx) => &self[0..idx],
-			None => return Err(ReadError::NoNull),
-		};
+// TODO: Get rid of this once we're able to use `{N + 1}`
+macro impl_null_ascii_string($($N:expr),* $(,)?) {
+	$(
+		impl NullAsciiString<$N> for [u8; $N + 1] {
+			fn read_string(&self) -> Result<AsciiStrArr<$N>, ReadError> {
+				// Find the first null and trim the buffer until it
+				let buf = match self.iter().position(|&b| b == b'\0') {
+					Some(idx) => &self[0..idx],
+					None => return Err(ReadError::NoNull),
+				};
 
-		// Then convert it from Ascii
-		ascii::AsciiStr::from_ascii(buf).map_err(ReadError::NotAscii)
-	}
+				// Then convert it to the ascii string array
+				Ok(ascii::AsciiStr::from_ascii(buf)
+					.map_err(ReadError::NotAscii)?
+					.try_into()
+					.expect("Null terminated `[u8; N+1]` didn't fit into `AsciiStringArr<N>`")
+				)
+			}
 
-	fn write_string(&mut self, input: &ascii::AsciiStr) -> Result<&Self, WriteError> {
-		// If the input string doesn't fit into the buffer (excluding the null byte), return Err
-		if input.len() >= self.len() {
-			return Err(WriteError::TooLarge {
-				input_len:  input.len(),
-				buffer_len: self.len(),
-			});
+			fn write_string(&mut self, input: &AsciiStrArr<$N>) {
+				// Copy everything over and set the last byte to 0
+				// Note: Panic cannot occur, as `len < N`
+				// Note: No need to override the remaining bytes
+				let len = input.len();
+				self[0..len].copy_from_slice(input.as_bytes());
+				self[len] = 0;
+			}
 		}
-
-		// Else copy everything over and set the last byte to null
-		// Note: We leave all other bytes as they are, no need to set them to 0
-		self[0..input.len()].copy_from_slice(input.as_bytes());
-		self[input.len()] = 0;
-
-		// And return Ok with the buffer
-		Ok(self)
-	}
+	)*
 }
+
+#[rustfmt::skip]
+impl_null_ascii_string!(
+	 0,  1,  2,  3,  4,  5,  6,  7,  8,  9,
+	10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+	20, 21, 22, 23, 24, 25, 26, 27, 28, 29,
+	30, 31, 32,
+);

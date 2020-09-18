@@ -228,7 +228,7 @@ impl Table {
 
 		// Macro to help write all cards to file
 		macro_rules! write_card {
-			($cards:expr, $prev_ids:expr, $card_type:ident, $ErrVariant:ident) => {
+			($cards:expr, $prev_ids:expr, $card_type:ident, $($on_err:tt)*) => {
 				for (rel_id, card) in $cards.iter().enumerate() {
 					// Current id through the whole table
 					let cur_id = $prev_ids + rel_id;
@@ -247,9 +247,10 @@ impl Table {
 					CardType::$card_type.to_bytes(bytes.header_type)?;
 
 					// Write the card
+					#[allow(unreachable_code)] // FIXME: Remove this
 					card
 						.to_bytes(bytes.card)
-						.map_err(|err| SerializeError::$ErrVariant { id: cur_id, err })?;
+						.map_err(|err| {$($on_err)*}(err, cur_id))?;
 
 					// Write the footer
 					*bytes.footer = 0;
@@ -268,9 +269,9 @@ impl Table {
 		// Write all cards
 		#[rustfmt::skip] {
 			//            Buffer         , Offset                                , Type     , Error variant
-			write_card! { self.digimons  , 0                                     , Digimon  , SerializeDigimonCard   }
-			write_card! { self.items     , self.digimons.len()                   , Item     , SerializeItemCard      }
-			write_card! { self.digivolves, self.digimons.len() + self.items.len(), Digivolve, SerializeDigivolveCard }
+			write_card! { self.digimons  , 0                                     , Digimon  , |err, cur_id| SerializeError::SerializeDigimonCard { id: cur_id, err } }
+			write_card! { self.items     , self.digimons.len()                   , Item     , |err, cur_id| SerializeError::SerializeItemCard    { id: cur_id, err } }
+			write_card! { self.digivolves, self.digimons.len() + self.items.len(), Digivolve, |err, _| err }
 		}
 
 		// And return Ok
