@@ -1,4 +1,9 @@
-/target
-/.vscode
+# Project
 /resources
+
+# Cargo
+/target
 Cargo.lock
+
+# Ides
+/.vscode
