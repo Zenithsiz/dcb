@@ -8,18 +8,16 @@ pub use error::{DeserializeError, SerializeError};
 
 // Imports
 use crate::{
-	game::{
-		card::{
-			self,
-			property::{self, CardType},
-			Digimon, Digivolve, Item,
-		},
-		Bytes,
+	game::card::{
+		self,
+		property::{self, CardType},
+		Digimon, Digivolve, Item,
 	},
 	io::{address::Data, GameFile},
 	util::{array_split, array_split_mut},
 };
 use byteorder::{ByteOrder, LittleEndian};
+use dcb_bytes::Bytes;
 use std::{
 	convert::TryInto,
 	io::{Read, Seek, Write},

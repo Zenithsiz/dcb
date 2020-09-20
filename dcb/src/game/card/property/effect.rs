@@ -2,13 +2,11 @@
 
 // Imports
 use crate::{
-	game::{
-		card::property::{self, AttackType, DigimonProperty, EffectOperation, PlayerType, Slot},
-		Bytes,
-	},
+	game::card::property::{self, AttackType, DigimonProperty, EffectOperation, PlayerType, Slot},
 	util::{array_split, array_split_mut},
 };
 use byteorder::{ByteOrder, LittleEndian};
+use dcb_bytes::Bytes;
 
 /// A digimon's support effects
 ///
@@ -460,7 +458,19 @@ impl Bytes for Effect {
 	}
 }
 
-impl Bytes for Option<Effect> {
+/// A possible effect
+#[derive(derive_more::From, derive_more::Into)]
+pub struct MaybeEffect(Option<Effect>);
+
+impl<'a> From<&'a Option<Effect>> for &'a MaybeEffect {
+	#[allow(clippy::as_conversions)] // We need `as` to make pointer casts
+	fn from(opt: &'a Option<Effect>) -> Self {
+		// SAFETY: We're `repr(transparent)`, so this cast is safe
+		unsafe { &*(opt as *const Option<Effect> as *const MaybeEffect) }
+	}
+}
+
+impl Bytes for MaybeEffect {
 	type ByteArray = [u8; 0x10];
 	type FromError = FromBytesError;
 	type ToError = ToBytesError;
@@ -474,11 +484,11 @@ impl Bytes for Option<Effect> {
 
 		// If the exists byte is 0, return None
 		if *bytes.exists == 0 {
-			return Ok(None);
+			return Ok(Self(None));
 		}
 
 		// Else get the effect
-		Ok(Some(Effect::from_bytes(bytes.effect)?))
+		Ok(Self(Some(Effect::from_bytes(bytes.effect)?)))
 	}
 
 	fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError> {
@@ -488,7 +498,7 @@ impl Bytes for Option<Effect> {
 		);
 
 		// Check if we exist
-		match self {
+		match &self.0 {
 			Some(effect) => {
 				*bytes.exists = 1;
 				effect.to_bytes(bytes.effect)?;

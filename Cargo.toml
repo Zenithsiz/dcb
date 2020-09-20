@@ -1,5 +1,7 @@
 [workspace]
 
 members = [
-	"dcb"
+	"dcb",
+	"dcb-bytes",
+	"dcb-bytes-derive"
 ]

@@ -2,10 +2,7 @@
 
 // Imports
 use crate::{
-	game::{
-		card::property::{self, ArrowColor, Effect, EffectCondition},
-		Bytes,
-	},
+	game::card::property::{self, ArrowColor, Effect, EffectCondition, MaybeArrowColor, MaybeEffect, MaybeEffectCondition},
 	util::{
 		array_split, array_split_mut,
 		null_ascii_string::{self, NullAsciiString},
@@ -13,6 +10,7 @@ use crate::{
 	AsciiStrArr,
 };
 use byteorder::{ByteOrder, LittleEndian};
+use dcb_bytes::Bytes;
 
 // TODO: Remove these
 /// Name alias for [`Digimon`]
@@ -147,17 +145,23 @@ impl Bytes for Item {
 
 			// Effects
 			effect_conditions: [
-				Option::<EffectCondition>::from_bytes(bytes.condition_first).map_err(FromBytesError::EffectConditionFirst)?,
-				Option::<EffectCondition>::from_bytes(bytes.condition_second).map_err(FromBytesError::EffectConditionSecond)?,
+				MaybeEffectCondition::from_bytes(bytes.condition_first)
+					.map_err(FromBytesError::EffectConditionFirst)?
+					.into(),
+				MaybeEffectCondition::from_bytes(bytes.condition_second)
+					.map_err(FromBytesError::EffectConditionSecond)?
+					.into(),
 			],
 
 			effects: [
-				Option::<Effect>::from_bytes(bytes.effect_first).map_err(FromBytesError::EffectFirst)?,
-				Option::<Effect>::from_bytes(bytes.effect_second).map_err(FromBytesError::EffectSecond)?,
-				Option::<Effect>::from_bytes(bytes.effect_third).map_err(FromBytesError::EffectThird)?,
+				MaybeEffect::from_bytes(bytes.effect_first).map_err(FromBytesError::EffectFirst)?.into(),
+				MaybeEffect::from_bytes(bytes.effect_second).map_err(FromBytesError::EffectSecond)?.into(),
+				MaybeEffect::from_bytes(bytes.effect_third).map_err(FromBytesError::EffectThird)?.into(),
 			],
 
-			effect_arrow_color: Option::<ArrowColor>::from_bytes(bytes.effect_arrow_color).map_err(FromBytesError::ArrowColor)?,
+			effect_arrow_color: MaybeArrowColor::from_bytes(bytes.effect_arrow_color)
+				.map_err(FromBytesError::ArrowColor)?
+				.into(),
 
 			effect_description: [
 				bytes.effect_description_0.read_string().map_err(FromBytesError::EffectDescription1)?,
@@ -192,14 +196,26 @@ impl Bytes for Item {
 		bytes.name.write_string(&self.name);
 
 		// Effects
-		self.effect_conditions[0].to_bytes(bytes.condition_first).into_ok();
-		self.effect_conditions[1].to_bytes(bytes.condition_second).into_ok();
+		<&MaybeEffectCondition>::from(&self.effect_conditions[0])
+			.to_bytes(bytes.condition_first)
+			.into_ok();
+		<&MaybeEffectCondition>::from(&self.effect_conditions[1])
+			.to_bytes(bytes.condition_second)
+			.into_ok();
 
-		self.effects[0].to_bytes(bytes.effect_first).map_err(ToBytesError::EffectFirst)?;
-		self.effects[1].to_bytes(bytes.effect_second).map_err(ToBytesError::EffectSecond)?;
-		self.effects[2].to_bytes(bytes.effect_third).map_err(ToBytesError::EffectThird)?;
+		<&MaybeEffect>::from(&self.effects[0])
+			.to_bytes(bytes.effect_first)
+			.map_err(ToBytesError::EffectFirst)?;
+		<&MaybeEffect>::from(&self.effects[1])
+			.to_bytes(bytes.effect_second)
+			.map_err(ToBytesError::EffectSecond)?;
+		<&MaybeEffect>::from(&self.effects[2])
+			.to_bytes(bytes.effect_third)
+			.map_err(ToBytesError::EffectThird)?;
 
-		Option::<ArrowColor>::to_bytes(&self.effect_arrow_color, bytes.effect_arrow_color).into_ok();
+		<&MaybeArrowColor>::from(&self.effect_arrow_color)
+			.to_bytes(bytes.effect_arrow_color)
+			.into_ok();
 
 		bytes.effect_description_0.write_string(&self.effect_description[0]);
 		bytes.effect_description_1.write_string(&self.effect_description[1]);

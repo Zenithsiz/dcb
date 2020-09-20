@@ -74,7 +74,7 @@ macro_rules! generate_enum_property_mod
 					)+
 				}
 
-				/// Error type for [`$crate::game::Bytes::from_bytes`]
+				/// Error type for [`::dcb_bytes::Bytes::from_bytes`]
 				#[derive(PartialEq, Eq, Clone, Copy, ::std::fmt::Debug, ::thiserror::Error)]
 				pub enum FromBytesError {
 
@@ -85,7 +85,7 @@ macro_rules! generate_enum_property_mod
 					}
 				}
 
-				impl $crate::game::Bytes for $enum_name
+				impl ::dcb_bytes::Bytes for $enum_name
 				{
 					type ByteArray = u8;
 
@@ -129,33 +129,45 @@ macro_rules! generate_enum_property_mod
 	}
 }
 
-/// Implements [`Bytes`](crate::game::Bytes) for `Option<E>` where `E`
+/// Implements [`Bytes`](dcb_bytes::Bytes) for `Option<E>` where `E`
 /// is the first argument of this macro and an enum.
 ///
 /// This is done by supplying a sentinel value which is read/written as `None`.
 pub macro generate_enum_property_option {
 	(
-		$( $enum_name:ty => $sentinel_value:literal ),* $(,)?
+		$( $struct_vis:vis struct $struct_name:ident ( $enum_vis:vis $enum_name:ty ) => $sentinel_value:literal ),* $(,)?
 	) => {
 		$(
-			#[allow(clippy::diverging_sub_expression)] // Errors might be `!`
-			impl $crate::game::Bytes for Option<$enum_name> {
-				type ByteArray = <$enum_name as $crate::game::Bytes>::ByteArray;
+			#[repr(transparent)]
+			#[derive(derive_more::From, derive_more::Into)]
+			$struct_vis struct $struct_name( $enum_vis Option<$enum_name> );
 
-				type FromError = <$enum_name as $crate::game::Bytes>::FromError;
+			impl<'a> From<&'a Option<$enum_name>> for &'a $struct_name {
+				#[allow(clippy::as_conversions)] // We need `as` to make pointer casts
+				fn from(opt: &'a Option<$enum_name>) -> Self {
+					// SAFETY: We're `repr(transparent)`, so this cast is safe
+					unsafe { &*(opt as *const Option<$enum_name> as *const $struct_name) }
+				}
+			}
+
+			#[allow(clippy::diverging_sub_expression)] // Errors might be `!`
+			impl ::dcb_bytes::Bytes for $struct_name {
+				type ByteArray = <$enum_name as ::dcb_bytes::Bytes>::ByteArray;
+
+				type FromError = <$enum_name as ::dcb_bytes::Bytes>::FromError;
 				fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError>
 				{
 					match bytes {
-						$sentinel_value => Ok( None ),
-						_               => Ok( Some( $crate::game::Bytes::from_bytes(bytes)? ) ),
+						$sentinel_value => Ok( Self(None) ),
+						_               => Ok( Self(Some( ::dcb_bytes::Bytes::from_bytes(bytes)? )) ),
 					}
 				}
 
-				type ToError = <$enum_name as $crate::game::Bytes>::ToError;
+				type ToError = <$enum_name as ::dcb_bytes::Bytes>::ToError;
 				fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError>
 				{
-					match self {
-						Some(value) => $crate::game::Bytes::to_bytes(value, bytes)?,
+					match &self.0 {
+						Some(value) => ::dcb_bytes::Bytes::to_bytes(value, bytes)?,
 						None        => *bytes = $sentinel_value,
 					}
 

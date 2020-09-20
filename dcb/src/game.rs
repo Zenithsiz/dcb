@@ -15,13 +15,11 @@
 //#![allow(clippy::missing_docs_in_private_items)] // A lot of our private items are simple digimon types, so they don't need documentation
 
 // Modules
-pub mod bytes;
 pub mod card;
 pub mod deck;
 pub mod validation;
 
 // Exports
-pub use bytes::Bytes;
 pub use card::{Digimon, Digivolve, Item, Table as CardTable};
 pub use deck::{Deck, Table as DeckTable};
 pub use validation::{Validatable, Validation};

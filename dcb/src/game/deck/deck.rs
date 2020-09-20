@@ -2,10 +2,7 @@
 
 // Imports
 use crate::{
-	game::{
-		deck::{armor_evo, city, music, ArmorEvo, City, Music},
-		Bytes,
-	},
+	game::deck::{armor_evo, city, music, ArmorEvo, City, MaybeArmorEvo, MaybeCity, MaybeMusic, Music},
 	util::{
 		array_split, array_split_mut,
 		null_ascii_string::{self, NullAsciiString},
@@ -13,6 +10,7 @@ use crate::{
 	AsciiStrArr,
 };
 use byteorder::{ByteOrder, LittleEndian};
+use dcb_bytes::Bytes;
 
 /// Card id type
 pub type CardId = u16;
@@ -119,10 +117,10 @@ impl Bytes for Deck {
 			name: bytes.name.read_string().map_err(FromBytesError::Name)?,
 			owner: bytes.owner.read_string().map_err(FromBytesError::Owner)?,
 			cards,
-			city: Option::<City>::from_bytes(bytes.city).map_err(FromBytesError::City)?,
-			armor_evo: Option::<ArmorEvo>::from_bytes(bytes.armor_evo).map_err(FromBytesError::ArmorEvo)?,
-			battle_music: Option::<Music>::from_bytes(bytes.battle_music).map_err(FromBytesError::BattleMusic)?,
-			polygon_music: Option::<Music>::from_bytes(bytes.polygon_music).map_err(FromBytesError::PolygonMusic)?,
+			city: MaybeCity::from_bytes(bytes.city).map_err(FromBytesError::City)?.into(),
+			armor_evo: MaybeArmorEvo::from_bytes(bytes.armor_evo).map_err(FromBytesError::ArmorEvo)?.into(),
+			battle_music: MaybeMusic::from_bytes(bytes.battle_music).map_err(FromBytesError::BattleMusic)?.into(),
+			polygon_music: MaybeMusic::from_bytes(bytes.polygon_music).map_err(FromBytesError::PolygonMusic)?.into(),
 			experience: *bytes.experience,
 			unknown_64: *bytes.unknown_64,
 			unknown_6a: *bytes.unknown_6a,
@@ -160,14 +158,14 @@ impl Bytes for Deck {
 		*bytes.experience = self.experience;
 
 		// City
-		self.city.to_bytes(bytes.city).into_ok();
+		<&MaybeCity>::from(&self.city).to_bytes(bytes.city).into_ok();
 
 		// Armor evo
-		self.armor_evo.to_bytes(bytes.armor_evo).into_ok();
+		<&MaybeArmorEvo>::from(&self.armor_evo).to_bytes(bytes.armor_evo).into_ok();
 
 		// Music
-		self.battle_music.to_bytes(bytes.battle_music).into_ok();
-		self.polygon_music.to_bytes(bytes.polygon_music).into_ok();
+		<&MaybeMusic>::from(&self.battle_music).to_bytes(bytes.battle_music).into_ok();
+		<&MaybeMusic>::from(&self.polygon_music).to_bytes(bytes.polygon_music).into_ok();
 
 		// Unknown
 		*bytes.unknown_64 = self.unknown_64;

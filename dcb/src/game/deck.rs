@@ -57,9 +57,9 @@ generate_enum_property_mod! {
 }
 
 generate_enum_property_option!(
-	City     => 0,
-	ArmorEvo => 0,
-	Music    => 0,
+	pub struct MaybeCity    (City    ) => 0,
+	pub struct MaybeArmorEvo(ArmorEvo) => 0,
+	pub struct MaybeMusic   (Music   ) => 0,
 );
 
 // Modules

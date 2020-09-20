@@ -1,51 +1,7 @@
-//! `dcb` is a library for interacting with the game file of `Digimon Digital Card Battle`.
-//!
-//! # Modules
-//! `dcb` is split across 2 main modules, [`io`] and [`game`].
-//!
-//! ## Io
-//! The Io module is responsible for interacting with the game file. In the future it may be responsible
-//! for also interacting with the game extracted database, once work on that is complete.
-//!
-//! ## Game
-//! The game module is responsible for representing in-game structures such as cards, sprites, text, and
-//! others. The trait has various interfaces to be able to deserialize these structures from both the game
-//! file, database or even other sources, depending on the structure.
-//!
-//! # Example
-//!
-//! The following is an example of how to use the `dcb` library.
-//! This example extracts the card table and prints it to screen
-//!
-//! ```no_run
-//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
-//! #   use std::fs::File;
-//! let mut game_file = dcb::GameFile::from_reader( File::open("Digimon Digital Card Battle.bin")? )?;
-//! let card_table = dcb::game::CardTable::deserialize(&mut game_file)?;
-//! println!("Card table: {:?}", card_table);
-//! #   Ok(())
-//! # }
-//! ```
+//! Bytes conversions for [`dcb`].
 
 // Features
-#![feature(
-	seek_convenience,
-	never_type,
-	bool_to_option,
-	decl_macro,
-	stmt_expr_attributes,
-	unwrap_infallible,
-	external_doc,
-	format_args_capture,
-	const_fn,
-	const_panic,
-	min_const_generics,
-	exclusive_range_pattern,
-	unsafe_block_in_unsafe_fn,
-	maybe_uninit_uninit_array,
-	maybe_uninit_slice,
-	array_map
-)]
+#![feature(unsafe_block_in_unsafe_fn, min_const_generics)]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]
 // Instead of `unwrap`, we must use `expect` and provide a reason
@@ -100,12 +56,7 @@
 #![allow(clippy::indexing_slicing)]
 
 // Modules
-pub mod ascii_str_arr;
-pub mod game;
-pub mod io;
-mod util;
+pub mod bytes;
 
 // Exports
-pub use ascii_str_arr::AsciiStrArr;
-pub use game::{CardTable, Deck, DeckTable, Digimon, Digivolve, Item, Validatable, Validation};
-pub use io::GameFile;
+pub use bytes::{ByteArray, Bytes};

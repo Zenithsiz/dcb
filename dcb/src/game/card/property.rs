@@ -58,11 +58,14 @@ generate_enum_property_mod!(
 			#[must_use]
 			pub const fn byte_size(self) -> usize
 			{
+				use crate::game::card::{Digimon, Item, Digivolve};
+				use dcb_bytes::Bytes;
+
 				match self
 				{
-					Self::Digimon   => std::mem::size_of::< <crate::game::card::Digimon   as crate::game::Bytes>::ByteArray >(),
-					Self::Item      => std::mem::size_of::< <crate::game::card::Item      as crate::game::Bytes>::ByteArray >(),
-					Self::Digivolve => std::mem::size_of::< <crate::game::card::Digivolve as crate::game::Bytes>::ByteArray >(),
+					Self::Digimon   => std::mem::size_of::< <Digimon   as Bytes>::ByteArray >(),
+					Self::Item      => std::mem::size_of::< <Item      as Bytes>::ByteArray >(),
+					Self::Digivolve => std::mem::size_of::< <Digivolve as Bytes>::ByteArray >(),
 				}
 			}
 		}
@@ -211,9 +214,9 @@ generate_enum_property_mod!(
 );
 
 util::generate_enum_property_option!(
-	ArrowColor      => 0,
-	CrossMoveEffect => 0,
-	DigimonProperty => 0,
+	pub struct MaybeArrowColor      (ArrowColor      ) => 0,
+	pub struct MaybeCrossMoveEffect (CrossMoveEffect ) => 0,
+	pub struct MaybeDigimonProperty (DigimonProperty ) => 0,
 );
 
 // Complex
@@ -227,8 +230,8 @@ pub use attack_type::AttackType;
 pub use card_type::CardType;
 pub use cross_move_effect::CrossMoveEffect;
 pub use digimon_property::DigimonProperty;
-pub use effect::Effect;
-pub use effect_condition::EffectCondition;
+pub use effect::{Effect, MaybeEffect};
+pub use effect_condition::{EffectCondition, MaybeEffectCondition};
 pub use effect_condition_operation::EffectConditionOperation;
 pub use effect_operation::EffectOperation;
 pub use level::Level;

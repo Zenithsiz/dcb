@@ -2,13 +2,11 @@
 
 // Imports
 use crate::{
-	game::{
-		card::property::{self, DigimonProperty, EffectConditionOperation},
-		Bytes,
-	},
+	game::card::property::{self, DigimonProperty, EffectConditionOperation, MaybeDigimonProperty},
 	util::{array_split, array_split_mut},
 };
 use byteorder::{ByteOrder, LittleEndian};
+use dcb_bytes::Bytes;
 
 /// A digimon's support effect condition
 #[derive(PartialEq, Eq, Clone, Copy, Hash, Debug)]
@@ -84,7 +82,9 @@ impl Bytes for EffectCondition {
 			misfire:      (*bytes.misfire != 0),
 			property_cmp: DigimonProperty::from_bytes(bytes.property_cmp).map_err(FromBytesError::Condition)?,
 
-			arg_property: Option::<DigimonProperty>::from_bytes(bytes.arg_property).map_err(FromBytesError::PropertyArgument)?,
+			arg_property: MaybeDigimonProperty::from_bytes(bytes.arg_property)
+				.map_err(FromBytesError::PropertyArgument)?
+				.into(),
 
 			arg_num: LittleEndian::read_u16(bytes.arg_num),
 
@@ -119,7 +119,7 @@ impl Bytes for EffectCondition {
 		self.property_cmp.to_bytes(bytes.property_cmp).into_ok();
 
 		// Arguments
-		self.arg_property.to_bytes(bytes.arg_property).into_ok();
+		<&MaybeDigimonProperty>::from(&self.arg_property).to_bytes(bytes.arg_property).into_ok();
 		LittleEndian::write_u16(bytes.arg_num, self.arg_num);
 		self.operation.to_bytes(bytes.operation).into_ok();
 
@@ -135,25 +135,39 @@ impl Bytes for EffectCondition {
 	}
 }
 
-impl Bytes for Option<EffectCondition> {
+/// A possible effect condition
+#[repr(transparent)]
+#[derive(derive_more::From, derive_more::Into)]
+pub struct MaybeEffectCondition(Option<EffectCondition>);
+
+impl<'a> From<&'a Option<EffectCondition>> for &'a MaybeEffectCondition {
+	#[allow(clippy::as_conversions)] // We need `as` to make pointer casts
+	fn from(opt: &'a Option<EffectCondition>) -> Self {
+		// SAFETY: We're `repr(transparent)`, so this cast is safe
+		unsafe { &*(opt as *const Option<EffectCondition> as *const MaybeEffectCondition) }
+	}
+}
+
+
+impl Bytes for MaybeEffectCondition {
 	type ByteArray = [u8; 0x20];
 	type FromError = FromBytesError;
-	type ToError = <EffectCondition as crate::game::Bytes>::ToError;
+	type ToError = <EffectCondition as Bytes>::ToError;
 
 	fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError> {
 		// If we have no property comparison, return None
 		if bytes[0x2] == 0 {
-			return Ok(None);
+			return Ok(Self(None));
 		}
 
 		// Else build the type
-		Ok(Some(EffectCondition::from_bytes(bytes)?))
+		Ok(Self(Some(EffectCondition::from_bytes(bytes)?)))
 	}
 
 	#[allow(clippy::diverging_sub_expression)] // For if we ever change `EffectCondition::ToError`
 	fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError> {
 		// Check if we exist
-		match self {
+		match self.0 {
 			Some(cond) => cond.to_bytes(bytes)?,
 			None => bytes[0x2] = 0,
 		};

@@ -2,13 +2,13 @@
 
 // Imports
 use crate::{
-	game::Bytes,
 	util::{
 		array_split, array_split_mut,
 		null_ascii_string::{self, NullAsciiString},
 	},
 	AsciiStrArr,
 };
+use dcb_bytes::Bytes;
 
 // TODO: Remove these
 /// Name alias for [`Digimon`]

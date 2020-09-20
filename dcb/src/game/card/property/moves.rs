@@ -6,7 +6,7 @@ mod test;
 
 // Imports
 use crate::{
-	game::{Bytes, Validatable, Validation},
+	game::{Validatable, Validation},
 	util::{
 		array_split, array_split_mut,
 		null_ascii_string::{self, NullAsciiString},
@@ -14,6 +14,7 @@ use crate::{
 	AsciiStrArr,
 };
 use byteorder::{ByteOrder, LittleEndian};
+use dcb_bytes::Bytes;
 
 // TODO: Remove these
 /// Name alias for [`Digimon`]
