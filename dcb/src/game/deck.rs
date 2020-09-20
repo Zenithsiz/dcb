@@ -57,9 +57,17 @@ generate_enum_property_mod! {
 }
 
 generate_enum_property_option!(
-	pub struct MaybeCity    (City    ) => 0,
-	pub struct MaybeArmorEvo(ArmorEvo) => 0,
-	pub struct MaybeMusic   (Music   ) => 0,
+	#[derive(BytesProxySentinel)]
+	#[bytes_proxy_sentinel(value = 0)]
+	pub struct MaybeCity(Option<City>);
+
+	#[derive(BytesProxySentinel)]
+	#[bytes_proxy_sentinel(value = 0)]
+	pub struct MaybeArmorEvo(Option<ArmorEvo>);
+
+	#[derive(BytesProxySentinel)]
+	#[bytes_proxy_sentinel(value = 0)]
+	pub struct MaybeMusic(Option<Music>);
 );
 
 // Modules

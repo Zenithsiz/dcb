@@ -214,9 +214,17 @@ generate_enum_property_mod!(
 );
 
 util::generate_enum_property_option!(
-	pub struct MaybeArrowColor      (ArrowColor      ) => 0,
-	pub struct MaybeCrossMoveEffect (CrossMoveEffect ) => 0,
-	pub struct MaybeDigimonProperty (DigimonProperty ) => 0,
+	#[derive(BytesProxySentinel)]
+	#[bytes_proxy_sentinel(value = 0)]
+	pub struct MaybeArrowColor(Option<ArrowColor>);
+
+	#[derive(BytesProxySentinel)]
+	#[bytes_proxy_sentinel(value = 0)]
+	pub struct MaybeCrossMoveEffect(Option<CrossMoveEffect>);
+
+	#[derive(BytesProxySentinel)]
+	#[bytes_proxy_sentinel(value = 0)]
+	pub struct MaybeDigimonProperty(Option<DigimonProperty>);
 );
 
 // Complex
