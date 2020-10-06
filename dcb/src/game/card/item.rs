@@ -11,6 +11,7 @@ use crate::{
 };
 use byteorder::{ByteOrder, LittleEndian};
 use dcb_bytes::Bytes;
+use ref_cast::RefCast;
 
 // TODO: Remove these
 /// Name alias for [`Digimon`]
@@ -196,24 +197,24 @@ impl Bytes for Item {
 		bytes.name.write_string(&self.name);
 
 		// Effects
-		<&MaybeEffectCondition>::from(&self.effect_conditions[0])
+		MaybeEffectCondition::ref_cast(&self.effect_conditions[0])
 			.to_bytes(bytes.condition_first)
 			.into_ok();
-		<&MaybeEffectCondition>::from(&self.effect_conditions[1])
+		MaybeEffectCondition::ref_cast(&self.effect_conditions[1])
 			.to_bytes(bytes.condition_second)
 			.into_ok();
 
-		<&MaybeEffect>::from(&self.effects[0])
+		MaybeEffect::ref_cast(&self.effects[0])
 			.to_bytes(bytes.effect_first)
 			.map_err(ToBytesError::EffectFirst)?;
-		<&MaybeEffect>::from(&self.effects[1])
+		MaybeEffect::ref_cast(&self.effects[1])
 			.to_bytes(bytes.effect_second)
 			.map_err(ToBytesError::EffectSecond)?;
-		<&MaybeEffect>::from(&self.effects[2])
+		MaybeEffect::ref_cast(&self.effects[2])
 			.to_bytes(bytes.effect_third)
 			.map_err(ToBytesError::EffectThird)?;
 
-		<&MaybeArrowColor>::from(&self.effect_arrow_color)
+		MaybeArrowColor::ref_cast(&self.effect_arrow_color)
 			.to_bytes(bytes.effect_arrow_color)
 			.into_ok();
 

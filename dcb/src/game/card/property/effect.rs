@@ -459,16 +459,10 @@ impl Bytes for Effect {
 }
 
 /// A possible effect
+#[repr(transparent)]
+#[derive(ref_cast::RefCast)]
 #[derive(derive_more::From, derive_more::Into)]
 pub struct MaybeEffect(Option<Effect>);
-
-impl<'a> From<&'a Option<Effect>> for &'a MaybeEffect {
-	#[allow(clippy::as_conversions)] // We need `as` to make pointer casts
-	fn from(opt: &'a Option<Effect>) -> Self {
-		// SAFETY: We're `repr(transparent)`, so this cast is safe
-		unsafe { &*(opt as *const Option<Effect> as *const MaybeEffect) }
-	}
-}
 
 impl Bytes for MaybeEffect {
 	type ByteArray = [u8; 0x10];

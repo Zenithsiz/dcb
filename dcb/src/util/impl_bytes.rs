@@ -142,16 +142,9 @@ pub macro generate_enum_property_option (
 ) {
 	$(
 		#[repr(transparent)]
-		#[derive(derive_more::From, derive_more::Into)]
+		#[derive(::ref_cast::RefCast)]
+		#[derive(::derive_more::From, ::derive_more::Into)]
 		$struct_vis struct $struct_name( $enum_vis Option<$enum_name> );
-
-		impl<'a> From<&'a Option<$enum_name>> for &'a $struct_name {
-			#[allow(clippy::as_conversions)] // We need `as` to make pointer casts
-			fn from(opt: &'a Option<$enum_name>) -> Self {
-				// SAFETY: We're `repr(transparent)`, so this cast is safe
-				unsafe { &*(opt as *const Option<$enum_name> as *const $struct_name) }
-			}
-		}
 
 		#[allow(clippy::diverging_sub_expression)] // Errors might be `!`
 		impl ::dcb_bytes::Bytes for $struct_name {

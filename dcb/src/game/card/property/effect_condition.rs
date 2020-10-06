@@ -7,6 +7,7 @@ use crate::{
 };
 use byteorder::{ByteOrder, LittleEndian};
 use dcb_bytes::Bytes;
+use ref_cast::RefCast;
 
 /// A digimon's support effect condition
 #[derive(PartialEq, Eq, Clone, Copy, Hash, Debug)]
@@ -119,7 +120,7 @@ impl Bytes for EffectCondition {
 		self.property_cmp.to_bytes(bytes.property_cmp).into_ok();
 
 		// Arguments
-		<&MaybeDigimonProperty>::from(&self.arg_property).to_bytes(bytes.arg_property).into_ok();
+		MaybeDigimonProperty::ref_cast(&self.arg_property).to_bytes(bytes.arg_property).into_ok();
 		LittleEndian::write_u16(bytes.arg_num, self.arg_num);
 		self.operation.to_bytes(bytes.operation).into_ok();
 
@@ -137,17 +138,9 @@ impl Bytes for EffectCondition {
 
 /// A possible effect condition
 #[repr(transparent)]
+#[derive(ref_cast::RefCast)]
 #[derive(derive_more::From, derive_more::Into)]
 pub struct MaybeEffectCondition(Option<EffectCondition>);
-
-impl<'a> From<&'a Option<EffectCondition>> for &'a MaybeEffectCondition {
-	#[allow(clippy::as_conversions)] // We need `as` to make pointer casts
-	fn from(opt: &'a Option<EffectCondition>) -> Self {
-		// SAFETY: We're `repr(transparent)`, so this cast is safe
-		unsafe { &*(opt as *const Option<EffectCondition> as *const MaybeEffectCondition) }
-	}
-}
-
 
 impl Bytes for MaybeEffectCondition {
 	type ByteArray = [u8; 0x20];

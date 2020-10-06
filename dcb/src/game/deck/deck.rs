@@ -11,6 +11,7 @@ use crate::{
 };
 use byteorder::{ByteOrder, LittleEndian};
 use dcb_bytes::Bytes;
+use ref_cast::RefCast;
 
 /// Card id type
 pub type CardId = u16;
@@ -158,14 +159,14 @@ impl Bytes for Deck {
 		*bytes.experience = self.experience;
 
 		// City
-		<&MaybeCity>::from(&self.city).to_bytes(bytes.city).into_ok();
+		MaybeCity::ref_cast(&self.city).to_bytes(bytes.city).into_ok();
 
 		// Armor evo
-		<&MaybeArmorEvo>::from(&self.armor_evo).to_bytes(bytes.armor_evo).into_ok();
+		MaybeArmorEvo::ref_cast(&self.armor_evo).to_bytes(bytes.armor_evo).into_ok();
 
 		// Music
-		<&MaybeMusic>::from(&self.battle_music).to_bytes(bytes.battle_music).into_ok();
-		<&MaybeMusic>::from(&self.polygon_music).to_bytes(bytes.polygon_music).into_ok();
+		MaybeMusic::ref_cast(&self.battle_music).to_bytes(bytes.battle_music).into_ok();
+		MaybeMusic::ref_cast(&self.polygon_music).to_bytes(bytes.polygon_music).into_ok();
 
 		// Unknown
 		*bytes.unknown_64 = self.unknown_64;
