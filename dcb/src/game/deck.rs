@@ -1,7 +1,7 @@
 //! Deck
 
 // Imports
-use crate::{generate_enum_property_mod, util::impl_bytes::generate_enum_property_option};
+use crate::generate_enum_property_mod;
 
 generate_enum_property_mod! {
 	pub mod city {
@@ -56,19 +56,29 @@ generate_enum_property_mod! {
 	}
 }
 
-generate_enum_property_option!(
-	#[derive(BytesProxySentinel)]
-	#[bytes_proxy_sentinel(value = 0)]
-	pub struct MaybeCity(Option<City>);
+/// A [`City`] that may exist or not with a [`Bytes`] implementation
+#[repr(transparent)]
+#[derive(ref_cast::RefCast)]
+#[derive(derive_more::From, derive_more::Into)]
+#[derive(dcb_bytes_derive::ProxySentinel)]
+#[proxy_sentinel(value = 0, wrapper_type = "City")]
+pub struct MaybeCity(Option<City>);
 
-	#[derive(BytesProxySentinel)]
-	#[bytes_proxy_sentinel(value = 0)]
-	pub struct MaybeArmorEvo(Option<ArmorEvo>);
+/// An [`ArmorEvo`] that may exist or not with a [`Bytes`] implementation
+#[repr(transparent)]
+#[derive(ref_cast::RefCast)]
+#[derive(derive_more::From, derive_more::Into)]
+#[derive(dcb_bytes_derive::ProxySentinel)]
+#[proxy_sentinel(value = 0, wrapper_type = "ArmorEvo")]
+pub struct MaybeArmorEvo(Option<ArmorEvo>);
 
-	#[derive(BytesProxySentinel)]
-	#[bytes_proxy_sentinel(value = 0)]
-	pub struct MaybeMusic(Option<Music>);
-);
+/// A [`Music`] that may exist or not with a [`Bytes`] implementation
+#[repr(transparent)]
+#[derive(ref_cast::RefCast)]
+#[derive(derive_more::From, derive_more::Into)]
+#[derive(dcb_bytes_derive::ProxySentinel)]
+#[proxy_sentinel(value = 0, wrapper_type = "Music")]
+pub struct MaybeMusic(Option<Music>);
 
 // Modules
 pub mod deck;

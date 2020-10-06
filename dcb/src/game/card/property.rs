@@ -1,9 +1,6 @@
 //! Card properties
 
-// Imports
-use crate::{generate_enum_property_mod, util};
-
-generate_enum_property_mod!(
+crate::generate_enum_property_mod!(
 	pub mod slot {
 		/// A player's card slots
 		enum Slot
@@ -213,19 +210,29 @@ generate_enum_property_mod!(
 	}
 );
 
-util::generate_enum_property_option!(
-	#[derive(BytesProxySentinel)]
-	#[bytes_proxy_sentinel(value = 0)]
-	pub struct MaybeArrowColor(Option<ArrowColor>);
+/// An [`ArrowColor`] that may exist or not with a [`Bytes`] implementation
+#[repr(transparent)]
+#[derive(ref_cast::RefCast)]
+#[derive(derive_more::From, derive_more::Into)]
+#[derive(dcb_bytes_derive::ProxySentinel)]
+#[proxy_sentinel(value = 0, wrapper_type = "ArrowColor")]
+pub struct MaybeArrowColor(Option<ArrowColor>);
 
-	#[derive(BytesProxySentinel)]
-	#[bytes_proxy_sentinel(value = 0)]
-	pub struct MaybeCrossMoveEffect(Option<CrossMoveEffect>);
+/// A [`CrossMoveEffect`] that may exist or not with a [`Bytes`] implementation
+#[repr(transparent)]
+#[derive(ref_cast::RefCast)]
+#[derive(derive_more::From, derive_more::Into)]
+#[derive(dcb_bytes_derive::ProxySentinel)]
+#[proxy_sentinel(value = 0, wrapper_type = "CrossMoveEffect")]
+pub struct MaybeCrossMoveEffect(Option<CrossMoveEffect>);
 
-	#[derive(BytesProxySentinel)]
-	#[bytes_proxy_sentinel(value = 0)]
-	pub struct MaybeDigimonProperty(Option<DigimonProperty>);
-);
+/// A [`DigimonProperty`] that may exist or not with a [`Bytes`] implementation
+#[repr(transparent)]
+#[derive(ref_cast::RefCast)]
+#[derive(derive_more::From, derive_more::Into)]
+#[derive(dcb_bytes_derive::ProxySentinel)]
+#[proxy_sentinel(value = 0, wrapper_type = "DigimonProperty")]
+pub struct MaybeDigimonProperty(Option<DigimonProperty>);
 
 // Complex
 pub mod effect;

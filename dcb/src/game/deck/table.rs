@@ -8,16 +8,16 @@ pub use error::{DeserializeError, SerializeError};
 
 // Imports
 use crate::{
-	game::{Deck},
+	game::Deck,
 	io::{address::Data, GameFile},
 	util::array_split_mut,
 };
 use byteorder::{ByteOrder, LittleEndian};
+use dcb_bytes::Bytes;
 use std::{
 	convert::TryInto,
 	io::{Read, Seek, Write},
 };
-use dcb_bytes::Bytes;
 
 /// The decks table, where all decks are stored
 #[derive(PartialEq, Eq, Clone, Debug)]
