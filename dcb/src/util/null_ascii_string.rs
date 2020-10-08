@@ -26,7 +26,8 @@ macro impl_null_ascii_string($($N:expr),* $(,)?) {
 			fn read_string(&self) -> Result<AsciiStrArr<$N>, ReadError> {
 				// Find the first null and trim the buffer until it
 				let buf = match self.iter().position(|&b| b == b'\0') {
-					Some(idx) => &self[0..idx],
+					// SAFETY: `idx` is guaranteed to be less than our length
+					Some(idx) => unsafe { self.get_unchecked(..idx) },
 					None => return Err(ReadError::NoNull),
 				};
 
@@ -38,13 +39,15 @@ macro impl_null_ascii_string($($N:expr),* $(,)?) {
 				)
 			}
 
+			#[allow(unused_comparisons)] // With N = 0 this function does nothing
 			fn write_string(&mut self, input: &AsciiStrArr<$N>) {
 				// Copy everything over and set the last byte to 0
-				// Note: Panic cannot occur, as `len < N`
+				// SAFETY: We guarantee `len < N`.
 				// Note: No need to override the remaining bytes
 				let len = input.len();
-				self[0..len].copy_from_slice(input.as_bytes());
-				self[len] = 0;
+				debug_assert!(len < $N);
+				unsafe { std::intrinsics::copy_nonoverlapping::<u8>(input.as_bytes().as_ptr(), self.as_mut_ptr(), len) };
+				*unsafe { self.get_unchecked_mut(len) } = 0;
 			}
 		}
 	)*

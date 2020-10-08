@@ -14,7 +14,11 @@ use dcb_bytes::Bytes;
 use ref_cast::RefCast;
 
 /// Card id type
-pub type CardId = u16;
+#[derive(PartialEq, Eq, Clone, Copy, Debug)]
+#[derive(derive_more::From, derive_more::Into)]
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(transparent)]
+pub struct CardId(pub u16);
 
 // TODO: Remove these
 /// Name alias for [`Digimon`]
@@ -107,24 +111,21 @@ impl Bytes for Deck {
 		);
 
 		let mut cards = [0; 30];
-		for (card_id, card) in cards.iter_mut().enumerate() {
-			/// Size of [`CardId`]
-			const CARD_ID_SIZE: usize = std::mem::size_of::<CardId>();
-			let offset = card_id * CARD_ID_SIZE;
-			*card = LittleEndian::read_u16(&bytes.deck[offset..offset + CARD_ID_SIZE]);
+		for (card, bytes) in cards.iter_mut().zip(bytes.deck.chunks(2)) {
+			*card = LittleEndian::read_u16(bytes);
 		}
 
 		Ok(Self {
-			name: bytes.name.read_string().map_err(FromBytesError::Name)?,
-			owner: bytes.owner.read_string().map_err(FromBytesError::Owner)?,
-			cards,
-			city: MaybeCity::from_bytes(bytes.city).map_err(FromBytesError::City)?.into(),
-			armor_evo: MaybeArmorEvo::from_bytes(bytes.armor_evo).map_err(FromBytesError::ArmorEvo)?.into(),
-			battle_music: MaybeMusic::from_bytes(bytes.battle_music).map_err(FromBytesError::BattleMusic)?.into(),
+			name:          bytes.name.read_string().map_err(FromBytesError::Name)?,
+			owner:         bytes.owner.read_string().map_err(FromBytesError::Owner)?,
+			cards:         cards.map(CardId),
+			city:          MaybeCity::from_bytes(bytes.city).map_err(FromBytesError::City)?.into(),
+			armor_evo:     MaybeArmorEvo::from_bytes(bytes.armor_evo).map_err(FromBytesError::ArmorEvo)?.into(),
+			battle_music:  MaybeMusic::from_bytes(bytes.battle_music).map_err(FromBytesError::BattleMusic)?.into(),
 			polygon_music: MaybeMusic::from_bytes(bytes.polygon_music).map_err(FromBytesError::PolygonMusic)?.into(),
-			experience: *bytes.experience,
-			unknown_64: *bytes.unknown_64,
-			unknown_6a: *bytes.unknown_6a,
+			experience:    *bytes.experience,
+			unknown_64:    *bytes.unknown_64,
+			unknown_6a:    *bytes.unknown_6a,
 		})
 	}
 
@@ -148,11 +149,8 @@ impl Bytes for Deck {
 		bytes.owner.write_string(&self.owner);
 
 		// Deck
-		for (card_id, card) in self.cards.iter().enumerate() {
-			/// Size of [`CardId`]
-			const CARD_ID_SIZE: usize = std::mem::size_of::<CardId>();
-			let offset = card_id * CARD_ID_SIZE;
-			LittleEndian::write_u16(&mut bytes.deck[offset..offset + CARD_ID_SIZE], *card);
+		for (&card, bytes) in self.cards.iter().zip(bytes.deck.chunks_mut(2)) {
+			LittleEndian::write_u16(bytes, card.0);
 		}
 
 		// Experience

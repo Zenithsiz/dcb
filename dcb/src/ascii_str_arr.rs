@@ -358,8 +358,9 @@ impl<const N: usize> TryFrom<&[u8; N]> for AsciiStrArr<N> {
 
 	fn try_from(byte_str: &[u8; N]) -> Result<Self, Self::Error> {
 		let mut ascii_str = [AsciiChar::Null; N];
-		for (pos, &byte) in byte_str.iter().enumerate() {
-			ascii_str[pos] = AsciiChar::from_ascii(byte).map_err(|_| NotAsciiError { pos })?;
+		#[allow(clippy::map_err_ignore)] // The error doesn't contain anything
+		for (pos, (&byte, ascii)) in byte_str.iter().zip(ascii_str.iter_mut()).enumerate() {
+			*ascii = AsciiChar::from_ascii(byte).map_err(|_| NotAsciiError { pos })?;
 		}
 
 		Ok(Self::from(ascii_str))

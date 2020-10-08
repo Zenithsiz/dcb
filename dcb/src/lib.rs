@@ -93,11 +93,8 @@
 #![allow(clippy::pattern_type_mismatch)]
 // Sometimes the blocks make it easier to invert their order
 #![allow(clippy::if_not_else)]
-// False positives:
-// TODO: Remove them in the future once they are no longer triggered.
-// We only slice arrays, which are verified at compile time. This
-// lint currently triggers for `&[T; N]`, which we pass around a lot.
-#![allow(clippy::indexing_slicing)]
+// This lint triggers when using `assert`s and `todo`s, which is unsuitable for this project
+#![allow(clippy::panic_in_result_fn)]
 
 // Modules
 pub mod ascii_str_arr;

@@ -114,7 +114,9 @@ impl<R: Read + Write + Seek> Read for GameFile<R> {
 
 			// Read either until the end of the data section or until buffer is full
 			// Note: If any fail, we immediately return Err
-			let bytes_read = self.reader.read(&mut buf[0..bytes_to_read])?;
+			// SAFETY: `bytes_to_read` is at most `buf.len()`
+			debug_assert!(bytes_to_read <= buf.len());
+			let bytes_read = self.reader.read(unsafe { buf.get_unchecked_mut(..bytes_to_read) })?;
 
 			// If 0 bytes were read, EOF was reached, so return with however many we've read
 			if bytes_read == 0 {
@@ -126,7 +128,7 @@ impl<R: Read + Write + Seek> Read for GameFile<R> {
 
 			// And discard what we've already read
 			// Note: This slice can't panic, as `bytes_read` is at most `buf.len()`
-			buf = &mut buf[bytes_read..];
+			buf = buf.get_mut(bytes_read..).expect("Bytes read was larger than buffer size");
 		}
 
 		// And return the bytes we read
@@ -176,7 +178,9 @@ impl<R: Read + Write + Seek> Write for GameFile<R> {
 
 			// Write either until the end of the data section or until buffer is full
 			// Note: If any fail, we immediately return Err
-			let bytes_written = self.reader.write(&buf[0..bytes_to_write])?;
+			// SAFETY: `bytes_to_write` is at most `buf.len()`
+			debug_assert!(bytes_to_write <= buf.len());
+			let bytes_written = self.reader.write(unsafe { buf.get_unchecked(..bytes_to_write) })?;
 
 			// If 0 bytes were read, EOF was reached, so return with however many we've read
 			if bytes_written == 0 {
@@ -188,7 +192,7 @@ impl<R: Read + Write + Seek> Write for GameFile<R> {
 
 			// And discard what we've already written
 			// Note: This slice can't panic, as `bytes_written` is at most `buf.len()`
-			buf = &buf[bytes_written..];
+			buf = buf.get(bytes_written..).expect("Bytes written were larger than buffer size");
 		}
 
 		// And return the bytes we read
