@@ -8,7 +8,7 @@ mod test;
 mod visitor;
 
 // Exports
-pub use error::{FromBytesError, NotAsciiError, TooLongError};
+pub use error::{FromBytesError, FromUtf8Error, NotAsciiError, TooLongError};
 pub use slice::SliceIndex;
 
 // Imports
@@ -48,8 +48,7 @@ impl<const N: usize> AsciiStrArr<N> {
 
 	/// Returns the length of this string
 	#[must_use]
-	#[contracts::debug_ensures(self.len <= N)]
-	pub fn len(&self) -> usize {
+	pub const fn len(&self) -> usize {
 		self.len
 	}
 
@@ -64,14 +63,14 @@ impl<const N: usize> AsciiStrArr<N> {
 	/// # Safety
 	/// - All elements `0..new_len` must be initialized.
 	/// - `new_len` must be less or equal to `N`.
-	#[contracts::debug_requires(new_len <= N)]
-	pub unsafe fn set_len(&mut self, new_len: usize) {
+	pub const unsafe fn set_len(&mut self, new_len: usize) {
+		debug_assert!(new_len <= N);
 		self.len = new_len;
 	}
 
 	/// Returns if this string is empty
 	#[must_use]
-	pub fn is_empty(&self) -> bool {
+	pub const fn is_empty(&self) -> bool {
 		self.len() == 0
 	}
 }
@@ -88,6 +87,7 @@ impl<const N: usize> AsciiStrArr<N> {
 		// Then get a reference to them
 		// SAFETY: The first `self.len` elements are initialized
 		let chars = unsafe { MaybeUninit::slice_assume_init_ref(chars) };
+		debug_assert!(chars.len() == self.len());
 
 		<&AsciiStr>::from(chars)
 	}
@@ -103,6 +103,7 @@ impl<const N: usize> AsciiStrArr<N> {
 		// Then get a mutable reference to them
 		// SAFETY: The first `self.len` elements are initialized
 		let chars = unsafe { MaybeUninit::slice_assume_init_mut(chars) };
+		debug_assert!(chars.len() == len);
 
 		<&mut AsciiStr>::from(chars)
 	}
@@ -155,7 +156,7 @@ impl<const N: usize> AsciiStrArr<N> {
 	///
 	/// # Safety
 	/// All elements `0..self.len()` must remain initialized.
-	pub unsafe fn buffer_mut(&mut self) -> &mut [MaybeUninit<AsciiChar>; N] {
+	pub const unsafe fn buffer_mut(&mut self) -> &mut [MaybeUninit<AsciiChar>; N] {
 		&mut self.chars
 	}
 }
@@ -167,27 +168,27 @@ impl<const N: usize> AsciiStrArr<N> {
 		let ascii = ascii.as_ref();
 
 		// If it has too many elements, return Err
-		let len = ascii.len();
-		if len > N {
+		if ascii.len() > N {
 			return Err(TooLongError::<N>);
 		}
 
 		// Else create an uninitialized array and copy over the initialized characters
-		let mut chars = MaybeUninit::uninit_array();
-		for (idx, c) in chars.iter_mut().take(len).enumerate() {
-			// Write each character
-			// SAFETY: `idx` is within bounds (`0..len`)
-			// Note: `MaybeUnit::drop` is a no-op, so we can use normal assignment.
-			*c = MaybeUninit::new(*unsafe { ascii.get_unchecked(idx) });
+		let mut chars: [MaybeUninit<AsciiChar>; N] = MaybeUninit::uninit_array();
+		for (uninit, &ascii) in chars.iter_mut().zip(ascii) {
+			*uninit = MaybeUninit::new(ascii);
 		}
 
-		Ok(Self { chars, len })
+		// SAFETY: We initialized `ascii.len()` characters from `ascii`.
+		Ok(Self { chars, len: ascii.len() })
 	}
 
-	/// Creates a string from a `&[u8]`
+	/// Creates a string from bytes
 	pub fn from_bytes<B: ?Sized + AsRef<[u8]>>(bytes: &B) -> Result<Self, FromBytesError<N>> {
 		// Get the bytes as ascii first
-		let ascii = AsciiStr::from_ascii(bytes).map_err(FromBytesError::NotAscii)?;
+		let ascii = AsciiStr::from_ascii(bytes)
+			.map_err(ascii::AsAsciiStrError::valid_up_to)
+			.map_err(|pos| NotAsciiError { pos })
+			.map_err(FromBytesError::NotAscii)?;
 
 		// Then try to convert them
 		Self::from_ascii(ascii).map_err(FromBytesError::TooLong)
@@ -321,10 +322,7 @@ impl<'de, const N: usize> serde::Deserialize<'de> for AsciiStrArr<N> {
 	where
 		D: serde::Deserializer<'de>,
 	{
-		match deserializer.deserialize_str(DeserializerVisitor) {
-			Ok(string) => Ok(string),
-			Err(err) => Err(err),
-		}
+		deserializer.deserialize_str(DeserializerVisitor)
 	}
 }
 
@@ -333,14 +331,15 @@ impl<const N: usize> serde::Serialize for AsciiStrArr<N> {
 	where
 		S: serde::Serializer,
 	{
-		serializer.serialize_str(self.as_ascii().as_str())
+		// Serialize as an ascii string
+		serializer.serialize_str(self.as_str())
 	}
 }
 
 // TODO: Generalize this to `impl<const N: usize, const M: usize> From<&[AsciiChar; M]> for AsciiStrArr<N> where M <= N`
 impl<const N: usize> From<&[AsciiChar; N]> for AsciiStrArr<N> {
 	fn from(src: &[AsciiChar; N]) -> Self {
-		Self::from(*src)
+		<Self as From<[AsciiChar; N]>>::from(*src)
 	}
 }
 
@@ -348,6 +347,8 @@ impl<const N: usize> From<&[AsciiChar; N]> for AsciiStrArr<N> {
 impl<const N: usize> From<[AsciiChar; N]> for AsciiStrArr<N> {
 	fn from(chars: [AsciiChar; N]) -> Self {
 		let chars = chars.map(MaybeUninit::new);
+
+		// SAFETY: All characters up to `N` are initialized.
 		Self { chars, len: N }
 	}
 }
@@ -357,13 +358,15 @@ impl<const N: usize> TryFrom<&[u8; N]> for AsciiStrArr<N> {
 	type Error = NotAsciiError;
 
 	fn try_from(byte_str: &[u8; N]) -> Result<Self, Self::Error> {
-		let mut ascii_str = [AsciiChar::Null; N];
-		#[allow(clippy::map_err_ignore)] // The error doesn't contain anything
-		for (pos, (&byte, ascii)) in byte_str.iter().zip(ascii_str.iter_mut()).enumerate() {
-			*ascii = AsciiChar::from_ascii(byte).map_err(|_| NotAsciiError { pos })?;
+		let mut chars = MaybeUninit::uninit_array();
+
+		for (pos, (&byte, ascii)) in byte_str.iter().zip(&mut chars).enumerate() {
+			*ascii = AsciiChar::from_ascii(byte).map(MaybeUninit::new).map_err(|_err| NotAsciiError { pos })?;
 		}
 
-		Ok(Self::from(ascii_str))
+		// SAFETY: We initialize `chars` from `byte_str`, which is
+		//         initialized up to `len` bytes.
+		Ok(Self { chars, len: byte_str.len() })
 	}
 }
 
@@ -384,20 +387,17 @@ impl<const N: usize> TryFrom<&[u8]> for AsciiStrArr<N> {
 }
 
 impl<const N: usize> TryFrom<&str> for AsciiStrArr<N> {
-	type Error = FromBytesError<N>;
+	type Error = FromUtf8Error<N>;
 
-	fn try_from(string: &str) -> Result<Self, Self::Error> {
-		let ascii_str = AsciiStr::from_ascii(string).map_err(FromBytesError::NotAscii)?;
-
-		Self::try_from(ascii_str).map_err(FromBytesError::TooLong)
+	fn try_from(s: &str) -> Result<Self, Self::Error> {
+		Self::from_bytes(s.as_bytes())
 	}
 }
 
 impl<const N: usize> std::str::FromStr for AsciiStrArr<N> {
-	type Err = FromBytesError<N>;
+	type Err = FromUtf8Error<N>;
 
 	fn from_str(s: &str) -> Result<Self, Self::Err> {
-		// Simply delegate to [`Self::from_bytes`]
 		Self::from_bytes(s.as_bytes())
 	}
 }

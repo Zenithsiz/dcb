@@ -44,7 +44,8 @@
 	unsafe_block_in_unsafe_fn,
 	maybe_uninit_uninit_array,
 	maybe_uninit_slice,
-	array_map
+	array_map,
+	const_mut_refs
 )]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]
