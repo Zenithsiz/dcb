@@ -42,10 +42,9 @@ macro impl_null_ascii_string($($N:expr),* $(,)?) {
 			#[allow(unused_comparisons)] // With N = 0 this function does nothing
 			fn write_string(&mut self, input: &AsciiStrArr<$N>) {
 				// Copy everything over and set the last byte to 0
-				// SAFETY: We guarantee `len <= N`.
 				// Note: No need to override the remaining bytes
+				// SAFETY: We guarantee `len <= N`.
 				let len = input.len();
-				debug_assert!(len <= $N);
 				unsafe { std::intrinsics::copy_nonoverlapping::<u8>(input.as_bytes().as_ptr(), self.as_mut_ptr(), len) };
 				*unsafe { self.get_unchecked_mut(len) } = 0;
 			}

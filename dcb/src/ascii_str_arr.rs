@@ -24,8 +24,7 @@ pub struct AsciiStrArr<const N: usize> {
 	chars: [MaybeUninit<AsciiChar>; N],
 
 	/// Size
-	// Invariant `self.len <= N`
-	// Note: On all methods except `Self::len()`, one should call `self.len()` instead of using `self.len`.
+	// Invariant: `self.len <= N`
 	len: usize,
 }
 
@@ -49,6 +48,9 @@ impl<const N: usize> AsciiStrArr<N> {
 	/// Returns the length of this string
 	#[must_use]
 	pub const fn len(&self) -> usize {
+		// Guarantee to the compiler len's invariant
+		// SAFETY: We guarantee this through a field invariant.
+		unsafe { std::intrinsics::assume(self.len <= N) };
 		self.len
 	}
 
@@ -87,7 +89,6 @@ impl<const N: usize> AsciiStrArr<N> {
 		// Then get a reference to them
 		// SAFETY: The first `self.len` elements are initialized
 		let chars = unsafe { MaybeUninit::slice_assume_init_ref(chars) };
-		debug_assert!(chars.len() == self.len());
 
 		<&AsciiStr>::from(chars)
 	}
@@ -103,7 +104,6 @@ impl<const N: usize> AsciiStrArr<N> {
 		// Then get a mutable reference to them
 		// SAFETY: The first `self.len` elements are initialized
 		let chars = unsafe { MaybeUninit::slice_assume_init_mut(chars) };
-		debug_assert!(chars.len() == len);
 
 		<&mut AsciiStr>::from(chars)
 	}

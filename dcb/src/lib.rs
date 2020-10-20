@@ -45,7 +45,9 @@
 	maybe_uninit_uninit_array,
 	maybe_uninit_slice,
 	array_map,
-	const_mut_refs
+	const_mut_refs,
+	core_intrinsics,
+	const_assume
 )]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]
