@@ -1,9 +1,13 @@
 # Project
-/resources
+/resources/*
+!/resources/tables.txt
+!/resources/extract_data.c
+!/resources/get_tables.c
+!/resources/index.c
 
 # Cargo
 /target
-Cargo.lock
+/Cargo.lock
 
 # Ides
 /.vscode
