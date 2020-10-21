@@ -3,5 +3,6 @@
 members = [
 	"dcb",
 	"dcb-bytes",
-	"dcb-bytes-derive"
+	"dcb-bytes-derive",
+	"dcb-tools"
 ]

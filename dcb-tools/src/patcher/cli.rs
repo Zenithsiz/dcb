@@ -1,13 +1,8 @@
-//! Cli manager for the extractor
+//! Cli manager
 
-// Filesystem
-use std::path::{Path, PathBuf};
-
-// Clap
+// Imports
 use clap::{App as ClapApp, Arg as ClapArg};
-
-// Errors
-use err_panic::ErrorExtPanic;
+use std::path::{Path, PathBuf};
 
 /// Data from the command line
 #[derive(PartialEq, Clone, Debug)]
@@ -38,13 +33,13 @@ impl CliData {
 			)
 			.get_matches();
 
-		// Get the ouput filename
+		// Get the output filename
 		// Note: required
 		let game_file_path = matches
 			.value_of("GAME_FILE")
 			.map(Path::new)
 			.map(Path::to_path_buf)
-			.panic_msg("Unable to get required argument `GAME_FILE`");
+			.expect("Unable to get required argument `GAME_FILE`");
 
 		// Get the input dir as either an input, the game file directory or the current directory
 		let input_dir = matches
