@@ -3,7 +3,7 @@
 // Imports
 use crate::{game::card::property, util::null_ascii_string};
 
-/// Error type for [`Bytes::from_bytes`]
+/// Error type for [`Bytes::from_bytes`](dcb_bytes::Bytes::from_bytes)
 #[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
 pub enum FromBytesError {
 	/// Unable to read the digimon name
@@ -75,7 +75,7 @@ pub enum FromBytesError {
 	EffectThird(#[source] property::effect::FromBytesError),
 }
 
-/// Error type for [`Bytes::to_bytes`]
+/// Error type for [`Bytes::to_bytes`](dcb_bytes::Bytes::to_bytes)
 #[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
 #[allow(clippy::pub_enum_variant_names)] // This is a general error, not a specific effect error
 pub enum ToBytesError {

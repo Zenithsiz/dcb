@@ -159,7 +159,7 @@ pub enum Effect {
 	},
 }
 
-/// Error type for [`Bytes::from_bytes`]
+/// Error type for [`Bytes::from_bytes`](dcb_bytes::Bytes::from_bytes)
 #[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
 pub enum FromBytesError {
 	/// Unknown property for first property argument
@@ -190,7 +190,7 @@ pub enum FromBytesError {
 	},
 }
 
-/// Error type for [`Bytes::from_bytes`]
+/// Error type for [`Bytes::from_bytes`](dcb_bytes::Bytes::from_bytes)
 #[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
 pub enum ToBytesError {
 	/// Invalid move [`Effect::MoveCards`] effect

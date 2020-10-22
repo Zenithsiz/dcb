@@ -210,7 +210,7 @@ crate::generate_enum_property_mod!(
 	}
 );
 
-/// An [`ArrowColor`] that may exist or not with a [`Bytes`] implementation
+/// A possible [`ArrowColor`]
 #[repr(transparent)]
 #[derive(ref_cast::RefCast)]
 #[derive(derive_more::From, derive_more::Into)]
@@ -218,7 +218,7 @@ crate::generate_enum_property_mod!(
 #[proxy_sentinel(value = 0, wrapper_type = "ArrowColor")]
 pub struct MaybeArrowColor(Option<ArrowColor>);
 
-/// A [`CrossMoveEffect`] that may exist or not with a [`Bytes`] implementation
+/// A possible [`CrossMoveEffect`]
 #[repr(transparent)]
 #[derive(ref_cast::RefCast)]
 #[derive(derive_more::From, derive_more::Into)]
@@ -226,7 +226,7 @@ pub struct MaybeArrowColor(Option<ArrowColor>);
 #[proxy_sentinel(value = 0, wrapper_type = "CrossMoveEffect")]
 pub struct MaybeCrossMoveEffect(Option<CrossMoveEffect>);
 
-/// A [`DigimonProperty`] that may exist or not with a [`Bytes`] implementation
+/// A possible [`DigimonProperty`]
 #[repr(transparent)]
 #[derive(ref_cast::RefCast)]
 #[derive(derive_more::From, derive_more::Into)]

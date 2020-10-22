@@ -56,7 +56,7 @@ generate_enum_property_mod! {
 	}
 }
 
-/// A [`City`] that may exist or not with a [`Bytes`] implementation
+/// A possible [`City`]
 #[repr(transparent)]
 #[derive(ref_cast::RefCast)]
 #[derive(derive_more::From, derive_more::Into)]
@@ -64,7 +64,7 @@ generate_enum_property_mod! {
 #[proxy_sentinel(value = 0, wrapper_type = "City")]
 pub struct MaybeCity(Option<City>);
 
-/// An [`ArmorEvo`] that may exist or not with a [`Bytes`] implementation
+/// A possible [`ArmorEvo`]
 #[repr(transparent)]
 #[derive(ref_cast::RefCast)]
 #[derive(derive_more::From, derive_more::Into)]
@@ -72,7 +72,7 @@ pub struct MaybeCity(Option<City>);
 #[proxy_sentinel(value = 0, wrapper_type = "ArmorEvo")]
 pub struct MaybeArmorEvo(Option<ArmorEvo>);
 
-/// A [`Music`] that may exist or not with a [`Bytes`] implementation
+/// A possible [`Music`]
 #[repr(transparent)]
 #[derive(ref_cast::RefCast)]
 #[derive(derive_more::From, derive_more::Into)]

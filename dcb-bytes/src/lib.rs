@@ -1,4 +1,4 @@
-//! Bytes conversions for [`dcb`].
+//! Bytes conversions for game types.
 
 // Features
 #![feature(unsafe_block_in_unsafe_fn, min_const_generics)]

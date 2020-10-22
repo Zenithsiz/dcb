@@ -62,7 +62,7 @@ pub struct Deck {
 	unknown_6a: u8,
 }
 
-/// Error type for [`Bytes::from_bytes`]
+/// Error type for [`Bytes::from_bytes`](dcb_bytes::Bytes::from_bytes)
 #[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
 pub enum FromBytesError {
 	/// Unable to read the deck name

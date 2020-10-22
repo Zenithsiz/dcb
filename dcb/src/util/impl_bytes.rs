@@ -1,4 +1,4 @@
-//! Helper macros to implement [`Bytes`](crate::Bytes)
+//! Helper macros to implement [`Bytes`](dcb_bytes::Bytes)
 
 /// Defines and implements a property enum
 // TODO: Make better documentation

@@ -2,16 +2,17 @@
 
 /// Structures that are validatable to be written to bytes.
 ///
-/// This works in tandem with the [`Bytes`](crate::Bytes) interface to allow
+/// This works in tandem with the [`Bytes`](dcb_bytes::Bytes) interface to allow
 /// applications which take user input to validate input before serializing it.
 ///
-/// Although this information exists by calling [`Bytes::to_bytes`](crate::Bytes::to_bytes),
+/// Although this information exists by calling [`Bytes::to_bytes`](dcb_bytes::Bytes::to_bytes),
 /// this interface provides two main advantages:
 ///
 /// 1. It is faster than serializing the data, as it doesn't need to write the raw bytes and
 ///    can focus on simply parsing possible errors.
 /// 2. It provides warnings alongside the errors. These are also provided via `log::warn`, but
 ///    these cannot be sent to the user easily.
+// TODO: Move to `dcb-bytes`.
 pub trait Validatable {
 	/// Error type for this validation
 	type Error;

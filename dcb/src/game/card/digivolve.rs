@@ -35,7 +35,7 @@ pub struct Digivolve {
 	pub unknown_15: [u8; 3],
 }
 
-/// Error type for [`Bytes::from_bytes`]
+/// Error type for [`Bytes::from_bytes`](dcb_bytes::Bytes::from_bytes)
 #[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
 pub enum FromBytesError {
 	/// Unable to read the digimon name
