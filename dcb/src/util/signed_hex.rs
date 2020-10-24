@@ -3,15 +3,22 @@
 
 // Imports
 use int_conv::Extended;
+use ref_cast::RefCast;
 use std::fmt::{self, Formatter, LowerHex};
 
 /// A signed numeric type that uses signed hexadecimal formatting.
+#[derive(ref_cast::RefCast)]
+#[repr(transparent)]
 pub struct SignedHex<T>(pub T);
 
 // All references implement it for their underlying type.
-impl<'a, T: LowerHex> LowerHex for SignedHex<&'a T> {
+#[allow(clippy::use_self)] // We're using a generic version `SignedHex`, not `Self`
+impl<'a, T> LowerHex for SignedHex<&'a T>
+where
+	SignedHex<T>: LowerHex,
+{
 	fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-		<T as LowerHex>::fmt(self.0, f)
+		<SignedHex<T> as LowerHex>::fmt(SignedHex::<T>::ref_cast(self.0), f)
 	}
 }
 
