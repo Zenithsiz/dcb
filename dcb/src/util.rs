@@ -11,10 +11,11 @@ pub mod array_split;
 pub mod null_ascii_string;
 #[macro_use]
 pub mod impl_bytes;
+pub mod signed_hex;
 
 // Exports
 pub use array_split::{array_split, array_split_mut};
-
+pub use signed_hex::SignedHex;
 
 /// Returns the absolute different between `a` and `b`, `a - b` as a `i64`.
 ///
