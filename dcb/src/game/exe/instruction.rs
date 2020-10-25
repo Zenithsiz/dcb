@@ -2,7 +2,6 @@
 
 // Modules
 pub mod directive;
-pub mod pos;
 pub mod pseudo;
 pub mod raw;
 pub mod reg;
@@ -10,11 +9,13 @@ pub mod simple;
 
 // Exports
 pub use directive::Directive;
-pub use pos::Pos;
 pub use pseudo::PseudoInstruction;
 pub use raw::{FromRawIter, Raw};
 pub use reg::Register;
 pub use simple::SimpleInstruction;
+
+// Imports
+use crate::game::exe::Pos;
 
 /// An assembler instruction
 #[derive(PartialEq, Eq, Clone, Debug)]

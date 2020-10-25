@@ -1,7 +1,7 @@
 //! Raw instructions
 
 // Imports
-use super::Pos;
+use crate::game::exe::Pos;
 
 /// A raw instruction
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]

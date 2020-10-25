@@ -10,8 +10,8 @@ pub mod repr;
 pub use repr::RawRepr;
 
 // Imports
-use super::{FromRawIter, Pos, Raw, Register};
-use crate::util::SignedHex;
+use super::{FromRawIter, Raw, Register};
+use crate::{game::exe::Pos, util::SignedHex};
 use int_conv::{SignExtended, Signed};
 
 /// Macro to declare all instructions
@@ -825,5 +825,25 @@ decl_instructions! {
 		rs: Register = Register::new(rs)?,
 		rt: Register = Register::new(rt)?,
 		imm: u16 = imm16,
+	},
+
+	/// Syscall
+	#[display(fmt = "sys {imm:#x}")]
+	RawRepr {
+		op: 0x00, op2: 0x0c,
+		sys_imm,
+		..
+	} => Syscall {
+		imm: u32 = sys_imm,
+	},
+
+	/// Break
+	#[display(fmt = "break {imm:#x}")]
+	RawRepr {
+		op: 0x00, op2: 0x0d,
+		sys_imm,
+		..
+	} => Break {
+		imm: u32 = sys_imm,
 	},
 }

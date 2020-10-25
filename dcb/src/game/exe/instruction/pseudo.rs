@@ -1,8 +1,8 @@
 //! Pseudo instructions
 
 // Imports
-use super::{FromRawIter, Pos, Raw, Register, SimpleInstruction};
-use crate::util::SignedHex;
+use super::{FromRawIter, Raw, Register, SimpleInstruction};
+use crate::{game::exe::Pos, util::SignedHex};
 use int_conv::{Join, SignExtended, Signed, ZeroExtended};
 
 /// A pseudo instruction
@@ -91,7 +91,7 @@ pub enum PseudoInstruction {
 	Li32 { rx: Register, imm: u32 },
 
 	/// Load immediate 16-bit
-	/// Alias for `ori $rx, $zr, imm`
+	/// Alias for `{ori,addiu} $rx, $zr, imm`, with imm > 0 for `addiu`
 	#[display(fmt = "li {rx}, {imm:#x}")]
 	Li16 { rx: Register, imm: u16 },
 
@@ -104,6 +104,11 @@ pub enum PseudoInstruction {
 	/// Alias for `lui 0x1000 * imm`
 	#[display(fmt = "li {rx}, {:#x}", "imm.zero_extended::<u32>() << 16")]
 	LiUpper16 { rx: Register, imm: u16 },
+
+	/// Add immediate assign
+	/// Alias for `addi $rx, $rx, imm`
+	#[display(fmt = "addi {rx}, {:#x}", "SignedHex(imm)")]
+	AddiAssign { rx: Register, imm: i16 },
 
 	/// Add assign
 	/// Alias for `add $rx, $rx, $rt`
@@ -196,24 +201,24 @@ pub enum PseudoInstruction {
 	JalrRa { rx: Register },
 
 	/// Subtract immediate
-	/// Alias for `addi $rt, $rs, imm` for negative `imm`s
-	#[display(fmt = "subi {rt}, {rs}, {:#x}", "SignedHex(imm)")]
-	Subi { rt: Register, rs: Register, imm: i16 },
+	/// Alias for `addi $rt, $rs, -imm`
+	#[display(fmt = "subi {rt}, {rs}, {imm:#x}")]
+	Subi { rt: Register, rs: Register, imm: u32 },
 
 	/// Subtract immediate sign-extended
-	/// Alias for `addiu $rt, $rs, imm` for negative `imm`s
-	#[display(fmt = "subiu {rt}, {rs}, {:#x}", "SignedHex(imm)")]
-	Subiu { rt: Register, rs: Register, imm: i16 },
+	/// Alias for `addiu $rt, $rs, -imm`
+	#[display(fmt = "subiu {rt}, {rs}, {imm:#x}")]
+	Subiu { rt: Register, rs: Register, imm: u32 },
 
 	/// Subtract immediate assign
 	/// Alias for `subi $rx, $rx, imm`
-	#[display(fmt = "subi {rx}, {:#x}", "SignedHex(imm)")]
-	SubiAssign { rx: Register, imm: i16 },
+	#[display(fmt = "subi {rx}, {imm:#x}")]
+	SubiAssign { rx: Register, imm: u32 },
 
 	/// Subtract immediate sign-extended assign
 	/// Alias for `subiu $rx, $rx, imm`
-	#[display(fmt = "subiu {rx}, {:#x}", "SignedHex(imm)")]
-	SubiuAssign { rx: Register, imm: i16 },
+	#[display(fmt = "subiu {rx}, {imm:#x}")]
+	SubiuAssign { rx: Register, imm: u32 },
 
 	/// Branch if equal to zero
 	/// Alias for `beq $rx, $zr, target`
@@ -244,6 +249,16 @@ impl FromRawIter for PseudoInstruction {
 			Add, Addi, Addiu, Addu, And, Andi, Beq, Bne, Jalr, Lb, Lbu, Lh, Lhu, Lui, Lw, Lwl, Lwr, Nor, Or, Ori, Sb, Sh, Sll, Sllv, Sra, Srav, Srl,
 			Srlv, Sub, Subu, Sw, Swl, Swr, Xor, Xori,
 		};
+
+		// TODO: Deal with code such as:
+		// li $rx, 0xXXXX_0000
+		// l* $ry, 0xZZZZ_ZZZZ
+		// ori $rx, 0xYYYY
+		//
+		// And transform it into
+		// l* $ry, 0xZZZZ_ZZZZ
+		// ori $rx 0xXXXX_YYYY
+		// Assuming the `l*` doesn't use $rx
 
 		// Get the first instruction
 		let (pos, instruction) = SimpleInstruction::decode(iter)?;
@@ -322,7 +337,12 @@ impl FromRawIter for PseudoInstruction {
 
 			Addu { rd, rs, rt: Zr } | Addiu { rt: rd, rs, imm: 0 } | Or { rd, rs, rt: Zr } => Some(Self::MovReg { rd, rs }),
 
-			Ori { rt, rs: Zr, imm } => Some(Self::Li16 { rx: rt, imm }),
+			Addiu {
+				rt: rx,
+				rs: Zr,
+				imm: imm @ 1..i16::MAX,
+			} => Some(Self::Li16 { rx, imm: imm.as_unsigned() }),
+			Ori { rt: rx, rs: Zr, imm } => Some(Self::Li16 { rx, imm }),
 
 			Add { rd, rs, rt } if rd == rs => Some(Self::AddAssign { rx: rd, rt }),
 			Addu { rd, rs, rt } if rd == rs => Some(Self::AdduAssign { rx: rd, rt }),
@@ -353,8 +373,15 @@ impl FromRawIter for PseudoInstruction {
 				rs,
 				imm: imm @ i16::MIN..0,
 			} => match rt == rs {
-				true => Some(Self::SubiAssign { rx: rt, imm }),
-				false => Some(Self::Subi { rt, rs, imm }),
+				true => Some(Self::SubiAssign {
+					rx:  rt,
+					imm: imm.sign_extended::<i32>().abs().as_unsigned(),
+				}),
+				false => Some(Self::Subi {
+					rt,
+					rs,
+					imm: imm.sign_extended::<i32>().abs().as_unsigned(),
+				}),
 			},
 
 			Addiu {
@@ -368,9 +395,18 @@ impl FromRawIter for PseudoInstruction {
 				rs,
 				imm: imm @ i16::MIN..0,
 			} => match rt == rs {
-				true => Some(Self::SubiuAssign { rx: rt, imm }),
-				false => Some(Self::Subiu { rt, rs, imm }),
+				true => Some(Self::SubiuAssign {
+					rx:  rt,
+					imm: imm.sign_extended::<i32>().abs().as_unsigned(),
+				}),
+				false => Some(Self::Subiu {
+					rt,
+					rs,
+					imm: imm.sign_extended::<i32>().abs().as_unsigned(),
+				}),
 			},
+
+			Addi { rt, rs, imm } if rt == rs => Some(Self::AddiAssign { rx: rt, imm }),
 
 			Beq { rs: Zr, rt: Zr, target } => Some(Self::B { target }),
 			Beq { rs: rx, rt: Zr, target } => Some(Self::Beqz { rx, target }),

@@ -80,11 +80,11 @@ use byteorder::{ByteOrder, LittleEndian};
 use dcb::{
 	game::exe::{
 		instruction::{
-			Directive, Pos,
+			Directive,
 			PseudoInstruction::{self, Nop},
 			Raw, Register, SimpleInstruction,
 		},
-		Instruction,
+		Instruction, Pos,
 	},
 	GameFile,
 };

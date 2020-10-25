@@ -6,7 +6,9 @@ use std::{fmt, ops};
 
 /// An instruction position
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Hash, Debug)]
+#[derive(serde::Serialize, serde::Deserialize)]
 #[derive(ref_cast::RefCast)]
+#[serde(transparent)]
 #[repr(transparent)]
 pub struct Pos(pub u32);
 

@@ -1,7 +1,8 @@
 //! Directives
 
 // Imports
-use super::{FromRawIter, Pos, Raw};
+use super::{FromRawIter, Raw};
+use crate::game::exe::Pos;
 use ascii::{AsciiChar, AsciiStr, AsciiString};
 use AsciiChar::Null;
 

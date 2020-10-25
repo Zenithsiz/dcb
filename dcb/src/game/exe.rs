@@ -5,13 +5,17 @@
 
 // Modules
 pub mod error;
+pub mod func;
 pub mod header;
 pub mod instruction;
+pub mod pos;
 
 // Exports
 pub use error::DeserializeError;
+pub use func::Func;
 pub use header::Header;
 pub use instruction::Instruction;
+pub use pos::Pos;
 
 // Imports
 use crate::{io::address::Data, GameFile};
