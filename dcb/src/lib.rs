@@ -47,7 +47,9 @@
 	array_map,
 	const_mut_refs,
 	core_intrinsics,
-	const_assume
+	const_assume,
+	bindings_after_at,
+	array_value_iter
 )]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]
@@ -98,6 +100,9 @@
 #![allow(clippy::if_not_else)]
 // This lint triggers when using `assert`s and `todo`s, which is unsuitable for this project
 #![allow(clippy::panic_in_result_fn)]
+// A `match Option / Result / Bool` can sometimes look cleaner than a `if let / else`
+#![allow(clippy::single_match_else, clippy::match_bool)]
+
 
 // Modules
 pub mod ascii_str_arr;

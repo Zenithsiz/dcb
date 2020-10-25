@@ -6,10 +6,12 @@
 // Modules
 pub mod error;
 pub mod header;
+pub mod instruction;
 
 // Exports
 pub use error::DeserializeError;
 pub use header::Header;
+pub use instruction::Instruction;
 
 // Imports
 use crate::{io::address::Data, GameFile};
