@@ -299,34 +299,34 @@ impl SimpleInstruction {
 		fn reg(idx: u32) -> Option<Register> {
 			Register::new(idx.truncated())
 		}
-		
+
 		#[rustfmt::skip]
 		let instruction = #[bitmatch]
 		match repr {
 			"000000_?????_ttttt_ddddd_iiiii_000000" => Sll  { rd: reg(d)?, rt: reg(t)?, imm: i.truncated()},
 			"000000_?????_ttttt_ddddd_iiiii_000010" => Srl  { rd: reg(d)?, rt: reg(t)?, imm: i.truncated()},
 			"000000_?????_ttttt_ddddd_iiiii_000011" => Sra  { rd: reg(d)?, rt: reg(t)?, imm: i.truncated()},
-			
+
 			"000000_sssss_ttttt_ddddd_?????_000100" => Sllv { rd: reg(d)?, rt: reg(t)?, rs: reg(s)? },
 			"000000_sssss_ttttt_ddddd_?????_000110" => Srlv { rd: reg(d)?, rt: reg(t)?, rs: reg(s)? },
 			"000000_sssss_ttttt_ddddd_?????_000111" => Srav { rd: reg(d)?, rt: reg(t)?, rs: reg(s)? },
-			
+
 			"000000_sssss_?????_?????_?????_001000" => Jr      { rs: reg(s)? },
 			"000000_sssss_?????_ddddd_?????_001001" => Jalr    { rd: reg(d)?, rs: reg(s)? },
-			
+
 			"000000_iiiii_iiiii_iiiii_iiiii_001100" => Syscall { imm: i },
 			"000000_iiiii_iiiii_iiiii_iiiii_001101" => Break   { imm: i },
-			
+
 			"000000_?????_?????_ddddd_?????_010000" => Mfhi  { rd: reg(d)? },
 			"000000_sssss_?????_?????_?????_010001" => Mthi  { rs: reg(s)? },
 			"000000_?????_?????_ddddd_?????_010010" => Mflo  { rd: reg(d)? },
 			"000000_sssss_?????_?????_?????_010011" => Mtlo  { rs: reg(s)? },
-			
+
 			"000000_sssss_ttttt_?????_?????_011000" => Mult  { rs: reg(s)?, rt: reg(t)? },
 			"000000_sssss_ttttt_?????_?????_011001" => Multu { rs: reg(s)?, rt: reg(t)? },
 			"000000_sssss_ttttt_?????_?????_011010" => Div   { rs: reg(s)?, rt: reg(t)? },
 			"000000_sssss_ttttt_?????_?????_011011" => Divu  { rs: reg(s)?, rt: reg(t)? },
-			
+
 			"000000_sssss_ttttt_ddddd_?????_100000" => Add  { rd: reg(d)?, rs: reg(s)?, rt: reg(t)? },
 			"000000_sssss_ttttt_ddddd_?????_100001" => Addu { rd: reg(d)?, rs: reg(s)?, rt: reg(t)? },
 			"000000_sssss_ttttt_ddddd_?????_100010" => Sub  { rd: reg(d)?, rs: reg(s)?, rt: reg(t)? },
@@ -335,24 +335,24 @@ impl SimpleInstruction {
 			"000000_sssss_ttttt_ddddd_?????_100101" => Or   { rd: reg(d)?, rs: reg(s)?, rt: reg(t)? },
 			"000000_sssss_ttttt_ddddd_?????_100110" => Xor  { rd: reg(d)?, rs: reg(s)?, rt: reg(t)? },
 			"000000_sssss_ttttt_ddddd_?????_100111" => Nor  { rd: reg(d)?, rs: reg(s)?, rt: reg(t)? },
-			
+
 			"000000_sssss_ttttt_ddddd_?????_101010" => Slt  { rd: reg(d)?, rs: reg(s)?, rt: reg(t)? },
 			"000000_sssss_ttttt_ddddd_?????_101011" => Sltu { rd: reg(d)?, rs: reg(s)?, rt: reg(t)? },
-			
+
 			"000001_sssss_?????_iiiii_iiiii_iiiiii" => Bltz   { rs: reg(s)?, target: pos + (i.truncated::<u16>().as_signed().sign_extended::<i32>() + 1) * 4 },
 			"000001_sssss_?????_iiiii_iiiii_iiiiii" => Bgez   { rs: reg(s)?, target: pos + (i.truncated::<u16>().as_signed().sign_extended::<i32>() + 1) * 4 },
 			"000001_sssss_?????_iiiii_iiiii_iiiiii" => Bltzal { rs: reg(s)?, target: pos + (i.truncated::<u16>().as_signed().sign_extended::<i32>() + 1) * 4 },
 			"000001_sssss_?????_iiiii_iiiii_iiiiii" => Bgezal { rs: reg(s)?, target: pos + (i.truncated::<u16>().as_signed().sign_extended::<i32>() + 1) * 4 },
-			
+
 			"000010_iiiii_iiiii_iiiii_iiiii_iiiiii" => J      { target: (pos & 0xf000_0000) + i * 4 },
 			"000011_iiiii_iiiii_iiiii_iiiii_iiiiii" => Jal    { target: (pos & 0xf000_0000) + i * 4 },
-			
+
 			"000100_sssss_ttttt_iiiii_iiiii_iiiiii" => Beq    { rs: reg(s)?, rt: reg(t)?, target: pos + (i + 1) * 4 },
 			"000101_sssss_ttttt_iiiii_iiiii_iiiiii" => Bne    { rs: reg(s)?, rt: reg(t)?, target: pos + (i + 1) * 4 },
-			
+
 			"000110_sssss_?????_iiiii_iiiii_iiiiii" => Blez   { rs: reg(s)?, target: pos + (i.truncated::<u16>().as_signed().sign_extended::<i32>() + 1) * 4 },
 			"000111_sssss_?????_iiiii_iiiii_iiiiii" => Bgtz   { rs: reg(s)?, target: pos + (i.truncated::<u16>().as_signed().sign_extended::<i32>() + 1) * 4 },
-			
+
 			"001000_sssss_ttttt_iiiii_iiiii_iiiiii" => Addi  { rt: reg(t)?, rs: reg(s)?, imm: i.truncated::<u16>().as_signed() },
 			"001001_sssss_ttttt_iiiii_iiiii_iiiiii" => Addiu { rt: reg(t)?, rs: reg(s)?, imm: i.truncated::<u16>().as_signed() },
 			"001010_sssss_ttttt_iiiii_iiiii_iiiiii" => Slti  { rt: reg(t)?, rs: reg(s)?, imm: i.truncated::<u16>().as_signed() },
@@ -361,16 +361,16 @@ impl SimpleInstruction {
 			"001101_sssss_ttttt_iiiii_iiiii_iiiiii" => Ori   { rt: reg(t)?, rs: reg(s)?, imm: i.truncated() },
 			"001110_sssss_ttttt_iiiii_iiiii_iiiiii" => Xori  { rt: reg(t)?, rs: reg(s)?, imm: i.truncated() },
 			"001111_?????_ttttt_iiiii_iiiii_iiiiii" => Lui   { rt: reg(t)?                  , imm: i.truncated() },
-			
+
 			"0100nn_1iiii_iiiii_iiiii_iiiii_iiiiii" => CopN { n: n.truncate(), imm: i},
-			
+
 			"0100nn_00000_ttttt_ddddd_?????_000000" => MfcN { n: n.truncate(), rt: reg(t)?, rd: reg(d)? },
 			"0100nn_00010_ttttt_ddddd_?????_000000" => CfcN { n: n.truncate(), rt: reg(t)?, rd: reg(d)? },
 			"0100nn_00100_ttttt_ddddd_?????_000000" => MtcN { n: n.truncate(), rt: reg(t)?, rd: reg(d)? },
 			"0100nn_00110_ttttt_ddddd_?????_000000" => CtcN { n: n.truncate(), rt: reg(t)?, rd: reg(d)? },
 			"0100nn_01000_00000_iiiii_iiiii_iiiiii" => BcNf { n: n.truncate(), target: i.truncate() },
 			"0100nn_01000_00001_iiiii_iiiii_iiiiii" => BcNt { n: n.truncate(), target: i.truncate() },
-			
+
 			"100000_sssss_ttttt_iiiii_iiiii_iiiiii" => Lb  { rt: reg(t)?, rs: reg(s)?, offset: i.truncated() },
 			"100001_sssss_ttttt_iiiii_iiiii_iiiiii" => Lh  { rt: reg(t)?, rs: reg(s)?, offset: i.truncated() },
 			"100010_sssss_ttttt_iiiii_iiiii_iiiiii" => Lwl { rt: reg(t)?, rs: reg(s)?, offset: i.truncated() },
@@ -378,16 +378,16 @@ impl SimpleInstruction {
 			"100100_sssss_ttttt_iiiii_iiiii_iiiiii" => Lbu { rt: reg(t)?, rs: reg(s)?, offset: i.truncated() },
 			"100101_sssss_ttttt_iiiii_iiiii_iiiiii" => Lhu { rt: reg(t)?, rs: reg(s)?, offset: i.truncated() },
 			"100110_sssss_ttttt_iiiii_iiiii_iiiiii" => Lwr { rt: reg(t)?, rs: reg(s)?, offset: i.truncated() },
-			
+
 			"101000_sssss_ttttt_iiiii_iiiii_iiiiii" => Sb  { rt: reg(t)?, rs: reg(s)?, offset: i.truncated() },
 			"101001_sssss_ttttt_iiiii_iiiii_iiiiii" => Sh  { rt: reg(t)?, rs: reg(s)?, offset: i.truncated() },
 			"101010_sssss_ttttt_iiiii_iiiii_iiiiii" => Swl { rt: reg(t)?, rs: reg(s)?, offset: i.truncated() },
 			"101011_sssss_ttttt_iiiii_iiiii_iiiiii" => Sw  { rt: reg(t)?, rs: reg(s)?, offset: i.truncated() },
 			"101110_sssss_ttttt_iiiii_iiiii_iiiiii" => Swr { rt: reg(t)?, rs: reg(s)?, offset: i.truncated() },
-			
+
 			"1100nn_sssss_ttttt_iiiii_iiiii_iiiiii" => LwcN { n: n.truncate(), rs: reg(s)?, rt: reg(t)?, imm: i.truncate() },
 			"1110nn_sssss_ttttt_iiiii_iiiii_iiiiii" => SwcN { n: n.truncate(), rs: reg(s)?, rt: reg(t)?, imm: i.truncate() },
-			
+
 			_ => return None,
 		};
 
