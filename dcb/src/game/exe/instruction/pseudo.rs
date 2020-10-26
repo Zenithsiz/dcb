@@ -242,12 +242,10 @@ impl FromRawIter for PseudoInstruction {
 
 	#[allow(clippy::similar_names)] // With register names, this happens too much
 	#[allow(clippy::too_many_lines, clippy::clippy::cognitive_complexity)] // We can't separate this into several functions, it's just 1 big match
+	#[allow(clippy::enum_glob_use)] // This reduces the amount of typing for simple instructions and registers
 	fn decode<I: Iterator<Item = Raw> + Clone>(iter: &mut I) -> Self::Decoded {
-		use Register::{At, Ra, Zr};
-		use SimpleInstruction::{
-			Add, Addi, Addiu, Addu, And, Andi, Beq, Bne, Jalr, Lb, Lbu, Lh, Lhu, Lui, Lw, Lwl, Lwr, Nor, Or, Ori, Sb, Sh, Sll, Sllv, Sra, Srav, Srl,
-			Srlv, Sub, Subu, Sw, Swl, Swr, Xor, Xori,
-		};
+		use Register::*;
+		use SimpleInstruction::*;
 
 		// TODO: Deal with code such as:
 		// li $rx, 0xXXXX_0000
