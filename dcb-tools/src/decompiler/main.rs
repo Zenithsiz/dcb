@@ -65,6 +65,8 @@
 #![allow(clippy::large_digit_groups)]
 // We don't put the final `else` if it's empty
 #![allow(clippy::else_if_without_else)]
+// We're usually fine with missing future variants
+#![allow(clippy::wildcard_enum_match_arm)]
 
 // Modules
 mod cli;
@@ -150,9 +152,9 @@ fn main() -> Result<(), anyhow::Error> {
 	// Get all function jumps
 	let funcs_pos: HashMap<Pos, usize> = instructions
 		.iter()
-		.filter_map(|(_, instruction)| match instruction {
-			Instruction::Simple(SimpleInstruction::Jal { target }) |
-			Instruction::Directive(Directive::Dw(target) | Directive::DwRepeated { value: target, .. }) => Some(Pos(*target)),
+		.filter_map(|(_, instruction)| match *instruction {
+			Instruction::Simple(SimpleInstruction::Jal { target }) => Some(target),
+			Instruction::Directive(Directive::Dw(target) | Directive::DwRepeated { value: target, .. }) => Some(Pos(target)),
 			_ => None,
 		})
 		.filter(|target| (Instruction::CODE_START..Instruction::CODE_END).contains(target) && offsets.contains(target))
@@ -163,7 +165,7 @@ fn main() -> Result<(), anyhow::Error> {
 	// Get all local jumps
 	let locals_pos: HashMap<Pos, usize> = instructions
 		.iter()
-		.filter_map(|(_, instruction)| match instruction {
+		.filter_map(|(_, instruction)| match *instruction {
 			Instruction::Simple(
 				SimpleInstruction::J { target } |
 				SimpleInstruction::Beq { target, .. } |
@@ -177,7 +179,7 @@ fn main() -> Result<(), anyhow::Error> {
 			) |
 			Instruction::Pseudo(
 				PseudoInstruction::Beqz { target, .. } | PseudoInstruction::Bnez { target, .. } | PseudoInstruction::B { target },
-			) => Some(Pos(*target)),
+			) => Some(target),
 			_ => None,
 		})
 		.filter(|target| (Instruction::CODE_START..Instruction::CODE_END).contains(target) && offsets.contains(target))
@@ -270,10 +272,10 @@ fn main() -> Result<(), anyhow::Error> {
 				SimpleInstruction::Bgezal { target, .. },
 			) => {
 				print!(" #");
-				if let Some(func_idx) = funcs_pos.get(Pos::ref_cast(target)) {
+				if let Some(func_idx) = funcs_pos.get(target) {
 					print!(" func_{func_idx}");
 				}
-				if let Some(local_idx) = locals_pos.get(Pos::ref_cast(target)) {
+				if let Some(local_idx) = locals_pos.get(target) {
 					print!(" .{local_idx}");
 				}
 			},

@@ -102,6 +102,8 @@
 #![allow(clippy::panic_in_result_fn)]
 // A `match Option / Result / Bool` can sometimes look cleaner than a `if let / else`
 #![allow(clippy::single_match_else, clippy::match_bool)]
+// We're usually fine with missing future variants
+#![allow(clippy::wildcard_enum_match_arm)]
 
 
 // Modules

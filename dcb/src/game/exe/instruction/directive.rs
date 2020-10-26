@@ -53,7 +53,6 @@ impl FromRawIter for Directive {
 		let raw = iter.next()?;
 
 		// Try to get an ascii string from the raw and check for nulls
-		#[allow(clippy::wildcard_enum_match_arm)] // Option won't get more variants
 		match AsciiString::from_ascii(raw.repr.to_ne_bytes()).map(check_nulls) {
 			// If we got a string with at least 1 non-null, but
 			// at least 1 null and uniformly null, return just it

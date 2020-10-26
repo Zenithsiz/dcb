@@ -223,24 +223,23 @@ pub enum PseudoInstruction {
 	/// Branch if equal to zero
 	/// Alias for `beq $rx, $zr, target`
 	#[display(fmt = "beqz {rx}, {target:#x}")]
-	Beqz { rx: Register, target: u32 },
+	Beqz { rx: Register, target: Pos },
 
 	/// Branch if different from zero
 	/// Alias for `bne $rx, $zr, target`
 	#[display(fmt = "bnez {rx}, {target:#x}")]
-	Bnez { rx: Register, target: u32 },
+	Bnez { rx: Register, target: Pos },
 
 	/// Jump relative
 	/// Alias for `beq $zr, $zr, target`
 	#[display(fmt = "b {target:#x}")]
-	B { target: u32 },
+	B { target: Pos },
 	// TODO: Push / Pop
 }
 
 impl FromRawIter for PseudoInstruction {
 	type Decoded = Option<(Pos, Self)>;
 
-	#[allow(clippy::wildcard_enum_match_arm)] // New entries won't affect this function, it can only act on entries it knows.
 	#[allow(clippy::similar_names)] // With register names, this happens too much
 	#[allow(clippy::too_many_lines, clippy::clippy::cognitive_complexity)] // We can't separate this into several functions, it's just 1 big match
 	fn decode<I: Iterator<Item = Raw> + Clone>(iter: &mut I) -> Self::Decoded {
