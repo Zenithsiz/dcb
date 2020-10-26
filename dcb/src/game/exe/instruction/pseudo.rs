@@ -252,7 +252,7 @@ impl FromRawIter for PseudoInstruction {
 	fn decode<I: Iterator<Item = Raw> + Clone>(iter: &mut I) -> Self::Decoded {
 		use Register::*;
 		use SimpleInstruction::*;
-		
+
 		// Get the first instruction
 		let (pos, instruction) = SimpleInstruction::decode(iter)?;
 		let pseudo = match instruction {
@@ -268,7 +268,7 @@ impl FromRawIter for PseudoInstruction {
 						rx:  prev_rt,
 						imm: u32::join(imm_lo, imm_hi),
 					},
-					
+
 					Lb { offset: imm_lo, rt, rs } if rt == prev_rt && rs == prev_rt => Self::LbImm {
 						rx:     prev_rt,
 						offset: u32::join(imm_lo, imm_hi),
