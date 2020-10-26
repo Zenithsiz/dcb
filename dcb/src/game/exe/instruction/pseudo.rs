@@ -11,14 +11,15 @@ use int_conv::{Join, SignExtended, Signed, ZeroExtended};
 #[allow(clippy::missing_docs_in_private_items)] // Mostly just register names and immediates.
 pub enum PseudoInstruction {
 	/// No-op
-	/// alias for `sll $zr,$zr,0`
+	/// Alias for `sll $zr,$zr,0`
 	#[display(fmt = "nop")]
 	Nop,
 
 	/// Move register
-	/// Alias for `{addu|addiu|or} $rd, $rs, $zr`
-	#[display(fmt = "move {rd}, {rs}")]
-	MovReg { rd: Register, rs: Register },
+	/// Alias for `{add|addu|sub|subu|and|or|xor|sllv|srlv|srav} $.., $.., $zr` or
+	/// `{addi|addiu|andi|ori|xori|sll|srl|sra} $.., $.., 0`
+	#[display(fmt = "move {rx}, {ry}")]
+	MovReg { rx: Register, ry: Register },
 
 	/// Load byte immediate
 	/// Alias for `lui $rx, {offset-hi} / lb $rx, {offset-lo}($rx)`
@@ -90,25 +91,20 @@ pub enum PseudoInstruction {
 	#[display(fmt = "li {rx}, {imm:#x}")]
 	Li32 { rx: Register, imm: u32 },
 
-	/// Load immediate 16-bit
-	/// Alias for `{ori,addiu} $rx, $zr, imm`, with imm > 0 for `addiu`
+	/// Load unsigned immediate 16-bit
+	/// Alias for `ori $rx, $zr, imm`
 	#[display(fmt = "li {rx}, {imm:#x}")]
-	Li16 { rx: Register, imm: u16 },
+	LiU16 { rx: Register, imm: u16 },
 
-	/// Load immediate negative 15-bit
-	/// Alias for `addiu $rx, $zr, imm`, with imm in `-0x8000 .. -0x1`
+	/// Load signed immediate negative 16-bit
+	/// Alias for `addiu $rx, $zr, imm`
 	#[display(fmt = "li {rx}, {:#x}", "SignedHex(imm)")]
-	LiNeg15 { rx: Register, imm: i16 },
+	LiI16 { rx: Register, imm: i16 },
 
 	/// Load immediate upper 16-bits
 	/// Alias for `lui 0x1000 * imm`
 	#[display(fmt = "li {rx}, {:#x}", "imm.zero_extended::<u32>() << 16")]
 	LiUpper16 { rx: Register, imm: u16 },
-
-	/// Add immediate assign
-	/// Alias for `addi $rx, $rx, imm`
-	#[display(fmt = "addi {rx}, {:#x}", "SignedHex(imm)")]
-	AddiAssign { rx: Register, imm: i16 },
 
 	/// Add assign
 	/// Alias for `add $rx, $rx, $rt`
@@ -149,6 +145,16 @@ pub enum PseudoInstruction {
 	/// Alias for `nor $rx, $rx, $rt`
 	#[display(fmt = "nor {rx}, {rt}")]
 	NorAssign { rx: Register, rt: Register },
+
+	/// Add immediate assign
+	/// Alias for `addi $rx, $rx, imm`
+	#[display(fmt = "addi {rx}, {:#x}", "SignedHex(imm)")]
+	AddiAssign { rx: Register, imm: i16 },
+
+	/// Add immediate sign-extended assign
+	/// Alias for `addiu $rx, $rx, imm`
+	#[display(fmt = "addiu {rx}, {:#x}", "SignedHex(imm)")]
+	AddiuAssign { rx: Register, imm: i16 },
 
 	/// And immediate assign
 	/// Alias for `andi $rx, $rx, imm`
@@ -246,173 +252,165 @@ impl FromRawIter for PseudoInstruction {
 	fn decode<I: Iterator<Item = Raw> + Clone>(iter: &mut I) -> Self::Decoded {
 		use Register::*;
 		use SimpleInstruction::*;
-
-		// TODO: Deal with code such as:
-		// li $rx, 0xXXXX_0000
-		// l* $ry, 0xZZZZ_ZZZZ
-		// ori $rx, 0xYYYY
-		//
-		// And transform it into
-		// l* $ry, 0xZZZZ_ZZZZ
-		// ori $rx 0xXXXX_YYYY
-		// Assuming the `l*` doesn't use $rx
-
+		
 		// Get the first instruction
 		let (pos, instruction) = SimpleInstruction::decode(iter)?;
 		let pseudo = match instruction {
 			Lui { imm: imm_hi, rt: prev_rt } => {
 				let iter_before = iter.clone();
 				match SimpleInstruction::decode(iter)?.1 {
-					Addiu { imm: imm_lo, rt, rs } if rt == prev_rt && rs == prev_rt => Some(Self::La {
+					Addiu { imm: imm_lo, rt, rs } if rt == prev_rt && rs == prev_rt => Self::La {
 						rx:     prev_rt,
 						// Note: `imm_lo` is signed
 						target: (u32::join(0, imm_hi).as_signed() + imm_lo.sign_extended::<i32>()).as_unsigned(),
-					}),
-					Ori { imm: imm_lo, rt, rs } if rt == prev_rt && rs == prev_rt => Some(Self::Li32 {
+					},
+					Ori { imm: imm_lo, rt, rs } if rt == prev_rt && rs == prev_rt => Self::Li32 {
 						rx:  prev_rt,
 						imm: u32::join(imm_lo, imm_hi),
-					}),
+					},
+					
+					Lb { offset: imm_lo, rt, rs } if rt == prev_rt && rs == prev_rt => Self::LbImm {
+						rx:     prev_rt,
+						offset: u32::join(imm_lo, imm_hi),
+					},
+					Lbu { offset: imm_lo, rt, rs } if rt == prev_rt && rs == prev_rt => Self::LbuImm {
+						rx:     prev_rt,
+						offset: u32::join(imm_lo, imm_hi),
+					},
+					Lh { offset: imm_lo, rt, rs } if rt == prev_rt && rs == prev_rt => Self::LhImm {
+						rx:     prev_rt,
+						offset: u32::join(imm_lo, imm_hi),
+					},
+					Lhu { offset: imm_lo, rt, rs } if rt == prev_rt && rs == prev_rt => Self::LhuImm {
+						rx:     prev_rt,
+						offset: u32::join(imm_lo, imm_hi),
+					},
+					Lwl { offset: imm_lo, rt, rs } if rt == prev_rt && rs == prev_rt => Self::LwlImm {
+						rx:     prev_rt,
+						offset: u32::join(imm_lo, imm_hi),
+					},
+					Lw { offset: imm_lo, rt, rs } if rt == prev_rt && rs == prev_rt => Self::LwImm {
+						rx:     prev_rt,
+						offset: u32::join(imm_lo, imm_hi),
+					},
+					Lwr { offset: imm_lo, rt, rs } if rt == prev_rt && rs == prev_rt => Self::LwrImm {
+						rx:     prev_rt,
+						offset: u32::join(imm_lo, imm_hi),
+					},
 
-					Lb { offset: imm_lo, rt, rs } if rt == prev_rt && rs == prev_rt => Some(Self::LbImm {
-						rx:     prev_rt,
-						offset: u32::join(imm_lo, imm_hi),
-					}),
-					Lbu { offset: imm_lo, rt, rs } if rt == prev_rt && rs == prev_rt => Some(Self::LbuImm {
-						rx:     prev_rt,
-						offset: u32::join(imm_lo, imm_hi),
-					}),
-					Lh { offset: imm_lo, rt, rs } if rt == prev_rt && rs == prev_rt => Some(Self::LhImm {
-						rx:     prev_rt,
-						offset: u32::join(imm_lo, imm_hi),
-					}),
-					Lhu { offset: imm_lo, rt, rs } if rt == prev_rt && rs == prev_rt => Some(Self::LhuImm {
-						rx:     prev_rt,
-						offset: u32::join(imm_lo, imm_hi),
-					}),
-					Lwl { offset: imm_lo, rt, rs } if rt == prev_rt && rs == prev_rt => Some(Self::LwlImm {
-						rx:     prev_rt,
-						offset: u32::join(imm_lo, imm_hi),
-					}),
-					Lw { offset: imm_lo, rt, rs } if rt == prev_rt && rs == prev_rt => Some(Self::LwImm {
-						rx:     prev_rt,
-						offset: u32::join(imm_lo, imm_hi),
-					}),
-					Lwr { offset: imm_lo, rt, rs } if rt == prev_rt && rs == prev_rt => Some(Self::LwrImm {
-						rx:     prev_rt,
-						offset: u32::join(imm_lo, imm_hi),
-					}),
-
-					Sb { offset: imm_lo, rt, rs } if prev_rt == At && rs == At => Some(Self::SbImm {
+					Sb { offset: imm_lo, rt, rs } if prev_rt == At && rs == At => Self::SbImm {
 						rx:     rt,
 						offset: u32::join(imm_lo, imm_hi),
-					}),
-					Sh { offset: imm_lo, rt, rs } if prev_rt == At && rs == At => Some(Self::ShImm {
+					},
+					Sh { offset: imm_lo, rt, rs } if prev_rt == At && rs == At => Self::ShImm {
 						rx:     rt,
 						offset: u32::join(imm_lo, imm_hi),
-					}),
-					Swl { offset: imm_lo, rt, rs } if prev_rt == At && rs == At => Some(Self::SwlImm {
+					},
+					Swl { offset: imm_lo, rt, rs } if prev_rt == At && rs == At => Self::SwlImm {
 						rx:     rt,
 						offset: u32::join(imm_lo, imm_hi),
-					}),
-					Sw { offset: imm_lo, rt, rs } if prev_rt == At && rs == At => Some(Self::SwImm {
+					},
+					Sw { offset: imm_lo, rt, rs } if prev_rt == At && rs == At => Self::SwImm {
 						rx:     rt,
 						offset: u32::join(imm_lo, imm_hi),
-					}),
-					Swr { offset: imm_lo, rt, rs } if prev_rt == At && rs == At => Some(Self::SwrImm {
+					},
+					Swr { offset: imm_lo, rt, rs } if prev_rt == At && rs == At => Self::SwrImm {
 						rx:     rt,
 						offset: u32::join(imm_lo, imm_hi),
-					}),
+					},
 					// Since we don't use the value, reset the iterator to it's previous value.
 					_ => {
 						*iter = iter_before;
-						Some(Self::LiUpper16 { rx: prev_rt, imm: imm_hi })
+						Self::LiUpper16 { rx: prev_rt, imm: imm_hi }
 					},
 				}
 			},
 
-			Sll { rd: Zr, rt: Zr, imm: 0 } => Some(Self::Nop),
+			Sll { rd: Zr, rt: Zr, imm: 0 } => Self::Nop,
 
-			Addu { rd, rs, rt: Zr } | Addiu { rt: rd, rs, imm: 0 } | Or { rd, rs, rt: Zr } => Some(Self::MovReg { rd, rs }),
+			#[rustfmt::skip]
+			Add   { rd: rx, rs: ry, rt: Zr } |
+			Addu  { rd: rx, rs: ry, rt: Zr } |
+			Sub   { rd: rx, rs: ry, rt: Zr } |
+			Subu  { rd: rx, rs: ry, rt: Zr } |
+			And   { rd: rx, rs: ry, rt: Zr } |
+			Or    { rd: rx, rs: ry, rt: Zr } |
+			Xor   { rd: rx, rs: ry, rt: Zr } |
+			Sllv  { rd: rx, rt: ry, rs: Zr } |
+			Srlv  { rd: rx, rt: ry, rs: Zr } |
+			Srav  { rd: rx, rt: ry, rs: Zr } |
+			Addi  { rt: rx, rs: ry, imm: 0 } |
+			Addiu { rt: rx, rs: ry, imm: 0 } |
+			Andi  { rt: rx, rs: ry, imm: 0 } |
+			Ori   { rt: rx, rs: ry, imm: 0 } |
+			Xori  { rt: rx, rs: ry, imm: 0 } |
+			Sll   { rd: rx, rt: ry, imm: 0 } |
+			Srl   { rd: rx, rt: ry, imm: 0 } |
+			Sra   { rd: rx, rt: ry, imm: 0 } => Self::MovReg { rx, ry },
 
-			Addiu {
-				rt: rx,
-				rs: Zr,
-				imm: imm @ 1..i16::MAX,
-			} => Some(Self::Li16 { rx, imm: imm.as_unsigned() }),
-			Ori { rt: rx, rs: Zr, imm } => Some(Self::Li16 { rx, imm }),
+			Ori { rt: rx, rs: Zr, imm } => Self::LiU16 { rx, imm },
+			Addiu { rt: rx, rs: Zr, imm } => Self::LiI16 { rx, imm },
 
-			Add { rd, rs, rt } if rd == rs => Some(Self::AddAssign { rx: rd, rt }),
-			Addu { rd, rs, rt } if rd == rs => Some(Self::AdduAssign { rx: rd, rt }),
-			Sub { rd, rs, rt } if rd == rs => Some(Self::SubAssign { rx: rd, rt }),
-			Subu { rd, rs, rt } if rd == rs => Some(Self::SubuAssign { rx: rd, rt }),
-
-			And { rd, rs, rt } if rd == rs => Some(Self::AndAssign { rx: rd, rt }),
-			Or { rd, rs, rt } if rd == rs => Some(Self::OrAssign { rx: rd, rt }),
-			Xor { rd, rs, rt } if rd == rs => Some(Self::XorAssign { rx: rd, rt }),
-			Nor { rd, rs, rt } if rd == rs => Some(Self::NorAssign { rx: rd, rt }),
-
-			Andi { rt, rs, imm } if rt == rs => Some(Self::AndiAssign { rx: rt, imm }),
-			Ori { rt, rs, imm } if rt == rs => Some(Self::OriAssign { rx: rt, imm }),
-			Xori { rt, rs, imm } if rt == rs => Some(Self::XoriAssign { rx: rt, imm }),
-
-			Sllv { rd, rt, rs } if rd == rt => Some(Self::SllvAssign { rx: rd, rs }),
-			Srlv { rd, rt, rs } if rd == rt => Some(Self::SrlvAssign { rx: rd, rs }),
-			Srav { rd, rt, rs } if rd == rt => Some(Self::SravAssign { rx: rd, rs }),
-
-			Sll { rd, rt, imm } if rd == rt => Some(Self::SllAssign { rx: rd, imm }),
-			Srl { rd, rt, imm } if rd == rt => Some(Self::SrlAssign { rx: rd, imm }),
-			Sra { rd, rt, imm } if rd == rt => Some(Self::SraAssign { rx: rd, imm }),
-
-			Jalr { rd: Ra, rs: rx } => Some(Self::JalrRa { rx }),
-
-			Addi {
-				rt,
-				rs,
-				imm: imm @ i16::MIN..0,
-			} => match rt == rs {
-				true => Some(Self::SubiAssign {
+			#[rustfmt::skip]
+			Addi { rt, rs, imm: imm @ i16::MIN..0 } => match rt == rs {
+				true => Self::SubiAssign {
 					rx:  rt,
 					imm: imm.sign_extended::<i32>().abs().as_unsigned(),
-				}),
-				false => Some(Self::Subi {
+				},
+				false => Self::Subi {
+					rt, rs,
+					imm: imm.sign_extended::<i32>().abs().as_unsigned(),
+				},
+			},
+
+			#[rustfmt::skip]
+			Addiu { rt, rs, imm: imm @ i16::MIN..0 } => match rt == rs {
+				true => Self::SubiuAssign {
+					rx:  rt,
+					imm: imm.sign_extended::<i32>().abs().as_unsigned(),
+				},
+				false => Self::Subiu {
 					rt,
 					rs,
 					imm: imm.sign_extended::<i32>().abs().as_unsigned(),
-				}),
+				},
 			},
 
-			Addiu {
-				rt: rx,
-				rs: Zr,
-				imm: imm @ i16::MIN..0,
-			} => Some(Self::LiNeg15 { rx, imm }),
+			Add { rd, rs, rt } if rd == rs => Self::AddAssign { rx: rd, rt },
+			Addu { rd, rs, rt } if rd == rs => Self::AdduAssign { rx: rd, rt },
+			Sub { rd, rs, rt } if rd == rs => Self::SubAssign { rx: rd, rt },
+			Subu { rd, rs, rt } if rd == rs => Self::SubuAssign { rx: rd, rt },
 
-			Addiu {
-				rt,
-				rs,
-				imm: imm @ i16::MIN..0,
-			} => match rt == rs {
-				true => Some(Self::SubiuAssign {
-					rx:  rt,
-					imm: imm.sign_extended::<i32>().abs().as_unsigned(),
-				}),
-				false => Some(Self::Subiu {
-					rt,
-					rs,
-					imm: imm.sign_extended::<i32>().abs().as_unsigned(),
-				}),
-			},
+			And { rd, rs, rt } if rd == rs => Self::AndAssign { rx: rd, rt },
+			Or { rd, rs, rt } if rd == rs => Self::OrAssign { rx: rd, rt },
+			Xor { rd, rs, rt } if rd == rs => Self::XorAssign { rx: rd, rt },
+			Nor { rd, rs, rt } if rd == rs => Self::NorAssign { rx: rd, rt },
 
-			Addi { rt, rs, imm } if rt == rs => Some(Self::AddiAssign { rx: rt, imm }),
+			Addi { rt, rs, imm } if rt == rs => Self::AddiAssign { rx: rt, imm },
+			Addiu { rt, rs, imm } if rt == rs => Self::AddiuAssign { rx: rt, imm },
 
-			Beq { rs: Zr, rt: Zr, target } => Some(Self::B { target }),
-			Beq { rs: rx, rt: Zr, target } => Some(Self::Beqz { rx, target }),
-			Bne { rs: rx, rt: Zr, target } => Some(Self::Bnez { rx, target }),
+			Andi { rt, rs, imm } if rt == rs => Self::AndiAssign { rx: rt, imm },
+			Ori { rt, rs, imm } if rt == rs => Self::OriAssign { rx: rt, imm },
+			Xori { rt, rs, imm } if rt == rs => Self::XoriAssign { rx: rt, imm },
+
+			Sllv { rd, rt, rs } if rd == rt => Self::SllvAssign { rx: rd, rs },
+			Srlv { rd, rt, rs } if rd == rt => Self::SrlvAssign { rx: rd, rs },
+			Srav { rd, rt, rs } if rd == rt => Self::SravAssign { rx: rd, rs },
+
+			Sll { rd, rt, imm } if rd == rt => Self::SllAssign { rx: rd, imm },
+			Srl { rd, rt, imm } if rd == rt => Self::SrlAssign { rx: rd, imm },
+			Sra { rd, rt, imm } if rd == rt => Self::SraAssign { rx: rd, imm },
+
+			Jalr { rd: Ra, rs: rx } => Self::JalrRa { rx },
+
+			Beq { rs: Zr, rt: Zr, target } => Self::B { target },
+			Beq { rs: rx, rt: Zr, target } => Self::Beqz { rx, target },
+			Bne { rs: rx, rt: Zr, target } => Self::Bnez { rx, target },
 
 			// Note: No need to reset iterator, it returned `None`.
-			_ => None,
+			_ => return None,
 		};
 
-		pseudo.map(|pseudo_instruction| (pos, pseudo_instruction))
+		Some((pos, pseudo))
 	}
 }
