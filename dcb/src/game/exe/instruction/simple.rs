@@ -15,52 +15,52 @@ use int_conv::{SignExtended, Signed, Truncate, Truncated};
 #[allow(clippy::missing_docs_in_private_items)] // They're mostly register and immediate names.
 pub enum SimpleInstruction {
 	/// Store byte
-	#[display(fmt = "sb {rt}, {offset:#x}({rs})")]
-	Sb { rt: Register, rs: Register, offset: u16 },
+	#[display(fmt = "sb {rt}, {:#x}({rs})", "SignedHex(offset)")]
+	Sb { rt: Register, rs: Register, offset: i16 },
 
 	/// Store half-word
-	#[display(fmt = "sh {rt}, {offset:#x}({rs})")]
-	Sh { rt: Register, rs: Register, offset: u16 },
+	#[display(fmt = "sh {rt}, {:#x}({rs})", "SignedHex(offset)")]
+	Sh { rt: Register, rs: Register, offset: i16 },
 
 	/// Store left word
-	#[display(fmt = "swl {rt}, {offset:#x}({rs})")]
-	Swl { rt: Register, rs: Register, offset: u16 },
+	#[display(fmt = "swl {rt}, {:#x}({rs})", "SignedHex(offset)")]
+	Swl { rt: Register, rs: Register, offset: i16 },
 
 	/// Store word
-	#[display(fmt = "sw {rt}, {offset:#x}({rs})")]
-	Sw { rt: Register, rs: Register, offset: u16 },
+	#[display(fmt = "sw {rt}, {:#x}({rs})", "SignedHex(offset)")]
+	Sw { rt: Register, rs: Register, offset: i16 },
 
 	/// Store right word
-	#[display(fmt = "swr {rt}, {offset:#x}({rs})")]
-	Swr { rt: Register, rs: Register, offset: u16 },
+	#[display(fmt = "swr {rt}, {:#x}({rs})", "SignedHex(offset)")]
+	Swr { rt: Register, rs: Register, offset: i16 },
 
 	/// Load byte
-	#[display(fmt = "lb {rt}, {offset:#x}({rs})")]
-	Lb { rt: Register, rs: Register, offset: u16 },
+	#[display(fmt = "lb {rt}, {:#x}({rs})", "SignedHex(offset)")]
+	Lb { rt: Register, rs: Register, offset: i16 },
 
 	/// Load byte unsigned
-	#[display(fmt = "lbu {rt}, {offset:#x}({rs})")]
-	Lbu { rt: Register, rs: Register, offset: u16 },
+	#[display(fmt = "lbu {rt}, {:#x}({rs})", "SignedHex(offset)")]
+	Lbu { rt: Register, rs: Register, offset: i16 },
 
 	/// Load half-word
-	#[display(fmt = "lh {rt}, {offset:#x}({rs})")]
-	Lh { rt: Register, rs: Register, offset: u16 },
+	#[display(fmt = "lh {rt}, {:#x}({rs})", "SignedHex(offset)")]
+	Lh { rt: Register, rs: Register, offset: i16 },
 
 	/// Load half-word unsigned
-	#[display(fmt = "lhu {rt}, {offset:#x}({rs})")]
-	Lhu { rt: Register, rs: Register, offset: u16 },
+	#[display(fmt = "lhu {rt}, {:#x}({rs})", "SignedHex(offset)")]
+	Lhu { rt: Register, rs: Register, offset: i16 },
 
 	/// Load left word
-	#[display(fmt = "lwl {rt}, {offset:#x}({rs})")]
-	Lwl { rt: Register, rs: Register, offset: u16 },
+	#[display(fmt = "lwl {rt}, {:#x}({rs})", "SignedHex(offset)")]
+	Lwl { rt: Register, rs: Register, offset: i16 },
 
 	/// Load word
-	#[display(fmt = "lw {rt}, {offset:#x}({rs})")]
-	Lw { rt: Register, rs: Register, offset: u16 },
+	#[display(fmt = "lw {rt}, {:#x}({rs})", "SignedHex(offset)")]
+	Lw { rt: Register, rs: Register, offset: i16 },
 
 	/// Load right word
-	#[display(fmt = "lwr {rt}, {offset:#x}({rs})")]
-	Lwr { rt: Register, rs: Register, offset: u16 },
+	#[display(fmt = "lwr {rt}, {:#x}({rs})", "SignedHex(offset)")]
+	Lwr { rt: Register, rs: Register, offset: i16 },
 
 	/// Add
 	#[display(fmt = "add {rd}, {rs}, {rt}")]
@@ -100,8 +100,8 @@ pub enum SimpleInstruction {
 	Slti { rt: Register, rs: Register, imm: i16 },
 
 	/// Set less than immediate unsigned
-	#[display(fmt = "sltiu {rt}, {rs}, {imm:#x}")]
-	Sltiu { rt: Register, rs: Register, imm: u16 },
+	#[display(fmt = "sltiu {rt}, {rs}, {:#x}", "SignedHex(imm)")]
+	Sltiu { rt: Register, rs: Register, imm: i16 },
 
 	/// And
 	#[display(fmt = "and {rd}, {rs}, {rt}")]
@@ -356,7 +356,7 @@ impl SimpleInstruction {
 			"001000_sssss_ttttt_iiiii_iiiii_iiiiii" => Addi  { rt: reg(t)?, rs: reg(s)?, imm: i.truncated::<u16>().as_signed() },
 			"001001_sssss_ttttt_iiiii_iiiii_iiiiii" => Addiu { rt: reg(t)?, rs: reg(s)?, imm: i.truncated::<u16>().as_signed() },
 			"001010_sssss_ttttt_iiiii_iiiii_iiiiii" => Slti  { rt: reg(t)?, rs: reg(s)?, imm: i.truncated::<u16>().as_signed() },
-			"001011_sssss_ttttt_iiiii_iiiii_iiiiii" => Sltiu { rt: reg(t)?, rs: reg(s)?, imm: i.truncated() },
+			"001011_sssss_ttttt_iiiii_iiiii_iiiiii" => Sltiu { rt: reg(t)?, rs: reg(s)?, imm: i.truncated::<u16>().as_signed() },
 			"001100_sssss_ttttt_iiiii_iiiii_iiiiii" => Andi  { rt: reg(t)?, rs: reg(s)?, imm: i.truncated() },
 			"001101_sssss_ttttt_iiiii_iiiii_iiiiii" => Ori   { rt: reg(t)?, rs: reg(s)?, imm: i.truncated() },
 			"001110_sssss_ttttt_iiiii_iiiii_iiiiii" => Xori  { rt: reg(t)?, rs: reg(s)?, imm: i.truncated() },
@@ -371,19 +371,19 @@ impl SimpleInstruction {
 			"0100nn_01000_00000_iiiii_iiiii_iiiiii" => BcNf { n: n.truncate(), target: i.truncate() },
 			"0100nn_01000_00001_iiiii_iiiii_iiiiii" => BcNt { n: n.truncate(), target: i.truncate() },
 
-			"100000_sssss_ttttt_iiiii_iiiii_iiiiii" => Lb  { rt: reg(t)?, rs: reg(s)?, offset: i.truncated() },
-			"100001_sssss_ttttt_iiiii_iiiii_iiiiii" => Lh  { rt: reg(t)?, rs: reg(s)?, offset: i.truncated() },
-			"100010_sssss_ttttt_iiiii_iiiii_iiiiii" => Lwl { rt: reg(t)?, rs: reg(s)?, offset: i.truncated() },
-			"100011_sssss_ttttt_iiiii_iiiii_iiiiii" => Lw  { rt: reg(t)?, rs: reg(s)?, offset: i.truncated() },
-			"100100_sssss_ttttt_iiiii_iiiii_iiiiii" => Lbu { rt: reg(t)?, rs: reg(s)?, offset: i.truncated() },
-			"100101_sssss_ttttt_iiiii_iiiii_iiiiii" => Lhu { rt: reg(t)?, rs: reg(s)?, offset: i.truncated() },
-			"100110_sssss_ttttt_iiiii_iiiii_iiiiii" => Lwr { rt: reg(t)?, rs: reg(s)?, offset: i.truncated() },
+			"100000_sssss_ttttt_iiiii_iiiii_iiiiii" => Lb  { rt: reg(t)?, rs: reg(s)?, offset: i.truncated::<u16>().as_signed() },
+			"100001_sssss_ttttt_iiiii_iiiii_iiiiii" => Lh  { rt: reg(t)?, rs: reg(s)?, offset: i.truncated::<u16>().as_signed() },
+			"100010_sssss_ttttt_iiiii_iiiii_iiiiii" => Lwl { rt: reg(t)?, rs: reg(s)?, offset: i.truncated::<u16>().as_signed() },
+			"100011_sssss_ttttt_iiiii_iiiii_iiiiii" => Lw  { rt: reg(t)?, rs: reg(s)?, offset: i.truncated::<u16>().as_signed() },
+			"100100_sssss_ttttt_iiiii_iiiii_iiiiii" => Lbu { rt: reg(t)?, rs: reg(s)?, offset: i.truncated::<u16>().as_signed() },
+			"100101_sssss_ttttt_iiiii_iiiii_iiiiii" => Lhu { rt: reg(t)?, rs: reg(s)?, offset: i.truncated::<u16>().as_signed() },
+			"100110_sssss_ttttt_iiiii_iiiii_iiiiii" => Lwr { rt: reg(t)?, rs: reg(s)?, offset: i.truncated::<u16>().as_signed() },
 
-			"101000_sssss_ttttt_iiiii_iiiii_iiiiii" => Sb  { rt: reg(t)?, rs: reg(s)?, offset: i.truncated() },
-			"101001_sssss_ttttt_iiiii_iiiii_iiiiii" => Sh  { rt: reg(t)?, rs: reg(s)?, offset: i.truncated() },
-			"101010_sssss_ttttt_iiiii_iiiii_iiiiii" => Swl { rt: reg(t)?, rs: reg(s)?, offset: i.truncated() },
-			"101011_sssss_ttttt_iiiii_iiiii_iiiiii" => Sw  { rt: reg(t)?, rs: reg(s)?, offset: i.truncated() },
-			"101110_sssss_ttttt_iiiii_iiiii_iiiiii" => Swr { rt: reg(t)?, rs: reg(s)?, offset: i.truncated() },
+			"101000_sssss_ttttt_iiiii_iiiii_iiiiii" => Sb  { rt: reg(t)?, rs: reg(s)?, offset: i.truncated::<u16>().as_signed() },
+			"101001_sssss_ttttt_iiiii_iiiii_iiiiii" => Sh  { rt: reg(t)?, rs: reg(s)?, offset: i.truncated::<u16>().as_signed() },
+			"101010_sssss_ttttt_iiiii_iiiii_iiiiii" => Swl { rt: reg(t)?, rs: reg(s)?, offset: i.truncated::<u16>().as_signed() },
+			"101011_sssss_ttttt_iiiii_iiiii_iiiiii" => Sw  { rt: reg(t)?, rs: reg(s)?, offset: i.truncated::<u16>().as_signed() },
+			"101110_sssss_ttttt_iiiii_iiiii_iiiiii" => Swr { rt: reg(t)?, rs: reg(s)?, offset: i.truncated::<u16>().as_signed() },
 
 			"1100nn_sssss_ttttt_iiiii_iiiii_iiiiii" => LwcN { n: n.truncate(), rs: reg(s)?, rt: reg(t)?, imm: i.truncate() },
 			"1110nn_sssss_ttttt_iiiii_iiiii_iiiiii" => SwcN { n: n.truncate(), rs: reg(s)?, rt: reg(t)?, imm: i.truncate() },

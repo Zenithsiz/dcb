@@ -262,7 +262,7 @@ impl FromRawIter for PseudoInstruction {
 					Addiu { imm: imm_lo, rt, rs } if rt == prev_rt && rs == prev_rt => Self::La {
 						rx:     prev_rt,
 						// Note: `imm_lo` is signed
-						target: (u32::join(0, imm_hi).as_signed() + imm_lo.sign_extended::<i32>()).as_unsigned(),
+						target: (imm_hi.zero_extended::<u32>().as_signed() + imm_lo.sign_extended::<i32>()).as_unsigned(),
 					},
 					Ori { imm: imm_lo, rt, rs } if rt == prev_rt && rs == prev_rt => Self::Li32 {
 						rx:  prev_rt,
@@ -271,52 +271,52 @@ impl FromRawIter for PseudoInstruction {
 
 					Lb { offset: imm_lo, rt, rs } if rt == prev_rt && rs == prev_rt => Self::LbImm {
 						rx:     prev_rt,
-						offset: u32::join(imm_lo, imm_hi),
+						offset: (imm_hi.zero_extended::<u32>().as_signed() + imm_lo.sign_extended::<i32>()).as_unsigned(),
 					},
 					Lbu { offset: imm_lo, rt, rs } if rt == prev_rt && rs == prev_rt => Self::LbuImm {
 						rx:     prev_rt,
-						offset: u32::join(imm_lo, imm_hi),
+						offset: (imm_hi.zero_extended::<u32>().as_signed() + imm_lo.sign_extended::<i32>()).as_unsigned(),
 					},
 					Lh { offset: imm_lo, rt, rs } if rt == prev_rt && rs == prev_rt => Self::LhImm {
 						rx:     prev_rt,
-						offset: u32::join(imm_lo, imm_hi),
+						offset: (imm_hi.zero_extended::<u32>().as_signed() + imm_lo.sign_extended::<i32>()).as_unsigned(),
 					},
 					Lhu { offset: imm_lo, rt, rs } if rt == prev_rt && rs == prev_rt => Self::LhuImm {
 						rx:     prev_rt,
-						offset: u32::join(imm_lo, imm_hi),
+						offset: (imm_hi.zero_extended::<u32>().as_signed() + imm_lo.sign_extended::<i32>()).as_unsigned(),
 					},
 					Lwl { offset: imm_lo, rt, rs } if rt == prev_rt && rs == prev_rt => Self::LwlImm {
 						rx:     prev_rt,
-						offset: u32::join(imm_lo, imm_hi),
+						offset: (imm_hi.zero_extended::<u32>().as_signed() + imm_lo.sign_extended::<i32>()).as_unsigned(),
 					},
 					Lw { offset: imm_lo, rt, rs } if rt == prev_rt && rs == prev_rt => Self::LwImm {
 						rx:     prev_rt,
-						offset: u32::join(imm_lo, imm_hi),
+						offset: (imm_hi.zero_extended::<u32>().as_signed() + imm_lo.sign_extended::<i32>()).as_unsigned(),
 					},
 					Lwr { offset: imm_lo, rt, rs } if rt == prev_rt && rs == prev_rt => Self::LwrImm {
 						rx:     prev_rt,
-						offset: u32::join(imm_lo, imm_hi),
+						offset: (imm_hi.zero_extended::<u32>().as_signed() + imm_lo.sign_extended::<i32>()).as_unsigned(),
 					},
 
 					Sb { offset: imm_lo, rt, rs } if prev_rt == At && rs == At => Self::SbImm {
 						rx:     rt,
-						offset: u32::join(imm_lo, imm_hi),
+						offset: (imm_hi.zero_extended::<u32>().as_signed() + imm_lo.sign_extended::<i32>()).as_unsigned(),
 					},
 					Sh { offset: imm_lo, rt, rs } if prev_rt == At && rs == At => Self::ShImm {
 						rx:     rt,
-						offset: u32::join(imm_lo, imm_hi),
+						offset: (imm_hi.zero_extended::<u32>().as_signed() + imm_lo.sign_extended::<i32>()).as_unsigned(),
 					},
 					Swl { offset: imm_lo, rt, rs } if prev_rt == At && rs == At => Self::SwlImm {
 						rx:     rt,
-						offset: u32::join(imm_lo, imm_hi),
+						offset: (imm_hi.zero_extended::<u32>().as_signed() + imm_lo.sign_extended::<i32>()).as_unsigned(),
 					},
 					Sw { offset: imm_lo, rt, rs } if prev_rt == At && rs == At => Self::SwImm {
 						rx:     rt,
-						offset: u32::join(imm_lo, imm_hi),
+						offset: (imm_hi.zero_extended::<u32>().as_signed() + imm_lo.sign_extended::<i32>()).as_unsigned(),
 					},
 					Swr { offset: imm_lo, rt, rs } if prev_rt == At && rs == At => Self::SwrImm {
 						rx:     rt,
-						offset: u32::join(imm_lo, imm_hi),
+						offset: (imm_hi.zero_extended::<u32>().as_signed() + imm_lo.sign_extended::<i32>()).as_unsigned(),
 					},
 					// Since we don't use the value, reset the iterator to it's previous value.
 					_ => {
