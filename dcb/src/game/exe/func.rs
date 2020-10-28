@@ -86,6 +86,7 @@ impl Func<&'static str> {
 					Pos(0x80056284) => "^",
 					Pos(0x80056288) => "^",
 					Pos(0x8005628c) => "^",
+					Pos(0x800562a8) => "Initialize stack to (*StackStart - 0x10) | 0x80000000",
 					Pos(0x800562f8) => "args: (0x8007f988, ???)",
 					Pos(0x8005630c) => "args: (0x8007f98c)",
 					Pos(0x80056324) => "args: (string_0, string_0)",

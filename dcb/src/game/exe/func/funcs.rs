@@ -140,7 +140,8 @@ impl Funcs<String> {
 			.iter()
 			.zip(0..)
 			.map(|(&target, idx)| {
-				let end_pos = returns.range(target..).next().copied().unwrap_or(target);
+				// Note: +8 for return + instruction after.
+				let end_pos = returns.range(target..).next().copied().unwrap_or(target) + 8;
 				let labels = labels
 					.range(target..end_pos)
 					.zip(0..)
