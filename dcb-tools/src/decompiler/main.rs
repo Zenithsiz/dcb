@@ -8,7 +8,8 @@
 	array_value_iter,
 	array_chunks,
 	format_args_capture,
-	or_patterns
+	or_patterns,
+	bindings_after_at
 )]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]
@@ -73,27 +74,19 @@ mod cli;
 #[path = "../logger.rs"]
 mod logger;
 
-// Exports
-use std::collections::{HashMap, HashSet};
-
 // Imports
 use anyhow::Context;
 use byteorder::{ByteOrder, LittleEndian};
 use dcb::{
 	game::exe::{
-		instruction::{
-			Directive,
-			PseudoInstruction::{self, Nop},
-			Raw, Register, SimpleInstruction,
-		},
+		func::Funcs,
+		instruction::{Directive, PseudoInstruction::Nop, Raw, Register, SimpleInstruction},
 		Instruction, Pos,
 	},
 	GameFile,
 };
-use itertools::Itertools;
-use ref_cast::RefCast;
 
-#[allow(clippy::too_many_lines)] // TODO: Refactor
+#[allow(clippy::cognitive_complexity, clippy::too_many_lines)] // TODO: Refactor
 fn main() -> Result<(), anyhow::Error> {
 	// Initialize the logger and set the panic handler
 	logger::init();
@@ -106,9 +99,11 @@ fn main() -> Result<(), anyhow::Error> {
 	let mut game_file = GameFile::from_reader(input_file).context("Unable to parse input file as dcb")?;
 
 	// Read the executable
+	log::debug!("Deserializing executable");
 	let exe = dcb::game::Exe::deserialize(&mut game_file).context("Unable to parse game executable")?;
 
 	// Get all instructions
+	log::debug!("Retrieving all instructions");
 	let instructions: Vec<(Pos, Instruction)> = Instruction::new_iter(
 		exe.data
 			.array_chunks::<4>()
@@ -121,10 +116,22 @@ fn main() -> Result<(), anyhow::Error> {
 	)
 	.collect();
 
+	// Get all functions
+	log::debug!("Retrieving all functions");
+	let functions: Funcs<String> = Funcs::known()
+		.into_string()
+		.merge(Funcs::from_instructions(
+			instructions.iter().map(|(pos, instruction)| (*pos, instruction)),
+		))
+		.collect();
+
+	/*
 	// All instruction offsets
+	log::debug!("Retrieving all offsets");
 	let offsets: HashSet<Pos> = instructions.iter().map(|(offset, _)| offset).copied().collect();
 
 	// All data / string addresses
+	log::debug!("Retrieving all data / strings addresses");
 	let data_string_addresses: HashSet<Pos> = instructions
 		.iter()
 		.filter_map(|(_, instruction)| match instruction {
@@ -149,20 +156,8 @@ fn main() -> Result<(), anyhow::Error> {
 		})
 		.collect();
 
-	// Get all function jumps
-	let funcs_pos: HashMap<Pos, usize> = instructions
-		.iter()
-		.filter_map(|(_, instruction)| match *instruction {
-			Instruction::Simple(SimpleInstruction::Jal { target }) => Some(target),
-			Instruction::Directive(Directive::Dw(target) | Directive::DwRepeated { value: target, .. }) => Some(Pos(target)),
-			_ => None,
-		})
-		.filter(|target| (Instruction::CODE_START..Instruction::CODE_END).contains(target) && offsets.contains(target))
-		.unique()
-		.zip(0..)
-		.collect();
-
 	// Get all local jumps
+	log::debug!("Retrieving all local jumps");
 	let locals_pos: HashMap<Pos, usize> = instructions
 		.iter()
 		.filter_map(|(_, instruction)| match *instruction {
@@ -187,16 +182,8 @@ fn main() -> Result<(), anyhow::Error> {
 		.zip(0..)
 		.collect();
 
-	// Get all returns
-	let return_pos: HashSet<Pos> = instructions
-		.iter()
-		.filter_map(|(cur_pos, instruction)| match instruction {
-			Instruction::Simple(SimpleInstruction::Jr { rs: Register::Ra }) => Some(*cur_pos),
-			_ => None,
-		})
-		.collect();
-
 	// Get all strings
+	log::debug!("Retrieving all strings");
 	let strings_pos: HashMap<Pos, usize> = instructions
 		.iter()
 		.filter_map(|(cur_pos, instruction)| match instruction {
@@ -209,6 +196,7 @@ fn main() -> Result<(), anyhow::Error> {
 		.collect();
 
 	// Get all data
+	log::debug!("Retrieving all data");
 	let data_pos: HashMap<Pos, usize> = instructions
 		.iter()
 		.filter_map(|(cur_pos, instruction)| match instruction {
@@ -219,14 +207,23 @@ fn main() -> Result<(), anyhow::Error> {
 		.unique()
 		.zip(0..)
 		.collect();
+	*/
 
+	// Build the full instructions iterator
+	let full_iter = functions
+		.with_instructions(instructions.iter().map(|(pos, instruction)| (*pos, instruction)))
+		.scan(None, |last_instruction, output @ (_, cur_instruction, _)| {
+			Some((output, last_instruction.replace(cur_instruction)))
+		});
 
 	// Read all instructions
-	let mut last_instruction = None;
 	let mut skipped_nops = 0;
-	for (offset, instruction) in &instructions {
+	for ((cur_pos, instruction, cur_func), last_instruction) in full_iter {
+		// Note: Required by `rust-analyzer` currently, it can't determine the type of `cur_func`.
+		let cur_func: Option<&dcb::game::exe::Func<String>> = cur_func;
+
 		// If both last and current instructions are nops, skip
-		if let (Some(&Instruction::Pseudo(Nop)), Instruction::Pseudo(Nop)) = (last_instruction, instruction) {
+		if let (Some(Instruction::Pseudo(Nop)), Instruction::Pseudo(Nop)) = (last_instruction, instruction) {
 			skipped_nops += 1;
 			continue;
 		}
@@ -239,9 +236,18 @@ fn main() -> Result<(), anyhow::Error> {
 		}
 
 		// Check if we need to prefix
-		if let Some(func_idx) = funcs_pos.get(offset) {
-			println!("\n\tfunc_{func_idx}:");
+		match cur_func {
+			Some(cur_func) if cur_func.start_pos == cur_pos => {
+				println!("####################");
+				println!("{}:", cur_func.name);
+				println!("# {}\n#", cur_func.signature);
+				for description in cur_func.desc.lines() {
+					println!("# {}", description);
+				}
+			},
+			_ => (),
 		}
+		/*
 		if let Some(local_idx) = locals_pos.get(offset) {
 			println!("\t.{local_idx}:");
 		}
@@ -251,9 +257,10 @@ fn main() -> Result<(), anyhow::Error> {
 		if let Some(data_idx) = data_pos.get(offset) {
 			println!("\tdata_{data_idx}:");
 		}
+		*/
 
 		// Print the instruction
-		print!("{offset:#010x}: {instruction}");
+		print!("{cur_pos:#010x}: {instruction}");
 
 		// Check if we should have any comments with this instruction
 		// TODO: Add Pseudo jumps too
@@ -272,12 +279,14 @@ fn main() -> Result<(), anyhow::Error> {
 				SimpleInstruction::Bgezal { target, .. },
 			) => {
 				print!(" #");
-				if let Some(func_idx) = funcs_pos.get(target) {
-					print!(" func_{func_idx}");
+				if let Some(func) = functions.get(*target) {
+					print!(" {}", func.name);
 				}
+				/*
 				if let Some(local_idx) = locals_pos.get(target) {
 					print!(" .{local_idx}");
 				}
+				*/
 			},
 
 			// Comment returns
@@ -285,6 +294,7 @@ fn main() -> Result<(), anyhow::Error> {
 				print!(" # Return");
 			},
 
+			/*
 			// Comment loading address, loading and writing values of string and data
 			// TODO: Maybe check loads / writes to halfway between
 			//       the strings / data.
@@ -305,20 +315,23 @@ fn main() -> Result<(), anyhow::Error> {
 				PseudoInstruction::SwrImm { offset, .. },
 			) => {
 				print!(" #");
+				/*
 				if let Some(string_idx) = strings_pos.get(Pos::ref_cast(offset)) {
 					print!(" string_{string_idx}");
 				}
 				if let Some(data_idx) = data_pos.get(Pos::ref_cast(offset)) {
 					print!(" data_{data_idx}");
 				}
+				*/
 			},
-
+			*/
 			// Comment `dw`s with both function and data
 			Instruction::Directive(Directive::Dw(offset) | Directive::DwRepeated { value: offset, .. }) => {
 				print!(" #");
-				if let Some(func_idx) = funcs_pos.get(Pos::ref_cast(offset)) {
-					print!(" func_{func_idx}");
+				if let Some(func) = functions.get(Pos(*offset)) {
+					print!(" {}", func.name);
 				}
+				/*
 				if let Some(local_idx) = locals_pos.get(Pos::ref_cast(offset)) {
 					print!(" .{local_idx}");
 				}
@@ -328,20 +341,26 @@ fn main() -> Result<(), anyhow::Error> {
 				if let Some(data_idx) = data_pos.get(Pos::ref_cast(offset)) {
 					print!(" data_{data_idx}");
 				}
+				*/
 			},
 
 			_ => (),
 		}
 
+		// Append any comments in this line
+		if let Some(cur_func) = cur_func {
+			if let Some(comment) = cur_func.comments.get(&cur_pos) {
+				print!(" {comment}");
+			}
+		}
 		// And finish the line
 		println!();
 
-		// If the _last_ instruction was a return, print a newline after this one
-		if return_pos.contains(&(offset - 4)) {
+		// If the last instruction was a `return` and we have a function, space it out
+		if let (Some(Instruction::Simple(SimpleInstruction::Jr { rs: Register::Ra })), Some(_cur_func)) = (last_instruction, cur_func) {
 			println!();
+			println!("####################");
 		}
-
-		last_instruction = Some(instruction);
 	}
 
 	Ok(())

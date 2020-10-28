@@ -30,6 +30,7 @@ float-ord = "0.2"
 itertools = "0.9"
 rand = "0.7"
 ref-cast = "1.0"
+maplit = "1.0"
 
 # Cmd
 clap = "2.33"

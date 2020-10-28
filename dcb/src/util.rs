@@ -11,6 +11,7 @@ pub mod array_split;
 pub mod null_ascii_string;
 #[macro_use]
 pub mod impl_bytes;
+pub mod merge_iter;
 pub mod signed_hex;
 
 // Exports
