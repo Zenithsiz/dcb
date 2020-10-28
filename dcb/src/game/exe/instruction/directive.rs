@@ -1,7 +1,7 @@
 //! Directives
 
 // Imports
-use super::{FromRawIter, Raw};
+use super::{FromRawIter, Instruction, Raw};
 use crate::game::exe::Pos;
 use ascii::{AsciiChar, AsciiStr, AsciiString};
 use AsciiChar::Null;
@@ -29,6 +29,41 @@ pub enum Directive {
 	Ascii(AsciiString),
 }
 
+impl Directive {
+	/// Decodes a `dw` instruction
+	pub fn decode_dw(first_raw: Raw, iter: &mut (impl Iterator<Item = Raw> + Clone)) -> Self {
+		let mut times_repeated = 0;
+
+		// Keep getting values until either eof or a different one
+		loop {
+			let mut cur_iter = iter.clone();
+			match cur_iter.next().map(|next_raw| next_raw.repr == first_raw.repr) {
+				// If we got a different value, keep fetching values until they're different
+				Some(true) => {
+					*iter = cur_iter;
+					times_repeated += 1;
+				},
+
+				// If we didn't get it or we got a different value, exit
+				// Note: No need t update the iterator, as it either returned `None` or
+				//       a different raw.
+				None | Some(false) => match times_repeated {
+					// If the value didn't repeat, use a single `dw`
+					0 => break Self::Dw(first_raw.repr),
+
+					// Else return the table
+					_ => {
+						break Self::DwRepeated {
+							value: first_raw.repr,
+							len:   times_repeated + 1,
+						}
+					},
+				},
+			}
+		}
+	}
+}
+
 
 /// Helper function to check if a string has null and if everything after the first
 /// null is also null (or if there were no nulls).
@@ -51,6 +86,12 @@ impl FromRawIter for Directive {
 	fn decode<I: Iterator<Item = Raw> + Clone>(iter: &mut I) -> Self::Decoded {
 		// Get the first raw
 		let raw = iter.next()?;
+
+		// If we're past all the code, there are no more strings,
+		// so just decode a `dw`.
+		if raw.pos >= Instruction::CODE_END {
+			return Some((raw.pos, Self::decode_dw(raw, iter)));
+		}
 
 		// Try to get an ascii string from the raw and check for nulls
 		match AsciiString::from_ascii(raw.repr.to_ne_bytes()).map(check_nulls) {
@@ -101,37 +142,7 @@ impl FromRawIter for Directive {
 
 			// Else if it was full null, non-uniformly null or non-ascii,
 			// try to get a dw table
-			_ => {
-				let mut times_repeated = 0;
-
-				// Keep getting values until either eof or a different one
-				loop {
-					let mut cur_iter = iter.clone();
-					match cur_iter.next().map(|next_raw| next_raw.repr == raw.repr) {
-						// If we got a different value, keep fetching values until they're different
-						Some(true) => {
-							*iter = cur_iter;
-							times_repeated += 1;
-						},
-
-						// If we didn't get it or we got a different value, exit
-						// Note: No need t update the iterator, as it either returned `None` or
-						//       a different raw.
-						None | Some(false) => match times_repeated {
-							// If the value didn't repeat, use a single `dw`
-							0 => break Some((raw.pos, Self::Dw(raw.repr))),
-
-							// Else return the table
-							_ => {
-								break Some((raw.pos, Self::DwRepeated {
-									value: raw.repr,
-									len:   times_repeated + 1,
-								}))
-							},
-						},
-					}
-				}
-			},
+			_ => Some((raw.pos, Self::decode_dw(raw, iter))),
 		}
 	}
 }

@@ -250,69 +250,56 @@ fn main() -> Result<(), anyhow::Error> {
 			) |
 			Instruction::Pseudo(
 				PseudoInstruction::B { target } | PseudoInstruction::Beqz { target, .. } | PseudoInstruction::Bnez { target, .. },
-			) => {
-				if let Some((target, prefix)) = functions
-					.get(*target)
-					.map(|func| (&func.name, ""))
-					.or_else(|| cur_func.and_then(|func| func.labels.get(target).map(|label| (label, "."))))
-				{
-					// TODO: Improve solution, removing the target like this isn't
-					//       a good way of going about it.
-					let instruction = instruction.to_string();
-					#[allow(clippy::indexing_slicing)] // This can't panic, it's index is `..{0..len}`.
-					let instruction = &instruction[..instruction.rfind(' ').unwrap_or_else(|| instruction.len())];
-					print!("{instruction} {prefix}{target}");
-				} else {
-					print!("{instruction}");
-				}
+			) => match functions
+				.get(*target)
+				.map(|func| (&func.name, ""))
+				.or_else(|| cur_func.and_then(|func| func.labels.get(target).map(|label| (label, "."))))
+			{
+				Some((target, prefix)) => print!("{} {prefix}{target}", strip_last_arg(instruction)),
+				None => print!("{instruction}"),
 			},
-			_ => print!("{instruction}"),
-		}
 
-		// Check if we should have any comments with this instruction
-
-		match instruction {
 			// Comment loading address, loading and writing values of string and data
 			// TODO: Maybe check loads / writes to halfway between
 			//       the strings / data.
 			Instruction::Pseudo(
-				PseudoInstruction::La { target: offset, .. } |
-				PseudoInstruction::Li32 { imm: offset, .. } |
-				PseudoInstruction::LbImm { offset, .. } |
-				PseudoInstruction::LbuImm { offset, .. } |
-				PseudoInstruction::LhImm { offset, .. } |
-				PseudoInstruction::LhuImm { offset, .. } |
-				PseudoInstruction::LwlImm { offset, .. } |
-				PseudoInstruction::LwImm { offset, .. } |
-				PseudoInstruction::LwrImm { offset, .. } |
-				PseudoInstruction::SbImm { offset, .. } |
-				PseudoInstruction::ShImm { offset, .. } |
-				PseudoInstruction::SwlImm { offset, .. } |
-				PseudoInstruction::SwImm { offset, .. } |
-				PseudoInstruction::SwrImm { offset, .. },
-			) => {
-				if let Some(string_idx) = strings_pos.get(Pos::ref_cast(offset)) {
-					print!(" # string_{string_idx}");
-				}
-				if let Some(data_idx) = data_pos.get(Pos::ref_cast(offset)) {
-					print!(" # data_{data_idx}");
-				}
+				PseudoInstruction::La { target, .. } |
+				PseudoInstruction::Li32 { imm: target, .. } |
+				PseudoInstruction::LbImm { offset: target, .. } |
+				PseudoInstruction::LbuImm { offset: target, .. } |
+				PseudoInstruction::LhImm { offset: target, .. } |
+				PseudoInstruction::LhuImm { offset: target, .. } |
+				PseudoInstruction::LwlImm { offset: target, .. } |
+				PseudoInstruction::LwImm { offset: target, .. } |
+				PseudoInstruction::LwrImm { offset: target, .. } |
+				PseudoInstruction::SbImm { offset: target, .. } |
+				PseudoInstruction::ShImm { offset: target, .. } |
+				PseudoInstruction::SwlImm { offset: target, .. } |
+				PseudoInstruction::SwImm { offset: target, .. } |
+				PseudoInstruction::SwrImm { offset: target, .. },
+			) => match strings_pos
+				.get(Pos::ref_cast(target))
+				.map(|idx| (idx, "string_"))
+				.or_else(|| data_pos.get(Pos::ref_cast(target)).map(|idx| (idx, "data_")))
+			{
+				Some((target, prefix)) => print!("{} {prefix}{target}", strip_last_arg(instruction)),
+				None => print!("{instruction}"),
 			},
 
-			// Comment `dw`s with both function and data
-			Instruction::Directive(Directive::Dw(offset) | Directive::DwRepeated { value: offset, .. }) => {
-				if let Some(func) = functions.get(Pos(*offset)) {
-					print!(" # {}", func.name);
-				}
-				if let Some(string_idx) = strings_pos.get(Pos::ref_cast(offset)) {
-					print!(" # string_{string_idx}");
-				}
-				if let Some(data_idx) = data_pos.get(Pos::ref_cast(offset)) {
-					print!(" # data_{data_idx}");
-				}
-			},
+			_ => print!("{instruction}"),
+		}
 
-			_ => (),
+		// Comment any `dw` instructions that are function, data or string pointers
+		if let Instruction::Directive(Directive::Dw(target) | Directive::DwRepeated { value: target, .. }) = instruction {
+			if let Some(func) = functions.get(Pos(*target)) {
+				print!(" # {}", func.name);
+			}
+			if let Some(string_idx) = strings_pos.get(Pos::ref_cast(target)) {
+				print!(" # string_{string_idx}");
+			}
+			if let Some(data_idx) = data_pos.get(Pos::ref_cast(target)) {
+				print!(" # data_{data_idx}");
+			}
 		}
 
 		// Append any comments in this line
@@ -335,4 +322,14 @@ fn main() -> Result<(), anyhow::Error> {
 	}
 
 	Ok(())
+}
+
+
+/// Helper function to extract the last argument from an instruction
+// TODO: Use something better than this
+fn strip_last_arg(instruction: &Instruction) -> String {
+	let mut instruction: String = instruction.to_string();
+	// Note: This can't panic
+	instruction.truncate(instruction.rfind(' ').unwrap_or(0));
+	instruction
 }

@@ -94,7 +94,7 @@ impl Func<&'static str> {
 					Pos(0x80056280) => "zero_loop",
 				},
 				start_pos: Pos(0x80056270),
-				end_pos:   Pos(0x80056384),
+				end_pos:   Pos(0x80056388),
 			},
 		])
 	}
