@@ -347,11 +347,10 @@ impl SimpleInstruction {
 			"000010_iiiii_iiiii_iiiii_iiiii_iiiiii" => J      { target: (pos & 0xf000_0000) + i * 4 },
 			"000011_iiiii_iiiii_iiiii_iiiii_iiiiii" => Jal    { target: (pos & 0xf000_0000) + i * 4 },
 
-			"000100_sssss_ttttt_iiiii_iiiii_iiiiii" => Beq    { rs: reg(s)?, rt: reg(t)?, target: pos + (i + 1) * 4 },
-			"000101_sssss_ttttt_iiiii_iiiii_iiiiii" => Bne    { rs: reg(s)?, rt: reg(t)?, target: pos + (i + 1) * 4 },
-
-			"000110_sssss_?????_iiiii_iiiii_iiiiii" => Blez   { rs: reg(s)?, target: pos + (i.truncated::<u16>().as_signed().sign_extended::<i32>() + 1) * 4 },
-			"000111_sssss_?????_iiiii_iiiii_iiiiii" => Bgtz   { rs: reg(s)?, target: pos + (i.truncated::<u16>().as_signed().sign_extended::<i32>() + 1) * 4 },
+			"000100_sssss_ttttt_iiiii_iiiii_iiiiii" => Beq    { rs: reg(s)?, rt: reg(t)?, target: pos + (i.truncated::<u16>().as_signed().sign_extended::<i32>() + 1) * 4 },
+			"000101_sssss_ttttt_iiiii_iiiii_iiiiii" => Bne    { rs: reg(s)?, rt: reg(t)?, target: pos + (i.truncated::<u16>().as_signed().sign_extended::<i32>() + 1) * 4 },
+			"000110_sssss_?????_iiiii_iiiii_iiiiii" => Blez   { rs: reg(s)?                  , target: pos + (i.truncated::<u16>().as_signed().sign_extended::<i32>() + 1) * 4 },
+			"000111_sssss_?????_iiiii_iiiii_iiiiii" => Bgtz   { rs: reg(s)?                  , target: pos + (i.truncated::<u16>().as_signed().sign_extended::<i32>() + 1) * 4 },
 
 			"001000_sssss_ttttt_iiiii_iiiii_iiiiii" => Addi  { rt: reg(t)?, rs: reg(s)?, imm: i.truncated::<u16>().as_signed() },
 			"001001_sssss_ttttt_iiiii_iiiii_iiiiii" => Addiu { rt: reg(t)?, rs: reg(s)?, imm: i.truncated::<u16>().as_signed() },
