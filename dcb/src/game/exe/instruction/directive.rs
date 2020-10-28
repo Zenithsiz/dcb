@@ -21,7 +21,7 @@ pub enum Directive {
 		value: u32,
 
 		/// Times the value was repeated
-		len: usize,
+		len: u32,
 	},
 
 	/// Ascii string
@@ -30,6 +30,17 @@ pub enum Directive {
 }
 
 impl Directive {
+	/// Returns the size of this instruction
+	#[must_use]
+	pub fn size(&self) -> u32 {
+		#[allow(clippy::as_conversions, clippy::cast_possible_truncation)] // Our length will always fit into a `u32`.
+		match self {
+			Self::Dw(_) => 4,
+			Self::DwRepeated { len, .. } => 4 * len,
+			Self::Ascii(ascii) => 4 * (ascii.len() as u32),
+		}
+	}
+
 	/// Decodes a `dw` instruction
 	pub fn decode_dw(first_raw: Raw, iter: &mut (impl Iterator<Item = Raw> + Clone)) -> Self {
 		let mut times_repeated = 0;

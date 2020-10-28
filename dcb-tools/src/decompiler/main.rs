@@ -75,12 +75,11 @@ mod cli;
 mod logger;
 
 // Imports
-use std::collections::{HashMap, HashSet};
-
 use anyhow::Context;
 use byteorder::{ByteOrder, LittleEndian};
 use dcb::{
 	game::exe::{
+		data::AllData,
 		func::Funcs,
 		instruction::{
 			Directive,
@@ -91,8 +90,6 @@ use dcb::{
 	},
 	GameFile,
 };
-use itertools::Itertools;
-use ref_cast::RefCast;
 
 #[allow(clippy::cognitive_complexity, clippy::too_many_lines)] // TODO: Refactor
 fn main() -> Result<(), anyhow::Error> {
@@ -133,56 +130,12 @@ fn main() -> Result<(), anyhow::Error> {
 		))
 		.collect();
 
-	// All data / string addresses
-	log::debug!("Retrieving all data / strings addresses");
-	let data_string_addresses: HashSet<Pos> = instructions
-		.iter()
-		.filter_map(|(_, instruction)| match instruction {
-			Instruction::Pseudo(
-				PseudoInstruction::La { target: offset, .. } |
-				PseudoInstruction::Li32 { imm: offset, .. } |
-				PseudoInstruction::LbImm { offset, .. } |
-				PseudoInstruction::LbuImm { offset, .. } |
-				PseudoInstruction::LhImm { offset, .. } |
-				PseudoInstruction::LhuImm { offset, .. } |
-				PseudoInstruction::LwlImm { offset, .. } |
-				PseudoInstruction::LwImm { offset, .. } |
-				PseudoInstruction::LwrImm { offset, .. } |
-				PseudoInstruction::SbImm { offset, .. } |
-				PseudoInstruction::ShImm { offset, .. } |
-				PseudoInstruction::SwlImm { offset, .. } |
-				PseudoInstruction::SwImm { offset, .. } |
-				PseudoInstruction::SwrImm { offset, .. },
-			) |
-			Instruction::Directive(Directive::Dw(offset) | Directive::DwRepeated { value: offset, .. }) => Some(Pos(*offset)),
-			_ => None,
-		})
-		.collect();
-
-	// Get all strings
-	log::debug!("Retrieving all strings");
-	let strings_pos: HashMap<Pos, usize> = instructions
-		.iter()
-		.filter_map(|(cur_pos, instruction)| match instruction {
-			Instruction::Directive(Directive::Ascii(_)) => Some(*cur_pos),
-			_ => None,
-		})
-		.filter(|cur_pos| data_string_addresses.contains(cur_pos))
-		.unique()
-		.zip(0..)
-		.collect();
-
 	// Get all data
-	log::debug!("Retrieving all data");
-	let data_pos: HashMap<Pos, usize> = instructions
-		.iter()
-		.filter_map(|(cur_pos, instruction)| match instruction {
-			Instruction::Directive(Directive::Dw(_) | Directive::DwRepeated { .. }) => Some(*cur_pos),
-			_ => None,
-		})
-		.filter(|cur_pos| data_string_addresses.contains(cur_pos))
-		.unique()
-		.zip(0..)
+	let data_pos: AllData<String> = AllData::known()
+		.into_string()
+		.merge(AllData::from_instructions(
+			instructions.iter().map(|(pos, instruction)| (*pos, instruction)),
+		))
 		.collect();
 
 	// Build the full instructions iterator
@@ -226,11 +179,8 @@ fn main() -> Result<(), anyhow::Error> {
 				println!("\t.{label}:");
 			}
 		}
-		if let Some(string_idx) = strings_pos.get(&cur_pos) {
-			println!("\tstring_{string_idx}:");
-		}
-		if let Some(data_idx) = data_pos.get(&cur_pos) {
-			println!("\tdata_{data_idx}:");
+		if let Some(data) = data_pos.get(cur_pos) {
+			println!("\t{}:", data.name());
 		}
 
 		// Print the instruction and it's location.
@@ -277,12 +227,8 @@ fn main() -> Result<(), anyhow::Error> {
 				PseudoInstruction::SwlImm { offset: target, .. } |
 				PseudoInstruction::SwImm { offset: target, .. } |
 				PseudoInstruction::SwrImm { offset: target, .. },
-			) => match strings_pos
-				.get(Pos::ref_cast(target))
-				.map(|idx| (idx, "string_"))
-				.or_else(|| data_pos.get(Pos::ref_cast(target)).map(|idx| (idx, "data_")))
-			{
-				Some((target, prefix)) => print!("{} {prefix}{target}", strip_last_arg(instruction)),
+			) => match data_pos.get(Pos(*target)) {
+				Some(target) => print!("{} {}", strip_last_arg(instruction), target.name()),
 				None => print!("{instruction}"),
 			},
 
@@ -294,11 +240,8 @@ fn main() -> Result<(), anyhow::Error> {
 			if let Some(func) = functions.get(Pos(*target)) {
 				print!(" # {}", func.name);
 			}
-			if let Some(string_idx) = strings_pos.get(Pos::ref_cast(target)) {
-				print!(" # string_{string_idx}");
-			}
-			if let Some(data_idx) = data_pos.get(Pos::ref_cast(target)) {
-				print!(" # data_{data_idx}");
+			if let Some(data) = data_pos.get(Pos(*target)) {
+				print!(" # {}", data.name());
 			}
 		}
 
@@ -308,6 +251,7 @@ fn main() -> Result<(), anyhow::Error> {
 				print!(" # {comment}");
 			}
 		}
+
 		// And finish the line
 		println!();
 

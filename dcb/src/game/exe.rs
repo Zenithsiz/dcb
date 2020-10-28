@@ -4,6 +4,7 @@
 //! as well as tools to decompile and recompile it.
 
 // Modules
+pub mod data;
 pub mod error;
 pub mod func;
 pub mod header;
@@ -11,6 +12,7 @@ pub mod instruction;
 pub mod pos;
 
 // Exports
+pub use data::Data;
 pub use error::DeserializeError;
 pub use func::Func;
 pub use header::Header;
@@ -18,7 +20,7 @@ pub use instruction::Instruction;
 pub use pos::Pos;
 
 // Imports
-use crate::{io::address::Data, GameFile};
+use crate::{io::address::Data as DataAddress, GameFile};
 use dcb_bytes::{ByteArray, Bytes};
 use std::{
 	convert::TryFrom,
@@ -41,7 +43,7 @@ pub struct Exe {
 
 impl Exe {
 	/// Start address of the executable
-	const START_ADDRESS: Data = Data::from_u64(0x58b9000);
+	const START_ADDRESS: DataAddress = DataAddress::from_u64(0x58b9000);
 }
 
 impl Exe {
