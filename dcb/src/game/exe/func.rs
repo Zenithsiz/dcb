@@ -29,6 +29,9 @@ pub struct Func<S: AsRef<str>> {
 	/// Comments
 	pub comments: HashMap<Pos, S>,
 
+	/// Labels
+	pub labels: HashMap<Pos, S>,
+
 	/// Start position
 	pub start_pos: Pos,
 
@@ -66,7 +69,11 @@ impl Func<&'static str> {
 				name:      "InitHeap",
 				signature: "void(int* addr, unsigned int size)",
 				desc:      "Calls A(0x39)",
-				comments:  hashmap! {},
+				comments:  hashmap! {
+					Pos(0x8006a738) => "Register tailcall. Likely to prevent calling in KSEG0 and do it in KUSEG",
+					Pos(0x8006a73c) => "arg: 0x39",
+				},
+				labels:    hashmap! {},
 				start_pos: Pos(0x8006a734),
 				end_pos:   Pos(0x8006a744),
 			},
@@ -79,31 +86,15 @@ impl Func<&'static str> {
 					Pos(0x80056284) => "^",
 					Pos(0x80056288) => "^",
 					Pos(0x8005628c) => "^",
-					Pos(0x800562f8) => "InitHeap(0x8007f988, ???)",
-					Pos(0x8005630c) => "func_1025(0x8007f98c)",
-					Pos(0x80056324) => "func_1026(string_0, string_0)",
+					Pos(0x800562f8) => "args: (0x8007f988, ???)",
+					Pos(0x8005630c) => "args: (0x8007f98c)",
+					Pos(0x80056324) => "args: (string_0, string_0)",
+				},
+				labels:    hashmap! {
+					Pos(0x80056280) => "zero_loop",
 				},
 				start_pos: Pos(0x80056270),
-				end_pos:   Pos(0x80056330),
-			},
-			Self {
-				name:      "func_1025",
-				signature: "void(int*)",
-				desc:      "",
-				comments:  hashmap! {
-					Pos(0x80013ef4) => "Called indefinitely?",
-					Pos(0x80013efc) => "^ Due to this loop"
-				},
-				start_pos: Pos(0x80013e4c),
-				end_pos:   Pos(0x80013f04),
-			},
-			Self {
-				name:      "func_446",
-				signature: "int(int)",
-				desc:      "",
-				comments:  hashmap! {},
-				start_pos: Pos(0x80069124),
-				end_pos:   Pos(0x80069150),
+				end_pos:   Pos(0x80056384),
 			},
 		])
 	}

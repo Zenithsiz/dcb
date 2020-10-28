@@ -2,7 +2,7 @@
 // TODO: More implementations for `Pos`
 
 // Imports
-use int_conv::Signed;
+use int_conv::{SignExtended, Signed};
 use std::{fmt, ops};
 
 /// An instruction position
@@ -24,6 +24,14 @@ impl ops::Sub<u32> for Pos {
 
 	fn sub(self, rhs: u32) -> Self::Output {
 		Self(self.0 - rhs)
+	}
+}
+
+impl ops::Sub<Pos> for Pos {
+	type Output = i64;
+
+	fn sub(self, rhs: Self) -> Self::Output {
+		self.0.as_signed().sign_extended::<i64>() - rhs.0.as_signed().sign_extended::<i64>()
 	}
 }
 

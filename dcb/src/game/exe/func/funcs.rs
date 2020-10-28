@@ -4,7 +4,7 @@
 use super::{Func, WithInstructionsIter};
 use crate::{
 	game::exe::{
-		instruction::{Directive, Register, SimpleInstruction},
+		instruction::{Directive, PseudoInstruction, Register, SimpleInstruction},
 		Instruction, Pos,
 	},
 	util::merge_iter::MergeSortedIter,
@@ -58,6 +58,7 @@ impl<S: AsRef<str> + Into<String>> Funcs<S> {
 					signature: func.signature.into(),
 					desc:      func.desc.into(),
 					comments:  func.comments.into_iter().map(|(pos, comment)| (pos, comment.into())).collect(),
+					labels:    func.labels.into_iter().map(|(pos, label)| (pos, label.into())).collect(),
 					start_pos: func.start_pos,
 					end_pos:   func.end_pos,
 				})
@@ -100,6 +101,29 @@ impl Funcs<String> {
 			})
 			.collect();
 
+		// Get all labels
+		let labels: BTreeSet<Pos> = instructions
+			.clone()
+			.filter_map(|(_, instruction)| match instruction {
+				Instruction::Simple(
+					SimpleInstruction::J { target } |
+					SimpleInstruction::Beq { target, .. } |
+					SimpleInstruction::Bne { target, .. } |
+					SimpleInstruction::Bltz { target, .. } |
+					SimpleInstruction::Bgez { target, .. } |
+					SimpleInstruction::Bgtz { target, .. } |
+					SimpleInstruction::Blez { target, .. } |
+					SimpleInstruction::Bltzal { target, .. } |
+					SimpleInstruction::Bgezal { target, .. },
+				) |
+				Instruction::Pseudo(
+					PseudoInstruction::Beqz { target, .. } | PseudoInstruction::Bnez { target, .. } | PseudoInstruction::B { target },
+				) => Some(*target),
+				_ => None,
+			})
+			.filter(|target| (Instruction::CODE_START..Instruction::CODE_END).contains(target) && offsets.contains(target))
+			.collect();
+
 		// Now get every function entrance from jumps and `dw`s.
 		let function_entrances: BTreeSet<Pos> = instructions
 			.filter_map(|(_, instruction)| match instruction {
@@ -115,13 +139,22 @@ impl Funcs<String> {
 		let functions = function_entrances
 			.iter()
 			.zip(0..)
-			.map(|(&target, idx)| Func {
-				name:      format!("func_{idx}"),
-				signature: "".to_string(),
-				desc:      "".to_string(),
-				comments:  hashmap![],
-				start_pos: target,
-				end_pos:   returns.range(target..).next().copied().unwrap_or(Pos(0xFFFFFFFF)),
+			.map(|(&target, idx)| {
+				let end_pos = returns.range(target..).next().copied().unwrap_or(target);
+				let labels = labels
+					.range(target..end_pos)
+					.zip(0..)
+					.map(|(&pos, idx)| (pos, format!("{idx}")))
+					.collect();
+				Func {
+					name: format!("func_{idx}"),
+					signature: "".to_string(),
+					desc: "".to_string(),
+					comments: hashmap! {},
+					labels,
+					start_pos: target,
+					end_pos,
+				}
 			})
 			.collect();
 

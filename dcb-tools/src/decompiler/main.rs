@@ -85,7 +85,7 @@ use dcb::{
 		instruction::{
 			Directive,
 			PseudoInstruction::{self, Nop},
-			Raw, Register, SimpleInstruction,
+			Raw, SimpleInstruction,
 		},
 		Instruction, Pos,
 	},
@@ -133,10 +133,6 @@ fn main() -> Result<(), anyhow::Error> {
 		))
 		.collect();
 
-	// All instruction offsets
-	log::debug!("Retrieving all offsets");
-	let offsets: HashSet<Pos> = instructions.iter().map(|(offset, _)| offset).copied().collect();
-
 	// All data / string addresses
 	log::debug!("Retrieving all data / strings addresses");
 	let data_string_addresses: HashSet<Pos> = instructions
@@ -161,32 +157,6 @@ fn main() -> Result<(), anyhow::Error> {
 			Instruction::Directive(Directive::Dw(offset) | Directive::DwRepeated { value: offset, .. }) => Some(Pos(*offset)),
 			_ => None,
 		})
-		.collect();
-
-	// Get all local jumps
-	log::debug!("Retrieving all local jumps");
-	let locals_pos: HashMap<Pos, usize> = instructions
-		.iter()
-		.filter_map(|(_, instruction)| match *instruction {
-			Instruction::Simple(
-				SimpleInstruction::J { target } |
-				SimpleInstruction::Beq { target, .. } |
-				SimpleInstruction::Bne { target, .. } |
-				SimpleInstruction::Bltz { target, .. } |
-				SimpleInstruction::Bgez { target, .. } |
-				SimpleInstruction::Bgtz { target, .. } |
-				SimpleInstruction::Blez { target, .. } |
-				SimpleInstruction::Bltzal { target, .. } |
-				SimpleInstruction::Bgezal { target, .. },
-			) |
-			Instruction::Pseudo(
-				PseudoInstruction::Beqz { target, .. } | PseudoInstruction::Bnez { target, .. } | PseudoInstruction::B { target },
-			) => Some(target),
-			_ => None,
-		})
-		.filter(|target| (Instruction::CODE_START..Instruction::CODE_END).contains(target) && offsets.contains(target))
-		.unique()
-		.zip(0..)
 		.collect();
 
 	// Get all strings
@@ -242,19 +212,19 @@ fn main() -> Result<(), anyhow::Error> {
 		}
 
 		// Check if we need to prefix
-		match cur_func {
-			Some(cur_func) if cur_func.start_pos == cur_pos => {
+		if let Some(cur_func) = cur_func {
+			if cur_func.start_pos == cur_pos {
+				println!();
 				println!("####################");
 				println!("{}:", cur_func.name);
 				println!("# {}\n#", cur_func.signature);
 				for description in cur_func.desc.lines() {
 					println!("# {}", description);
 				}
-			},
-			_ => (),
-		}
-		if let Some(local_idx) = locals_pos.get(&cur_pos) {
-			println!("\t.{local_idx}:");
+			}
+			if let Some(label) = cur_func.labels.get(&cur_pos) {
+				println!("\t.{label}:");
+			}
 		}
 		if let Some(string_idx) = strings_pos.get(&cur_pos) {
 			println!("\tstring_{string_idx}:");
@@ -263,13 +233,9 @@ fn main() -> Result<(), anyhow::Error> {
 			println!("\tdata_{data_idx}:");
 		}
 
-		// Print the instruction
-		print!("{cur_pos:#010x}: {instruction}");
-
-		// Check if we should have any comments with this instruction
-		// TODO: Add Pseudo jumps too
+		// Print the instruction and it's location.
+		print!("{cur_pos:#010x}: ");
 		match instruction {
-			// If we have a jump, make a comment with it's target
 			Instruction::Simple(
 				SimpleInstruction::J { target } |
 				SimpleInstruction::Jal { target } |
@@ -281,20 +247,31 @@ fn main() -> Result<(), anyhow::Error> {
 				SimpleInstruction::Blez { target, .. } |
 				SimpleInstruction::Bltzal { target, .. } |
 				SimpleInstruction::Bgezal { target, .. },
+			) |
+			Instruction::Pseudo(
+				PseudoInstruction::B { target } | PseudoInstruction::Beqz { target, .. } | PseudoInstruction::Bnez { target, .. },
 			) => {
-				if let Some(func) = functions.get(*target) {
-					print!(" # {}", func.name);
-				}
-				if let Some(local_idx) = locals_pos.get(target) {
-					print!(" # .{local_idx}");
+				if let Some((target, prefix)) = functions
+					.get(*target)
+					.map(|func| (&func.name, ""))
+					.or_else(|| cur_func.and_then(|func| func.labels.get(target).map(|label| (label, "."))))
+				{
+					// TODO: Improve solution, removing the target like this isn't
+					//       a good way of going about it.
+					let instruction = instruction.to_string();
+					#[allow(clippy::indexing_slicing)] // This can't panic, it's index is `..{0..len}`.
+					let instruction = &instruction[..instruction.rfind(' ').unwrap_or_else(|| instruction.len())];
+					print!("{instruction} {prefix}{target}");
+				} else {
+					print!("{instruction}");
 				}
 			},
+			_ => print!("{instruction}"),
+		}
 
-			// Comment returns
-			Instruction::Simple(SimpleInstruction::Jr { rs: Register::Ra }) => {
-				print!(" # Return");
-			},
+		// Check if we should have any comments with this instruction
 
+		match instruction {
 			// Comment loading address, loading and writing values of string and data
 			// TODO: Maybe check loads / writes to halfway between
 			//       the strings / data.
@@ -324,12 +301,8 @@ fn main() -> Result<(), anyhow::Error> {
 
 			// Comment `dw`s with both function and data
 			Instruction::Directive(Directive::Dw(offset) | Directive::DwRepeated { value: offset, .. }) => {
-				print!(" #");
 				if let Some(func) = functions.get(Pos(*offset)) {
 					print!(" # {}", func.name);
-				}
-				if let Some(local_idx) = locals_pos.get(Pos::ref_cast(offset)) {
-					print!(" # .{local_idx}");
 				}
 				if let Some(string_idx) = strings_pos.get(Pos::ref_cast(offset)) {
 					print!(" # string_{string_idx}");
@@ -351,10 +324,13 @@ fn main() -> Result<(), anyhow::Error> {
 		// And finish the line
 		println!();
 
-		// If the last instruction was a `return` and we have a function, space it out
-		if let (Some(Instruction::Simple(SimpleInstruction::Jr { rs: Register::Ra })), Some(_cur_func)) = (last_instruction, cur_func) {
-			println!();
-			println!("####################");
+		// If this is the last instruction in this function, space it out
+		// TODO: This can fail when the last instruction is more than 4 bytes
+		if let Some(cur_func) = cur_func {
+			if cur_func.end_pos == cur_pos + 4 {
+				println!("####################");
+				println!();
+			}
 		}
 	}
 
