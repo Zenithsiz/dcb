@@ -75,16 +75,24 @@ mod cli;
 mod logger;
 
 // Imports
+use std::collections::{HashMap, HashSet};
+
 use anyhow::Context;
 use byteorder::{ByteOrder, LittleEndian};
 use dcb::{
 	game::exe::{
 		func::Funcs,
-		instruction::{Directive, PseudoInstruction::Nop, Raw, Register, SimpleInstruction},
+		instruction::{
+			Directive,
+			PseudoInstruction::{self, Nop},
+			Raw, Register, SimpleInstruction,
+		},
 		Instruction, Pos,
 	},
 	GameFile,
 };
+use itertools::Itertools;
+use ref_cast::RefCast;
 
 #[allow(clippy::cognitive_complexity, clippy::too_many_lines)] // TODO: Refactor
 fn main() -> Result<(), anyhow::Error> {
@@ -125,7 +133,6 @@ fn main() -> Result<(), anyhow::Error> {
 		))
 		.collect();
 
-	/*
 	// All instruction offsets
 	log::debug!("Retrieving all offsets");
 	let offsets: HashSet<Pos> = instructions.iter().map(|(offset, _)| offset).copied().collect();
@@ -207,7 +214,6 @@ fn main() -> Result<(), anyhow::Error> {
 		.unique()
 		.zip(0..)
 		.collect();
-	*/
 
 	// Build the full instructions iterator
 	let full_iter = functions
@@ -247,17 +253,15 @@ fn main() -> Result<(), anyhow::Error> {
 			},
 			_ => (),
 		}
-		/*
-		if let Some(local_idx) = locals_pos.get(offset) {
+		if let Some(local_idx) = locals_pos.get(&cur_pos) {
 			println!("\t.{local_idx}:");
 		}
-		if let Some(string_idx) = strings_pos.get(offset) {
+		if let Some(string_idx) = strings_pos.get(&cur_pos) {
 			println!("\tstring_{string_idx}:");
 		}
-		if let Some(data_idx) = data_pos.get(offset) {
+		if let Some(data_idx) = data_pos.get(&cur_pos) {
 			println!("\tdata_{data_idx}:");
 		}
-		*/
 
 		// Print the instruction
 		print!("{cur_pos:#010x}: {instruction}");
@@ -278,15 +282,12 @@ fn main() -> Result<(), anyhow::Error> {
 				SimpleInstruction::Bltzal { target, .. } |
 				SimpleInstruction::Bgezal { target, .. },
 			) => {
-				print!(" #");
 				if let Some(func) = functions.get(*target) {
-					print!(" {}", func.name);
+					print!(" # {}", func.name);
 				}
-				/*
 				if let Some(local_idx) = locals_pos.get(target) {
-					print!(" .{local_idx}");
+					print!(" # .{local_idx}");
 				}
-				*/
 			},
 
 			// Comment returns
@@ -294,7 +295,6 @@ fn main() -> Result<(), anyhow::Error> {
 				print!(" # Return");
 			},
 
-			/*
 			// Comment loading address, loading and writing values of string and data
 			// TODO: Maybe check loads / writes to halfway between
 			//       the strings / data.
@@ -314,34 +314,29 @@ fn main() -> Result<(), anyhow::Error> {
 				PseudoInstruction::SwImm { offset, .. } |
 				PseudoInstruction::SwrImm { offset, .. },
 			) => {
-				print!(" #");
-				/*
 				if let Some(string_idx) = strings_pos.get(Pos::ref_cast(offset)) {
-					print!(" string_{string_idx}");
+					print!(" # string_{string_idx}");
 				}
 				if let Some(data_idx) = data_pos.get(Pos::ref_cast(offset)) {
-					print!(" data_{data_idx}");
+					print!(" # data_{data_idx}");
 				}
-				*/
 			},
-			*/
+
 			// Comment `dw`s with both function and data
 			Instruction::Directive(Directive::Dw(offset) | Directive::DwRepeated { value: offset, .. }) => {
 				print!(" #");
 				if let Some(func) = functions.get(Pos(*offset)) {
-					print!(" {}", func.name);
+					print!(" # {}", func.name);
 				}
-				/*
 				if let Some(local_idx) = locals_pos.get(Pos::ref_cast(offset)) {
-					print!(" .{local_idx}");
+					print!(" # .{local_idx}");
 				}
 				if let Some(string_idx) = strings_pos.get(Pos::ref_cast(offset)) {
-					print!(" string_{string_idx}");
+					print!(" # string_{string_idx}");
 				}
 				if let Some(data_idx) = data_pos.get(Pos::ref_cast(offset)) {
-					print!(" data_{data_idx}");
+					print!(" # data_{data_idx}");
 				}
-				*/
 			},
 
 			_ => (),
@@ -350,7 +345,7 @@ fn main() -> Result<(), anyhow::Error> {
 		// Append any comments in this line
 		if let Some(cur_func) = cur_func {
 			if let Some(comment) = cur_func.comments.get(&cur_pos) {
-				print!(" {comment}");
+				print!(" # {comment}");
 			}
 		}
 		// And finish the line
