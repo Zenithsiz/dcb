@@ -82,20 +82,20 @@ impl Func<&'static str> {
 				signature: "void(void)",
 				desc:      "Executable start",
 				comments:  hashmap! {
-					Pos(0x80056280) => "Zero out 0x80077a08 .. 0x801ddf38 word by word.",
+					Pos(0x80056280) => "Zero out ZeroStart .. HeapStart word by word.",
 					Pos(0x80056284) => "^",
 					Pos(0x80056288) => "^",
 					Pos(0x8005628c) => "^",
-					Pos(0x800562a8) => "Initialize stack to (*StackStart - 0x10) | 0x80000000",
-					Pos(0x800562f8) => "args: (0x8007f988, ???)",
-					Pos(0x8005630c) => "args: (0x8007f98c)",
+					Pos(0x800562a8) => "Initialize stack to (*StackTop - 0x10) | 0x80000000",
+					Pos(0x800562f8) => "args: (HeapStart, (*StackTop - 0x10) - *StackSize - (HeapStart & 0x1fff_ffff))",
+					Pos(0x8005630c) => "args: (HeapStart + 0x4)",
 					Pos(0x80056324) => "args: (string_0, string_0)",
 				},
 				labels:    hashmap! {
 					Pos(0x80056280) => "zero_loop",
 				},
 				start_pos: Pos(0x80056270),
-				end_pos:   Pos(0x80056388),
+				end_pos:   Pos(0x80056330),
 			},
 		])
 	}

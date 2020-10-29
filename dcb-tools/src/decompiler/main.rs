@@ -236,7 +236,7 @@ fn main() -> Result<(), anyhow::Error> {
 		}
 
 		// Comment any `dw` instructions that are function, data or string pointers
-		if let Instruction::Directive(Directive::Dw(target) | Directive::DwRepeated { value: target, .. }) = instruction {
+		if let Instruction::Directive(Directive::Dw(target)) = instruction {
 			if let Some(func) = functions.get(Pos(*target)) {
 				print!(" # {}", func.name);
 			}

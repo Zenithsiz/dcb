@@ -47,27 +47,15 @@ impl<S: AsRef<str> + Into<String>> AllData<S> {
 			self.0
 				.into_iter()
 				.map(|data| match data {
-					Data::Ascii {
-						name,
-						desc,
-						start_pos,
-						end_pos,
-					} => Data::Ascii {
+					Data::Ascii { name, desc, start_pos } => Data::Ascii {
 						name: name.into(),
 						desc: desc.into(),
 						start_pos,
-						end_pos,
 					},
-					Data::Bytes {
-						name,
-						desc,
-						start_pos,
-						end_pos,
-					} => Data::Bytes {
+					Data::Bytes { name, desc, start_pos } => Data::Bytes {
 						name: name.into(),
 						desc: desc.into(),
 						start_pos,
-						end_pos,
 					},
 				})
 				.collect(),
@@ -109,7 +97,7 @@ impl AllData<String> {
 					PseudoInstruction::SwImm { offset, .. } |
 					PseudoInstruction::SwrImm { offset, .. },
 				) |
-				Instruction::Directive(Directive::Dw(offset) | Directive::DwRepeated { value: offset, .. }) => Some(Pos(*offset)),
+				Instruction::Directive(Directive::Dw(offset)) => Some(Pos(*offset)),
 				_ => None,
 			})
 			.collect();
@@ -126,14 +114,12 @@ impl AllData<String> {
 						name:      format!("string_{idx}"),
 						desc:      "".to_string(),
 						start_pos: pos,
-						end_pos:   pos + directive.size(),
 					},
 
-					Directive::Dw(_) | Directive::DwRepeated { .. } => Data::Bytes {
+					Directive::Dw(_) => Data::Bytes {
 						name:      format!("data_{idx}"),
 						desc:      "".to_string(),
 						start_pos: pos,
-						end_pos:   pos + directive.size(),
 					},
 				})
 				.collect(),

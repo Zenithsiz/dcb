@@ -128,7 +128,7 @@ impl Funcs<String> {
 		let function_entrances: BTreeSet<Pos> = instructions
 			.filter_map(|(_, instruction)| match instruction {
 				Instruction::Simple(SimpleInstruction::Jal { target }) => Some(*target),
-				Instruction::Directive(Directive::Dw(target) | Directive::DwRepeated { value: target, .. }) => Some(Pos(*target)),
+				Instruction::Directive(Directive::Dw(target)) => Some(Pos(*target)),
 				_ => None,
 			})
 			.filter(|target| (Instruction::CODE_START..Instruction::CODE_END).contains(target) && offsets.contains(target))

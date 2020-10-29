@@ -23,9 +23,6 @@ pub enum Data<S: AsRef<str>> {
 
 		/// Start position
 		start_pos: Pos,
-
-		/// End position (non-inclusive)
-		end_pos: Pos,
 	},
 
 	/// Bytes
@@ -38,9 +35,6 @@ pub enum Data<S: AsRef<str>> {
 
 		/// Start position
 		start_pos: Pos,
-
-		/// End position (non-inclusive)
-		end_pos: Pos,
 	},
 }
 
@@ -105,25 +99,33 @@ impl<S: AsRef<str>> Data<S> {
 			Self::Bytes { start_pos, .. } => *start_pos,
 		}
 	}
-
-	/// Accesses the end position of this data
-	pub fn end_pos(&self) -> Pos {
-		match self {
-			Self::Ascii { end_pos, .. } => *end_pos,
-			Self::Bytes { end_pos, .. } => *end_pos,
-		}
-	}
 }
 
 
 impl Data<&'static str> {
 	/// Returns an iterator of all known data
 	pub fn known() -> impl Iterator<Item = Self> {
-		std::array::IntoIter::new([Self::Bytes {
-			name:      "StackStart",
-			desc:      "Stack position",
-			start_pos: Pos(0x8006dd44),
-			end_pos:   Pos(0x8006dd48),
-		}])
+		std::array::IntoIter::new([
+			Self::Bytes {
+				name:      "StackTop",
+				desc:      "Stack top address",
+				start_pos: Pos(0x8006dd44),
+			},
+			Self::Bytes {
+				name:      "StackSize",
+				desc:      "Stack size",
+				start_pos: Pos(0x8006dd48),
+			},
+			Self::Bytes {
+				name:      "ZeroStart",
+				desc:      "Start of the zero section in `start`",
+				start_pos: Pos(0x80077a08),
+			},
+			Self::Bytes {
+				name:      "HeapStart",
+				desc:      "start of the heap",
+				start_pos: Pos(0x801ddf38),
+			},
+		])
 	}
 }

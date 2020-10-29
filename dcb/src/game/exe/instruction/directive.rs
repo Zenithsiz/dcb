@@ -14,16 +14,6 @@ pub enum Directive {
 	#[display(fmt = "dw {_0:#x}")]
 	Dw(u32),
 
-	/// Repeated words
-	#[display(fmt = "dw {value:#x}, {len}")]
-	DwRepeated {
-		/// Value being repeated
-		value: u32,
-
-		/// Times the value was repeated
-		len: u32,
-	},
-
 	/// Ascii string
 	#[display(fmt = ".ascii {_0:?}")]
 	Ascii(AsciiString),
@@ -36,41 +26,7 @@ impl Directive {
 		#[allow(clippy::as_conversions, clippy::cast_possible_truncation)] // Our length will always fit into a `u32`.
 		match self {
 			Self::Dw(_) => 4,
-			Self::DwRepeated { len, .. } => 4 * len,
 			Self::Ascii(ascii) => 4 * (ascii.len() as u32),
-		}
-	}
-
-	/// Decodes a `dw` instruction
-	pub fn decode_dw(first_raw: Raw, iter: &mut (impl Iterator<Item = Raw> + Clone)) -> Self {
-		let mut times_repeated = 0;
-
-		// Keep getting values until either eof or a different one
-		loop {
-			let mut cur_iter = iter.clone();
-			match cur_iter.next().map(|next_raw| next_raw.repr == first_raw.repr) {
-				// If we got a different value, keep fetching values until they're different
-				Some(true) => {
-					*iter = cur_iter;
-					times_repeated += 1;
-				},
-
-				// If we didn't get it or we got a different value, exit
-				// Note: No need t update the iterator, as it either returned `None` or
-				//       a different raw.
-				None | Some(false) => match times_repeated {
-					// If the value didn't repeat, use a single `dw`
-					0 => break Self::Dw(first_raw.repr),
-
-					// Else return the table
-					_ => {
-						break Self::DwRepeated {
-							value: first_raw.repr,
-							len:   times_repeated + 1,
-						}
-					},
-				},
-			}
 		}
 	}
 }
@@ -101,7 +57,7 @@ impl FromRawIter for Directive {
 		// If we're past all the code, there are no more strings,
 		// so just decode a `dw`.
 		if raw.pos >= Instruction::CODE_END {
-			return Some((raw.pos, Self::decode_dw(raw, iter)));
+			return Some((raw.pos, Self::Dw(raw.repr)));
 		}
 
 		// Try to get an ascii string from the raw and check for nulls
@@ -153,7 +109,7 @@ impl FromRawIter for Directive {
 
 			// Else if it was full null, non-uniformly null or non-ascii,
 			// try to get a dw table
-			_ => Some((raw.pos, Self::decode_dw(raw, iter))),
+			_ => Some((raw.pos, Self::Dw(raw.repr))),
 		}
 	}
 }
