@@ -104,6 +104,7 @@ impl<S: AsRef<str>> Data<S> {
 
 impl Data<&'static str> {
 	/// Returns an iterator of all known data
+	#[allow(clippy::too_many_lines)] // This will be big, as it's the list of ALL known data
 	pub fn known() -> impl Iterator<Item = Self> {
 		std::array::IntoIter::new([
 			Self::Bytes {
@@ -123,13 +124,90 @@ impl Data<&'static str> {
 			},
 			Self::Bytes {
 				name:      "HeapStart",
-				desc:      "start of the heap",
+				desc:      "Start of the heap",
 				start_pos: Pos(0x801ddf38),
 			},
 			Self::Bytes {
 				name:      "something1_data1",
-				desc:      "???",
+				desc:      "",
 				start_pos: Pos(0x8006f984),
+			},
+			Self::Bytes {
+				name:      "something1_data2",
+				desc:      "",
+				start_pos: Pos(0x80010000),
+			},
+			Self::Bytes {
+				name:      "something5_data1",
+				desc:      "",
+				start_pos: Pos(0x8006fa20),
+			},
+			Self::Bytes {
+				name:      "I_STAT_PTR",
+				desc:      "",
+				start_pos: Pos(0x80070aac),
+			},
+			Self::Bytes {
+				name:      "I_MASK_PTR",
+				desc:      "",
+				start_pos: Pos(0x80070ab0),
+			},
+			Self::Bytes {
+				name:      "DPCR_PTR",
+				desc:      "",
+				start_pos: Pos(0x80070ab4),
+			},
+			Self::Bytes {
+				name:      "something5_data5",
+				desc:      "",
+				start_pos: Pos(0x8006fa5c),
+			},
+			Self::Bytes {
+				name:      "FuncList1",
+				desc:      "",
+				start_pos: Pos(0x80070a88),
+			},
+			Self::Bytes {
+				name:      "FuncList1Ptr",
+				desc:      "Pointer to FuncList1",
+				start_pos: Pos(0x80070aa8),
+			},
+			// Hardware registers
+			// 0x1f80_1000 - 0x1f80_2fff
+			Self::Bytes {
+				name:      "I_STAT",
+				desc:      "Interrupt status register",
+				start_pos: Pos(0x1f801070),
+			},
+			Self::Bytes {
+				name:      "I_MASK",
+				desc:      "Interrupt mask register",
+				start_pos: Pos(0x1f801074),
+			},
+			Self::Bytes {
+				name:      "DPCR",
+				desc:      "DMA Control register",
+				start_pos: Pos(0x1f8010f0),
+			},
+			Self::Bytes {
+				name:      "DICR",
+				desc:      "DMA Interrupt register",
+				start_pos: Pos(0x1f8010f4),
+			},
+			Self::Bytes {
+				name:      "Timer0",
+				desc:      "",
+				start_pos: Pos(0x1f801100),
+			},
+			Self::Bytes {
+				name:      "Timer1",
+				desc:      "",
+				start_pos: Pos(0x1f801110),
+			},
+			Self::Bytes {
+				name:      "Timer2",
+				desc:      "",
+				start_pos: Pos(0x1f801120),
 			},
 		])
 	}

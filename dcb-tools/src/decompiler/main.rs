@@ -180,7 +180,9 @@ fn main() -> Result<(), anyhow::Error> {
 			}
 		}
 		if let Some(data) = data_pos.get(cur_pos) {
-			println!("\t{}:", data.name());
+			if data.start_pos() == cur_pos {
+				println!("\t{}:", data.name());
+			}
 		}
 
 		// Print the instruction and it's location.
@@ -210,8 +212,6 @@ fn main() -> Result<(), anyhow::Error> {
 			},
 
 			// Comment loading address, loading and writing values of string and data
-			// TODO: Maybe check loads / writes to halfway between
-			//       the strings / data.
 			Instruction::Pseudo(
 				PseudoInstruction::La { target, .. } |
 				PseudoInstruction::Li32 { imm: target, .. } |
@@ -227,8 +227,21 @@ fn main() -> Result<(), anyhow::Error> {
 				PseudoInstruction::SwlImm { offset: target, .. } |
 				PseudoInstruction::SwImm { offset: target, .. } |
 				PseudoInstruction::SwrImm { offset: target, .. },
-			) => match data_pos.get(Pos(*target)) {
-				Some(target) => print!("{} {}", strip_last_arg(instruction), target.name()),
+			) => match functions
+				.get(Pos(*target))
+				.map(|func| (func.start_pos, &func.name))
+				.or_else(|| data_pos.get(Pos(*target)).map(|data| (data.start_pos(), data.name())))
+			{
+				Some((start_pos, name)) => {
+					if start_pos == Pos(*target) {
+						print!("{} {}", strip_last_arg(instruction), name);
+					} else {
+						let offset = Pos(*target) - start_pos;
+						if offset > 0 {
+							print!("{} {} + {offset:#x}", strip_last_arg(instruction), name);
+						}
+					}
+				},
 				None => print!("{instruction}"),
 			},
 
@@ -241,7 +254,9 @@ fn main() -> Result<(), anyhow::Error> {
 				print!(" # {}", func.name);
 			}
 			if let Some(data) = data_pos.get(Pos(*target)) {
-				print!(" # {}", data.name());
+				if data.start_pos() == Pos(*target) {
+					print!(" # {}", data.name());
+				}
 			}
 		}
 

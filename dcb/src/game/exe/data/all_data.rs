@@ -31,10 +31,11 @@ impl<S: AsRef<str>> AllData<S> {
 		MergeSortedIter::new(self.0.into_iter(), other.0.into_iter())
 	}
 
-	/// Retrieves a data with start address `pos`
+	/// Retrieves the closest data section to `pos`, searching
+	/// from `pos` backwards.
 	#[must_use]
 	pub fn get(&self, pos: Pos) -> Option<&Data<S>> {
-		self.0.get(&pos)
+		self.0.range(..=pos).next_back()
 	}
 }
 
