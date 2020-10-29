@@ -11,6 +11,7 @@ use maplit::hashmap;
 
 // Imports
 use crate::game::exe::Pos;
+use indoc::indoc;
 use std::collections::HashMap;
 
 /// A function within the executable
@@ -96,6 +97,43 @@ impl Func<&'static str> {
 				},
 				start_pos: Pos(0x80056270),
 				end_pos:   Pos(0x80056330),
+			},
+			Self {
+				name:      "something1",
+				signature: "void(void)",
+				desc:      indoc! {"
+					This function checks if *something1_data1 is positive, if so decreases
+					it by 1 and calls something2.
+				"},
+				comments:  hashmap! {
+					Pos(0x80056348) => "If *something1_data1 == 0, skip",
+					Pos(0x8005634c) => "Else decrease it by 1 and save it.",
+					Pos(0x80056368) => "Then call call_func_arr with args (string0, string0)",
+				},
+				labels:    hashmap! {
+					Pos(0x80056370) => "skip",
+				},
+				start_pos: Pos(0x80056330),
+				end_pos:   Pos(0x80056388),
+			},
+			Self {
+				name:      "call_func_arr",
+				signature: "fn(start: fn(), end: fn())",
+				desc:      "",
+				comments:  hashmap! {
+					Pos(0x800563a0) => "if `start >= end`, skip",
+					Pos(0x800563b0) => "If *start == 0, skip call",
+					Pos(0x800563b8) => "Else call *start",
+					Pos(0x800563c0) => "start++",
+					Pos(0x800563c8) => "If `start < end`, restart",
+				},
+				labels:    hashmap! {
+					Pos(0x800563a8) => "loop",
+					Pos(0x800563c0) => "skip_call",
+					Pos(0x800563d0) => "exit",
+				},
+				start_pos: Pos(0x80056388),
+				end_pos:   Pos(0x800563e4),
 			},
 		])
 	}

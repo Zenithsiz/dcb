@@ -126,6 +126,11 @@ impl Data<&'static str> {
 				desc:      "start of the heap",
 				start_pos: Pos(0x801ddf38),
 			},
+			Self::Bytes {
+				name:      "something1_data1",
+				desc:      "???",
+				start_pos: Pos(0x8006f984),
+			},
 		])
 	}
 }

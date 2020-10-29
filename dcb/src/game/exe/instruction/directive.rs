@@ -4,6 +4,10 @@
 use super::{FromRawIter, Instruction, Raw};
 use crate::game::exe::Pos;
 use ascii::{AsciiChar, AsciiStr, AsciiString};
+use std::ops::{
+	Bound::{self, Excluded, Included, Unbounded},
+	RangeBounds,
+};
 use AsciiChar::Null;
 
 /// A directive
@@ -20,6 +24,13 @@ pub enum Directive {
 }
 
 impl Directive {
+	/// All range of positions that should be force decoded
+	/// as `dw`.
+	pub const FORCE_DW_RANGES: &'static [(Bound<Pos>, Bound<Pos>)] = &[
+		(Included(Pos(0x80010000)), Excluded(Pos(0x80010008))),
+		(Included(Instruction::CODE_END), Unbounded),
+	];
+
 	/// Returns the size of this instruction
 	#[must_use]
 	pub fn size(&self) -> u32 {
@@ -56,7 +67,7 @@ impl FromRawIter for Directive {
 
 		// If we're past all the code, there are no more strings,
 		// so just decode a `dw`.
-		if raw.pos >= Instruction::CODE_END {
+		if Self::FORCE_DW_RANGES.iter().any(|range| range.contains(&raw.pos)) {
 			return Some((raw.pos, Self::Dw(raw.repr)));
 		}
 
