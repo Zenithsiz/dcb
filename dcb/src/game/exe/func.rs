@@ -69,7 +69,7 @@ impl Func<&'static str> {
 		std::array::IntoIter::new([
 			Self {
 				name:      "InitHeap",
-				signature: "fn(addr: *int, size: int)",
+				signature: "fn(addr: *u32, size: u32)",
 				desc:      "Calls A(0x39)",
 				comments:  hashmap! {
 					Pos(0x8006a738) => "Register tailcall. Likely to prevent calling in KSEG0 and do it in KUSEG",
@@ -101,7 +101,7 @@ impl Func<&'static str> {
 			},
 			Self {
 				name:      "something1",
-				signature: "fn(arg: int)",
+				signature: "fn(arg: u32)",
 				desc:      indoc! {"
 					This function checks if *something1_data1 is positive, if so decreases
 					it by 1 and calls call_func_arr with (something1_data2, something1_data2).
@@ -138,7 +138,7 @@ impl Func<&'static str> {
 			},
 			Self {
 				name:      "something2",
-				signature: "fn(start: *int)",
+				signature: "fn(start: *u32)",
 				desc:      "",
 				comments:  hashmap! {
 					Pos(0x80013e54) => "args: (start)",
@@ -209,7 +209,7 @@ impl Func<&'static str> {
 			},
 			Self {
 				name:      "save_registers",
-				signature: "fn(int* pos)",
+				signature: "fn(u32* pos)",
 				desc:      indoc! {"
 					Saves the following registers in `pos[0x0 .. 0x30]`.
 					$ra, $gp, $sp, $fp,
@@ -223,7 +223,7 @@ impl Func<&'static str> {
 			},
 			Self {
 				name:      "memset_zero",
-				signature: "fn(int* ptr, int size)",
+				signature: "fn(u32* ptr, u32 size)",
 				desc:      indoc! {"
 					Zeroes out the memory at `ptr` for `size` words.
 				"},

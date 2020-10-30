@@ -4,6 +4,8 @@
 use super::{FromRawIter, Instruction, Raw};
 use crate::game::exe::Pos;
 use ascii::{AsciiChar, AsciiStr, AsciiString};
+use int_conv::Split;
+use smallvec::{smallvec, SmallVec};
 use std::ops::{
 	Bound::{self, Excluded, Included, Unbounded},
 	RangeBounds,
@@ -18,17 +20,85 @@ pub enum Directive {
 	#[display(fmt = "dw {_0:#x}")]
 	Dw(u32),
 
+	/// Write half-word
+	#[display(fmt = "dh {_0:#x}")]
+	Dh(u16),
+
+	/// Write byte
+	#[display(fmt = "db {_0:#x}")]
+	Db(u8),
+
 	/// Ascii string
 	#[display(fmt = ".ascii {_0:?}")]
 	Ascii(AsciiString),
 }
 
+/// A force decode range
+pub struct ForceDecodeRange {
+	/// Start bound
+	start: Bound<Pos>,
+
+	/// End bound
+	end: Bound<Pos>,
+
+	/// Decoding kind
+	kind: ForceDecodeKind,
+}
+
+impl RangeBounds<Pos> for ForceDecodeRange {
+	fn start_bound(&self) -> Bound<&Pos> {
+		match self.start {
+			Included(ref start) => Included(start),
+			Excluded(ref start) => Excluded(start),
+			Unbounded => Unbounded,
+		}
+	}
+
+	fn end_bound(&self) -> Bound<&Pos> {
+		match self.end {
+			Included(ref end) => Included(end),
+			Excluded(ref end) => Excluded(end),
+			Unbounded => Unbounded,
+		}
+	}
+}
+
+/// Force decode range kind
+pub enum ForceDecodeKind {
+	/// Single Word
+	W,
+
+	/// Two half-words
+	HH,
+
+	/// Half-word followed by bytes
+	HBB,
+
+	/// Bytes followed by half-word
+	BBH,
+
+	/// Bytes
+	BBBB,
+}
+
 impl Directive {
-	/// All range of positions that should be force decoded
-	/// as `dw`.
-	pub const FORCE_DW_RANGES: &'static [(Bound<Pos>, Bound<Pos>)] = &[
-		(Included(Pos(0x80010000)), Excluded(Pos(0x80010008))),
-		(Included(Instruction::CODE_END), Unbounded),
+	/// Positions that should be force decoded using a specific variant.
+	pub const FORCE_DECODE_RANGES: &'static [ForceDecodeRange] = &[
+		ForceDecodeRange {
+			start: Included(Pos(0x80010000)),
+			end:   Excluded(Pos(0x80010008)),
+			kind:  ForceDecodeKind::W,
+		},
+		ForceDecodeRange {
+			start: Included(Pos(0x8006fa20)),
+			end:   Excluded(Pos(0x8006fa24)),
+			kind:  ForceDecodeKind::HH,
+		},
+		ForceDecodeRange {
+			start: Included(Instruction::CODE_END),
+			end:   Unbounded,
+			kind:  ForceDecodeKind::W,
+		},
 	];
 
 	/// Returns the size of this instruction
@@ -37,7 +107,14 @@ impl Directive {
 		#[allow(clippy::as_conversions, clippy::cast_possible_truncation)] // Our length will always fit into a `u32`.
 		match self {
 			Self::Dw(_) => 4,
-			Self::Ascii(ascii) => 4 * (ascii.len() as u32),
+			Self::Dh(_) => 2,
+			Self::Db(_) => 1,
+			// Round ascii strings' len up to the
+			// nearest word.
+			Self::Ascii(ascii) => {
+				let len = ascii.len() as u32;
+				len + 4 - (len % 4)
+			},
 		}
 	}
 }
@@ -57,18 +134,50 @@ fn check_nulls<S: AsRef<AsciiStr>>(s: S) -> (S, usize, bool) {
 	(s, null_idx, uniform_null)
 }
 
-
 impl FromRawIter for Directive {
-	type Decoded = Option<(Pos, Self)>;
+	//type Decoded = Option<(Pos, Self)>;
+	// Note: We return at most 4 directives.
+	type Decoded = SmallVec<[(Pos, Self); 4]>;
 
 	fn decode<I: Iterator<Item = Raw> + Clone>(iter: &mut I) -> Self::Decoded {
 		// Get the first raw
-		let raw = iter.next()?;
+		let raw = match iter.next() {
+			Some(raw) => raw,
+			None => return smallvec![],
+		};
 
 		// If we're past all the code, there are no more strings,
 		// so just decode a `dw`.
-		if Self::FORCE_DW_RANGES.iter().any(|range| range.contains(&raw.pos)) {
-			return Some((raw.pos, Self::Dw(raw.repr)));
+		// Note: We're working in big endian when returning these.
+		if let Some(ForceDecodeRange { kind, .. }) = Self::FORCE_DECODE_RANGES.iter().find(|range| range.contains(&raw.pos)) {
+			return match kind {
+				ForceDecodeKind::W => smallvec![(raw.pos, Self::Dw(raw.repr))],
+				ForceDecodeKind::HH => {
+					let (lo, hi) = raw.repr.lo_hi();
+					smallvec![(raw.pos, Self::Dh(hi)), (raw.pos + 2, Self::Dh(lo))]
+				},
+				ForceDecodeKind::HBB => {
+					let (lo, hi) = raw.repr.lo_hi();
+					let (lo_lo, lo_hi) = lo.lo_hi();
+					smallvec![(raw.pos, Self::Dh(hi)), (raw.pos + 2, Self::Db(lo_hi)), (raw.pos + 3, Self::Db(lo_lo))]
+				},
+				ForceDecodeKind::BBH => {
+					let (lo, hi) = raw.repr.lo_hi();
+					let (hi_lo, hi_hi) = hi.lo_hi();
+					smallvec![(raw.pos, Self::Db(hi_hi)), (raw.pos + 1, Self::Db(hi_lo)), (raw.pos + 2, Self::Dh(lo))]
+				},
+				ForceDecodeKind::BBBB => {
+					let (lo, hi) = raw.repr.lo_hi();
+					let (lo_lo, lo_hi) = lo.lo_hi();
+					let (hi_lo, hi_hi) = hi.lo_hi();
+					smallvec![
+						(raw.pos, Self::Db(hi_hi)),
+						(raw.pos + 1, Self::Db(hi_lo)),
+						(raw.pos + 2, Self::Db(lo_hi)),
+						(raw.pos + 3, Self::Db(lo_lo))
+					]
+				},
+			};
 		}
 
 		// Try to get an ascii string from the raw and check for nulls
@@ -77,7 +186,7 @@ impl FromRawIter for Directive {
 			// at least 1 null and uniformly null, return just it
 			Ok((mut ascii_string, null_idx @ 1..=3, true)) => {
 				ascii_string.truncate(null_idx);
-				Some((raw.pos, Self::Ascii(ascii_string)))
+				smallvec![(raw.pos, Self::Ascii(ascii_string))]
 			},
 
 			// If we got a string without any nulls, keep
@@ -115,12 +224,12 @@ impl FromRawIter for Directive {
 					}
 				};
 
-				Some((raw.pos, Self::Ascii(ascii_string)))
+				smallvec![(raw.pos, Self::Ascii(ascii_string))]
 			},
 
 			// Else if it was full null, non-uniformly null or non-ascii,
-			// try to get a dw table
-			_ => Some((raw.pos, Self::Dw(raw.repr))),
+			// just return a normal word.
+			_ => smallvec![(raw.pos, Self::Dw(raw.repr))],
 		}
 	}
 }

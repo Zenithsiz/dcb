@@ -149,8 +149,8 @@ impl Funcs<String> {
 					.collect();
 				Func {
 					name: format!("func_{idx}"),
-					signature: "".to_string(),
-					desc: "".to_string(),
+					signature: String::new(),
+					desc: String::new(),
 					comments: hashmap! {},
 					labels,
 					start_pos: target,

@@ -1,7 +1,7 @@
 //! Data list
 
 // Imports
-use super::Data;
+use super::{Data, DataKind};
 use crate::{
 	game::exe::{
 		instruction::{Directive, PseudoInstruction},
@@ -47,17 +47,11 @@ impl<S: AsRef<str> + Into<String>> AllData<S> {
 		AllData(
 			self.0
 				.into_iter()
-				.map(|data| match data {
-					Data::Ascii { name, desc, start_pos } => Data::Ascii {
-						name: name.into(),
-						desc: desc.into(),
-						start_pos,
-					},
-					Data::Bytes { name, desc, start_pos } => Data::Bytes {
-						name: name.into(),
-						desc: desc.into(),
-						start_pos,
-					},
+				.map(|data| Data {
+					name:      data.name.into(),
+					desc:      data.desc.into(),
+					start_pos: data.start_pos,
+					kind:      data.kind,
 				})
 				.collect(),
 		)
@@ -110,18 +104,35 @@ impl AllData<String> {
 					_ => None,
 				})
 				.zip(0..)
-				.map(|((pos, directive), idx)| match directive {
-					Directive::Ascii(_) => Data::Ascii {
-						name:      format!("string_{idx}"),
-						desc:      "".to_string(),
-						start_pos: pos,
-					},
+				.map(|((pos, directive), idx)| {
+					#[allow(clippy::as_conversions, clippy::cast_possible_truncation)] // All strings will fit into a `u32`
+					match directive {
+						Directive::Ascii(ascii) => Data {
+							name:      format!("string_{idx}"),
+							desc:      String::new(),
+							start_pos: pos,
+							kind:      DataKind::AsciiStr { len: ascii.len() as u32 },
+						},
 
-					Directive::Dw(_) => Data::Bytes {
-						name:      format!("data_{idx}"),
-						desc:      "".to_string(),
-						start_pos: pos,
-					},
+						Directive::Dw(_) => Data {
+							name:      format!("w{idx}"),
+							desc:      String::new(),
+							start_pos: pos,
+							kind:      DataKind::Word,
+						},
+						Directive::Dh(_) => Data {
+							name:      format!("h{idx}"),
+							desc:      String::new(),
+							start_pos: pos,
+							kind:      DataKind::HalfWord,
+						},
+						Directive::Db(_) => Data {
+							name:      format!("b{idx}"),
+							desc:      String::new(),
+							start_pos: pos,
+							kind:      DataKind::Byte,
+						},
+					}
 				})
 				.collect(),
 		)

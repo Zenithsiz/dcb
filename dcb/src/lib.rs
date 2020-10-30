@@ -50,7 +50,8 @@
 	const_assume,
 	bindings_after_at,
 	array_value_iter,
-	or_patterns
+	or_patterns,
+	once_cell
 )]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]

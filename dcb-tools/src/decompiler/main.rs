@@ -139,15 +139,21 @@ fn main() -> Result<(), anyhow::Error> {
 		.collect();
 
 	// Build the full instructions iterator
+	// TODO: Revamp this, iterate over an enum of `Func | Data | Other`
 	let full_iter = functions
 		.with_instructions(instructions.iter().map(|(pos, instruction)| (*pos, instruction)))
 		.scan(None, |last_instruction, output @ (_, cur_instruction, _)| {
 			Some((output, last_instruction.replace(cur_instruction)))
-		});
+		})
+		.map(|((cur_pos, instruction, cur_func), last_instruction)| (cur_pos, instruction, last_instruction, cur_func))
+		.scan(None, |last_func, output @ (_, _, cur_func, _)| {
+			Some((output, last_func.replace(cur_func)))
+		})
+		.map(|((cur_pos, instruction, last_instruction, cur_func), last_func)| (cur_pos, instruction, last_instruction, cur_func, last_func));
 
 	// Read all instructions
 	let mut skipped_nops = 0;
-	for ((cur_pos, instruction, cur_func), last_instruction) in full_iter {
+	for (cur_pos, instruction, last_instruction, cur_func, last_func) in full_iter {
 		// Note: Required by `rust-analyzer` currently, it can't determine the type of `cur_func`.
 		let cur_func: Option<&dcb::game::exe::Func<String>> = cur_func;
 
@@ -164,13 +170,30 @@ fn main() -> Result<(), anyhow::Error> {
 			skipped_nops = 0;
 		}
 
+		// If we just exited a function, space it out.
+		/*
+		if last_func.is_some() && cur_func.is_none() {
+			println!("####################");
+			println!();
+		}
+		*/
+
+		// Space out data if it had a name
+		if let Some(data) = data_pos.get(cur_pos) {
+			if data.end_pos() == cur_pos && !data.name.is_empty() {
+				println!();
+			}
+		}
+
 		// Check if we need to prefix
 		if let Some(cur_func) = cur_func {
 			if cur_func.start_pos == cur_pos {
 				println!();
 				println!("####################");
 				println!("{}:", cur_func.name);
-				println!("# {}\n#", cur_func.signature);
+				if !cur_func.signature.is_empty() {
+					println!("# {}", cur_func.signature);
+				}
 				for description in cur_func.desc.lines() {
 					println!("# {}", description);
 				}
@@ -180,13 +203,17 @@ fn main() -> Result<(), anyhow::Error> {
 			}
 		}
 		if let Some(data) = data_pos.get(cur_pos) {
-			if data.start_pos() == cur_pos {
-				println!("\t{}:", data.name());
+			if data.start_pos == cur_pos {
+				println!("{}:", data.name);
+				println!("# {}", data.kind);
+				for description in data.desc.lines() {
+					println!("# {}", description);
+				}
 			}
 		}
 
 		// Print the instruction and it's location.
-		print!("{cur_pos:#010x}: ");
+		print!("{cur_pos:#010x}:\t");
 		match instruction {
 			Instruction::Simple(
 				SimpleInstruction::J { target } |
@@ -230,7 +257,7 @@ fn main() -> Result<(), anyhow::Error> {
 			) => match functions
 				.get(Pos(*target))
 				.map(|func| (func.start_pos, &func.name))
-				.or_else(|| data_pos.get(Pos(*target)).map(|data| (data.start_pos(), data.name())))
+				.or_else(|| data_pos.get(Pos(*target)).map(|data| (data.start_pos, &data.name)))
 			{
 				Some((start_pos, name)) => {
 					if start_pos == Pos(*target) {
@@ -254,8 +281,8 @@ fn main() -> Result<(), anyhow::Error> {
 				print!(" # {}", func.name);
 			}
 			if let Some(data) = data_pos.get(Pos(*target)) {
-				if data.start_pos() == Pos(*target) {
-					print!(" # {}", data.name());
+				if data.start_pos == Pos(*target) {
+					print!(" # {}", data.name);
 				}
 			}
 		}
@@ -269,15 +296,6 @@ fn main() -> Result<(), anyhow::Error> {
 
 		// And finish the line
 		println!();
-
-		// If this is the last instruction in this function, space it out
-		// TODO: This can fail when the last instruction is more than 4 bytes
-		if let Some(cur_func) = cur_func {
-			if cur_func.end_pos == cur_pos + 4 {
-				println!("####################");
-				println!();
-			}
-		}
 	}
 
 	Ok(())
