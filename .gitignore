@@ -11,3 +11,6 @@
 
 # Ides
 /.vscode
+
+# Logs
+/latest.log

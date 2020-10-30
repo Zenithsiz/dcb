@@ -1,7 +1,7 @@
 //! Data table
 //!
 //! This module defines the [`DataTable`] type, which
-//! stores all data within the executable.
+//! stores all data locations within the executable.
 //!
 //! Typically this data will be a mix of the known data,
 //! available through [`DataTable::known`] and heuristically
@@ -24,6 +24,12 @@ use std::{collections::BTreeSet, convert::TryInto, iter::FromIterator};
 /// Stores all data locations sorted by their address.
 /// Also guarantees all data locations are unique and non-overlapping.
 pub struct DataTable<S: AsRef<str>>(BTreeSet<Data<S>>);
+
+impl<S: AsRef<str>> FromIterator<Data<S>> for DataTable<S> {
+	fn from_iter<T: IntoIterator<Item = Data<S>>>(iter: T) -> Self {
+		Self(iter.into_iter().collect())
+	}
+}
 
 impl<S: AsRef<str>> DataTable<S> {
 	/// Merges two data tables, discarding duplicates from `other`.
@@ -57,12 +63,6 @@ impl<S: AsRef<str> + Into<String>> DataTable<S> {
 	}
 }
 
-impl<S: AsRef<str>> FromIterator<Data<S>> for DataTable<S> {
-	fn from_iter<T: IntoIterator<Item = Data<S>>>(iter: T) -> Self {
-		Self(iter.into_iter().collect())
-	}
-}
-
 impl DataTable<&'static str> {
 	/// Returns all known functions
 	///
@@ -72,7 +72,6 @@ impl DataTable<&'static str> {
 		Data::known().collect()
 	}
 }
-
 
 impl DataTable<String> {
 	/// Searches all instructions for references to

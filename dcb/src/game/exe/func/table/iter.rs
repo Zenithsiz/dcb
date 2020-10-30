@@ -1,7 +1,9 @@
 //! Iterators
 
+// TODO: Deprecate in favor of a function + data iterator.
+
 // Imports
-use super::{Func, Funcs};
+use super::{Func, FuncTable};
 use crate::game::exe::{Instruction, Pos};
 
 /// Iterator of instructions along with the current function
@@ -10,7 +12,7 @@ pub struct WithInstructionsIter<'a, S: AsRef<str>, I: Iterator<Item = (Pos, &'a 
 	instructions: I,
 
 	/// All functions
-	funcs: &'a Funcs<S>,
+	funcs: &'a FuncTable<S>,
 
 	/// Current function
 	cur_func: Option<&'a Func<S>>,
@@ -18,7 +20,7 @@ pub struct WithInstructionsIter<'a, S: AsRef<str>, I: Iterator<Item = (Pos, &'a 
 
 impl<'a, S: AsRef<str>, I: Iterator<Item = (Pos, &'a Instruction)>> WithInstructionsIter<'a, S, I> {
 	/// Creates a new instructions iterator
-	pub(super) fn new(instructions: I, funcs: &'a Funcs<S>) -> Self {
+	pub(super) fn new(instructions: I, funcs: &'a FuncTable<S>) -> Self {
 		Self {
 			instructions,
 			funcs,

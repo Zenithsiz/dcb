@@ -80,13 +80,13 @@ use byteorder::{ByteOrder, LittleEndian};
 use dcb::{
 	game::exe::{
 		data::DataTable,
-		func::Funcs,
+		func::FuncTable,
 		instruction::{
 			Directive,
 			PseudoInstruction::{self, Nop},
 			Raw, SimpleInstruction,
 		},
-		Instruction, Pos,
+		Func, Instruction, Pos,
 	},
 	GameFile,
 };
@@ -123,19 +123,14 @@ fn main() -> Result<(), anyhow::Error> {
 
 	// Get all functions
 	log::debug!("Retrieving all functions");
-	let functions: Funcs<String> = Funcs::known()
-		.into_string()
-		.merge(Funcs::from_instructions(
-			instructions.iter().map(|(pos, instruction)| (*pos, instruction)),
-		))
-		.collect();
+	let functions: FuncTable<String> = FuncTable::known().into_string().merge(FuncTable::from_instructions(
+		&instructions.iter().map(|(pos, instruction)| (*pos, instruction)),
+	));
 
 	// Get all data
-	let data_pos: DataTable<String> = DataTable::known()
-		.into_string()
-		.merge(DataTable::search_instructions(
-			instructions.iter().map(|(pos, instruction)| (*pos, instruction)),
-		));
+	let data_pos: DataTable<String> = DataTable::known().into_string().merge(DataTable::search_instructions(
+		instructions.iter().map(|(pos, instruction)| (*pos, instruction)),
+	));
 
 	// Build the full instructions iterator
 	// TODO: Revamp this, iterate over an enum of `Func | Data | Other`
@@ -145,16 +140,20 @@ fn main() -> Result<(), anyhow::Error> {
 			Some((output, last_instruction.replace(cur_instruction)))
 		})
 		.map(|((cur_pos, instruction, cur_func), last_instruction)| (cur_pos, instruction, last_instruction, cur_func))
-		.scan(None, |last_func, output @ (_, _, cur_func, _)| {
-			Some((output, last_func.replace(cur_func)))
+		.scan(None, |last_func, output @ (_, _, _, cur_func)| {
+			Some((output, match cur_func {
+				Some(cur_func) => last_func.replace(cur_func),
+				None => *last_func,
+			}))
 		})
 		.map(|((cur_pos, instruction, last_instruction, cur_func), last_func)| (cur_pos, instruction, last_instruction, cur_func, last_func));
 
 	// Read all instructions
 	let mut skipped_nops = 0;
-	for (cur_pos, instruction, last_instruction, cur_func, _last_func) in full_iter {
+	for (cur_pos, instruction, last_instruction, cur_func, last_func) in full_iter {
 		// Note: Required by `rust-analyzer` currently, it can't determine the type of `cur_func`.
-		let cur_func: Option<&dcb::game::exe::Func<String>> = cur_func;
+		let cur_func: Option<&Func<String>> = cur_func;
+		let last_func: Option<&Func<String>> = last_func;
 
 		// If both last and current instructions are nops, skip
 		if let (Some(Instruction::Pseudo(Nop)), Instruction::Pseudo(Nop)) = (last_instruction, instruction) {
@@ -170,12 +169,12 @@ fn main() -> Result<(), anyhow::Error> {
 		}
 
 		// If we just exited a function, space it out.
-		/*
-		if last_func.is_some() && cur_func.is_none() {
-			println!("####################");
-			println!();
+		if let Some(last_func) = last_func {
+			if last_func.end_pos == cur_pos {
+				println!("####################");
+				println!();
+			}
 		}
-		*/
 
 		// Space out data if it had a name
 		if let Some(data) = data_pos.get(cur_pos) {
@@ -204,7 +203,6 @@ fn main() -> Result<(), anyhow::Error> {
 		if let Some(data) = data_pos.get(cur_pos) {
 			if data.pos == cur_pos {
 				println!("{}:", data.name);
-				println!("# {}", data.kind);
 				for description in data.desc.lines() {
 					println!("# {}", description);
 				}

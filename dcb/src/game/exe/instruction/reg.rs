@@ -68,6 +68,28 @@ macro_rules! generate_register {
 	}
 }
 
+impl Register {
+	/// Returns the index of an argument register
+	#[must_use]
+	pub const fn arg_idx(self) -> Option<usize> {
+		let idx = match self {
+			Self::A0 => 0,
+			Self::A1 => 1,
+			Self::A2 => 2,
+			Self::A3 => 3,
+			_ => return None,
+		};
+
+		Some(idx)
+	}
+
+	/// Checks if this register is an argument register
+	#[must_use]
+	pub fn is_arg(self) -> bool {
+		self.arg_idx().is_some()
+	}
+}
+
 generate_register! {
 	pub enum Register {
 		/// Zero register
