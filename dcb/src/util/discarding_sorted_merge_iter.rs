@@ -7,7 +7,7 @@ use std::cmp::Ordering;
 /// Merging sorted iterator
 ///
 /// Will discard duplicate items.
-pub struct MergeSortedIter<T: Ord, Li: Iterator<Item = T>, Ri: Iterator<Item = T>> {
+pub struct DiscardingSortedMergeIter<T: Ord, Li: Iterator<Item = T>, Ri: Iterator<Item = T>> {
 	/// Left iterator
 	lhs: Li,
 
@@ -18,7 +18,7 @@ pub struct MergeSortedIter<T: Ord, Li: Iterator<Item = T>, Ri: Iterator<Item = T
 	last: Option<Either<T, T>>,
 }
 
-impl<T: Ord, Li: Iterator<Item = T>, Ri: Iterator<Item = T>> MergeSortedIter<T, Li, Ri> {
+impl<T: Ord, Li: Iterator<Item = T>, Ri: Iterator<Item = T>> DiscardingSortedMergeIter<T, Li, Ri> {
 	/// Creates a new merging iterator
 	pub fn new(lhs: Li, rhs: Ri) -> Self {
 		Self { lhs, rhs, last: None }
@@ -44,7 +44,7 @@ impl<T: Ord, Li: Iterator<Item = T>, Ri: Iterator<Item = T>> MergeSortedIter<T, 
 	}
 }
 
-impl<T: Ord, Li: Iterator<Item = T>, Ri: Iterator<Item = T>> Iterator for MergeSortedIter<T, Li, Ri> {
+impl<T: Ord, Li: Iterator<Item = T>, Ri: Iterator<Item = T>> Iterator for DiscardingSortedMergeIter<T, Li, Ri> {
 	type Item = T;
 
 	fn next(&mut self) -> Option<Self::Item> {

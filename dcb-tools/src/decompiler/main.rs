@@ -79,7 +79,7 @@ use anyhow::Context;
 use byteorder::{ByteOrder, LittleEndian};
 use dcb::{
 	game::exe::{
-		data::AllData,
+		data::DataTable,
 		func::Funcs,
 		instruction::{
 			Directive,
@@ -131,12 +131,11 @@ fn main() -> Result<(), anyhow::Error> {
 		.collect();
 
 	// Get all data
-	let data_pos: AllData<String> = AllData::known()
+	let data_pos: DataTable<String> = DataTable::known()
 		.into_string()
-		.merge(AllData::from_instructions(
+		.merge(DataTable::search_instructions(
 			instructions.iter().map(|(pos, instruction)| (*pos, instruction)),
-		))
-		.collect();
+		));
 
 	// Build the full instructions iterator
 	// TODO: Revamp this, iterate over an enum of `Func | Data | Other`
@@ -153,7 +152,7 @@ fn main() -> Result<(), anyhow::Error> {
 
 	// Read all instructions
 	let mut skipped_nops = 0;
-	for (cur_pos, instruction, last_instruction, cur_func, last_func) in full_iter {
+	for (cur_pos, instruction, last_instruction, cur_func, _last_func) in full_iter {
 		// Note: Required by `rust-analyzer` currently, it can't determine the type of `cur_func`.
 		let cur_func: Option<&dcb::game::exe::Func<String>> = cur_func;
 
@@ -203,7 +202,7 @@ fn main() -> Result<(), anyhow::Error> {
 			}
 		}
 		if let Some(data) = data_pos.get(cur_pos) {
-			if data.start_pos == cur_pos {
+			if data.pos == cur_pos {
 				println!("{}:", data.name);
 				println!("# {}", data.kind);
 				for description in data.desc.lines() {
@@ -257,7 +256,7 @@ fn main() -> Result<(), anyhow::Error> {
 			) => match functions
 				.get(Pos(*target))
 				.map(|func| (func.start_pos, &func.name))
-				.or_else(|| data_pos.get(Pos(*target)).map(|data| (data.start_pos, &data.name)))
+				.or_else(|| data_pos.get(Pos(*target)).map(|data| (data.pos, &data.name)))
 			{
 				Some((start_pos, name)) => {
 					if start_pos == Pos(*target) {
@@ -281,7 +280,7 @@ fn main() -> Result<(), anyhow::Error> {
 				print!(" # {}", func.name);
 			}
 			if let Some(data) = data_pos.get(Pos(*target)) {
-				if data.start_pos == Pos(*target) {
+				if data.pos == Pos(*target) {
 					print!(" # {}", data.name);
 				}
 			}

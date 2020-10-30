@@ -7,7 +7,7 @@ use crate::{
 		instruction::{Directive, PseudoInstruction, Register, SimpleInstruction},
 		Instruction, Pos,
 	},
-	util::merge_iter::MergeSortedIter,
+	util::discarding_sorted_merge_iter::DiscardingSortedMergeIter,
 };
 use maplit::hashmap;
 use std::{collections::BTreeSet, iter::FromIterator, vec};
@@ -25,8 +25,8 @@ impl<S: AsRef<str>> Funcs<S> {
 	/// Merges two function lists, discarding any duplicates
 	/// from `other`.
 	#[must_use]
-	pub fn merge(self, other: Self) -> MergeSortedIter<Func<S>, vec::IntoIter<Func<S>>, vec::IntoIter<Func<S>>> {
-		MergeSortedIter::new(self.0.into_iter(), other.0.into_iter())
+	pub fn merge(self, other: Self) -> DiscardingSortedMergeIter<Func<S>, vec::IntoIter<Func<S>>, vec::IntoIter<Func<S>>> {
+		DiscardingSortedMergeIter::new(self.0.into_iter(), other.0.into_iter())
 	}
 
 	/// Adapts an instruction iterator to extract the current function

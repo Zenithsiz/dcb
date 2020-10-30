@@ -12,7 +12,7 @@ pub mod instruction;
 pub mod pos;
 
 // Exports
-pub use data::Data;
+pub use data::{Data, DataKind, DataTable};
 pub use error::DeserializeError;
 pub use func::Func;
 pub use header::Header;

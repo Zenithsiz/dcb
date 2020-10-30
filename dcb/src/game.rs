@@ -23,5 +23,5 @@ pub mod validation;
 // Exports
 pub use card::{Digimon, Digivolve, Item, Table as CardTable};
 pub use deck::{Deck, Table as DeckTable};
-pub use exe::{Exe, Header as ExeHeader};
+pub use exe::{Exe, Header as ExeHeader, Pos as ExePos};
 pub use validation::{Validatable, Validation};
