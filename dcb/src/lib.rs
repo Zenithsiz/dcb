@@ -51,7 +51,8 @@
 	bindings_after_at,
 	array_value_iter,
 	or_patterns,
-	once_cell
+	once_cell,
+	box_syntax
 )]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]

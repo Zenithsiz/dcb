@@ -9,7 +9,6 @@
 
 // Modules
 pub mod kind;
-pub mod known;
 pub mod table;
 
 // Exports

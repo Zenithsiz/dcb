@@ -123,14 +123,19 @@ fn main() -> Result<(), anyhow::Error> {
 
 	// Get all functions
 	log::debug!("Retrieving all functions");
-	let functions: FuncTable<String> = FuncTable::known().into_string().merge(FuncTable::from_instructions(
-		&instructions.iter().map(|(pos, instruction)| (*pos, instruction)),
-	));
+	let functions: FuncTable<String> = FuncTable::get_known()
+		.context("Unable to get known function table")?
+		.merge(FuncTable::from_instructions(
+			&instructions.iter().map(|(pos, instruction)| (*pos, instruction)),
+		));
 
 	// Get all data
-	let data_pos: DataTable<String> = DataTable::known().into_string().merge(DataTable::search_instructions(
-		instructions.iter().map(|(pos, instruction)| (*pos, instruction)),
-	));
+	log::debug!("Retrieving all locations");
+	let data_pos: DataTable<String> = DataTable::get_known()
+		.context("Unable to get known function table")?
+		.merge(DataTable::search_instructions(
+			instructions.iter().map(|(pos, instruction)| (*pos, instruction)),
+		));
 
 	// Build the full instructions iterator
 	// TODO: Revamp this, iterate over an enum of `Func | Data | Other`

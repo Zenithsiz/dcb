@@ -4,6 +4,8 @@
 !/resources/extract_data.c
 !/resources/get_tables.c
 !/resources/index.c
+!/resources/known_data.yaml
+!/resources/known_funcs.yaml
 
 # Cargo
 /target

@@ -9,9 +9,11 @@
 //! through [`FuncTable::search_instructions`].
 
 // Modules
+pub mod error;
 pub mod iter;
 
 // Exports
+pub use error::GetKnownError;
 pub use iter::WithInstructionsIter;
 
 // Imports
@@ -23,13 +25,18 @@ use crate::{
 	},
 	util::discarding_sorted_merge_iter::DiscardingSortedMergeIter,
 };
-use maplit::hashmap;
-use std::{collections::BTreeSet, iter::FromIterator};
+use std::{
+	collections::{BTreeSet, HashMap},
+	fs::File,
+	iter::FromIterator,
+};
 
 /// Function table
 ///
 /// Stores all functions sorted by their address.
 /// Also guarantees all functions are unique and non-overlapping.
+#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct FuncTable<S: AsRef<str>>(BTreeSet<Func<S>>);
 
 impl<S: AsRef<str>> FromIterator<Func<S>> for FuncTable<S> {
@@ -64,25 +71,14 @@ impl<S: AsRef<str>> FuncTable<S> {
 	}
 }
 
-#[allow(clippy::use_self)] // We're not using `Funcs<S>`, but `Funcs<String>`
-impl<S: AsRef<str> + Into<String>> FuncTable<S> {
-	/// Converts all strings to `String`.
-	#[must_use]
-	pub fn into_string(self) -> FuncTable<String> {
-		FuncTable(self.0.into_iter().map(Func::into_string).collect())
-	}
-}
-
-
-impl FuncTable<&'static str> {
-	/// Returns all known functions
-	#[must_use]
-	pub fn known() -> Self {
-		Func::known().collect()
-	}
-}
-
 impl FuncTable<String> {
+	/// Returns all known functions
+	pub fn get_known() -> Result<Self, GetKnownError> {
+		let file = File::open("resources/known_funcs.yaml").map_err(GetKnownError::File)?;
+
+		serde_yaml::from_reader(file).map_err(GetKnownError::Parse)
+	}
+
 	/// Creates a new list of functions from an iterator over instructions
 	#[must_use]
 	#[allow(clippy::too_many_lines)] // TODO: Refactor?
@@ -478,7 +474,7 @@ impl FuncTable<String> {
 					name: format!("func_{idx}"),
 					signature,
 					desc: String::new(),
-					comments: hashmap! {},
+					comments: HashMap::new(),
 					labels,
 					start_pos: func_pos,
 					end_pos,

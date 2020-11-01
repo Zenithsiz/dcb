@@ -8,6 +8,12 @@
 //! discovered data through instruction references, available
 //! through [`DataTable::search_instructions`].
 
+// Modules
+pub mod error;
+
+// Exports
+pub use error::GetKnownError;
+
 // Imports
 use super::{Data, DataKind};
 use crate::{
@@ -17,12 +23,14 @@ use crate::{
 	},
 	util::DiscardingSortedMergeIter,
 };
-use std::{collections::BTreeSet, convert::TryInto, iter::FromIterator};
+use std::{collections::BTreeSet, convert::TryInto, fs::File, iter::FromIterator};
 
 /// Data table
 ///
 /// Stores all data locations sorted by their address.
 /// Also guarantees all data locations are unique and non-overlapping.
+#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct DataTable<S: AsRef<str>>(BTreeSet<Data<S>>);
 
 impl<S: AsRef<str>> FromIterator<Data<S>> for DataTable<S> {
@@ -52,28 +60,14 @@ impl<S: AsRef<str>> DataTable<S> {
 	}
 }
 
-#[allow(clippy::use_self)] // False positive
-impl<S: AsRef<str> + Into<String>> DataTable<S> {
-	/// Converts this table to use owned strings.
-	// TODO: Replace this with a impl<S: AsRef<str>> From<DataTable<S>> for DataTable<String> impl
-	//       once specialization is around.
-	#[must_use]
-	pub fn into_string(self) -> DataTable<String> {
-		DataTable(self.0.into_iter().map(Data::into_string).collect())
-	}
-}
-
-impl DataTable<&'static str> {
-	/// Returns all known functions
-	///
-	/// Alias for `Data::known().collect()`.
-	#[must_use]
-	pub fn known() -> Self {
-		Data::known().collect()
-	}
-}
-
 impl DataTable<String> {
+	/// Returns all known data locations
+	pub fn get_known() -> Result<Self, GetKnownError> {
+		let file = File::open("resources/known_data.yaml").map_err(GetKnownError::File)?;
+
+		serde_yaml::from_reader(file).map_err(GetKnownError::Parse)
+	}
+
 	/// Searches all instructions for references to
 	/// executable data using certain heuristics.
 	#[must_use]

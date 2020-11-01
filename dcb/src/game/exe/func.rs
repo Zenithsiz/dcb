@@ -9,7 +9,6 @@
 //! be found at [`Func::known`].
 
 // Modules
-pub mod known;
 pub mod table;
 
 // Exports
