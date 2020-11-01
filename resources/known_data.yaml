@@ -1,4 +1,24 @@
 ---
+- name: HeapStartKuseg
+  desc: Stores the start of the heap in KUSEG (Minus 0x4).
+  pos: 0x8006f988
+  kind: Word
+- name: HeapSize
+  desc: Stores the size of the heap .
+  pos: 0x8006f98c
+  kind: Word
+- name: StartReturnAddress
+  desc: Stores the return address in `start` when calling `InitHeap`
+  pos: 0x80077a20
+  kind: Word
+
+- name: GPU_STAT_PTR
+  pos: 0x8006f9b0
+  kind: Word
+- name: Timer1Ptr
+  pos: 0x8006f9b4
+  kind: Word
+
 - name: I_STAT_PTR
   pos: 0x80070aac
   kind: Word
@@ -7,6 +27,10 @@
   kind: Word
 - name: DPCR_PTR
   pos: 0x80070ab4
+  kind: Word
+
+- name: something6_data1
+  pos: 0x80070ae8
   kind: Word
 - name: ZeroStart
   desc: "Start of the zero section in `start`"
@@ -27,7 +51,7 @@
   desc: Stack size
   pos: 0x8006dd48
   kind: Word
-- name: something1_data1
+- name: something1_executed
   pos: 0x8006f984
   kind: Word
 - name: something5_data1
@@ -45,7 +69,7 @@
   kind:
     Array:
       ty: Word
-      len: 8
+      len: 7
 
 # Expansion region 1
 - name: ExpansionRegion1Header

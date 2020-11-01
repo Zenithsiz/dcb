@@ -1,10 +1,31 @@
 ---
-- name: something2
-  signature: "fn(start: *u32)"
-  desc: "Runs the main loop of the game it seems.\nNever seems to return control back to `start`.\n"
+# Entry point
+- name: start
+  signature: fn() -> !
+  desc: Executable start
   comments:
-    0x80013e50: "The return address is stored, but it seems it's never popped."
-    0x80013e54: "args: (start)"
+    0x80056280: Zero out ZeroStart .. HeapStart word by word.
+    0x80056284: ^
+    0x80056288: ^
+    0x8005628c: ^
+    0x800562a8: Initialize stack to (*StackTop - 0x10) | 0x80000000
+    0x800562f8: "args: (HeapStart + 0x4, (*StackTop - 0x10) - *StackSize - (HeapStart & 0x1fff_ffff))"
+    0x80056314: "Seems to never be reached, as we get to the title screen before this instruction"
+    0x80056324: "args: (something1_data2, something1_data2)"
+  labels:
+    0x80056280: zero_loop
+  start_pos: 0x80056270
+  end_pos: 0x80056330
+
+# Main game loop
+- name: main_loop
+  signature: fn() -> !
+  desc: Runs the main loop of the game.
+    Never seems to return.
+  comments:
+    0x80013e50: The return address is stored, but it seems it's never popped.
+    0x80013e54: Just sets `something1_executed` to 1.
+    0x80013e5c: Setup interrupts and DMA and possibly other stuff.
     0x80013e6c: "args: (0)"
   labels:
     0x80013ef4: "0"
@@ -14,65 +35,66 @@
     0x80013f8c: "4"
   start_pos: 0x80013e4c
   end_pos: 0x80013fa4
-- name: start
-  signature: fn()
-  desc: Executable start
-  comments:
-    0x80056280: Zero out ZeroStart .. HeapStart word by word.
-    0x80056284: ^
-    0x80056288: ^
-    0x8005628c: ^
-    0x800562a8: Initialize stack to (*StackTop - 0x10) | 0x80000000
-    0x800562f8: "args: (HeapStart, (*StackTop - 0x10) - *StackSize - (HeapStart & 0x1fff_ffff))"
-    0x8005630c: "args: (HeapStart + 0x4, ...?)"
-    0x80056314: "Seems to never be reached, as we get to the title screen before this instruction"
-    0x80056324: "args: (something1_data2, something1_data2)"
-  labels:
-    0x80056280: zero_loop
-  start_pos: 0x80056270
-  end_pos: 0x80056330
+
+# ???
 - name: something1
-  signature: "fn(arg: u32)"
-  desc: "This function checks if *something1_data1 is positive, if so decreases\nit by 1 and calls call_func_arr with (something1_data2, something1_data2).\n"
+  signature: fn()
+  desc: If something1_executed is 0, sets it to 1.
+    Also calls `call_func_arr(something1_data2, something1_data2)` if 0,
+    but this seems to be a nop.
   comments:
-    0x80056348: "If *something1_data1 == 0, skip"
-    0x8005634c: Else decrease it by 1 and save it.
-    0x80056368: "Then call call_func_arr with args (something1_data2, something1_data2)"
+    0x80056348: If *something1_executed != 0, skip
+    0x80056350: Else set it to 1.
+    0x80056368: "args: (something1_data2, something1_data2). Seems like a nop?"
   labels:
     0x80056370: skip
   start_pos: 0x80056330
   end_pos: 0x80056388
+
 - name: call_func_arr
-  signature: "fn(start: fn(), end: fn())"
+  desc: Calls all functions from `start` to `end` (exclusive).
+    Since it's only called from `start` and `something1` with no
+    functions, it seems that this is never used.
+    After running the game for a bit it doesn't seem to be triggered,
+    all the way from the start of a new game to the battle arena fight.
+  signature: "fn(start: *fn(), end: *fn())"
   comments:
-    0x800563a0: "if `start >= end`, skip"
-    0x800563b0: "If *start == 0, skip call"
-    0x800563b8: Else call *start
-    0x800563c0: start++
-    0x800563c8: "If `start < end`, restart"
+    0x800563a0: If `start >= end`, return
+    0x800563a8: Load the current function
+    0x800563b0: If it was null, skip the call.
+    0x800563b8: Else call it
+    0x800563c0: Go to the next function
+    0x800563c8: Until we hit `end`, keep going.
   labels:
     0x800563a8: loop
     0x800563c0: skip_call
     0x800563d0: exit
   start_pos: 0x80056388
   end_pos: 0x800563e4
+
+# ?
 - name: something3
   signature: fn()
+  desc: Calls `something5`.
   comments:
     0x80056604: "Loads FuncList1[3]"
     0x8005660c: "Calls FuncList1[3] (i.e. something5)"
   start_pos: 0x800565f4
   end_pos: 0x80056624
+
+# ?
 - name: something5
   signature: fn()
+  desc: Setups interrupt and DMA.
+    If called again, simply returns.
   comments:
     0x8005679c: Loads *something5_data1
     0x800567a4: "If the loaded value is not zero, exit"
     0x800567c0: Stop all interrupts by writing 0 to I_MASK
     0x800567c4: "Before the write goes through, save the current interrupts (?)"
     0x800567cc: Set I_STAT to the previous I_MASK value.
-    0x800567dc: Set the DMA control registers to 0x3333
-    0x800567e0: "Zero out `something5_data1[..0x3333]`, args: (something5_data1, 0x3333)"
+    0x800567dc: Set the DMA control registers to 0x33333333
+    0x800567e0: "args: (something5_data1, 0x33333333), Zero out `something5_data1[..0x33333333]`"
     0x800567e8: "Save all registers with `save_registers` and check return value"
     0x800567f0: "If the return value isn't 0, call `func_831`. This shouldn't happen, as `save_registers` always returns 0"
     0x800567f8: "args: (something5_data1 as *u8 + 0x38, 0x41a)"
@@ -83,6 +105,57 @@
     0x80056800: skip_call
   start_pos: 0x80056788
   end_pos: 0x80056860
+
+# ?
+- name: something6
+  signature: "fn(arg: u32)"
+  desc: ""
+  comments:
+    0x80056404: Get the gpu status from `GPU_STAT`
+    0x80056408: Read the horizontal retrace from timer1
+    0x80056418: Read the horizontal retrace again.
+    0x80056420: While the horizontal retraces are different, loop.
+    0x8005642c:
+      "TODO: Check what this load is about, it's 0 at the start of the program.
+      Seems to store the result from the timing"
+    0x80056438: Get the difference between data_w462 and the current horizontal retrace timer.
+    0x8005643c: "If arg < 0, return something6_data1, (Note: `main_loop` doesn't supply any arguments)"
+    0x80056458: If arg == 1, return the difference between data_w462 and the current time & 0xFFFF.
+    0x80056460: If arg <= 0, $v0 = data_w463, else $v0 = data_w463 + arg - 1
+    0x80056488: If arg <= 0, $a1 = 0, else $a1 = arg - 1
+    0x80056494: "args: arg <= 0 ? (data_w463, 0) : (data_w463 + arg - 1, arg - 1)"
+  labels:
+    0x80056408: timer_loop
+    0x80056454: skip_exit
+    0x80056480: 2
+    0x80056488: 3
+    0x80056494: 4
+    0x800564f0: 5
+    0x80056508: 6
+    0x80056520: 7
+    0x80056544: exit_with_s1
+    0x80056548: exit
+  start_pos: 0x800563e4
+  end_pos: 0x8005655c
+
+# ?
+- name: something7
+  signature: "fn(a: u32, b: u32)"
+  comments:
+    0x80056578: If something6_data1 >= a, return
+    0x8005659c: If (b << 15 - 1) != -1, goto try_again
+    0x800565dc: If something6_data1 < a, try again, else exit.
+    0x800565a8: "args: (0x8001311c)"
+    0x800565b0: "args: (0)"
+    0x800565bc: "args: (0x3, 0), This call and the above one seem to setup interrupts"
+  labels:
+    0x80056584: try_start
+    0x800565cc: try_again
+    0x800565e4: exit
+  start_pos: 0x8005655c
+  end_pos: 0x800565f4
+
+#?
 - name: something4
   signature: fn()
   labels:
@@ -96,6 +169,7 @@
     0x80056b58: "7"
   start_pos: 0x80056a30
   end_pos: 0x80056b78
+
 - name: memset_zero
   signature: "fn(u32* ptr, u32 size)"
   desc: "Zeroes out the memory at `ptr` for `size` words.\n"
@@ -111,11 +185,24 @@
     0x80056cac: exit
   start_pos: 0x80056c90
   end_pos: 0x80056cb4
+
 - name: save_registers
   signature: fn(u32* pos)
   desc: "Saves the following registers in `pos[0x0 .. 0x30]`.\n$ra, $gp, $sp, $fp,\n$s0, $s1, $s2, $s3,\n$s4, $s5, $s6, $s7,\n"
   start_pos: 0x8006a674
   end_pos: 0x8006a6b0
+
+- name: main_loop_sub1
+  signature: fn()
+  desc: "Called on loop by `main_loop` forever, maybe an interrupt breaks
+    out of the loop, but not sure how this function is related to that.
+    Simply reads from 0x801ddc10, calculates `(value * 0x41c64e6d) as u32 + 0x3039`,
+    storing it back into 0x801ddc10, then returns `value << 10 | 0x7fff`, where `value`
+    is the new value, just stored back."
+  start_pos: 0x80069124
+  end_pos: 0x80069154
+
+# A functions
 - name: InitHeap
   signature: "fn(addr: *u32, size: u32)"
   desc: Calls A(0x39)
@@ -124,8 +211,22 @@
     0x8006a73c: "arg: 0x39"
   start_pos: 0x8006a734
   end_pos: 0x8006a744
+
+# B Functions
 - name: SetCustomExitFromException
   signature: "fn(addr: fn())"
   desc: Calls B(0x19)
   start_pos: 0x8006a7f4
   end_pos: 0x8006a800
+- name: ChangeClearPad
+  signature: "fn(pad: u32)"
+  desc: Calls B(0x5b)
+  start_pos: 0x8006a884
+  end_pos: 0x8006a890
+
+# C Functions
+- name: ChangeClearRCnt
+  signature: "fn(t: u32, flag: u32)"
+  desc: Calls C(0xa)
+  start_pos: 0x8006a894
+  end_pos: 0x8006a8a0
