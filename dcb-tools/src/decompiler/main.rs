@@ -236,7 +236,7 @@ fn main() -> Result<(), anyhow::Error> {
 				.map(|func| (&func.name, ""))
 				.or_else(|| cur_func.and_then(|func| func.labels.get(target).map(|label| (label, "."))))
 			{
-				Some((target, prefix)) => print!("{} {prefix}{target}", strip_last_arg(instruction)),
+				Some((target, prefix)) => print!("{}", set_instruction_immediate(instruction, format_args!(" {prefix}{target}"))),
 				None => print!("{instruction}"),
 			},
 
@@ -263,11 +263,11 @@ fn main() -> Result<(), anyhow::Error> {
 			{
 				Some((start_pos, name)) => {
 					if start_pos == Pos(*target) {
-						print!("{} {}", strip_last_arg(instruction), name);
+						print!("{}", set_instruction_immediate(instruction, format_args!(" {name}")));
 					} else {
 						let offset = Pos(*target) - start_pos;
 						if offset > 0 {
-							print!("{} {} + {offset:#x}", strip_last_arg(instruction), name);
+							print!("{}", set_instruction_immediate(instruction, format_args!(" {name} + {offset:#x}")));
 						}
 					}
 				},
@@ -281,10 +281,14 @@ fn main() -> Result<(), anyhow::Error> {
 		if let Instruction::Directive(Directive::Dw(target)) = instruction {
 			if let Some(func) = functions.get(Pos(*target)) {
 				print!(" # {}", func.name);
-			}
-			if let Some(data) = data_pos.get(Pos(*target)) {
+			} else if let Some(data) = data_pos.get(Pos(*target)) {
 				if data.pos == Pos(*target) {
 					print!(" # {}", data.name);
+				} else {
+					let offset = Pos(*target) - data.pos;
+					if offset > 0 {
+						print!(" # {} + {offset:#x}", data.name);
+					}
 				}
 			}
 		}
@@ -303,12 +307,29 @@ fn main() -> Result<(), anyhow::Error> {
 	Ok(())
 }
 
-
-/// Helper function to extract the last argument from an instruction
+/// Helper function to modify the immediate argument from an instruction
 // TODO: Use something better than this
-fn strip_last_arg(instruction: &Instruction) -> String {
-	let mut instruction: String = instruction.to_string();
-	// Note: This can't panic
-	instruction.truncate(instruction.rfind(' ').unwrap_or(0));
-	instruction
+fn set_instruction_immediate(instruction: &Instruction, fmt: std::fmt::Arguments) -> String {
+	use std::fmt::Write;
+
+	// Get the string as a string
+	let mut s: String = instruction.to_string();
+
+	// If the instruction is of the form `.. , imm(..)`, then grab
+	// the `(..)`
+	#[allow(clippy::indexing_slicing)] // This can't panic
+	let parens = s.rfind('(').map(|idx| s[idx..].to_string());
+
+	// Truncate the string from it's last argument and write the fmt
+	// Note: We use ' ' instead of ',' to support single argument instructions.
+	s.truncate(s.rfind(' ').unwrap_or(0));
+	s.write_fmt(fmt).expect("Unable to write format to string");
+
+	// If we had a paren, write it
+	// Note: This technically shouldn't be needed, but just in case.
+	if let Some(parens) = parens {
+		s.push_str(&parens);
+	}
+
+	s
 }

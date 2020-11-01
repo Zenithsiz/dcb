@@ -28,7 +28,9 @@ use std::{collections::BTreeSet, convert::TryInto, fs::File, iter::FromIterator}
 /// Data table
 ///
 /// Stores all data locations sorted by their address.
-/// Also guarantees all data locations are unique and non-overlapping.
+/// Data locations may be 'specialized', that is, a large data
+/// location may have several smaller data locations inside of it,
+/// as long as they only belong to the larger data location.
 #[derive(PartialEq, Eq, Clone, Debug)]
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct DataTable(BTreeSet<Data>);
@@ -42,8 +44,8 @@ impl FromIterator<Data> for DataTable {
 impl DataTable {
 	/// Merges two data tables, discarding duplicates from `other`.
 	///
-	/// This can be useful when combining known functions and heuristically
-	/// discovered function, as the known functions are always kept, and the
+	/// This can be useful when combining known data locations and heuristically
+	/// discovered data locations, as the known functions are always kept, and the
 	/// duplicate discovered ones are discarded.
 	#[must_use]
 	pub fn merge(self, other: Self) -> Self {
@@ -52,10 +54,12 @@ impl DataTable {
 		DiscardingSortedMergeIter::new(self.0.into_iter(), other.0.into_iter()).collect()
 	}
 
-	/// Retrieves the data location containing `pos`
+	/// Retrieves the smallest data location containing `pos`
 	#[must_use]
 	pub fn get(&self, pos: Pos) -> Option<&Data> {
 		// Find the closest one and check if it contains `pos`
+		// Note: We search from the end to make sure we grab the
+		//       smaller locations first.
 		self.0.range(..=pos).next_back().filter(|data| pos <= data.end_pos())
 	}
 }
