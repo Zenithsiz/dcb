@@ -21,21 +21,25 @@ use std::{borrow::Borrow, collections::HashMap};
 /// A function within the executable
 #[derive(Clone, Debug)]
 #[derive(serde::Serialize, serde::Deserialize)]
-pub struct Func<S: AsRef<str>> {
+pub struct Func {
 	/// Function name
-	pub name: S,
+	pub name: String,
 
 	/// Function signature
-	pub signature: S,
+	#[serde(default)]
+	pub signature: String,
 
 	/// Description
-	pub desc: S,
+	#[serde(default)]
+	pub desc: String,
 
 	/// Comments
-	pub comments: HashMap<Pos, S>,
+	#[serde(default)]
+	pub comments: HashMap<Pos, String>,
 
 	/// Labels
-	pub labels: HashMap<Pos, S>,
+	#[serde(default)]
+	pub labels: HashMap<Pos, String>,
 
 	/// Start position
 	pub start_pos: Pos,
@@ -44,46 +48,30 @@ pub struct Func<S: AsRef<str>> {
 	pub end_pos: Pos,
 }
 
-#[allow(clippy::use_self)] // False positive
-impl<S: AsRef<str> + Into<String>> Func<S> {
-	/// Returns this function with owned `String`s.
-	pub fn into_string(self) -> Func<String> {
-		Func {
-			name:      self.name.into(),
-			signature: self.signature.into(),
-			desc:      self.desc.into(),
-			comments:  self.comments.into_iter().map(|(pos, comment)| (pos, comment.into())).collect(),
-			labels:    self.labels.into_iter().map(|(pos, label)| (pos, label.into())).collect(),
-			start_pos: self.start_pos,
-			end_pos:   self.end_pos,
-		}
-	}
-}
-
-impl<S: AsRef<str>> Borrow<Pos> for Func<S> {
+impl Borrow<Pos> for Func {
 	fn borrow(&self) -> &Pos {
 		&self.start_pos
 	}
 }
 
 /// Two functions are equal if their start position is the same.
-impl<S: AsRef<str>> PartialEq for Func<S> {
+impl PartialEq for Func {
 	fn eq(&self, other: &Self) -> bool {
 		self.start_pos.eq(&other.start_pos)
 	}
 }
 
-impl<S: AsRef<str>> Eq for Func<S> {}
+impl Eq for Func {}
 
 /// Only the start position is hashed, just as in the [`PartialEq`] impl.
-impl<S: AsRef<str>> std::hash::Hash for Func<S> {
+impl std::hash::Hash for Func {
 	fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
 		self.start_pos.hash(state);
 	}
 }
 
 /// Only the start position matters for the order
-impl<S: AsRef<str>> PartialOrd for Func<S> {
+impl PartialOrd for Func {
 	fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
 		// Delegate to `eq` since we have a total order.
 		Some(self.cmp(other))
@@ -91,7 +79,7 @@ impl<S: AsRef<str>> PartialOrd for Func<S> {
 }
 
 /// Only the start position matters for the order
-impl<S: AsRef<str>> Ord for Func<S> {
+impl Ord for Func {
 	fn cmp(&self, other: &Self) -> std::cmp::Ordering {
 		// Only compare the start position
 		self.start_pos.cmp(&other.start_pos)

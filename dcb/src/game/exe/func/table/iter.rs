@@ -7,20 +7,20 @@ use super::{Func, FuncTable};
 use crate::game::exe::{Instruction, Pos};
 
 /// Iterator of instructions along with the current function
-pub struct WithInstructionsIter<'a, S: AsRef<str>, I: Iterator<Item = (Pos, &'a Instruction)>> {
+pub struct WithInstructionsIter<'a, I: Iterator<Item = (Pos, &'a Instruction)>> {
 	/// The instructions iterator
 	instructions: I,
 
 	/// All functions
-	funcs: &'a FuncTable<S>,
+	funcs: &'a FuncTable,
 
 	/// Current function
-	cur_func: Option<&'a Func<S>>,
+	cur_func: Option<&'a Func>,
 }
 
-impl<'a, S: AsRef<str>, I: Iterator<Item = (Pos, &'a Instruction)>> WithInstructionsIter<'a, S, I> {
+impl<'a, I: Iterator<Item = (Pos, &'a Instruction)>> WithInstructionsIter<'a, I> {
 	/// Creates a new instructions iterator
-	pub(super) fn new(instructions: I, funcs: &'a FuncTable<S>) -> Self {
+	pub(super) fn new(instructions: I, funcs: &'a FuncTable) -> Self {
 		Self {
 			instructions,
 			funcs,
@@ -30,8 +30,8 @@ impl<'a, S: AsRef<str>, I: Iterator<Item = (Pos, &'a Instruction)>> WithInstruct
 }
 
 
-impl<'a, S: AsRef<str>, I: Iterator<Item = (Pos, &'a Instruction)>> Iterator for WithInstructionsIter<'a, S, I> {
-	type Item = (Pos, &'a Instruction, Option<&'a Func<S>>);
+impl<'a, I: Iterator<Item = (Pos, &'a Instruction)>> Iterator for WithInstructionsIter<'a, I> {
+	type Item = (Pos, &'a Instruction, Option<&'a Func>);
 
 	fn next(&mut self) -> Option<Self::Item> {
 		let (pos, instruction) = self.instructions.next()?;

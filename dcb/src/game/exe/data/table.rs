@@ -31,15 +31,15 @@ use std::{collections::BTreeSet, convert::TryInto, fs::File, iter::FromIterator}
 /// Also guarantees all data locations are unique and non-overlapping.
 #[derive(PartialEq, Eq, Clone, Debug)]
 #[derive(serde::Serialize, serde::Deserialize)]
-pub struct DataTable<S: AsRef<str>>(BTreeSet<Data<S>>);
+pub struct DataTable(BTreeSet<Data>);
 
-impl<S: AsRef<str>> FromIterator<Data<S>> for DataTable<S> {
-	fn from_iter<T: IntoIterator<Item = Data<S>>>(iter: T) -> Self {
+impl FromIterator<Data> for DataTable {
+	fn from_iter<T: IntoIterator<Item = Data>>(iter: T) -> Self {
 		Self(iter.into_iter().collect())
 	}
 }
 
-impl<S: AsRef<str>> DataTable<S> {
+impl DataTable {
 	/// Merges two data tables, discarding duplicates from `other`.
 	///
 	/// This can be useful when combining known functions and heuristically
@@ -54,13 +54,13 @@ impl<S: AsRef<str>> DataTable<S> {
 
 	/// Retrieves the data location containing `pos`
 	#[must_use]
-	pub fn get(&self, pos: Pos) -> Option<&Data<S>> {
+	pub fn get(&self, pos: Pos) -> Option<&Data> {
 		// Find the closest one and check if it contains `pos`
 		self.0.range(..=pos).next_back().filter(|data| pos <= data.end_pos())
 	}
 }
 
-impl DataTable<String> {
+impl DataTable {
 	/// Returns all known data locations
 	pub fn get_known() -> Result<Self, GetKnownError> {
 		let file = File::open("resources/known_data.yaml").map_err(GetKnownError::File)?;

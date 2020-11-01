@@ -1,84 +1,85 @@
 ---
 - name: I_STAT
   desc: Interrupt status register
-  pos: "0x1f801070"
+  pos: 0x1f801070
   kind: Word
 - name: I_MASK
   desc: Interrupt mask register
-  pos: "0x1f801074"
+  pos: 0x1f801074
   kind: Word
 - name: DPCR
   desc: DMA Control register
-  pos: "0x1f8010f0"
+  pos: 0x1f8010f0
   kind: Word
 - name: DICR
   desc: DMA Interrupt register
-  pos: "0x1f8010f4"
+  pos: 0x1f8010f4
   kind: Word
 - name: Timer0
-  desc: ""
-  pos: "0x1f801100"
+  pos: 0x1f801100
   kind: Word
 - name: Timer1
-  desc: ""
-  pos: "0x1f801110"
+  pos: 0x1f801110
   kind: Word
 - name: Timer2
-  desc: ""
-  pos: "0x1f801120"
+  pos: 0x1f801120
   kind: Word
 - name: something1_data2
-  desc: ""
-  pos: "0x80010000"
+  pos: 0x80010000
   kind: Word
 - name: StackTop
   desc: Stack top address
-  pos: "0x8006dd44"
+  pos: 0x8006dd44
   kind: Word
 - name: StackSize
   desc: Stack size
-  pos: "0x8006dd48"
+  pos: 0x8006dd48
   kind: Word
 - name: something1_data1
-  desc: ""
-  pos: "0x8006f984"
+  pos: 0x8006f984
   kind: Word
 - name: something5_data1
-  desc: ""
-  pos: "0x8006fa20"
+  pos: 0x8006fa20
   kind: HalfWord
 - name: something5_data5
-  desc: ""
-  pos: "0x8006fa5c"
+  pos: 0x8006fa5c
   kind: Word
 - name: FuncList1
-  desc: ""
-  pos: "0x80070a88"
+  pos: 0x80070a88
   kind: Word
 - name: FuncList1Ptr
   desc: Pointer to FuncList1
-  pos: "0x80070aa8"
+  pos: 0x80070aa8
   kind:
     Array:
       ty: Word
       len: 8
+
+- name: Scratchpad
+  dec: ""
+  pos: 0x1f800000
+  kind:
+    Array:
+      ty: Word
+      len: 0x400
+
+# Memory control 1
+
+#
 - name: I_STAT_PTR
-  desc: ""
-  pos: "0x80070aac"
+  pos: 0x80070aac
   kind: Word
 - name: I_MASK_PTR
-  desc: ""
-  pos: "0x80070ab0"
+  pos: 0x80070ab0
   kind: Word
 - name: DPCR_PTR
-  desc: ""
-  pos: "0x80070ab4"
+  pos: 0x80070ab4
   kind: Word
 - name: ZeroStart
   desc: "Start of the zero section in `start`"
-  pos: "0x80077a08"
+  pos: 0x80077a08
   kind: Word
 - name: HeapStart
   desc: Start of the heap
-  pos: "0x801ddf38"
+  pos: 0x801ddf38
   kind: Word

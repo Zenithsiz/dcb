@@ -123,7 +123,7 @@ fn main() -> Result<(), anyhow::Error> {
 
 	// Get all functions
 	log::debug!("Retrieving all functions");
-	let functions: FuncTable<String> = FuncTable::get_known()
+	let functions: FuncTable = FuncTable::get_known()
 		.context("Unable to get known function table")?
 		.merge(FuncTable::from_instructions(
 			&instructions.iter().map(|(pos, instruction)| (*pos, instruction)),
@@ -131,7 +131,7 @@ fn main() -> Result<(), anyhow::Error> {
 
 	// Get all data
 	log::debug!("Retrieving all locations");
-	let data_pos: DataTable<String> = DataTable::get_known()
+	let data_pos: DataTable = DataTable::get_known()
 		.context("Unable to get known function table")?
 		.merge(DataTable::search_instructions(
 			instructions.iter().map(|(pos, instruction)| (*pos, instruction)),
@@ -157,8 +157,8 @@ fn main() -> Result<(), anyhow::Error> {
 	let mut skipped_nops = 0;
 	for (cur_pos, instruction, last_instruction, cur_func, last_func) in full_iter {
 		// Note: Required by `rust-analyzer` currently, it can't determine the type of `cur_func`.
-		let cur_func: Option<&Func<String>> = cur_func;
-		let last_func: Option<&Func<String>> = last_func;
+		let cur_func: Option<&Func> = cur_func;
+		let last_func: Option<&Func> = last_func;
 
 		// If both last and current instructions are nops, skip
 		if let (Some(Instruction::Pseudo(Nop)), Instruction::Pseudo(Nop)) = (last_instruction, instruction) {

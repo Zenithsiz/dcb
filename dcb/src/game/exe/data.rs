@@ -22,12 +22,13 @@ use std::borrow::Borrow;
 /// Data location
 #[derive(Clone, Debug)]
 #[derive(serde::Serialize, serde::Deserialize)]
-pub struct Data<S: AsRef<str>> {
+pub struct Data {
 	/// Name
-	pub name: S,
+	pub name: String,
 
 	/// Description
-	pub desc: S,
+	#[serde(default)]
+	pub desc: String,
 
 	/// Start position
 	pub pos: Pos,
@@ -36,50 +37,38 @@ pub struct Data<S: AsRef<str>> {
 	pub kind: DataKind,
 }
 
-impl<S: AsRef<str>> Data<S> {
+impl Data {
 	/// Returns the end position of this data
+	#[must_use]
 	pub fn end_pos(&self) -> Pos {
 		self.pos + self.kind.size()
 	}
 }
 
-#[allow(clippy::use_self)] // False positive
-impl<S: AsRef<str> + Into<String>> Data<S> {
-	/// Returns this data with owned `String`s.
-	pub fn into_string(self) -> Data<String> {
-		Data {
-			name: self.name.into(),
-			desc: self.desc.into(),
-			pos:  self.pos,
-			kind: self.kind,
-		}
-	}
-}
-
-impl<S: AsRef<str>> Borrow<Pos> for Data<S> {
+impl Borrow<Pos> for Data {
 	fn borrow(&self) -> &Pos {
 		&self.pos
 	}
 }
 
 /// Two data locations are equal if their position is the same.
-impl<S: AsRef<str>> PartialEq for Data<S> {
+impl PartialEq for Data {
 	fn eq(&self, other: &Self) -> bool {
 		self.pos.eq(&other.pos)
 	}
 }
 
-impl<S: AsRef<str>> Eq for Data<S> {}
+impl Eq for Data {}
 
 /// Only the position is hashed, just as in the [`PartialEq`] impl.
-impl<S: AsRef<str>> std::hash::Hash for Data<S> {
+impl std::hash::Hash for Data {
 	fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
 		self.pos.hash(state);
 	}
 }
 
 /// Only the position matters for the order
-impl<S: AsRef<str>> PartialOrd for Data<S> {
+impl PartialOrd for Data {
 	fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
 		// Delegate to `eq` since we have a total order.
 		Some(self.cmp(other))
@@ -87,7 +76,7 @@ impl<S: AsRef<str>> PartialOrd for Data<S> {
 }
 
 /// Only the position matters for the order
-impl<S: AsRef<str>> Ord for Data<S> {
+impl Ord for Data {
 	fn cmp(&self, other: &Self) -> std::cmp::Ordering {
 		// Only compare the start position
 		self.pos.cmp(&other.pos)

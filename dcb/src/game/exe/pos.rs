@@ -3,7 +3,7 @@
 
 // Imports
 use int_conv::{SignExtended, Signed};
-use std::{fmt, ops};
+use std::{convert::TryFrom, fmt, ops};
 
 /// An instruction position
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Hash, Debug)]
@@ -105,13 +105,26 @@ impl<'de> serde::de::Visitor<'de> for PosVisitor {
 	type Value = Pos;
 
 	fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-		formatter.write_str("A string-encoded hex value or `u32`")
+		formatter.write_str("a string-encoded hex value or `u32`")
 	}
 
-	fn visit_u32<E>(self, pos: u32) -> Result<Self::Value, E>
+	fn visit_u64<E>(self, pos: u64) -> Result<Self::Value, E>
 	where
 		E: serde::de::Error,
 	{
+		#[allow(clippy::map_err_ignore)] // It's clearer to provide a string than the error from `try_from`
+		let pos = u32::try_from(pos).map_err(|_| E::custom("Position must fit within a `u32`"))?;
+
+		Ok(Pos(pos))
+	}
+
+	fn visit_i64<E>(self, pos: i64) -> Result<Self::Value, E>
+	where
+		E: serde::de::Error,
+	{
+		#[allow(clippy::map_err_ignore)] // It's clearer to provide a string than the error from `try_from`
+		let pos = u32::try_from(pos).map_err(|_| E::custom("Position must fit within a `u32`"))?;
+
 		Ok(Pos(pos))
 	}
 

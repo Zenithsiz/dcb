@@ -37,15 +37,15 @@ use std::{
 /// Also guarantees all functions are unique and non-overlapping.
 #[derive(PartialEq, Eq, Clone, Debug)]
 #[derive(serde::Serialize, serde::Deserialize)]
-pub struct FuncTable<S: AsRef<str>>(BTreeSet<Func<S>>);
+pub struct FuncTable(BTreeSet<Func>);
 
-impl<S: AsRef<str>> FromIterator<Func<S>> for FuncTable<S> {
-	fn from_iter<T: IntoIterator<Item = Func<S>>>(iter: T) -> Self {
+impl FromIterator<Func> for FuncTable {
+	fn from_iter<T: IntoIterator<Item = Func>>(iter: T) -> Self {
 		Self(iter.into_iter().collect())
 	}
 }
 
-impl<S: AsRef<str>> FuncTable<S> {
+impl FuncTable {
 	/// Merges two data tables, discarding duplicates from `other`.
 	///
 	/// This can be useful when combining known functions and heuristically
@@ -60,18 +60,18 @@ impl<S: AsRef<str>> FuncTable<S> {
 
 	/// Retrieves a function with start address `pos`
 	#[must_use]
-	pub fn get(&self, pos: Pos) -> Option<&Func<S>> {
+	pub fn get(&self, pos: Pos) -> Option<&Func> {
 		// Note: As we're sorted, we can binary search
 		self.0.range(..=pos).filter(|func| func.start_pos == pos).next_back()
 	}
 
 	/// Adapts an instruction iterator to extract the current function
-	pub fn with_instructions<'a, I: Iterator<Item = (Pos, &'a Instruction)>>(&'a self, instructions: I) -> WithInstructionsIter<'a, S, I> {
+	pub fn with_instructions<'a, I: Iterator<Item = (Pos, &'a Instruction)>>(&'a self, instructions: I) -> WithInstructionsIter<'a, I> {
 		WithInstructionsIter::new(instructions, self)
 	}
 }
 
-impl FuncTable<String> {
+impl FuncTable {
 	/// Returns all known functions
 	pub fn get_known() -> Result<Self, GetKnownError> {
 		let file = File::open("resources/known_funcs.yaml").map_err(GetKnownError::File)?;
