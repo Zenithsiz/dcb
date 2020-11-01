@@ -3,30 +3,30 @@
   signature: "fn(start: *u32)"
   desc: "Runs the main loop of the game it seems.\nNever seems to return control back to `start`.\n"
   comments:
-    0x80013e54: "args: (start)"
     0x80013e50: "The return address is stored, but it seems it's never popped."
+    0x80013e54: "args: (start)"
     0x80013e6c: "args: (0)"
   labels:
+    0x80013ef4: "0"
+    0x80013f48: "1"
+    0x80013f54: "2"
     0x80013f6c: "3"
     0x80013f8c: "4"
-    0x80013f54: "2"
-    0x80013f48: "1"
-    0x80013ef4: "0"
   start_pos: 0x80013e4c
   end_pos: 0x80013fa4
 - name: start
   signature: fn()
   desc: Executable start
   comments:
-    0x800562a8: Initialize stack to (*StackTop - 0x10) | 0x80000000
+    0x80056280: Zero out ZeroStart .. HeapStart word by word.
+    0x80056284: ^
     0x80056288: ^
+    0x8005628c: ^
+    0x800562a8: Initialize stack to (*StackTop - 0x10) | 0x80000000
+    0x800562f8: "args: (HeapStart, (*StackTop - 0x10) - *StackSize - (HeapStart & 0x1fff_ffff))"
     0x8005630c: "args: (HeapStart + 0x4, ...?)"
     0x80056314: "Seems to never be reached, as we get to the title screen before this instruction"
-    0x80056280: Zero out ZeroStart .. HeapStart word by word.
     0x80056324: "args: (something1_data2, something1_data2)"
-    0x80056284: ^
-    0x800562f8: "args: (HeapStart, (*StackTop - 0x10) - *StackSize - (HeapStart & 0x1fff_ffff))"
-    0x8005628c: ^
   labels:
     0x80056280: zero_loop
   start_pos: 0x80056270
@@ -35,9 +35,9 @@
   signature: "fn(arg: u32)"
   desc: "This function checks if *something1_data1 is positive, if so decreases\nit by 1 and calls call_func_arr with (something1_data2, something1_data2).\n"
   comments:
+    0x80056348: "If *something1_data1 == 0, skip"
     0x8005634c: Else decrease it by 1 and save it.
     0x80056368: "Then call call_func_arr with args (something1_data2, something1_data2)"
-    0x80056348: "If *something1_data1 == 0, skip"
   labels:
     0x80056370: skip
   start_pos: 0x80056330
@@ -45,39 +45,39 @@
 - name: call_func_arr
   signature: "fn(start: fn(), end: fn())"
   comments:
-    0x800563b0: "If *start == 0, skip call"
-    0x800563c8: "If `start < end`, restart"
     0x800563a0: "if `start >= end`, skip"
+    0x800563b0: "If *start == 0, skip call"
     0x800563b8: Else call *start
     0x800563c0: start++
+    0x800563c8: "If `start < end`, restart"
   labels:
-    0x800563d0: exit
     0x800563a8: loop
     0x800563c0: skip_call
+    0x800563d0: exit
   start_pos: 0x80056388
   end_pos: 0x800563e4
 - name: something3
   signature: fn()
   comments:
-    0x8005660c: "Calls FuncList1[3] (i.e. something5)"
     0x80056604: "Loads FuncList1[3]"
+    0x8005660c: "Calls FuncList1[3] (i.e. something5)"
   start_pos: 0x800565f4
   end_pos: 0x80056624
 - name: something5
   signature: fn()
   comments:
-    0x800567e8: "Save all registers with `save_registers` and check return value"
-    0x800567dc: Set the DMA control registers to 0x3333
-    0x80056814: Set something5_data5 to 0xfdc
-    0x800567c4: "Before the write goes through, save the current interrupts (?)"
-    0x800567e0: "Zero out `something5_data1[..0x3333]`, args: (something5_data1, 0x3333)"
-    0x800567f0: "If the return value isn't 0, call `func_831`. This shouldn't happen, as `save_registers` always returns 0"
-    0x800567a4: "If the loaded value is not zero, exit"
-    0x800567cc: Set I_STAT to the previous I_MASK value.
-    0x800567f8: "args: (something5_data1 as *u8 + 0x38, 0x41a)"
     0x8005679c: Loads *something5_data1
+    0x800567a4: "If the loaded value is not zero, exit"
     0x800567c0: Stop all interrupts by writing 0 to I_MASK
+    0x800567c4: "Before the write goes through, save the current interrupts (?)"
+    0x800567cc: Set I_STAT to the previous I_MASK value.
+    0x800567dc: Set the DMA control registers to 0x3333
+    0x800567e0: "Zero out `something5_data1[..0x3333]`, args: (something5_data1, 0x3333)"
+    0x800567e8: "Save all registers with `save_registers` and check return value"
+    0x800567f0: "If the return value isn't 0, call `func_831`. This shouldn't happen, as `save_registers` always returns 0"
+    0x800567f8: "args: (something5_data1 as *u8 + 0x38, 0x41a)"
     0x80056810: "Set the exception exit function as something5_data5 - 1; args: (something5_data5 as *u8 - 0x4)"
+    0x80056814: Set something5_data5 to 0xfdc
   labels:
     0x80056850: exit
     0x80056800: skip_call
@@ -86,13 +86,13 @@
 - name: something4
   signature: fn()
   labels:
+    0x80056ac0: "0"
     0x80056ae0: "1"
+    0x80056b04: "2"
+    0x80056b1c: "3"
+    0x80056b34: "4"
     0x80056b44: "5"
     0x80056b54: "6"
-    0x80056b34: "4"
-    0x80056b04: "2"
-    0x80056ac0: "0"
-    0x80056b1c: "3"
     0x80056b58: "7"
   start_pos: 0x80056a30
   end_pos: 0x80056b78
@@ -100,15 +100,15 @@
   signature: "fn(u32* ptr, u32 size)"
   desc: "Zeroes out the memory at `ptr` for `size` words.\n"
   comments:
-    0x80056ca4: "While size != -1, continue"
-    0x80056c9c: "*ptr = 0"
-    0x80056ca8: ptr++
     0x80056c90: "If size == 0, return"
     0x80056c94: size--
+    0x80056c9c: "*ptr = 0"
     0x80056ca0: size--
+    0x80056ca4: "While size != -1, continue"
+    0x80056ca8: ptr++
   labels:
-    0x80056cac: exit
     0x80056c9c: loop
+    0x80056cac: exit
   start_pos: 0x80056c90
   end_pos: 0x80056cb4
 - name: save_registers
@@ -120,8 +120,8 @@
   signature: "fn(addr: *u32, size: u32)"
   desc: Calls A(0x39)
   comments:
-    0x8006a73c: "arg: 0x39"
     0x8006a738: Register tailcall. Likely to prevent calling in KSEG0 and do it in KUSEG
+    0x8006a73c: "arg: 0x39"
   start_pos: 0x8006a734
   end_pos: 0x8006a744
 - name: SetCustomExitFromException
