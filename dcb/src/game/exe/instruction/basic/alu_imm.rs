@@ -57,7 +57,7 @@ pub struct AluImmInst {
 	/// Lhs argument, `rs`
 	pub lhs: Register,
 
-	/// Rhs immediate argument
+	/// Rhs argument, immediate
 	pub rhs: u32,
 
 	/// Opcode

@@ -84,6 +84,6 @@ impl fmt::Display for SysInst {
 			SysFunc::Break => "break",
 		};
 
-		write!(f, "{mnemonic} {comment}")
+		write!(f, "{mnemonic} {comment:#x}")
 	}
 }

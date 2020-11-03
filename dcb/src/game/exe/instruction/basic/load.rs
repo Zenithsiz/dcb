@@ -1,7 +1,7 @@
 //! Load instructions
 
 // Imports
-use crate::game::exe::instruction::Register;
+use crate::{game::exe::instruction::Register, util::SignedHex};
 use int_conv::{Signed, Truncated, ZeroExtended};
 use std::{convert::TryFrom, fmt};
 
@@ -104,6 +104,6 @@ impl fmt::Display for LoadInst {
 			LoadOpcode::WordRight => "lwr",
 		};
 
-		write!(f, "{mnemonic} {dest}, {offset}({source})")
+		write!(f, "{mnemonic} {dest}, {:#x}({source})", SignedHex(offset))
 	}
 }

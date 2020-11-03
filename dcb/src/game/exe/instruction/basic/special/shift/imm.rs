@@ -39,14 +39,14 @@ pub struct ShiftImmRaw {
 /// Shift immediate instructions
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub struct ShiftImmInst {
-	/// Source register, `rd`
-	pub source: Register,
-
 	/// Destination register, `rt`
 	pub dest: Register,
 
-	/// Immediate argument
-	pub arg: i16,
+	/// Lhs argument, `rd`
+	pub lhs: Register,
+
+	/// Rhs argument, immediate
+	pub rhs: i16,
 
 	/// Function
 	pub func: ShiftImmFunc,
@@ -59,9 +59,9 @@ impl ShiftImmInst {
 		let func = ShiftImmFunc::try_from(raw.f.truncated::<u8>()).ok()?;
 
 		Some(Self {
-			source: Register::new(raw.t)?,
+			lhs: Register::new(raw.t)?,
 			dest: Register::new(raw.d)?,
-			arg: raw.i.truncated::<u16>().as_signed(),
+			rhs: raw.i.truncated::<u16>().as_signed(),
 			func,
 		})
 	}
@@ -69,9 +69,9 @@ impl ShiftImmInst {
 	/// Encodes this instruction
 	#[must_use]
 	pub fn encode(self) -> ShiftImmRaw {
-		let t = self.source.idx();
+		let t = self.lhs.idx();
 		let d = self.dest.idx();
-		let i = self.arg.as_unsigned().zero_extended::<u32>();
+		let i = self.rhs.as_unsigned().zero_extended::<u32>();
 		let f = u8::from(self.func).zero_extended::<u32>();
 
 		ShiftImmRaw { f, t, d, i }
@@ -80,7 +80,7 @@ impl ShiftImmInst {
 
 impl fmt::Display for ShiftImmInst {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-		let Self { source, dest, arg, func } = self;
+		let Self { lhs, dest, rhs, func } = self;
 
 		let mnemonic = match func {
 			ShiftImmFunc::LeftLogical => "sll",
@@ -88,6 +88,6 @@ impl fmt::Display for ShiftImmInst {
 			ShiftImmFunc::RightArithmetic => "sra",
 		};
 
-		write!(f, "{mnemonic} {dest}, {source}, {arg}")
+		write!(f, "{mnemonic} {dest}, {lhs}, {rhs:#x}")
 	}
 }

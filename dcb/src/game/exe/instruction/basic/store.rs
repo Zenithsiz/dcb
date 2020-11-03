@@ -1,7 +1,7 @@
 //! Store instructions
 
 // Imports
-use crate::game::exe::instruction::Register;
+use crate::{game::exe::instruction::Register, util::SignedHex};
 use int_conv::{Signed, Truncated, ZeroExtended};
 use std::{convert::TryFrom, fmt};
 
@@ -101,6 +101,6 @@ impl fmt::Display for StoreInst {
 			StoreOpcode::WordLeft => "swl",
 		};
 
-		write!(f, "{mnemonic} {dest}, {offset}({source})")
+		write!(f, "{mnemonic} {dest}, {:#x}({source})", SignedHex(offset))
 	}
 }

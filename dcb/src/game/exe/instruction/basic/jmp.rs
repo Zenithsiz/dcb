@@ -69,6 +69,6 @@ impl fmt::Display for JmpInst {
 			JmpKind::Link => "jal",
 		};
 
-		write!(f, "{mnemonic} {target}")
+		write!(f, "{mnemonic} {target:#x}")
 	}
 }
