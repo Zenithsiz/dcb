@@ -4,6 +4,8 @@
 pub mod error;
 
 // Exports
+use std::fmt;
+
 pub use error::{FromBytesError, ToBytesError};
 
 // Import
@@ -49,7 +51,34 @@ pub struct Header {
 	pub initial_sp_offset: u32,
 
 	/// Executable region marker
-	pub marker: AsciiStrArr<0x7b4>,
+	pub marker: AsciiStrArr<0x7b3>,
+}
+
+impl fmt::Display for Header {
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+		let Self {
+			ref initial_pc,
+			ref initial_gp,
+			ref dest,
+			ref size,
+			ref memfill_start,
+			ref memfill_size,
+			ref initial_sp_base,
+			ref initial_sp_offset,
+			ref marker,
+			..
+		} = self;
+
+		write!(
+			f,
+			"PC: {initial_pc:#x}
+GP: {initial_gp:#x}
+Destination: {dest:#x} / size: {size:#x}
+Memfill: {memfill_start:#X} / size: {memfill_size:#x}
+SP: {initial_sp_base:#x} / offset: {initial_sp_offset:#x}
+Marker: {marker:?}"
+		)
+	}
 }
 
 impl Header {
@@ -76,8 +105,8 @@ impl Bytes for Header {
 			memfill_size     : [0x4],
 			initial_sp_base  : [0x4],
 			initial_sp_offset: [0x4],
-			_zero2           : [0x13],
-			marker           : [0x7b5],
+			_zero2           : [0x14],
+			marker           : [0x7b4],
 		);
 
 		// If the magic is wrong, return Err

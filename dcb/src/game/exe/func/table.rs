@@ -20,7 +20,7 @@ pub use iter::WithInstructionsIter;
 use super::Func;
 use crate::{
 	game::exe::{
-		instruction::{Directive, PseudoInstruction, Register, SimpleInstruction},
+		instruction::{BasicInstruction, Directive, PseudoInstruction, Register},
 		Instruction, Pos,
 	},
 	util::discarding_sorted_merge_iter::DiscardingSortedMergeIter,
@@ -84,15 +84,15 @@ impl FuncTable {
 	#[allow(clippy::too_many_lines)] // TODO: Refactor?
 	#[allow(clippy::enum_glob_use)] // It's only for this function
 	pub fn from_instructions<'a>(instructions: &(impl Iterator<Item = (Pos, &'a Instruction)> + Clone)) -> Self {
-		use Instruction::{Pseudo, Simple};
+		use BasicInstruction::*;
+		use Instruction::{Basic, Pseudo};
 		use PseudoInstruction::*;
-		use SimpleInstruction::*;
 
 		// Get all returns
 		let returns: BTreeSet<Pos> = instructions
 			.clone()
 			.filter_map(|(pos, instruction)| match instruction {
-				Simple(Jr { rs: Register::Ra }) => Some(pos),
+				Basic(Jr { rs: Register::Ra }) => Some(pos),
 				_ => None,
 			})
 			.collect();
@@ -101,7 +101,7 @@ impl FuncTable {
 		let tailcalls: BTreeSet<Pos> = instructions
 			.clone()
 			.filter_map(|(pos, instruction)| match instruction {
-				Simple(J { .. } | Jr { .. }) => Some(pos),
+				Basic(J { .. } | Jr { .. }) => Some(pos),
 				_ => None,
 			})
 			.collect();
@@ -110,7 +110,7 @@ impl FuncTable {
 		let labels: BTreeSet<Pos> = instructions
 			.clone()
 			.filter_map(|(_, instruction)| match instruction {
-				Simple(
+				Basic(
 					J { target } |
 					Beq { target, .. } |
 					Bne { target, .. } |
@@ -131,7 +131,7 @@ impl FuncTable {
 		let function_entries: BTreeSet<Pos> = instructions
 			.clone()
 			.filter_map(|(_, instruction)| match instruction {
-				Simple(Jal { target }) => Some(*target),
+				Basic(Jal { target }) => Some(*target),
 				Instruction::Directive(Directive::Dw(target)) => Some(Pos(*target)),
 				_ => None,
 			})
@@ -179,7 +179,7 @@ impl FuncTable {
 					// TODO: Generalize this in `Instruction` as a method that
 					//       returns all registers used maybe.
 					match instruction {
-						Simple(Sb { rt, rs, .. } | Lb { rt, rs, .. } | Lbu { rt, rs, .. }) => {
+						Basic(Sb { rt, rs, .. } | Lb { rt, rs, .. } | Lbu { rt, rs, .. }) => {
 							if let Some(idx) = rt.arg_idx() {
 								if arguments[idx].is_none() {
 									arguments[idx] = Some("u8");
@@ -199,7 +199,7 @@ impl FuncTable {
 							}
 						},
 
-						Simple(Sh { rt, rs, .. } | Lh { rt, rs, .. } | Lhu { rt, rs, .. }) => {
+						Basic(Sh { rt, rs, .. } | Lh { rt, rs, .. } | Lhu { rt, rs, .. }) => {
 							if let Some(idx) = rt.arg_idx() {
 								if arguments[idx].is_none() {
 									arguments[idx] = Some("u16");
@@ -219,7 +219,7 @@ impl FuncTable {
 							}
 						},
 
-						Simple(
+						Basic(
 							Swl { rt, rs, .. } | Sw { rt, rs, .. } | Swr { rt, rs, .. } | Lwl { rt, rs, .. } | Lw { rt, rs, .. } | Lwr { rt, rs, .. },
 						) => {
 							if let Some(idx) = rt.arg_idx() {
@@ -244,7 +244,7 @@ impl FuncTable {
 							}
 						},
 
-						Simple(
+						Basic(
 							Addi { rt, rs, .. } |
 							Addiu { rt, rs, .. } |
 							Slti { rt, rs, .. } |
@@ -274,7 +274,7 @@ impl FuncTable {
 							}
 						},
 
-						Simple(
+						Basic(
 							Add { rd, rs, rt } |
 							Addu { rd, rs, rt } |
 							Sub { rd, rs, rt } |
@@ -306,7 +306,7 @@ impl FuncTable {
 							}
 						},
 
-						Simple(
+						Basic(
 							Sll { rd, rt, .. } |
 							Srl { rd, rt, .. } |
 							Sra { rd, rt, .. } |
@@ -327,7 +327,7 @@ impl FuncTable {
 							}
 						},
 
-						Simple(Jalr { rd, rs }) => {
+						Basic(Jalr { rd, rs }) => {
 							if let Some(idx) = rd.arg_idx() {
 								if arguments[idx].is_none() {
 									arguments[idx] = Some("u32");
@@ -340,7 +340,7 @@ impl FuncTable {
 							}
 						},
 
-						Simple(Lui { rt, .. }) => {
+						Basic(Lui { rt, .. }) => {
 							if let Some(idx) = rt.arg_idx() {
 								if arguments[idx].is_none() {
 									arguments[idx] = Some("u32");
@@ -348,7 +348,7 @@ impl FuncTable {
 							}
 						},
 
-						Simple(Mfhi { rd } | Mflo { rd }) => {
+						Basic(Mfhi { rd } | Mflo { rd }) => {
 							if let Some(idx) = rd.arg_idx() {
 								if arguments[idx].is_none() {
 									arguments[idx] = Some("u32");
@@ -356,7 +356,7 @@ impl FuncTable {
 							}
 						},
 
-						Simple(
+						Basic(
 							Bltz { rs, .. } |
 							Bgez { rs, .. } |
 							Bgtz { rs, .. } |

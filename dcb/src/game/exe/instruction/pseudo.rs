@@ -1,7 +1,7 @@
 //! Pseudo instructions
 
 // Imports
-use super::{FromRawIter, Raw, Register, SimpleInstruction};
+use super::{BasicInstruction, FromRawIter, Raw, Register};
 use crate::{game::exe::Pos, util::SignedHex};
 use int_conv::{Join, SignExtended, Signed, ZeroExtended};
 
@@ -248,17 +248,17 @@ impl FromRawIter for PseudoInstruction {
 
 	#[allow(clippy::similar_names)] // With register names, this happens too much
 	#[allow(clippy::too_many_lines, clippy::clippy::cognitive_complexity)] // We can't separate this into several functions, it's just 1 big match
-	#[allow(clippy::enum_glob_use)] // This reduces the amount of typing for simple instructions and registers
+	#[allow(clippy::enum_glob_use)] // This reduces the amount of typing for basic instructions and registers
 	fn decode<I: Iterator<Item = Raw> + Clone>(iter: &mut I) -> Self::Decoded {
+		use BasicInstruction::*;
 		use Register::*;
-		use SimpleInstruction::*;
 
 		// Get the first instruction
-		let (pos, instruction) = SimpleInstruction::decode(iter)?;
+		let (pos, instruction) = BasicInstruction::decode(iter)?;
 		let pseudo = match instruction {
 			Lui { imm: imm_hi, rt: prev_rt } => {
 				let iter_before = iter.clone();
-				match SimpleInstruction::decode(iter)?.1 {
+				match BasicInstruction::decode(iter)?.1 {
 					Addiu { imm: imm_lo, rt, rs } if rt == prev_rt && rs == prev_rt => Self::La {
 						rx:     prev_rt,
 						target: self::hi_plus_lo(imm_lo, imm_hi),

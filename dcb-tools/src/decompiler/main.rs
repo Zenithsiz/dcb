@@ -82,9 +82,9 @@ use dcb::{
 		data::DataTable,
 		func::FuncTable,
 		instruction::{
-			Directive,
+			BasicInstruction, Directive,
 			PseudoInstruction::{self, Nop},
-			Raw, SimpleInstruction,
+			Raw,
 		},
 		Func, Instruction, Pos,
 	},
@@ -106,6 +106,8 @@ fn main() -> Result<(), anyhow::Error> {
 	// Read the executable
 	log::debug!("Deserializing executable");
 	let exe = dcb::game::Exe::deserialize(&mut game_file).context("Unable to parse game executable")?;
+
+	log::info!("Header:\n{}\n", exe.header);
 
 	// Get all instructions
 	log::debug!("Retrieving all instructions");
@@ -182,8 +184,9 @@ fn main() -> Result<(), anyhow::Error> {
 		}
 
 		// Space out data if it had a name
-		if let Some(data) = data_pos.get(cur_pos) {
+		if let Some(data) = data_pos.get(cur_pos - 1) {
 			if data.end_pos() == cur_pos && !data.name.is_empty() {
+				println!("####################");
 				println!();
 			}
 		}
@@ -207,6 +210,8 @@ fn main() -> Result<(), anyhow::Error> {
 		}
 		if let Some(data) = data_pos.get(cur_pos) {
 			if data.pos == cur_pos {
+				println!();
+				println!("####################");
 				println!("{}:", data.name);
 				for description in data.desc.lines() {
 					println!("# {}", description);
@@ -215,19 +220,22 @@ fn main() -> Result<(), anyhow::Error> {
 		}
 
 		// Print the instruction and it's location.
-		print!("{cur_pos:#010x}:\t");
+		match cur_func {
+			Some(cur_func) => print!("{:#05x}:\t", cur_pos - cur_func.start_pos),
+			None => print!("{cur_pos:#010x}:\t"),
+		}
 		match instruction {
-			Instruction::Simple(
-				SimpleInstruction::J { target } |
-				SimpleInstruction::Jal { target } |
-				SimpleInstruction::Beq { target, .. } |
-				SimpleInstruction::Bne { target, .. } |
-				SimpleInstruction::Bltz { target, .. } |
-				SimpleInstruction::Bgez { target, .. } |
-				SimpleInstruction::Bgtz { target, .. } |
-				SimpleInstruction::Blez { target, .. } |
-				SimpleInstruction::Bltzal { target, .. } |
-				SimpleInstruction::Bgezal { target, .. },
+			Instruction::Basic(
+				BasicInstruction::J { target } |
+				BasicInstruction::Jal { target } |
+				BasicInstruction::Beq { target, .. } |
+				BasicInstruction::Bne { target, .. } |
+				BasicInstruction::Bltz { target, .. } |
+				BasicInstruction::Bgez { target, .. } |
+				BasicInstruction::Bgtz { target, .. } |
+				BasicInstruction::Blez { target, .. } |
+				BasicInstruction::Bltzal { target, .. } |
+				BasicInstruction::Bgezal { target, .. },
 			) |
 			Instruction::Pseudo(
 				PseudoInstruction::B { target } | PseudoInstruction::Beqz { target, .. } | PseudoInstruction::Bnez { target, .. },
@@ -256,7 +264,8 @@ fn main() -> Result<(), anyhow::Error> {
 				PseudoInstruction::SwlImm { offset: target, .. } |
 				PseudoInstruction::SwImm { offset: target, .. } |
 				PseudoInstruction::SwrImm { offset: target, .. },
-			) => match functions
+			) |
+			Instruction::Directive(Directive::Dw(target)) => match functions
 				.get(Pos(*target))
 				.map(|func| (func.start_pos, &func.name))
 				.or_else(|| data_pos.get(Pos(*target)).map(|data| (data.pos, &data.name)))
@@ -275,22 +284,6 @@ fn main() -> Result<(), anyhow::Error> {
 			},
 
 			_ => print!("{instruction}"),
-		}
-
-		// Comment any `dw` instructions that are function, data or string pointers
-		if let Instruction::Directive(Directive::Dw(target)) = instruction {
-			if let Some(func) = functions.get(Pos(*target)) {
-				print!(" # {}", func.name);
-			} else if let Some(data) = data_pos.get(Pos(*target)) {
-				if data.pos == Pos(*target) {
-					print!(" # {}", data.name);
-				} else {
-					let offset = Pos(*target) - data.pos;
-					if offset > 0 {
-						print!(" # {} + {offset:#x}", data.name);
-					}
-				}
-			}
 		}
 
 		// Append any comments in this line

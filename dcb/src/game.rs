@@ -11,9 +11,6 @@
 //! All these strings must only contain ascii characters, thus on read and on write, if any
 //! strings contain non-ascii characters, an error will occur
 
-// Lints
-//#![allow(clippy::missing_docs_in_private_items)] // A lot of our private items are simple digimon types, so they don't need documentation
-
 // Modules
 pub mod card;
 pub mod deck;

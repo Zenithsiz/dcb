@@ -1,18 +1,18 @@
 //! Psx cpu instructions
 
 // Modules
+pub mod basic;
 pub mod directive;
 pub mod pseudo;
 pub mod raw;
 pub mod reg;
-pub mod simple;
 
 // Exports
+pub use basic::BasicInstruction;
 pub use directive::Directive;
 pub use pseudo::PseudoInstruction;
 pub use raw::{FromRawIter, Raw};
 pub use reg::Register;
-pub use simple::SimpleInstruction;
 
 // Imports
 use crate::game::exe::Pos;
@@ -21,8 +21,8 @@ use crate::game::exe::Pos;
 #[derive(PartialEq, Eq, Clone, Debug)]
 #[derive(derive_more::Display)]
 pub enum Instruction {
-	/// A simple instruction
-	Simple(SimpleInstruction),
+	/// A basic instruction
+	Basic(BasicInstruction),
 
 	/// A pseudo instruction
 	Pseudo(PseudoInstruction),
@@ -111,9 +111,9 @@ impl<I: Iterator<Item = Raw> + Clone> Iterator for Iter<I> {
 			return self.try_next_from(Instruction::Directive);
 		}
 
-		// Else try to decode it as a pseudo, simple or directive, in that order.
+		// Else try to decode it as a pseudo, basic or directive, in that order.
 		self.try_next_from(Instruction::Pseudo)
-			.or_else(|| self.try_next_from(Instruction::Simple))
+			.or_else(|| self.try_next_from(Instruction::Basic))
 			.or_else(|| self.try_next_from(Instruction::Directive))
 	}
 }

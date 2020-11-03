@@ -19,7 +19,7 @@ pub struct Raw {
 /// returned iterator, that is, consume the least possible
 /// input in order to produce an atomic part of themselves.
 pub trait FromRawIter: Sized {
-	/// Returned iterator from [`decode`]
+	/// Returned iterator from [`decode`].
 	type Decoded: IntoIterator<Item = (Pos, Self)>;
 
 	/// Attempts to decode an instruction from an iterator of raw instructions

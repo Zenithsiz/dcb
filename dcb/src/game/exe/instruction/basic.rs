@@ -1,19 +1,130 @@
-//! Raw instructions
+//! Basic instructions
+//!
+//! This modules defines all the basic instructions from the psx.
+//! They are all 1 word (`u32`) long.
 
-// Lints
-// #[allow(clippy::similar_names)]
+// Modules
+pub mod alu_imm;
+pub mod cond;
+pub mod jmp;
+pub mod load;
+pub mod special;
+pub mod store;
+
+// Exports
+pub use alu_imm::{AluImmInst, AluImmRaw};
+pub use cond::{CondInst, CondRaw};
+pub use jmp::{JmpInst, JmpRaw};
+pub use load::{LoadInst, LoadRaw};
+pub use special::{SpecialInst, SpecialRaw};
+pub use store::{StoreInst, StoreRaw};
 
 // Imports
 use super::{FromRawIter, Raw, Register};
 use crate::{game::exe::Pos, util::SignedHex};
 use bitmatch::bitmatch;
-use int_conv::{SignExtended, Signed, Truncate, Truncated};
+use int_conv::{SignExtended, Signed, Truncate, Truncated, ZeroExtended};
+
+/// All basic instructions
+#[derive(PartialEq, Eq, Clone, Copy, Debug)]
+#[derive(derive_more::Display)]
+pub enum BasicInst {
+	/// Store
+	Store(StoreInst),
+
+	/// Load
+	Load(LoadInst),
+
+	/// Special
+	Special(SpecialInst),
+
+	/// Condition
+	Cond(CondInst),
+
+	/// Jump
+	Jmp(JmpInst),
+
+	/// Alu immediate
+	AluImm(AluImmInst),
+
+	/// Load upper immediate
+	#[display(fmt = "lui {dest}, {value:#x}")]
+	Lui {
+		/// Destination
+		dest: Register,
+
+		/// Value
+		value: u16,
+	},
+}
+
+impl BasicInst {
+	// TODO: MAybe extract the strings if the bitmatch macro allows for it.
+
+	/// Decodes this instruction
+	#[must_use]
+	#[bitmatch::bitmatch]
+	#[allow(clippy::many_single_char_names)] // `bitmatch` can only output single character names.
+	pub fn decode(raw: u32) -> Option<Self> {
+		Some(
+			#[bitmatch]
+			#[allow(unused_variables)] // TODO: Remove once `CopInst` is implemented.
+			match raw {
+				"000000_sssss_ttttt_ddddd_iiiii_ffffff" => Self::Special(SpecialInst::decode(SpecialRaw { s, t, d, i, f })?),
+				"00001p_iiiii_iiiii_iiiii_iiiii_iiiiii" => Self::Jmp(JmpInst::decode(JmpRaw { p, i })),
+				"000ppp_sssss_ttttt_iiiii_iiiii_iiiiii" => Self::Cond(CondInst::decode(CondRaw { p, s, t, i })?),
+				"001111_?????_ttttt_iiiii_iiiii_iiiiii" => Self::Lui {
+					dest:  Register::new(t)?,
+					value: i.truncated::<u16>(),
+				},
+				"001ppp_sssss_ttttt_iiiii_iiiii_iiiiii" => Self::AluImm(AluImmInst::decode(AluImmRaw { p, s, t, i })?),
+				"100ppp_sssss_ttttt_iiiii_iiiii_iiiiii" => Self::Store(StoreInst::decode(StoreRaw { p, s, t, i })?),
+				"101ppp_sssss_ttttt_iiiii_iiiii_iiiiii" => Self::Load(LoadInst::decode(LoadRaw { p, s, t, i })?),
+
+				/*
+				"0100nn_1iiii_iiiii_iiiii_iiiii_iiiiii" => Self::Cop(),
+				"0100nn_00000_ttttt_ddddd_?????_000000" => Self::Cop(),
+				"0100nn_00010_ttttt_ddddd_?????_000000" => Self::Cop(),
+				"0100nn_00100_ttttt_ddddd_?????_000000" => Self::Cop(),
+				"0100nn_00110_ttttt_ddddd_?????_000000" => Self::Cop(),
+				"0100nn_01000_00000_iiiii_iiiii_iiiiii" => Self::Cop(),
+				"0100nn_01000_00001_iiiii_iiiii_iiiiii" => Self::Cop(),
+				"1100nn_sssss_ttttt_iiiii_iiiii_iiiiii" => Self::Cop(),
+				"1110nn_sssss_ttttt_iiiii_iiiii_iiiiii" => Self::Cop(),
+				*/
+				_ => return None,
+			},
+		)
+	}
+
+	/// Encodes this instruction
+	#[must_use]
+	#[bitmatch]
+	pub fn encode(self) -> u32 {
+		#[rustfmt::skip]
+		match self {
+			Self::Special(inst) => { let SpecialRaw {    s, t, d, i, f } = inst.encode(); bitpack!("000000_sssss_ttttt_ddddd_iiiii_ffffff") },
+			Self::Jmp    (inst) => { let     JmpRaw { p,          i    } = inst.encode(); bitpack!("00001p_iiiii_iiiii_iiiii_iiiii_iiiiii") },
+			Self::Cond   (inst) => { let    CondRaw { p, s, t,    i    } = inst.encode(); bitpack!("000ppp_sssss_ttttt_iiiii_iiiii_iiiiii") },
+			Self::AluImm (inst) => { let  AluImmRaw { p, s, t,    i    } = inst.encode(); bitpack!("001ppp_sssss_ttttt_iiiii_iiiii_iiiiii") },
+			Self::Store  (inst) => { let   StoreRaw { p, s, t,    i    } = inst.encode(); bitpack!("100ppp_sssss_ttttt_iiiii_iiiii_iiiiii") },
+			Self::Load   (inst) => { let    LoadRaw { p, s, t,    i    } = inst.encode(); bitpack!("101ppp_sssss_ttttt_iiiii_iiiii_iiiiii") },
+
+			Self::Lui { dest, value } => {
+				let t = dest.idx();
+				let i = value.zero_extended::<u32>();
+				bitpack!("001111_?????_ttttt_iiiii_iiiii_iiiiii")
+			},
+		}
+	}
+}
+
 
 /// All simple instructions
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 #[derive(derive_more::Display)]
 #[allow(clippy::missing_docs_in_private_items)] // They're mostly register and immediate names.
-pub enum SimpleInstruction {
+pub enum BasicInstruction {
 	/// Store byte
 	#[display(fmt = "sb {rt}, {:#x}({rs})", "SignedHex(offset)")]
 	Sb { rt: Register, rs: Register, offset: i16 },
@@ -287,22 +398,27 @@ pub enum SimpleInstruction {
 	Break { imm: u32 },
 }
 
-impl SimpleInstruction {
+impl BasicInstruction {
 	/// Decodes an instruction from it's raw representation
 	#[bitmatch]
 	#[allow(clippy::cognitive_complexity)] // It's just a big match, not much we can do about it.
-	fn decode_repr(Raw { repr, pos }: Raw) -> Option<Self> {
+	fn decode_repr(raws: &[u32], pos: Pos) -> Option<(Self, &[u32])> {
 		#[allow(clippy::enum_glob_use)] // It's local to this function and REALLY reduces on the noise
-		use SimpleInstruction::*;
+		use BasicInstruction::*;
 
 		/// Alias for `Register::new`
 		fn reg(idx: u32) -> Option<Register> {
 			Register::new(idx.truncated())
 		}
 
+		let (raw, raws) = match raws {
+			[raw, raws @ ..] => (raw, raws),
+			_ => return None,
+		};
+
 		#[rustfmt::skip]
 		let instruction = #[bitmatch]
-		match repr {
+		match raw {
 			"000000_?????_ttttt_ddddd_iiiii_000000" => Sll  { rd: reg(d)?, rt: reg(t)?, imm: i.truncated()},
 			"000000_?????_ttttt_ddddd_iiiii_000010" => Srl  { rd: reg(d)?, rt: reg(t)?, imm: i.truncated()},
 			"000000_?????_ttttt_ddddd_iiiii_000011" => Sra  { rd: reg(d)?, rt: reg(t)?, imm: i.truncated()},
@@ -349,8 +465,8 @@ impl SimpleInstruction {
 
 			"000100_sssss_ttttt_iiiii_iiiii_iiiiii" => Beq    { rs: reg(s)?, rt: reg(t)?, target: pos + (i.truncated::<u16>().as_signed().sign_extended::<i32>() + 1) * 4 },
 			"000101_sssss_ttttt_iiiii_iiiii_iiiiii" => Bne    { rs: reg(s)?, rt: reg(t)?, target: pos + (i.truncated::<u16>().as_signed().sign_extended::<i32>() + 1) * 4 },
-			"000110_sssss_?????_iiiii_iiiii_iiiiii" => Blez   { rs: reg(s)?                  , target: pos + (i.truncated::<u16>().as_signed().sign_extended::<i32>() + 1) * 4 },
-			"000111_sssss_?????_iiiii_iiiii_iiiiii" => Bgtz   { rs: reg(s)?                  , target: pos + (i.truncated::<u16>().as_signed().sign_extended::<i32>() + 1) * 4 },
+			"000110_sssss_?????_iiiii_iiiii_iiiiii" => Blez   { rs: reg(s)?                 , target: pos + (i.truncated::<u16>().as_signed().sign_extended::<i32>() + 1) * 4 },
+			"000111_sssss_?????_iiiii_iiiii_iiiiii" => Bgtz   { rs: reg(s)?                 , target: pos + (i.truncated::<u16>().as_signed().sign_extended::<i32>() + 1) * 4 },
 
 			"001000_sssss_ttttt_iiiii_iiiii_iiiiii" => Addi  { rt: reg(t)?, rs: reg(s)?, imm: i.truncated::<u16>().as_signed() },
 			"001001_sssss_ttttt_iiiii_iiiii_iiiiii" => Addiu { rt: reg(t)?, rs: reg(s)?, imm: i.truncated::<u16>().as_signed() },
@@ -359,7 +475,7 @@ impl SimpleInstruction {
 			"001100_sssss_ttttt_iiiii_iiiii_iiiiii" => Andi  { rt: reg(t)?, rs: reg(s)?, imm: i.truncated() },
 			"001101_sssss_ttttt_iiiii_iiiii_iiiiii" => Ori   { rt: reg(t)?, rs: reg(s)?, imm: i.truncated() },
 			"001110_sssss_ttttt_iiiii_iiiii_iiiiii" => Xori  { rt: reg(t)?, rs: reg(s)?, imm: i.truncated() },
-			"001111_?????_ttttt_iiiii_iiiii_iiiiii" => Lui   { rt: reg(t)?                  , imm: i.truncated() },
+			"001111_?????_ttttt_iiiii_iiiii_iiiiii" => Lui   { rt: reg(t)?                 , imm: i.truncated() },
 
 			"0100nn_1iiii_iiiii_iiiii_iiiii_iiiiii" => CopN { n: n.truncate(), imm: i},
 
@@ -390,16 +506,114 @@ impl SimpleInstruction {
 			_ => return None,
 		};
 
-		Some(instruction)
+		Some((instruction, raws))
+	}
+
+	/// Encodes an instruction.
+	#[bitmatch]
+	#[must_use]
+	pub fn encode_repr(self, pos: Pos) -> Raw {
+		#[allow(clippy::enum_glob_use)] // It's local to this function and REALLY reduces on the noise
+		use BasicInstruction::*;
+
+		#[rustfmt::skip]
+		let repr = match self {
+			Sll { rd, rt, imm: i } => { let (d, t) = (rd.idx(), rt.idx()); bitpack!("000000_00000_ttttt_ddddd_iiiii_000000") },
+
+			Srl  { rd, rt, imm: i } => { let (d, t) = (rd.idx(), rt.idx()); bitpack!("000000_00000_ttttt_ddddd_iiiii_000010") },
+			Sra  { rd, rt, imm: i } => { let (d, t) = (rd.idx(), rt.idx()); bitpack!("000000_00000_ttttt_ddddd_iiiii_000011") },
+
+			Sllv { rd, rt, rs } => { let (d, t, s) = (rd.idx(), rt.idx(), rs.idx()); bitpack!("000000_sssss_ttttt_ddddd_00000_000100") },
+			Srlv { rd, rt, rs } => { let (d, t, s) = (rd.idx(), rt.idx(), rs.idx()); bitpack!("000000_sssss_ttttt_ddddd_00000_000110") },
+			Srav { rd, rt, rs } => { let (d, t, s) = (rd.idx(), rt.idx(), rs.idx()); bitpack!("000000_sssss_ttttt_ddddd_00000_000111") },
+
+			Jr   {     rs } => { let     s  =            rs.idx() ; bitpack!("000000_sssss_00000_00000_00000_001000") },
+			Jalr { rd, rs } => { let (d, s) = (rd.idx(), rs.idx()); bitpack!("000000_sssss_00000_ddddd_00000_001001") },
+
+			Syscall { imm: i } => { bitpack!("000000_iiiii_iiiii_iiiii_iiiii_001100") },
+			Break   { imm: i } => { bitpack!("000000_iiiii_iiiii_iiiii_iiiii_001101") },
+
+			Mfhi  { rd } => { let d = rd.idx(); bitpack!("000000_00000_00000_ddddd_00000_010000") },
+			Mthi  { rs } => { let s = rs.idx(); bitpack!("000000_sssss_00000_00000_00000_010001") },
+			Mflo  { rd } => { let d = rd.idx(); bitpack!("000000_00000_00000_ddddd_00000_010010") },
+			Mtlo  { rs } => { let s = rs.idx(); bitpack!("000000_sssss_00000_00000_00000_010011") },
+
+			Mult  { rs, rt } => { let (t, s) = (rt.idx(), rs.idx()); bitpack!("000000_sssss_ttttt_00000_00000_011000") },
+			Multu { rs, rt } => { let (t, s) = (rt.idx(), rs.idx()); bitpack!("000000_sssss_ttttt_00000_00000_011001") },
+			Div   { rs, rt } => { let (t, s) = (rt.idx(), rs.idx()); bitpack!("000000_sssss_ttttt_00000_00000_011010") },
+			Divu  { rs, rt } => { let (t, s) = (rt.idx(), rs.idx()); bitpack!("000000_sssss_ttttt_00000_00000_011011") },
+
+			Add  { rd, rs, rt } => { let (d, t, s) = (rd.idx(), rt.idx(), rs.idx()); bitpack!("000000_sssss_ttttt_ddddd_00000_100000") },
+			Addu { rd, rs, rt } => { let (d, t, s) = (rd.idx(), rt.idx(), rs.idx()); bitpack!("000000_sssss_ttttt_ddddd_00000_100001") },
+			Sub  { rd, rs, rt } => { let (d, t, s) = (rd.idx(), rt.idx(), rs.idx()); bitpack!("000000_sssss_ttttt_ddddd_00000_100010") },
+			Subu { rd, rs, rt } => { let (d, t, s) = (rd.idx(), rt.idx(), rs.idx()); bitpack!("000000_sssss_ttttt_ddddd_00000_100011") },
+			And  { rd, rs, rt } => { let (d, t, s) = (rd.idx(), rt.idx(), rs.idx()); bitpack!("000000_sssss_ttttt_ddddd_00000_100100") },
+			Or   { rd, rs, rt } => { let (d, t, s) = (rd.idx(), rt.idx(), rs.idx()); bitpack!("000000_sssss_ttttt_ddddd_00000_100101") },
+			Xor  { rd, rs, rt } => { let (d, t, s) = (rd.idx(), rt.idx(), rs.idx()); bitpack!("000000_sssss_ttttt_ddddd_00000_100110") },
+			Nor  { rd, rs, rt } => { let (d, t, s) = (rd.idx(), rt.idx(), rs.idx()); bitpack!("000000_sssss_ttttt_ddddd_00000_100111") },
+
+			Slt  { rd, rs, rt } => { let (d, t, s) = (rd.idx(), rt.idx(), rs.idx()); bitpack!("000000_sssss_ttttt_ddddd_00000_101010") },
+			Sltu { rd, rs, rt } => { let (d, t, s) = (rd.idx(), rt.idx(), rs.idx()); bitpack!("000000_sssss_ttttt_ddddd_00000_101011") },
+
+			Bltz   { rs, target } => { let s = rs.idx(); let i = (target - pos) / 4 - 1; bitpack!("000001_sssss_00000_iiiii_iiiii_iiiiii") },
+			Bgez   { rs, target } => { let s = rs.idx(); let i = (target - pos) / 4 - 1; bitpack!("000001_sssss_00000_iiiii_iiiii_iiiiii") },
+			Bltzal { rs, target } => { let s = rs.idx(); let i = (target - pos) / 4 - 1; bitpack!("000001_sssss_00000_iiiii_iiiii_iiiiii") },
+			Bgezal { rs, target } => { let s = rs.idx(); let i = (target - pos) / 4 - 1; bitpack!("000001_sssss_00000_iiiii_iiiii_iiiiii") },
+
+			J      { target } => { let i = (target - (pos & 0x0fff_ffff)) / 4; bitpack!("000010_iiiii_iiiii_iiiii_iiiii_iiiiii") },
+			Jal    { target } => { let i = (target - (pos & 0x0fff_ffff)) / 4; bitpack!("000011_iiiii_iiiii_iiiii_iiiii_iiiiii") },
+
+			Beq    { rs, rt, target } => { let (s, t) = (rs.idx(), rt.idx()); let i = (target - pos) / 4 - 1; bitpack!("000100_sssss_ttttt_iiiii_iiiii_iiiiii") },
+			Bne    { rs, rt, target } => { let (s, t) = (rs.idx(), rt.idx()); let i = (target - pos) / 4 - 1; bitpack!("000101_sssss_ttttt_iiiii_iiiii_iiiiii") },
+			Blez   { rs    , target } => { let  s     =  rs.idx()           ; let i = (target - pos) / 4 - 1; bitpack!("000110_sssss_00000_iiiii_iiiii_iiiiii") },
+			Bgtz   { rs    , target } => { let  s     =  rs.idx()           ; let i = (target - pos) / 4 - 1; bitpack!("000111_sssss_00000_iiiii_iiiii_iiiiii") },
+
+			Addi  { rt, rs, imm: i } => { let (t, s) = (rt.idx(), rs.idx()); bitpack!("001000_sssss_ttttt_iiiii_iiiii_iiiiii") },
+			Addiu { rt, rs, imm: i } => { let (t, s) = (rt.idx(), rs.idx()); bitpack!("001001_sssss_ttttt_iiiii_iiiii_iiiiii") },
+			Slti  { rt, rs, imm: i } => { let (t, s) = (rt.idx(), rs.idx()); bitpack!("001010_sssss_ttttt_iiiii_iiiii_iiiiii") },
+			Sltiu { rt, rs, imm: i } => { let (t, s) = (rt.idx(), rs.idx()); bitpack!("001011_sssss_ttttt_iiiii_iiiii_iiiiii") },
+			Andi  { rt, rs, imm: i } => { let (t, s) = (rt.idx(), rs.idx()); bitpack!("001100_sssss_ttttt_iiiii_iiiii_iiiiii") },
+			Ori   { rt, rs, imm: i } => { let (t, s) = (rt.idx(), rs.idx()); bitpack!("001101_sssss_ttttt_iiiii_iiiii_iiiiii") },
+			Xori  { rt, rs, imm: i } => { let (t, s) = (rt.idx(), rs.idx()); bitpack!("001110_sssss_ttttt_iiiii_iiiii_iiiiii") },
+			Lui   { rt,     imm: i } => { let  t     =  rt.idx();            bitpack!("001111_00000_ttttt_iiiii_iiiii_iiiiii") },
+
+			CopN { n, imm: i } => { bitpack!("0100nn_1iiii_iiiii_iiiii_iiiii_iiiiii") },
+
+			MfcN { n, rt, rd } => { let (t, d) = (rt.idx(), rd.idx()); bitpack!("0100nn_00000_ttttt_ddddd_00000_000000") },
+			CfcN { n, rt, rd } => { let (t, d) = (rt.idx(), rd.idx()); bitpack!("0100nn_00010_ttttt_ddddd_00000_000000") },
+			MtcN { n, rt, rd } => { let (t, d) = (rt.idx(), rd.idx()); bitpack!("0100nn_00100_ttttt_ddddd_00000_000000") },
+			CtcN { n, rt, rd } => { let (t, d) = (rt.idx(), rd.idx()); bitpack!("0100nn_00110_ttttt_ddddd_00000_000000") },
+			BcNf { n, target: i } => { bitpack!("0100nn_01000_00000_iiiii_iiiii_iiiiii") },
+			BcNt { n, target: i } => { bitpack!("0100nn_01000_00001_iiiii_iiiii_iiiiii") },
+
+			Lb  { rt, rs, offset: i } => { let (t, s) = (rt.idx(), rs.idx()); bitpack!("100000_sssss_ttttt_iiiii_iiiii_iiiiii") },
+			Lh  { rt, rs, offset: i } => { let (t, s) = (rt.idx(), rs.idx()); bitpack!("100001_sssss_ttttt_iiiii_iiiii_iiiiii") },
+			Lwl { rt, rs, offset: i } => { let (t, s) = (rt.idx(), rs.idx()); bitpack!("100010_sssss_ttttt_iiiii_iiiii_iiiiii") },
+			Lw  { rt, rs, offset: i } => { let (t, s) = (rt.idx(), rs.idx()); bitpack!("100011_sssss_ttttt_iiiii_iiiii_iiiiii") },
+			Lbu { rt, rs, offset: i } => { let (t, s) = (rt.idx(), rs.idx()); bitpack!("100100_sssss_ttttt_iiiii_iiiii_iiiiii") },
+			Lhu { rt, rs, offset: i } => { let (t, s) = (rt.idx(), rs.idx()); bitpack!("100101_sssss_ttttt_iiiii_iiiii_iiiiii") },
+			Lwr { rt, rs, offset: i } => { let (t, s) = (rt.idx(), rs.idx()); bitpack!("100110_sssss_ttttt_iiiii_iiiii_iiiiii") },
+
+			Sb  { rt, rs, offset: i } => { let (t, s) = (rt.idx(), rs.idx()); bitpack!("101000_sssss_ttttt_iiiii_iiiii_iiiiii") },
+			Sh  { rt, rs, offset: i } => { let (t, s) = (rt.idx(), rs.idx()); bitpack!("101001_sssss_ttttt_iiiii_iiiii_iiiiii") },
+			Swl { rt, rs, offset: i } => { let (t, s) = (rt.idx(), rs.idx()); bitpack!("101010_sssss_ttttt_iiiii_iiiii_iiiiii") },
+			Sw  { rt, rs, offset: i } => { let (t, s) = (rt.idx(), rs.idx()); bitpack!("101011_sssss_ttttt_iiiii_iiiii_iiiiii") },
+			Swr { rt, rs, offset: i } => { let (t, s) = (rt.idx(), rs.idx()); bitpack!("101110_sssss_ttttt_iiiii_iiiii_iiiiii") },
+
+			LwcN { n, rs, rt, imm: i } => { let (t, s) = (rt.idx(), rs.idx()); bitpack!("1100nn_sssss_ttttt_iiiii_iiiii_iiiiii") },
+			SwcN { n, rs, rt, imm: i } => { let (t, s) = (rt.idx(), rs.idx()); bitpack!("1110nn_sssss_ttttt_iiiii_iiiii_iiiiii") },
+		};
+
+		Raw { repr, pos }
 	}
 }
 
-impl FromRawIter for SimpleInstruction {
+impl FromRawIter for BasicInstruction {
 	type Decoded = Option<(Pos, Self)>;
 
 	fn decode<I: Iterator<Item = Raw> + Clone>(iter: &mut I) -> Self::Decoded {
 		let raw = iter.next()?;
-		let instruction = Self::decode_repr(raw)?;
+		let (instruction, _) = Self::decode_repr(std::slice::from_ref(&raw.repr), raw.pos)?;
 		Some((raw.pos, instruction))
 	}
 }

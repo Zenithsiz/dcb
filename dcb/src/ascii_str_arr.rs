@@ -306,13 +306,13 @@ impl<const N: usize> Default for AsciiStrArr<N> {
 }
 
 impl<const N: usize> fmt::Debug for AsciiStrArr<N> {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 		AsciiStr::fmt(self.as_ascii(), f)
 	}
 }
 
 impl<const N: usize> fmt::Display for AsciiStrArr<N> {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 		AsciiStr::fmt(self.as_ascii(), f)
 	}
 }

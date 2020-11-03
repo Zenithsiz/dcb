@@ -17,7 +17,7 @@ impl<'a, T> LowerHex for SignedHex<&'a T>
 where
 	SignedHex<T>: LowerHex,
 {
-	fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+	fn fmt(&self, f: &mut Formatter) -> fmt::Result {
 		<SignedHex<T> as LowerHex>::fmt(SignedHex::<T>::ref_cast(self.0), f)
 	}
 }

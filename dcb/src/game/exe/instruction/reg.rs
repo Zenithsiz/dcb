@@ -31,13 +31,23 @@ macro_rules! generate_register {
 
 			/// Creates a new register index from a `u8`.
 			#[must_use]
-			pub const fn new(idx: u8) -> Option<Self> {
+			pub const fn new(idx: u32) -> Option<Self> {
 				match idx {
 					$(
 						$value => Some( Self::$variant ),
 					)*
 
 					_ => None,
+				}
+			}
+
+			/// Returns the index of this register
+			#[must_use]
+			pub const fn idx(self) -> u32 {
+				match self {
+					$(
+						Self::$variant => $value,
+					)*
 				}
 			}
 		}

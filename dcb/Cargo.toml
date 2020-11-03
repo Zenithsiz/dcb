@@ -20,6 +20,7 @@ int-conv  = "0.1"
 bitmatch = "0.1"
 either = "1.6"
 smallvec = "1.4"
+num_enum = "0.5"
 
 # Serde
 serde = { version = "1.0", features = ["derive"] }
