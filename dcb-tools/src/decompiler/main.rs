@@ -82,7 +82,7 @@ use dcb::{
 		data::DataTable,
 		func::FuncTable,
 		instruction::{
-			BasicInstruction, Directive,
+			Directive,
 			PseudoInstruction::{self, Nop},
 			Raw,
 		},
@@ -225,18 +225,18 @@ fn main() -> Result<(), anyhow::Error> {
 			None => print!("{cur_pos:#010x}:\t"),
 		}
 		match instruction {
-			Instruction::Basic(
-				BasicInstruction::J { target } |
-				BasicInstruction::Jal { target } |
-				BasicInstruction::Beq { target, .. } |
-				BasicInstruction::Bne { target, .. } |
-				BasicInstruction::Bltz { target, .. } |
-				BasicInstruction::Bgez { target, .. } |
-				BasicInstruction::Bgtz { target, .. } |
-				BasicInstruction::Blez { target, .. } |
-				BasicInstruction::Bltzal { target, .. } |
-				BasicInstruction::Bgezal { target, .. },
-			) |
+			/* Instruction::Basic(
+				BasicInst::J { target } |
+				BasicInst::Jal { target } |
+				BasicInst::Beq { target, .. } |
+				BasicInst::Bne { target, .. } |
+				BasicInst::Bltz { target, .. } |
+				BasicInst::Bgez { target, .. } |
+				BasicInst::Bgtz { target, .. } |
+				BasicInst::Blez { target, .. } |
+				BasicInst::Bltzal { target, .. } |
+				BasicInst::Bgezal { target, .. },
+			) | */
 			Instruction::Pseudo(
 				PseudoInstruction::B { target } | PseudoInstruction::Beqz { target, .. } | PseudoInstruction::Bnez { target, .. },
 			) => match functions

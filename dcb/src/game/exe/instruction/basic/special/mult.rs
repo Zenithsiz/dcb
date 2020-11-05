@@ -71,19 +71,19 @@ pub enum MultInst {
 	/// Move from
 	MoveFrom {
 		/// Destination
-		dest: Register,
+		dst: Register,
 
 		/// Source
-		source: MultReg,
+		src: MultReg,
 	},
 
 	/// Move to
 	MoveTo {
 		/// Source
-		source: Register,
+		dst: Register,
 
 		/// Destination
-		dest: MultReg,
+		src: MultReg,
 	},
 }
 
@@ -93,11 +93,11 @@ impl MultInst {
 	pub fn decode(raw: MultRaw) -> Option<Self> {
 		#[rustfmt::skip]
 		Some(match raw.f {
-			0x10 => Self::MoveFrom { dest: Register::new(raw.d)?, source: MultReg::Hi },
-			0x12 => Self::MoveFrom { dest: Register::new(raw.d)?, source: MultReg::Lo },
+			0x10 => Self::MoveFrom { dst: Register::new(raw.d)?, src: MultReg::Hi },
+			0x12 => Self::MoveFrom { dst: Register::new(raw.d)?, src: MultReg::Lo },
 
-			0x11 => Self::MoveTo { source: Register::new(raw.s)?, dest: MultReg::Hi },
-			0x13 => Self::MoveTo { source: Register::new(raw.s)?, dest: MultReg::Lo },
+			0x11 => Self::MoveTo { dst: Register::new(raw.s)?, src: MultReg::Hi },
+			0x13 => Self::MoveTo { dst: Register::new(raw.s)?, src: MultReg::Lo },
 
 			0x18 => Self::Mult { kind: MultKind::Mult, mode: MultMode::  Signed, lhs: Register::new(raw.s)?, rhs: Register::new(raw.t)? },
 			0x19 => Self::Mult { kind: MultKind::Mult, mode: MultMode::Unsigned, lhs: Register::new(raw.s)?, rhs: Register::new(raw.t)? },
@@ -123,20 +123,20 @@ impl MultInst {
 					(MultKind::Div, MultMode::Unsigned) => 0x1b,
 				},
 			},
-			Self::MoveFrom { dest, source } => MultRaw {
+			Self::MoveFrom { dst, src } => MultRaw {
 				s: 0,
 				t: 0,
-				d: dest.idx(),
-				f: match source {
+				d: dst.idx(),
+				f: match src {
 					MultReg::Hi => 0x10,
 					MultReg::Lo => 0x12,
 				},
 			},
-			Self::MoveTo { source, dest } => MultRaw {
-				s: source.idx(),
+			Self::MoveTo { dst: src, src: dst } => MultRaw {
+				s: src.idx(),
 				t: 0,
 				d: 0,
-				f: match dest {
+				f: match dst {
 					MultReg::Hi => 0x11,
 					MultReg::Lo => 0x13,
 				},
@@ -155,13 +155,13 @@ impl fmt::Display for MultInst {
 				(MultKind::Div , MultMode::  Signed) => write!(f, "div {lhs}, {rhs}"),
 				(MultKind::Div , MultMode::Unsigned) => write!(f, "diu {lhs}, {rhs}"),
 			},
-			Self::MoveFrom { dest, source } => match source {
-				MultReg::Hi => write!(f, "mfhi {dest}"),
-				MultReg::Lo => write!(f, "mflo {dest}"),
+			Self::MoveFrom { dst, src } => match src {
+				MultReg::Hi => write!(f, "mfhi {dst}"),
+				MultReg::Lo => write!(f, "mflo {dst}"),
 			},
-			Self::MoveTo { source, dest } => match dest {
-				MultReg::Hi => write!(f, "mthi {source}"),
-				MultReg::Lo => write!(f, "mtlo {source}"),
+			Self::MoveTo { dst: src, src: dst } => match dst {
+				MultReg::Hi => write!(f, "mthi {src}"),
+				MultReg::Lo => write!(f, "mtlo {src}"),
 			},
 		}
 	}

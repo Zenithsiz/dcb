@@ -1,9 +1,215 @@
 //! Pseudo instructions
+//!
+//! This modules defines all the pseudo instructions usually
+//! used in mips. They are variable length.
+
+// Modules
+pub mod load;
+pub mod load_imm;
+pub mod move_reg;
+pub mod store;
+
+// Exports
+pub use load::LoadPseudoInst;
+pub use move_reg::MoveRegPseudoInst;
+pub use store::StorePseudoInst;
 
 // Imports
-use super::{BasicInstruction, FromRawIter, Raw, Register};
-use crate::{game::exe::Pos, util::SignedHex};
-use int_conv::{Join, SignExtended, Signed, ZeroExtended};
+use super::{FromRawIter, Raw, Register};
+use crate::{
+	game::exe::{instruction::BasicInst, Pos},
+	util::SignedHex,
+};
+use int_conv::ZeroExtended;
+
+/// A pseudo instruction
+// TODO: Maybe partition by start address instead of by type somehow?
+#[derive(PartialEq, Eq, Clone, Copy, Debug)]
+#[derive(derive_more::Display)]
+pub enum PseudoInst {
+	/// Load
+	Load(LoadPseudoInst),
+
+	/// Store
+	Store(StorePseudoInst),
+
+	/// Move register
+	MoveRegPseudo(MoveRegPseudoInst),
+
+	/// No-op
+	/// Alias for `sll $zr,$zr,0`
+	#[display(fmt = "nop")]
+	Nop,
+	/*
+	/// Add assign
+	/// Alias for `add $rx, $rx, $rt`
+	#[display(fmt = "add {rx}, {rt}")]
+	AddAssign { rx: Register, rt: Register },
+
+	/// Add unsigned assign
+	/// Alias for `addu $rx, $rx, $rt`
+	#[display(fmt = "addu {rx}, {rt}")]
+	AdduAssign { rx: Register, rt: Register },
+
+	/// Sub assign
+	/// Alias for `sub $rx, $rx, $rt`
+	#[display(fmt = "sub {rx}, {rt}")]
+	SubAssign { rx: Register, rt: Register },
+
+	/// Sub unsigned assign
+	/// Alias for `subu $rx, $rx, $rt`
+	#[display(fmt = "subu {rx}, {rt}")]
+	SubuAssign { rx: Register, rt: Register },
+
+	/// And assign
+	/// Alias for `and $rx, $rx, $rt`
+	#[display(fmt = "and {rx}, {rt}")]
+	AndAssign { rx: Register, rt: Register },
+
+	/// Or assign
+	/// Alias for `or $rx, $rx, $rt`
+	#[display(fmt = "or {rx}, {rt}")]
+	OrAssign { rx: Register, rt: Register },
+
+	/// Xor assign
+	/// Alias for `xor $rx, $rx, $rt`
+	#[display(fmt = "xor {rx}, {rt}")]
+	XorAssign { rx: Register, rt: Register },
+
+	/// Nor assign
+	/// Alias for `nor $rx, $rx, $rt`
+	#[display(fmt = "nor {rx}, {rt}")]
+	NorAssign { rx: Register, rt: Register },
+
+	/// Add immediate assign
+	/// Alias for `addi $rx, $rx, imm`
+	#[display(fmt = "addi {rx}, {:#x}", "SignedHex(imm)")]
+	AddiAssign { rx: Register, imm: i16 },
+
+	/// Add immediate sign-extended assign
+	/// Alias for `addiu $rx, $rx, imm`
+	#[display(fmt = "addiu {rx}, {:#x}", "SignedHex(imm)")]
+	AddiuAssign { rx: Register, imm: i16 },
+
+	/// And immediate assign
+	/// Alias for `andi $rx, $rx, imm`
+	#[display(fmt = "andi {rx}, {imm:#x}")]
+	AndiAssign { rx: Register, imm: u16 },
+
+	/// Or immediate assign
+	/// Alias for `ori $rx, $rx, imm`
+	#[display(fmt = "ori {rx}, {imm:#x}")]
+	OriAssign { rx: Register, imm: u16 },
+
+	/// Xor immediate assign
+	/// Alias for `xori $rx, $rx, imm`
+	#[display(fmt = "xori {rx}, {imm:#x}")]
+	XoriAssign { rx: Register, imm: u16 },
+
+	/// Shift left logical variable assign
+	/// Alias for `sllv $rx, $rx, $rs`
+	#[display(fmt = "sllv {rx} {rs}")]
+	SllvAssign { rx: Register, rs: Register },
+
+	/// Shift right logical variable assign
+	/// Alias for `srlv $rx, $rx, $rs`
+	#[display(fmt = "srlv {rx} {rs}")]
+	SrlvAssign { rx: Register, rs: Register },
+
+	/// Shift right arithmetic variable assign
+	/// Alias for `srav $rx, $rx, $rs`
+	#[display(fmt = "srav {rx} {rs}")]
+	SravAssign { rx: Register, rs: Register },
+
+	/// Shift left logical assign
+	/// Alias for `sll $rx, $rx, imm`
+	#[display(fmt = "sll {rx} {imm:#x}")]
+	SllAssign { rx: Register, imm: u8 },
+
+	/// Shift right logical assign
+	/// Alias for `srl $rx, $rx, imm`
+	#[display(fmt = "srl {rx} {imm:#x}")]
+	SrlAssign { rx: Register, imm: u8 },
+
+	/// Shift right arithmetic assign
+	/// Alias for `sla $rx, $rx, imm`
+	#[display(fmt = "sra {rx} {imm:#x}")]
+	SraAssign { rx: Register, imm: u8 },
+
+	/// Jump and link with return address
+	/// Alias for `jalr $ra, $rx`
+	#[display(fmt = "jalr {rx}")]
+	JalrRa { rx: Register },
+
+	/// Subtract immediate
+	/// Alias for `addi $rt, $rs, -imm`
+	#[display(fmt = "subi {rt}, {rs}, {imm:#x}")]
+	Subi { rt: Register, rs: Register, imm: u32 },
+
+	/// Subtract immediate sign-extended
+	/// Alias for `addiu $rt, $rs, -imm`
+	#[display(fmt = "subiu {rt}, {rs}, {imm:#x}")]
+	Subiu { rt: Register, rs: Register, imm: u32 },
+
+	/// Subtract immediate assign
+	/// Alias for `subi $rx, $rx, imm`
+	#[display(fmt = "subi {rx}, {imm:#x}")]
+	SubiAssign { rx: Register, imm: u32 },
+
+	/// Subtract immediate sign-extended assign
+	/// Alias for `subiu $rx, $rx, imm`
+	#[display(fmt = "subiu {rx}, {imm:#x}")]
+	SubiuAssign { rx: Register, imm: u32 },
+
+	/// Branch if equal to zero
+	/// Alias for `beq $rx, $zr, target`
+	#[display(fmt = "beqz {rx}, {target:#x}")]
+	Beqz { rx: Register, target: Pos },
+
+	/// Branch if different from zero
+	/// Alias for `bne $rx, $zr, target`
+	#[display(fmt = "bnez {rx}, {target:#x}")]
+	Bnez { rx: Register, target: Pos },
+
+	/// Jump relative
+	/// Alias for `beq $zr, $zr, target`
+	#[display(fmt = "b {target:#x}")]
+	B { target: Pos },
+	*/
+}
+
+impl PseudoInst {
+	pub fn decode<I: Iterator<Item = BasicInst> + Clone>(_iter: &mut I) -> Option<Self> {
+		todo!();
+		/*
+		let mut cur_iter = iter.clone();
+		match cur_iter.next()? {
+			BasicInst::Lui(_) => match cur_iter.next() {
+
+				BasicInst::Store(_) => {},
+				BasicInst::Load(_) => {},
+				BasicInst::Special(_) => {},
+				BasicInst::Cond(_) => {},
+				BasicInst::Jmp(_) => {},
+				BasicInst::AluImm(_) => {},
+				Some(_) => {}
+				None => {}
+			},
+
+			/*
+			BasicInst::Store(_) => {},
+			BasicInst::Load(_) => {},
+			BasicInst::Special(_) => {},
+			BasicInst::Cond(_) => {},
+			BasicInst::Jmp(_) => {},
+			BasicInst::AluImm(_) => {},
+			*/
+
+			_ => None,
+		}
+		*/
+	}
+}
 
 /// A pseudo instruction
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -248,17 +454,15 @@ impl FromRawIter for PseudoInstruction {
 
 	#[allow(clippy::similar_names)] // With register names, this happens too much
 	#[allow(clippy::too_many_lines, clippy::clippy::cognitive_complexity)] // We can't separate this into several functions, it's just 1 big match
-	#[allow(clippy::enum_glob_use)] // This reduces the amount of typing for basic instructions and registers
-	fn decode<I: Iterator<Item = Raw> + Clone>(iter: &mut I) -> Self::Decoded {
-		use BasicInstruction::*;
-		use Register::*;
-
+	fn decode<I: Iterator<Item = Raw> + Clone>(_iter: &mut I) -> Self::Decoded {
 		// Get the first instruction
-		let (pos, instruction) = BasicInstruction::decode(iter)?;
+
+		/*
+		let (pos, instruction) = BasicInst::decode(iter)?;
 		let pseudo = match instruction {
 			Lui { imm: imm_hi, rt: prev_rt } => {
 				let iter_before = iter.clone();
-				match BasicInstruction::decode(iter)?.1 {
+				match BasicInst::decode(iter)?.1 {
 					Addiu { imm: imm_lo, rt, rs } if rt == prev_rt && rs == prev_rt => Self::La {
 						rx:     prev_rt,
 						target: self::hi_plus_lo(imm_lo, imm_hi),
@@ -411,13 +615,7 @@ impl FromRawIter for PseudoInstruction {
 		};
 
 		Some((pos, pseudo))
+		*/
+		todo!()
 	}
-}
-
-/// Calculates `hi << 16 + lo`
-fn hi_plus_lo(lo: i16, hi: u16) -> u32 {
-	let lo = lo.sign_extended::<i32>();
-	let hi = u32::join(0, hi).as_signed();
-
-	(hi + lo).as_unsigned()
 }

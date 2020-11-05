@@ -19,17 +19,10 @@ pub use iter::WithInstructionsIter;
 // Imports
 use super::Func;
 use crate::{
-	game::exe::{
-		instruction::{BasicInstruction, Directive, PseudoInstruction, Register},
-		Instruction, Pos,
-	},
+	game::exe::{Instruction, Pos},
 	util::discarding_sorted_merge_iter::DiscardingSortedMergeIter,
 };
-use std::{
-	collections::{BTreeSet, HashMap},
-	fs::File,
-	iter::FromIterator,
-};
+use std::{collections::BTreeSet, fs::File, iter::FromIterator};
 
 /// Function table
 ///
@@ -83,11 +76,8 @@ impl FuncTable {
 	#[must_use]
 	#[allow(clippy::too_many_lines)] // TODO: Refactor?
 	#[allow(clippy::enum_glob_use)] // It's only for this function
-	pub fn from_instructions<'a>(instructions: &(impl Iterator<Item = (Pos, &'a Instruction)> + Clone)) -> Self {
-		use BasicInstruction::*;
-		use Instruction::{Basic, Pseudo};
-		use PseudoInstruction::*;
-
+	pub fn from_instructions<'a>(_instructions: &(impl Iterator<Item = (Pos, &'a Instruction)> + Clone)) -> Self {
+		/*
 		// Get all returns
 		let returns: BTreeSet<Pos> = instructions
 			.clone()
@@ -481,5 +471,7 @@ impl FuncTable {
 				}
 			})
 			.collect()
+		*/
+		todo!()
 	}
 }

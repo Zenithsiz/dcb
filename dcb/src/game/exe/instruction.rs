@@ -8,7 +8,7 @@ pub mod raw;
 pub mod reg;
 
 // Exports
-pub use basic::BasicInstruction;
+pub use basic::BasicInst;
 pub use directive::Directive;
 pub use pseudo::PseudoInstruction;
 pub use raw::{FromRawIter, Raw};
@@ -22,7 +22,7 @@ use crate::game::exe::Pos;
 #[derive(derive_more::Display)]
 pub enum Instruction {
 	/// A basic instruction
-	Basic(BasicInstruction),
+	Basic(BasicInst),
 
 	/// A pseudo instruction
 	Pseudo(PseudoInstruction),
@@ -112,9 +112,12 @@ impl<I: Iterator<Item = Raw> + Clone> Iterator for Iter<I> {
 		}
 
 		// Else try to decode it as a pseudo, basic or directive, in that order.
+		todo!()
+		/*
 		self.try_next_from(Instruction::Pseudo)
 			.or_else(|| self.try_next_from(Instruction::Basic))
 			.or_else(|| self.try_next_from(Instruction::Directive))
+		*/
 	}
 }
 

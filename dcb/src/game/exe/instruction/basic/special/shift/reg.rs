@@ -40,7 +40,7 @@ pub struct ShiftRegRaw {
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub struct ShiftRegInst {
 	/// Destination register, `rd`
-	pub dest: Register,
+	pub dst: Register,
 
 	/// Lhs argument, `rt`
 	pub lhs: Register,
@@ -59,7 +59,7 @@ impl ShiftRegInst {
 		let func = ShiftRegFunc::try_from(raw.f.truncated::<u8>()).ok()?;
 
 		Some(Self {
-			dest: Register::new(raw.d)?,
+			dst: Register::new(raw.d)?,
 			lhs: Register::new(raw.t)?,
 			rhs: Register::new(raw.s)?,
 			func,
@@ -69,7 +69,7 @@ impl ShiftRegInst {
 	/// Encodes this instruction
 	#[must_use]
 	pub fn encode(self) -> ShiftRegRaw {
-		let d = self.dest.idx();
+		let d = self.dst.idx();
 		let t = self.lhs.idx();
 		let s = self.rhs.idx();
 		let f = u8::from(self.func).zero_extended::<u32>();
@@ -80,7 +80,7 @@ impl ShiftRegInst {
 
 impl fmt::Display for ShiftRegInst {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-		let Self { dest, lhs, rhs, func } = self;
+		let Self { dst, lhs, rhs, func } = self;
 
 		let mnemonic = match func {
 			ShiftRegFunc::LeftLogical => "sllv",
@@ -88,6 +88,6 @@ impl fmt::Display for ShiftRegInst {
 			ShiftRegFunc::RightArithmetic => "srav",
 		};
 
-		write!(f, "{mnemonic} {dest}, {lhs}, {rhs}")
+		write!(f, "{mnemonic} {dst}, {lhs}, {rhs}")
 	}
 }

@@ -12,9 +12,9 @@ path = "src/extractor/main.rs"
 name = "patcher"
 path = "src/patcher/main.rs"
 
-[[bin]]
-name = "decompiler"
-path = "src/decompiler/main.rs"
+# [[bin]]
+# name = "decompiler"
+# path = "src/decompiler/main.rs"
 
 [dependencies]
 # Dcb

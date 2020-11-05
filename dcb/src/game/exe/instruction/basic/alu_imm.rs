@@ -5,11 +5,13 @@ use crate::{game::exe::instruction::Register, util::SignedHex};
 use int_conv::{Signed, Truncated, ZeroExtended};
 use std::{convert::TryFrom, fmt};
 
-/// Alu register opcode (lower 3 bits)
+/// Alu immediate instruction kind
+///
+/// Each variant's value is equal to the lower 3 bits of the opcode
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 #[derive(num_enum::IntoPrimitive, num_enum::TryFromPrimitive)]
 #[repr(u8)]
-pub enum AluImmOp {
+pub enum AluImmKind {
 	/// Add
 	Add                 = 0x0,
 
@@ -52,7 +54,7 @@ pub struct AluImmRaw {
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub struct AluImmInst {
 	/// Destination register, `rd`
-	pub dest: Register,
+	pub dst: Register,
 
 	/// Lhs argument, `rs`
 	pub lhs: Register,
@@ -61,29 +63,29 @@ pub struct AluImmInst {
 	pub rhs: u32,
 
 	/// Opcode
-	pub op: AluImmOp,
+	pub kind: AluImmKind,
 }
 
 impl AluImmInst {
 	/// Decodes this instruction
 	#[must_use]
 	pub fn decode(raw: AluImmRaw) -> Option<Self> {
-		let op = AluImmOp::try_from(raw.p.truncated::<u8>()).ok()?;
+		let kind = AluImmKind::try_from(raw.p.truncated::<u8>()).ok()?;
 
 		Some(Self {
-			dest: Register::new(raw.t)?,
+			dst: Register::new(raw.t)?,
 			lhs: Register::new(raw.s)?,
 			rhs: raw.i,
-			op,
+			kind,
 		})
 	}
 
 	/// Encodes this instruction
 	#[must_use]
 	pub fn encode(self) -> AluImmRaw {
-		let p = u8::from(self.op).zero_extended::<u32>();
+		let p = u8::from(self.kind).zero_extended::<u32>();
 		let s = self.lhs.idx();
-		let t = self.dest.idx();
+		let t = self.dst.idx();
 		let i = self.rhs;
 
 		AluImmRaw { p, s, t, i }
@@ -92,17 +94,17 @@ impl AluImmInst {
 
 impl fmt::Display for AluImmInst {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-		let Self { op, dest, lhs, rhs } = self;
+		let Self { kind, dst, lhs, rhs } = self;
 
 		#[rustfmt::skip]
-		match op {
-			AluImmOp::Add                 => write!(f, "addi {dest}, {lhs}, {:#x}", SignedHex(rhs.as_signed())),
-			AluImmOp::AddUnsigned         => write!(f, "addiu {dest}, {lhs}, {:#x}", SignedHex(rhs.as_signed())),
-			AluImmOp::SetLessThan         => write!(f, "slti {dest}, {lhs}, {:#x}", SignedHex(rhs.as_signed())),
-			AluImmOp::SetLessThanUnsigned => write!(f, "sltiu {dest}, {lhs}, {rhs:#x}"),
-			AluImmOp::And                 => write!(f, "andi {dest}, {lhs}, {rhs:#x}"),
-			AluImmOp::Or                  => write!(f, "ori {dest}, {lhs}, {rhs:#x}"),
-			AluImmOp::Xor                 => write!(f, "xori {dest}, {lhs}, {rhs:#x}"),
+		match kind {
+			AluImmKind::Add                 => write!(f, "addi {dst}, {lhs}, {:#x}", SignedHex(rhs.as_signed())),
+			AluImmKind::AddUnsigned         => write!(f, "addiu {dst}, {lhs}, {:#x}", SignedHex(rhs.as_signed())),
+			AluImmKind::SetLessThan         => write!(f, "slti {dst}, {lhs}, {:#x}", SignedHex(rhs.as_signed())),
+			AluImmKind::SetLessThanUnsigned => write!(f, "sltiu {dst}, {lhs}, {rhs:#x}"),
+			AluImmKind::And                 => write!(f, "andi {dst}, {lhs}, {rhs:#x}"),
+			AluImmKind::Or                  => write!(f, "ori {dst}, {lhs}, {rhs:#x}"),
+			AluImmKind::Xor                 => write!(f, "xori {dst}, {lhs}, {rhs:#x}"),
 		}
 	}
 }

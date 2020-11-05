@@ -3,13 +3,15 @@
 // Imports
 use crate::{game::exe::instruction::Register, util::SignedHex};
 use int_conv::{Signed, Truncated, ZeroExtended};
-use std::{convert::TryFrom, fmt};
+use std::convert::TryFrom;
 
-/// Store instruction opcode (lower 3 bits)
+/// Store instruction kind
+///
+/// Each variant's value is equal to the lower 3 bits of the opcode
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 #[derive(num_enum::IntoPrimitive, num_enum::TryFromPrimitive)]
 #[repr(u8)]
-pub enum StoreOpcode {
+pub enum StoreKind {
 	/// Byte, `u8`
 	Byte      = 0x0,
 
@@ -24,6 +26,20 @@ pub enum StoreOpcode {
 
 	/// Word right-bits, `u32`
 	WordRight = 0x6,
+}
+
+impl StoreKind {
+	/// Returns the mnemonic for this store kind
+	#[must_use]
+	pub const fn mnemonic(self) -> &'static str {
+		match self {
+			Self::Byte => "sb",
+			Self::HalfWord => "sh",
+			Self::WordLeft => "swl",
+			Self::Word => "sw",
+			Self::WordRight => "swr",
+		}
+	}
 }
 
 /// Raw representation
@@ -44,63 +60,44 @@ pub struct StoreRaw {
 
 /// Store instructions
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
+#[derive(derive_more::Display)]
+#[display(fmt = "{} {dst}, {:#x}({src})", "kind.mnemonic()", "SignedHex(offset)")]
 pub struct StoreInst {
 	/// Source register, `rt`
-	pub source: Register,
+	pub src: Register,
 
 	/// Destination register, `rs`
-	pub dest: Register,
+	pub dst: Register,
 
 	/// Destination offset.
 	pub offset: i16,
 
-	/// Opcode
-	pub op: StoreOpcode,
+	/// Kind
+	pub kind: StoreKind,
 }
 
 impl StoreInst {
 	/// Decodes this instruction
 	#[must_use]
 	pub fn decode(raw: StoreRaw) -> Option<Self> {
-		let kind = StoreOpcode::try_from(raw.p.truncated::<u8>()).ok()?;
+		let kind = StoreKind::try_from(raw.p.truncated::<u8>()).ok()?;
 
 		Some(Self {
-			source: Register::new(raw.t)?,
-			dest:   Register::new(raw.s)?,
+			src: Register::new(raw.t)?,
+			dst: Register::new(raw.s)?,
 			offset: raw.i.truncated::<u16>().as_signed(),
-			op:     kind,
+			kind,
 		})
 	}
 
 	/// Encodes this instruction
 	#[must_use]
 	pub fn encode(self) -> StoreRaw {
-		let t = self.source.idx();
-		let s = self.dest.idx();
+		let t = self.src.idx();
+		let s = self.dst.idx();
 		let i = self.offset.as_unsigned().zero_extended::<u32>();
-		let p = u8::from(self.op).zero_extended::<u32>();
+		let p = u8::from(self.kind).zero_extended::<u32>();
 
 		StoreRaw { p, s, t, i }
-	}
-}
-
-impl fmt::Display for StoreInst {
-	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-		let Self {
-			source,
-			dest,
-			offset,
-			op: kind,
-		} = self;
-
-		let mnemonic = match kind {
-			StoreOpcode::Byte => "sb",
-			StoreOpcode::HalfWord => "sh",
-			StoreOpcode::Word => "sw",
-			StoreOpcode::WordRight => "swr",
-			StoreOpcode::WordLeft => "swl",
-		};
-
-		write!(f, "{mnemonic} {dest}, {:#x}({source})", SignedHex(offset))
 	}
 }

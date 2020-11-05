@@ -40,7 +40,7 @@ pub struct ShiftImmRaw {
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub struct ShiftImmInst {
 	/// Destination register, `rt`
-	pub dest: Register,
+	pub dst: Register,
 
 	/// Lhs argument, `rd`
 	pub lhs: Register,
@@ -60,7 +60,7 @@ impl ShiftImmInst {
 
 		Some(Self {
 			lhs: Register::new(raw.t)?,
-			dest: Register::new(raw.d)?,
+			dst: Register::new(raw.d)?,
 			rhs: raw.i.truncated::<u16>().as_signed(),
 			func,
 		})
@@ -70,7 +70,7 @@ impl ShiftImmInst {
 	#[must_use]
 	pub fn encode(self) -> ShiftImmRaw {
 		let t = self.lhs.idx();
-		let d = self.dest.idx();
+		let d = self.dst.idx();
 		let i = self.rhs.as_unsigned().zero_extended::<u32>();
 		let f = u8::from(self.func).zero_extended::<u32>();
 
@@ -80,7 +80,7 @@ impl ShiftImmInst {
 
 impl fmt::Display for ShiftImmInst {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-		let Self { lhs, dest, rhs, func } = self;
+		let Self { lhs, dst, rhs, func } = self;
 
 		let mnemonic = match func {
 			ShiftImmFunc::LeftLogical => "sll",
@@ -88,6 +88,6 @@ impl fmt::Display for ShiftImmInst {
 			ShiftImmFunc::RightArithmetic => "sra",
 		};
 
-		write!(f, "{mnemonic} {dest}, {lhs}, {rhs:#x}")
+		write!(f, "{mnemonic} {dst}, {lhs}, {rhs:#x}")
 	}
 }

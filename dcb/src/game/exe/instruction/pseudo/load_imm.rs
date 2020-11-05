@@ -1,0 +1,109 @@
+//! Load immediate
+
+// Imports
+use crate::{
+	game::exe::instruction::{basic::InstIter, Register},
+	util::SignedHex,
+};
+use std::fmt;
+
+/// Immediate kind
+#[derive(PartialEq, Eq, Clone, Copy, Debug)]
+#[derive(derive_more::Display)]
+pub enum LoadImmKind {
+	/// Address
+	///
+	/// Alias for `lui $dst, {hi} / addiu $dst, $dst, {lo}`
+	Address(u32),
+
+	/// Word
+	///
+	/// Alias for `lui $dst, {hi} / ori $dst, $dst, {imm-lo}`
+	Word(u32),
+
+	/// Unsigned half-word
+	///
+	/// Alias for `ori $dst, $zr, imm`
+	HalfWordUnsigned(u16),
+
+	/// Signed half-word
+	///
+	/// Alias for `addiu $dst, $zr, imm`
+	HalfWordSigned(i16),
+}
+
+impl LoadImmKind {
+	/// Returns the mnemonic for this load kind
+	#[must_use]
+	pub const fn mnemonic(self) -> &'static str {
+		match self {
+			LoadImmKind::Address(_) => "la",
+			LoadImmKind::Word(_) | LoadImmKind::HalfWordUnsigned(_) | LoadImmKind::HalfWordSigned(_) => "li",
+		}
+	}
+
+	/// Returns a displayable with the value of this load kind formatted.
+	pub fn value_fmt(self) -> impl fmt::Display {
+		struct FmtValue(Self);
+
+		impl fmt::Display for FmtValue {
+			fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+				#[rustfmt::skip]
+				match self.0 {
+					LoadImmKind::Address(address)        => write!(f, "{address:#x}"),
+					LoadImmKind::Word(value)             => write!(f, "{value:#x}"),
+					LoadImmKind::HalfWordUnsigned(value) => write!(f, "{value:#x}"),
+					LoadImmKind::HalfWordSigned(value)   => write!(f, "{:#x}", SignedHex(value)),
+				}
+			}
+		}
+
+		FmtValue(self)
+	}
+}
+
+/// Load immediate instruction
+#[derive(PartialEq, Eq, Clone, Copy, Debug)]
+#[derive(derive_more::Display)]
+#[display(fmt = "{} {dst}, {}", "kind.mnemonic()", "kind.value_fmt()")]
+pub struct LoadImmInst {
+	/// Destination register
+	pub dst: Register,
+
+	/// Load kind
+	pub kind: LoadImmKind,
+}
+
+impl LoadImmInst {
+	/// Decodes this pseudo instruction
+	#[must_use]
+	pub fn decode(iter: InstIter<'_, impl Iterator<Item = u32> + Clone>) -> Option<Self> {
+		todo!();
+		/*
+		match insts {
+			[BasicInst::]
+
+
+			/*
+			/// Alias for `lui $dst, {hi} / addiu $dst, $dst, {lo}`
+			Address(u32),
+
+			/// Word
+			///
+			/// Alias for `lui $dst, {hi} / ori $dst, $dst, {imm-lo}`
+			Word(u32),
+
+			/// Unsigned half-word
+			///
+			/// Alias for `ori $dst, $zr, imm`
+			HalfWordUnsigned(u16),
+
+			/// Signed half-word
+			///
+			/// Alias for `addiu $dst, $zr, imm`
+			HalfWordSigned(i16),
+			*/
+		}
+		*/
+	}
+}

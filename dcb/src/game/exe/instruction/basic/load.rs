@@ -3,13 +3,15 @@
 // Imports
 use crate::{game::exe::instruction::Register, util::SignedHex};
 use int_conv::{Signed, Truncated, ZeroExtended};
-use std::{convert::TryFrom, fmt};
+use std::convert::TryFrom;
 
-/// Load instruction opcode (lower 3 bits)
+/// Load instruction kind
+///
+/// Each variant's value is equal to the lower 3 bits of the opcode
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 #[derive(num_enum::IntoPrimitive, num_enum::TryFromPrimitive)]
 #[repr(u8)]
-pub enum LoadOpcode {
+pub enum LoadKind {
 	/// Byte, `i8`
 	Byte             = 0x0,
 
@@ -32,6 +34,22 @@ pub enum LoadOpcode {
 	WordRight        = 0x6,
 }
 
+impl LoadKind {
+	/// Returns the mnemonic for this load kind
+	#[must_use]
+	pub const fn mnemonic(self) -> &'static str {
+		match self {
+			Self::Byte => "lb",
+			Self::HalfWord => "lh",
+			Self::WordLeft => "lwl",
+			Self::Word => "lw",
+			Self::ByteUnsigned => "lbu",
+			Self::HalfWordUnsigned => "lhu",
+			Self::WordRight => "lwr",
+		}
+	}
+}
+
 /// Raw representation
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub struct LoadRaw {
@@ -50,60 +68,44 @@ pub struct LoadRaw {
 
 /// Load instructions
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
+#[derive(derive_more::Display)]
+#[display(fmt = "{} {dst}, {:#x}({src})", "kind.mnemonic()", "SignedHex(offset)")]
 pub struct LoadInst {
 	/// Source register, `rt`
-	pub source: Register,
+	pub src: Register,
 
 	/// Destination register, `rs`
-	pub dest: Register,
+	pub dst: Register,
 
 	/// Destination offset.
 	pub offset: i16,
 
-	/// Opcode
-	pub op: LoadOpcode,
+	/// Kind
+	pub kind: LoadKind,
 }
 
 impl LoadInst {
 	/// Decodes this instruction
 	#[must_use]
 	pub fn decode(raw: LoadRaw) -> Option<Self> {
-		let op = LoadOpcode::try_from(raw.p.truncated::<u8>()).ok()?;
+		let op = LoadKind::try_from(raw.p.truncated::<u8>()).ok()?;
 
 		Some(Self {
-			source: Register::new(raw.t)?,
-			dest: Register::new(raw.s)?,
+			src:    Register::new(raw.t)?,
+			dst:    Register::new(raw.s)?,
 			offset: raw.i.truncated::<u16>().as_signed(),
-			op,
+			kind:   op,
 		})
 	}
 
 	/// Encodes this instruction
 	#[must_use]
 	pub fn encode(self) -> LoadRaw {
-		let t = self.source.idx();
-		let s = self.dest.idx();
+		let t = self.src.idx();
+		let s = self.dst.idx();
 		let i = self.offset.as_unsigned().zero_extended::<u32>();
-		let p = u8::from(self.op).zero_extended::<u32>();
+		let p = u8::from(self.kind).zero_extended::<u32>();
 
 		LoadRaw { p, s, t, i }
-	}
-}
-
-impl fmt::Display for LoadInst {
-	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-		let Self { source, dest, offset, op } = self;
-
-		let mnemonic = match op {
-			LoadOpcode::Byte => "lb",
-			LoadOpcode::HalfWord => "lh",
-			LoadOpcode::WordLeft => "lwl",
-			LoadOpcode::Word => "lw",
-			LoadOpcode::ByteUnsigned => "lbu",
-			LoadOpcode::HalfWordUnsigned => "lhu",
-			LoadOpcode::WordRight => "lwr",
-		};
-
-		write!(f, "{mnemonic} {dest}, {:#x}({source})", SignedHex(offset))
 	}
 }

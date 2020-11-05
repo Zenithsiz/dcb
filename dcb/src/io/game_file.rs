@@ -104,10 +104,8 @@ impl<R: Read + Write + Seek> Read for GameFile<R> {
 			// Get how many bytes we can read, The minimum between the end of the data section and the size of the buffer
 			// Note: Can't overflow, max is `2048`
 			// Note: At this point, `cur_address` must be within the data section
-			let bytes_to_read = cur_address
-				.try_to_data()
-				.expect("Address wasn't in data section")
-				.remaining_bytes()
+			let bytes_until_section_end = cur_address.try_to_data().expect("Address wasn't in data section").remaining_bytes();
+			let bytes_to_read = bytes_until_section_end
 				.min(buf.len().try_into().expect("Unable to convert `usize` to `u64`"))
 				.try_into()
 				.expect("Unable to convert number 0..2048 to `i64`");
@@ -118,13 +116,13 @@ impl<R: Read + Write + Seek> Read for GameFile<R> {
 			debug_assert!(bytes_to_read <= buf.len());
 			let bytes_read = self.reader.read(unsafe { buf.get_unchecked_mut(..bytes_to_read) })?;
 
-			// If 0 bytes were read, EOF was reached, so return with however many we've read
+			// If we reached EOF, return what we read
 			if bytes_read == 0 {
 				return Ok(total_buf_len - buf.len());
 			}
 
-			// Else seek into the next data section start
-			cur_address = RealAddress::from_u64(self.reader.seek(SeekFrom::Start(cur_address.next_sector_data_section_start().as_u64()))?);
+			// Else update the current address
+			cur_address += bytes_read.try_into().expect("Unable to convert `usize` to `i64`");
 
 			// And discard what we've already read
 			// Note: This slice can't panic, as `bytes_read` is at most `buf.len()`
@@ -168,10 +166,8 @@ impl<R: Read + Write + Seek> Write for GameFile<R> {
 			// Get how many bytes we can write, The minimum between the end of the data section and the size of the buffer
 			// Note: Can't overflow, max is `2048`
 			// Note: At this point, `cur_address` must be within the data section
-			let bytes_to_write = cur_address
-				.try_to_data()
-				.expect("Address wasn't in data section")
-				.remaining_bytes()
+			let bytes_until_section_end = cur_address.try_to_data().expect("Address wasn't in data section").remaining_bytes();
+			let bytes_to_write = bytes_until_section_end
 				.min(buf.len().try_into().expect("Unable to convert `usize` to `u64`"))
 				.try_into()
 				.expect("Unable to convert number 0..2048 to `i64`");
@@ -187,8 +183,8 @@ impl<R: Read + Write + Seek> Write for GameFile<R> {
 				return Ok(total_buf_len - buf.len());
 			}
 
-			// Else seek into the next data section start
-			cur_address = RealAddress::from_u64(self.reader.seek(SeekFrom::Start(cur_address.next_sector_data_section_start().as_u64()))?);
+			// Else update the current address
+			cur_address += bytes_written.try_into().expect("Unable to convert `usize` to `i64`");
 
 			// And discard what we've already written
 			// Note: This slice can't panic, as `bytes_written` is at most `buf.len()`

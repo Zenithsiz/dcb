@@ -5,11 +5,13 @@ use crate::game::exe::instruction::Register;
 use int_conv::{Truncated, ZeroExtended};
 use std::{convert::TryFrom, fmt};
 
-/// Alu register func
+/// Alu register instruction kind
+///
+/// Each variant's value is equal to the lower 4 bits of the opcode
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 #[derive(num_enum::IntoPrimitive, num_enum::TryFromPrimitive)]
 #[repr(u8)]
-pub enum AluRegFunc {
+pub enum AluRegKind {
 	/// Add
 	Add                 = 0x20,
 
@@ -61,7 +63,7 @@ pub struct AluRegRaw {
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub struct AluRegInst {
 	/// Destination register, `rd`
-	pub dest: Register,
+	pub dst: Register,
 
 	/// Lhs argument, `rs`
 	pub lhs: Register,
@@ -69,31 +71,31 @@ pub struct AluRegInst {
 	/// Rhs argument, `rt`
 	pub rhs: Register,
 
-	/// Function
-	pub func: AluRegFunc,
+	/// Kind
+	pub kind: AluRegKind,
 }
 
 impl AluRegInst {
 	/// Decodes this instruction
 	#[must_use]
 	pub fn decode(raw: AluRegRaw) -> Option<Self> {
-		let func = AluRegFunc::try_from(raw.f.truncated::<u8>()).ok()?;
+		let kind = AluRegKind::try_from(raw.f.truncated::<u8>()).ok()?;
 
 		Some(Self {
-			dest: Register::new(raw.d)?,
+			dst: Register::new(raw.d)?,
 			lhs: Register::new(raw.s)?,
 			rhs: Register::new(raw.t)?,
-			func,
+			kind,
 		})
 	}
 
 	/// Encodes this instruction
 	#[must_use]
 	pub fn encode(self) -> AluRegRaw {
-		let d = self.dest.idx();
+		let d = self.dst.idx();
 		let s = self.lhs.idx();
 		let t = self.rhs.idx();
-		let f = u8::from(self.func).zero_extended::<u32>();
+		let f = u8::from(self.kind).zero_extended::<u32>();
 
 		AluRegRaw { f, t, d, s }
 	}
@@ -101,21 +103,21 @@ impl AluRegInst {
 
 impl fmt::Display for AluRegInst {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-		let Self { dest, lhs, rhs, func } = self;
+		let Self { dst, lhs, rhs, kind } = self;
 
-		let mnemonic = match func {
-			AluRegFunc::Add => "add",
-			AluRegFunc::AddUnsigned => "addu",
-			AluRegFunc::Sub => "sub",
-			AluRegFunc::SubUnsigned => "subu",
-			AluRegFunc::And => "and",
-			AluRegFunc::Or => "or",
-			AluRegFunc::Xor => "xor",
-			AluRegFunc::Nor => "nor",
-			AluRegFunc::SetLessThan => "slt",
-			AluRegFunc::SetLessThanUnsigned => "sltu",
+		let mnemonic = match kind {
+			AluRegKind::Add => "add",
+			AluRegKind::AddUnsigned => "addu",
+			AluRegKind::Sub => "sub",
+			AluRegKind::SubUnsigned => "subu",
+			AluRegKind::And => "and",
+			AluRegKind::Or => "or",
+			AluRegKind::Xor => "xor",
+			AluRegKind::Nor => "nor",
+			AluRegKind::SetLessThan => "slt",
+			AluRegKind::SetLessThanUnsigned => "sltu",
 		};
 
-		write!(f, "{mnemonic} {dest}, {lhs}, {rhs}")
+		write!(f, "{mnemonic} {dst}, {lhs}, {rhs}")
 	}
 }
