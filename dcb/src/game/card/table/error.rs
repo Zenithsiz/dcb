@@ -1,7 +1,7 @@
 //! Errors
 
 // Imports
-use super::{card, property, CardType, Table};
+use super::{card, header, CardType, Table};
 
 /// Error type for [`Table::deserialize`]
 #[derive(Debug, thiserror::Error)]
@@ -14,12 +14,9 @@ pub enum DeserializeError {
 	#[error("Unable to read table header")]
 	ReadHeader(#[source] std::io::Error),
 
-	/// The magic of the table was wrong
-	#[error("Found wrong table header magic (expected {:#x}, found {:#x})", Table::HEADER_MAGIC, magic)]
-	HeaderMagic {
-		/// Magic we found
-		magic: u32,
-	},
+	/// Unable to parse table header
+	#[error("Unable to parse table header")]
+	Header(#[source] header::FromBytesError),
 
 	/// There were too many cards
 	#[error(
@@ -51,15 +48,15 @@ pub enum DeserializeError {
 		err: std::io::Error,
 	},
 
-	/// An unknown card type was found
-	#[error("Unknown card type for card id {}", id)]
-	UnknownCardType {
+	/// Unable to parse a card header
+	#[error("Unable to parse a card header for card id {id}")]
+	ParseCardHeader {
 		/// Id of card
 		id: usize,
 
 		/// Underlying error
 		#[source]
-		err: property::card_type::FromBytesError,
+		err: card::header::FromBytesError,
 	},
 
 	/// Unable to read a card

@@ -2,34 +2,28 @@
 
 // Modules
 pub mod error;
+pub mod header;
 
 // Exports
 pub use error::{DeserializeError, SerializeError};
+pub use header::Header;
 
 // Imports
 use crate::{
-	game::card::{
-		self,
-		property::{self, CardType},
-		Digimon, Digivolve, Item,
-	},
+	game::card::{self, property::CardType, CardHeader, Digimon, Digivolve, Item},
 	io::{address::Data, GameFile},
-	util::{array_split, array_split_mut},
+	util::array_split_mut,
 };
-use byteorder::{ByteOrder, LittleEndian};
 use dcb_bytes::Bytes;
 use std::{
 	convert::TryInto,
 	io::{Read, Seek, Write},
 };
 
-/// The table storing all cards
-///
-/// See the [module containing](self) this struct for more details
-/// on where the table is deserialized from and it's features / restrictions.
+/// Table storing all cards.
 #[derive(PartialEq, Eq, Clone, Debug)]
 #[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::unsafe_derive_deserialize)] // We don't have any `unsafe` methods
+#[allow(clippy::unsafe_derive_deserialize)] // False positive
 pub struct Table {
 	/// All digimons in this table
 	pub digimons: Vec<Digimon>,
@@ -43,11 +37,6 @@ pub struct Table {
 
 // Constants
 impl Table {
-	/// Table header size
-	pub const HEADER_BYTE_SIZE: usize = 0x8;
-	/// The magic in the table header
-	/// = "0ACD"
-	pub const HEADER_MAGIC: u32 = 0x44434130;
 	/// The max size of the card table
 	// TODO: Check the theoretical max, which is currently thought to be `0x14ff5`
 	pub const MAX_BYTE_SIZE: usize = 0x14970;
@@ -81,26 +70,14 @@ impl Table {
 			.map_err(DeserializeError::Seek)?;
 
 		// Read header
-		let mut header_bytes = [0u8; Self::HEADER_BYTE_SIZE];
+		let mut header_bytes = <Header as Bytes>::ByteArray::default();
 		file.read_exact(&mut header_bytes).map_err(DeserializeError::ReadHeader)?;
-		let header = array_split! {&header_bytes,
-			magic: [0x4],
-
-			digimons_len: [0x2],
-			items_len: 1,
-			digivolves_len: 1,
-		};
-
-		// Check if the magic is right
-		let magic = LittleEndian::read_u32(header.magic);
-		if magic != Self::HEADER_MAGIC {
-			return Err(DeserializeError::HeaderMagic { magic });
-		}
+		let header = Header::from_bytes(&header_bytes).map_err(DeserializeError::Header)?;
 
 		// Then check the number of each card
-		let digimon_cards: usize = LittleEndian::read_u16(header.digimons_len).into();
-		let item_cards: usize = (*header.items_len).into();
-		let digivolve_cards: usize = (*header.digivolves_len).into();
+		let digimon_cards: usize = header.digimons_len.into();
+		let item_cards: usize = header.items_len.into();
+		let digivolve_cards: usize = header.digivolves_len.into();
 		log::trace!("Found {digimon_cards} digimon, {item_cards} item, {digivolve_cards} digivolve cards");
 
 		// And calculate the number of cards
@@ -124,43 +101,51 @@ impl Table {
 		let mut digivolves = Vec::with_capacity(digivolve_cards);
 
 		// Read until the table is over
-		for cur_id in 0..cards_len {
+		for card_id in 0..cards_len {
 			// Read card header bytes
 			let mut card_header_bytes = [0u8; 0x3];
 			file.read_exact(&mut card_header_bytes)
-				.map_err(|err| DeserializeError::ReadCardHeader { id: cur_id, err })?;
+				.map_err(|err| DeserializeError::ReadCardHeader { id: card_id, err })?;
 
 			// Read the header
-			let card_id = LittleEndian::read_u16(&card_header_bytes[0x0..0x2]);
-			let card_type = CardType::from_bytes(&card_header_bytes[0x2]).map_err(|err| DeserializeError::UnknownCardType { id: cur_id, err })?;
+			let card_header = CardHeader::from_bytes(&card_header_bytes).map_err(|err| DeserializeError::ParseCardHeader { id: card_id, err })?;
 
-			log::trace!("Found #{}: {}", card_id, card_type);
+			log::trace!("Found #{}: {}", card_id, card_header.ty);
 
 			// If the card id isn't what we expected, log warning
-			if usize::from(card_id) != cur_id {
-				log::warn!("Card with id {} had unexpected id {}", cur_id, card_id);
+			if usize::from(card_header.id) != card_id {
+				log::warn!("Card with id {} had unexpected id {}", card_id, card_header.id);
 			}
 			// And create / push the card
-			match card_type {
+			match card_header.ty {
 				CardType::Digimon => {
 					let mut digimon_bytes = [0; std::mem::size_of::<<Digimon as Bytes>::ByteArray>()];
-					file.read_exact(&mut digimon_bytes)
-						.map_err(|err| DeserializeError::ReadCard { id: cur_id, card_type, err })?;
-					let digimon = Digimon::from_bytes(&digimon_bytes).map_err(|err| DeserializeError::DigimonCard { id: cur_id, err })?;
+					file.read_exact(&mut digimon_bytes).map_err(|err| DeserializeError::ReadCard {
+						id: card_id,
+						card_type: card_header.ty,
+						err,
+					})?;
+					let digimon = Digimon::from_bytes(&digimon_bytes).map_err(|err| DeserializeError::DigimonCard { id: card_id, err })?;
 					digimons.push(digimon);
 				},
 				CardType::Item => {
 					let mut item_bytes = [0; std::mem::size_of::<<Item as Bytes>::ByteArray>()];
-					file.read_exact(&mut item_bytes)
-						.map_err(|err| DeserializeError::ReadCard { id: cur_id, card_type, err })?;
-					let item = Item::from_bytes(&item_bytes).map_err(|err| DeserializeError::ItemCard { id: cur_id, err })?;
+					file.read_exact(&mut item_bytes).map_err(|err| DeserializeError::ReadCard {
+						id: card_id,
+						card_type: card_header.ty,
+						err,
+					})?;
+					let item = Item::from_bytes(&item_bytes).map_err(|err| DeserializeError::ItemCard { id: card_id, err })?;
 					items.push(item);
 				},
 				CardType::Digivolve => {
 					let mut digivolve_bytes = [0; std::mem::size_of::<<Digivolve as Bytes>::ByteArray>()];
-					file.read_exact(&mut digivolve_bytes)
-						.map_err(|err| DeserializeError::ReadCard { id: cur_id, card_type, err })?;
-					let digivolve = Digivolve::from_bytes(&digivolve_bytes).map_err(|err| DeserializeError::DigivolveCard { id: cur_id, err })?;
+					file.read_exact(&mut digivolve_bytes).map_err(|err| DeserializeError::ReadCard {
+						id: card_id,
+						card_type: card_header.ty,
+						err,
+					})?;
+					let digivolve = Digivolve::from_bytes(&digivolve_bytes).map_err(|err| DeserializeError::DigivolveCard { id: card_id, err })?;
 					digivolves.push(digivolve);
 				},
 			}
@@ -168,9 +153,9 @@ impl Table {
 			// Skip null terminator
 			let mut null_terminator = [0; 1];
 			file.read_exact(&mut null_terminator)
-				.map_err(|err| DeserializeError::ReadCardFooter { id: cur_id, err })?;
+				.map_err(|err| DeserializeError::ReadCardFooter { id: card_id, err })?;
 			if null_terminator[0] != 0 {
-				log::warn!("Card with id {}'s null terminator was {} instead of 0", cur_id, null_terminator[0]);
+				log::warn!("Card with id {}'s null terminator was {} instead of 0", card_id, null_terminator[0]);
 			}
 		}
 
@@ -198,27 +183,12 @@ impl Table {
 
 		// Write header
 		let mut header_bytes = [0u8; 0x8];
-		let header = array_split_mut!(&mut header_bytes,
-			magic: [0x4],
-
-			digimons_len: [0x2],
-			items_len: 1,
-			digivolves_len: 1,
-		);
-
-		// Set magic
-		LittleEndian::write_u32(header.magic, Self::HEADER_MAGIC);
-
-		// Write card lens
-		log::trace!("Writing {} digimon cards", self.digimons.len());
-		log::trace!("Writing {} item cards", self.items.len());
-		log::trace!("Writing {} digivolve cards", self.digivolves.len());
-		LittleEndian::write_u16(
-			header.digimons_len,
-			self.digimons.len().try_into().expect("Number of digimon cards exceeded `u16`"),
-		);
-		*header.items_len = self.items.len().try_into().expect("Number of item cards exceeded `u8`");
-		*header.digivolves_len = self.digivolves.len().try_into().expect("Number of digivolve cards exceeded `u8`");
+		let header = Header {
+			digimons_len:   self.digimons.len().try_into().expect("Number of digimon cards exceeded `u16`"),
+			items_len:      self.items.len().try_into().expect("Number of item cards exceeded `u8`"),
+			digivolves_len: self.digivolves.len().try_into().expect("Number of digivolve cards exceeded `u8`"),
+		};
+		header.to_bytes(&mut header_bytes).into_ok();
 
 		// And write the header
 		file.write_all(&header_bytes).map_err(SerializeError::WriteHeader)?;
@@ -233,15 +203,16 @@ impl Table {
 					// Card bytes
 					let mut card_bytes = [0; 0x3 + CardType::$card_type.byte_size() + 0x1];
 					let bytes = array_split_mut!(&mut card_bytes,
-						header_id  : [0x2],
-						header_type: 1,
+						header     : [0x3],
 						card       : [CardType::$card_type.byte_size()],
 						footer     : 1,
 					);
 
-					// Write the header
-					LittleEndian::write_u16(bytes.header_id, cur_id.try_into().expect("Card ID exceeded `u16`"));
-					CardType::$card_type.to_bytes(bytes.header_type)?;
+					let card_header = CardHeader {
+						id: cur_id.try_into().expect("Card id didn't fit into a `u16`"),
+						ty: CardType::$card_type,
+					};
+					card_header.to_bytes(bytes.header).into_ok();
 
 					// Write the card
 					#[allow(unreachable_code)] // FIXME: Remove this
