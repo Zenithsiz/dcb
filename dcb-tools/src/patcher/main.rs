@@ -71,10 +71,8 @@ mod logger;
 
 // Imports
 use anyhow::Context;
-use dcb::{
-	game::{card::Table as CardTable, deck::Table as DeckTable},
-	GameFile,
-};
+use dcb::{card::Table as CardTable, deck::Table as DeckTable};
+use dcb_io::GameFile;
 
 fn main() -> Result<(), anyhow::Error> {
 	// Initialize the logger

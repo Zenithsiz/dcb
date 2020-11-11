@@ -1,267 +1,251 @@
 ---
+- name: CrossMoveEffectStringsRaw
+  desc: The cross move effect string table with raw symbols
+  pos: 0x8006e47c
+  ty: "[u32; 16]"
+- name: CrossMoveEffectStrings
+  desc: The cross move effect string table with escaped symbols
+  pos: 0x8006e4bc
+  ty: "[u32; 16]"
+- name: PartnerEffectStrings
+  desc: Partner effects string table.
+  pos: 0x8006edb4
+  ty: "[u32; 82]"
+- name: CrossMoveEffectStrings
+  desc: The cross move effect string table with escaped symbols
+  pos: 0x8006e4bc
+  ty: "[u32; 18]"
+
 - name: HeapStartKuseg
   desc: Stores the start of the heap in KUSEG (Minus 0x4).
   pos: 0x8006f988
-  kind: Word
+  ty: u32
 - name: HeapSize
   desc: Stores the size of the heap .
   pos: 0x8006f98c
-  kind: Word
+  ty: u32
 - name: StartReturnAddress
   desc: Stores the return address in `start` when calling `InitHeap`
   pos: 0x80077a20
-  kind: Word
+  ty: u32
 
 - name: GPU_STAT_PTR
   pos: 0x8006f9b0
-  kind: Word
+  ty: u32
 - name: Timer1Ptr
   pos: 0x8006f9b4
-  kind: Word
+  ty: u32
 
 - name: I_STAT_PTR
   pos: 0x80070aac
-  kind: Word
+  ty: u32
 - name: I_MASK_PTR
   pos: 0x80070ab0
-  kind: Word
+  ty: u32
 - name: DPCR_PTR
   pos: 0x80070ab4
-  kind: Word
+  ty: u32
 
 - name: something6_data1
   pos: 0x80070ae8
-  kind: Word
+  ty: u32
 - name: ZeroStart
   desc: "Start of the zero section in `start`"
   pos: 0x80077a08
-  kind: Word
+  ty: u32
 - name: HeapStart
   desc: Start of the heap
   pos: 0x801ddf38
-  kind: Word
+  ty: u32
 - name: something1_data2
   pos: 0x80010000
-  kind: Word
+  ty: u32
 - name: StackTop
   desc: Stack top address
   pos: 0x8006dd44
-  kind: Word
+  ty: u32
 - name: StackSize
   desc: Stack size
   pos: 0x8006dd48
-  kind: Word
+  ty: u32
 - name: something1_executed
   pos: 0x8006f984
-  kind: Word
+  ty: u32
 - name: something5_data1
   pos: 0x8006fa20
-  kind: HalfWord
+  ty: u16
 - name: something5_data5
   pos: 0x8006fa5c
-  kind: Word
+  ty: u32
 - name: FuncList1
   pos: 0x80070a88
-  kind: Word
+  ty: u32
 - name: FuncList1Ptr
   desc: Pointer to FuncList1
   pos: 0x80070aa8
-  kind:
-    Array:
-      ty: Word
-      len: 7
+  ty: "[u32; 7]"
 
 # Expansion region 1
 - name: ExpansionRegion1Header
   pos: 0x1f00000
-  kind:
-    Array:
-      ty: Word
-      len: 0x40
+  ty: "[u32; 0x40]"
 - name: ExpansionRegion1Data
   pos: 0x1f00100
-  kind:
-    Array:
-      ty: Word
-      len: 0x1ffC0
+  ty: "[u32; 0x1ffC0]"
 
 # Scratchpad
 - name: Scratchpad
   pos: 0x1f800000
-  kind:
-    Array:
-      ty: Word
-      len: 0x400
+  ty: "[u32; 0x400]"
 
 # Memory control 1
 - name: Expansion1BaseAddress
   pos: 0x1f801000
-  kind: Word
+  ty: u32
 - name: Expansion2BaseAddress
   pos: 0x1f801004
-  kind: Word
+  ty: u32
 - name: Expansion1DelaySize
   pos: 0x1f801008
-  kind: Word
+  ty: u32
 - name: Expansion3DelaySize
   pos: 0x1f80100c
-  kind: Word
+  ty: u32
 - name: BIOS_ROM
   pos: 0x1f801010
-  kind: Word
+  ty: u32
 - name: SPU_DELAY
   pos: 0x1f801014
-  kind: Word
+  ty: u32
 - name: CDROM_DELAY
   pos: 0x1f801018
-  kind: Word
+  ty: u32
 - name: Expansion2DelaySize
   pos: 0x1f80101c
-  kind: Word
+  ty: u32
 - name: COM_DELAY
   pos: 0x1f801020
-  kind: Word
+  ty: u32
 
 # Peripheral I/O Ports
 - name: JOY_DATA
   desc: "Joypad / Memory card data"
   pos: 0x1f801040
-  kind: Word
+  ty: u32
 - name: JOY_STAT
   desc: "Joypad / Memory card status"
   pos: 0x1f801044
-  kind: Word
+  ty: u32
 - name: JOY_MODE
   desc: "Joypad / Memory card mode"
   pos: 0x1f801048
-  kind: HalfWord
+  ty: u16
 - name: JOY_CTRL
   desc: "Joypad / Memory card control"
   pos: 0x1f80104a
-  kind: HalfWord
+  ty: u16
 - name: JOY_BAUD
   desc: "Joypad / Memory card baud-rate"
   pos: 0x1f80104e
-  kind: HalfWord
+  ty: u16
 
 - name: SIO_DATA
   desc: "Serial port data"
   pos: 0x1f801050
-  kind: Word
+  ty: u32
 - name: SIO_STAT
   desc: "Serial port status"
   pos: 0x1f801054
-  kind: Word
+  ty: u32
 - name: SIO_MODE
   desc: "Serial port mode"
   pos: 0x1f801058
-  kind: HalfWord
+  ty: u16
 - name: SIO_CTRL
   desc: "Serial port control"
   pos: 0x1f80105a
-  kind: HalfWord
+  ty: u16
 - name: SIO_MISC
   desc: "Serial port internal register"
   pos: 0x1f80105c
-  kind: HalfWord
+  ty: u16
 - name: SIO_BAUD
   desc: "Serial port internal baud-rate"
   pos: 0x1f80105e
-  kind: HalfWord
+  ty: u16
 
 # Memory Control 2
 - name: Ram_SIZE
   pos: 0x1f801060
-  kind: Word
+  ty: u32
 
 # Interrupt control
 - name: I_STAT
   desc: Interrupt status register
   pos: 0x1f801070
-  kind: Word
+  ty: u32
 - name: I_MASK
   desc: Interrupt mask register
   pos: 0x1f801074
-  kind: Word
+  ty: u32
 
 # DMA Registers
 - name: DMA_MDECin
   desc: DMA0 channel 0
   pos: 0x1f801080
-  kind:
-    Array:
-      ty: Word
-      len: 4
+  ty: "[u32; 4]"
 - name: DMA_MDECout
   desc: DMA1 channel 1
   pos: 0x1f801090
-  kind:
-    Array:
-      ty: Word
-      len: 4
+  ty: "[u32; 4]"
 - name: DMA_GPU
   desc: DMA2 channel 2
   pos: 0x1f8010a0
-  kind:
-    Array:
-      ty: Word
-      len: 4
+  ty: "[u32; 4]"
 - name: DMA_CDROM
   desc: DMA3 channel 3
   pos: 0x1f8010b0
-  kind:
-    Array:
-      ty: Word
-      len: 4
+  ty: "[u32; 4]"
 - name: DMA_SPU
   desc: DMA4 channel 4
   pos: 0x1f8010c0
-  kind:
-    Array:
-      ty: Word
-      len: 4
+  ty: "[u32; 4]"
 - name: DMA_PIO
   desc: DMA5 channel 5, Expansion port
   pos: 0x1f8010d0
-  kind:
-    Array:
-      ty: Word
-      len: 4
+  ty: "[u32; 4]"
 - name: DMA_OTC
   desc: DMA5 channel 5, Reverse clear OT (GPU)
   pos: 0x1f8010e0
-  kind:
-    Array:
-      ty: Word
-      len: 4
+  ty: "[u32; 4]"
 - name: DPCR
   desc: DMA Control register
   pos: 0x1f8010f0
-  kind: Word
+  ty: u32
 - name: DICR
   desc: DMA Interrupt register
   pos: 0x1f8010f4
-  kind: Word
+  ty: u32
 - name: DMA_Unknown0
   pos: 0x1f8010f8
-  kind: Word
+  ty: u32
 - name: DMA_Unknown1
   pos: 0x1f8010fc
-  kind: Word
+  ty: u32
 
 # Timers / Root counters
 - name: Timer0
   desc: Dotclock
   pos: 0x1f801100
-  kind: Word
+  ty: u32
 - name: Timer1
   desc: Horizontal Retrace
   pos: 0x1f801110
-  kind: Word
+  ty: u32
 - name: Timer2
   desc: 1/8 System clock
   pos: 0x1f801120
-  kind: Word
+  ty: u32
 
 # CDRom Registers
 # TODO: Figure out what Index means for these.
@@ -270,207 +254,192 @@
 - name: GP0_SEND_OR_GPU_READ
   desc: GP0 Sender / GPU Responses
   pos: 0x1f801810
-  kind: Word
+  ty: u32
 - name: GP1_SEND_OR_GPU_STAT
   desc: GP1 Sender / GPU Status register
   pos: 0x1f801814
-  kind: Word
+  ty: u32
 
 # MDEC Registers
 - name: MDEC_CommandParameter_Or_DataResponse_Register
   pos: 0x1f801820
-  kind: Word
+  ty: u32
 - name: MDEC_ControlReset_Or_StatusRegister_Register
   pos: 0x1f801824
-  kind: Word
+  ty: u32
 
 # SPU Voice registers
 # TODO: Find a better way of expressing this
 #       interleaved memory layout.
 - name: SPU_Voices
   pos: 0x1f801c00
-  kind:
-    Array:
-      ty: Word
-      len: 0x180
+  ty: "[u32; 0x180]"
 
 # SPU Control registers
 - name: SPU_MainVolumeLR
   pos: 0x1f801d80
-  kind: Word
+  ty: u32
 - name: SPU_ReverbOutputVolumeLR
   pos: 0x1f801d84
-  kind: Word
+  ty: u32
 - name: SPU_VoiceKeyOn
   pos: 0x1f801d88
-  kind: Word
+  ty: u32
 - name: SPU_VoiceKeyOff
   pos: 0x1f801d8c
-  kind: Word
+  ty: u32
 - name: SPU_VoiceChannelFMMode
   pos: 0x1f801d90
-  kind: Word
+  ty: u32
 - name: SPU_VoiceChannelNoiseMode
   pos: 0x1f801d94
-  kind: Word
+  ty: u32
 - name: SPU_VoiceChannelReverbMode
   pos: 0x1f801d98
-  kind: Word
+  ty: u32
 - name: SPU_VoiceChannelOnOffStatus
   pos: 0x1f801d9c
-  kind: Word
+  ty: u32
 - name: SPU_Unknown0
   pos: 0x1f801da0
-  kind: HalfWord
+  ty: u16
 - name: SPU_SoundRamReverbWorkAreaStartAddress
   pos: 0x1f801da2
-  kind: HalfWord
+  ty: u16
 - name: SPU_SoundRamIrqAddress
   pos: 0x1f801da4
-  kind: HalfWord
+  ty: u16
 - name: SPU_SoundRamDataTransferAddress
   pos: 0x1f801da6
-  kind: HalfWord
+  ty: u16
 - name: SPU_SoundRamDataTransferFifo
   pos: 0x1f801da8
-  kind: HalfWord
+  ty: u16
 - name: SPU_CNT
   desc: SPU Control Register
   pos: 0x1f801daa
-  kind: HalfWord
+  ty: u16
 - name: SPU_SoundRamDataTransferControl
   pos: 0x1f801dac
-  kind: HalfWord
+  ty: u16
 - name: SPU_STAT
   desc: SPU Status Register
   pos: 0x1f801dae
-  kind: HalfWord
+  ty: u16
 - name: SPU_CDVolumeLR
   pos: 0x1f801db0
-  kind: Word
+  ty: u32
 - name: SPU_ExternVolumeLR
   pos: 0x1f801db4
-  kind: Word
+  ty: u32
 - name: SPU_CurrentMainVolumeLR
   pos: 0x1f801db8
-  kind: Word
+  ty: u32
 - name: SPU_Unknown1
   pos: 0x1f801db8
-  kind: Word
+  ty: u32
 
 # SPU Reverb configuration area
 - name: SPU_dAPF1
   desc: SPU Reverb APF offset 1
   pos: 0x1f801dc0
-  kind: HalfWord
+  ty: u16
 - name: SPU_dAPF2
   desc: SPU Reverb APF offset 2
   pos: 0x1f801dc2
-  kind: HalfWord
+  ty: u16
 - name: SPU_vIIR
   desc: SPU Reflection volume 1
   pos: 0x1f801dc4
-  kind: HalfWord
+  ty: u16
 - name: SPU_vCOMB1
   desc: SPU Comb volume 1
   pos: 0x1f801dc6
-  kind: HalfWord
+  ty: u16
 - name: SPU_vCOMB2
   desc: SPU Comb volume 2
   pos: 0x1f801dc8
-  kind: HalfWord
+  ty: u16
 - name: SPU_vCOMB3
   desc: SPU Comb volume 3
   pos: 0x1f801dca
-  kind: HalfWord
+  ty: u16
 - name: SPU_vCOMB4
   desc: SPU Comb volume 4
   pos: 0x1f801dcc
-  kind: HalfWord
+  ty: u16
 - name: SPU_vWALL
   desc: SPU Reflection volume 2
   pos: 0x1f801dce
-  kind: HalfWord
+  ty: u16
 - name: SPU_vAPF1
   desc: SPU Reverb APF volume 1
   pos: 0x1f801dd0
-  kind: HalfWord
+  ty: u16
 - name: SPU_vAPF2
   desc: SPU Reverb APF volume 2
   pos: 0x1f801dd2
-  kind: HalfWord
+  ty: u16
 - name: SPU_mSAME
   desc: SPU Reverb same-side reflection address 1 (L/R)
   pos: 0x1f801dd4
-  kind: Word
+  ty: u32
 - name: SPU_mCOMB1
   desc: SPU Comb address 1 (L/R)
   pos: 0x1f801dd8
-  kind: Word
+  ty: u32
 - name: SPU_mCOMB2
   desc: SPU Comb address 2 (L/R)
   pos: 0x1f801ddc
-  kind: Word
+  ty: u32
 - name: SPU_dSAME
   desc: SPU Reverb same-side reflection address 2 (L/R)
   pos: 0x1f801de0
-  kind: Word
+  ty: u32
 - name: SPU_mDIFF
   desc: SPU Reverb different-side reflection address 1 (L/R)
   pos: 0x1f801de4
-  kind: Word
+  ty: u32
 - name: SPU_mCOMB3
   desc: SPU Comb address 3 (L/R)
   pos: 0x1f801de8
-  kind: Word
+  ty: u32
 - name: SPU_mCOMB4
   desc: SPU Comb address 4 (L/R)
   pos: 0x1f801dec
-  kind: Word
+  ty: u32
 - name: SPU_dDIFF
   desc: SPU Reverb different-side reflection address 2 (L/R)
   pos: 0x1f801df0
-  kind: Word
+  ty: u32
 - name: SPU_mAPF1
   desc: SPU Reverb APF address 1 (L/R)
   pos: 0x1f801df4
-  kind: Word
+  ty: u32
 - name: SPU_mAPF2
   desc: SPU Reverb APF address 2 (L/R)
   pos: 0x1f801df8
-  kind: Word
+  ty: u32
 - name: SPU_vIN
   desc: SPU Reverb input volume (L/R)
   pos: 0x1f801dfc
-  kind: Word
+  ty: u32
 
 # SPU internal registers
 - name: SPU_VoiceCurrentVolumeLR
   desc: Voices current volume
   pos: 0x1f801e00
-  kind:
-    Array:
-      ty: Word
-      len: 0x60
+  ty: "[u32; 0x60]"
 - name: SPU_Unknown2
   pos: 0x1f801e60
-  kind:
-    Array:
-      ty: Word
-      len: 0x4
+  ty: "[u32; 0x4]"
 - name: SPU_Unknown3
   pos: 0x1f801e80
-  kind:
-    Array:
-      ty: Word
-      len: 0x60
+  ty: "[u32; 0x60]"
 
 # TODO: Expansion region 2
 
 # BIOS Region
 - name: BIOS
   pos: 0x1fc00000
-  kind:
-    Array:
-      ty: Word
-      len: 0x20000
+  ty: "[u32; 0x20000]"

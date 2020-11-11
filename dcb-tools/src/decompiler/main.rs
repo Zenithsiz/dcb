@@ -76,20 +76,7 @@ mod logger;
 
 // Imports
 use anyhow::Context;
-use byteorder::{ByteOrder, LittleEndian};
-use dcb::{
-	game::exe::{
-		data::DataTable,
-		func::FuncTable,
-		instruction::{
-			Directive,
-			PseudoInstruction::{self, Nop},
-			Raw,
-		},
-		Func, Instruction, Pos,
-	},
-	GameFile,
-};
+use dcb::{exe::data::DataTable, GameFile};
 
 #[allow(clippy::cognitive_complexity, clippy::too_many_lines)] // TODO: Refactor
 fn main() -> Result<(), anyhow::Error> {
@@ -101,14 +88,15 @@ fn main() -> Result<(), anyhow::Error> {
 
 	// Open the game file
 	let input_file = std::fs::File::open(&game_file_path).context("Unable to open input file")?;
-	let mut game_file = GameFile::from_reader(input_file).context("Unable to parse input file as dcb")?;
+	let _game_file = GameFile::from_reader(input_file).context("Unable to parse input file as dcb")?;
 
 	// Read the executable
 	log::debug!("Deserializing executable");
-	let exe = dcb::game::Exe::deserialize(&mut game_file).context("Unable to parse game executable")?;
+	//let exe = dcb::Exe::deserialize(&mut game_file).context("Unable to parse game executable")?;
 
-	log::info!("Header:\n{}\n", exe.header);
+	//log::info!("Header:\n{}\n", exe.header);
 
+	/*
 	// Get all instructions
 	log::debug!("Retrieving all instructions");
 	let instructions: Vec<(Pos, Instruction)> = Instruction::new_iter(
@@ -122,7 +110,9 @@ fn main() -> Result<(), anyhow::Error> {
 			}),
 	)
 	.collect();
+	*/
 
+	/*
 	// Get all functions
 	log::debug!("Retrieving all functions");
 	let functions: FuncTable = FuncTable::get_known()
@@ -130,15 +120,18 @@ fn main() -> Result<(), anyhow::Error> {
 		.merge(FuncTable::from_instructions(
 			&instructions.iter().map(|(pos, instruction)| (*pos, instruction)),
 		));
+	*/
 
 	// Get all data
 	log::debug!("Retrieving all locations");
-	let data_pos: DataTable = DataTable::get_known()
-		.context("Unable to get known function table")?
-		.merge(DataTable::search_instructions(
-			instructions.iter().map(|(pos, instruction)| (*pos, instruction)),
-		));
+	let data_pos: DataTable = DataTable::get_known().context("Unable to get known function table")?;
 
+	#[allow(clippy::use_debug)]
+	{
+		println!("{data_pos:#?}");
+	}
+
+	/*
 	// Build the full instructions iterator
 	// TODO: Revamp this, iterate over an enum of `Func | Data | Other`
 	let full_iter = functions
@@ -296,10 +289,12 @@ fn main() -> Result<(), anyhow::Error> {
 		// And finish the line
 		println!();
 	}
+	*/
 
 	Ok(())
 }
 
+/*
 /// Helper function to modify the immediate argument from an instruction
 // TODO: Use something better than this
 fn set_instruction_immediate(instruction: &Instruction, fmt: std::fmt::Arguments) -> String {
@@ -326,3 +321,4 @@ fn set_instruction_immediate(instruction: &Instruction, fmt: std::fmt::Arguments
 
 	s
 }
+*/

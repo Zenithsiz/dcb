@@ -12,13 +12,14 @@ path = "src/extractor/main.rs"
 name = "patcher"
 path = "src/patcher/main.rs"
 
-# [[bin]]
-# name = "decompiler"
-# path = "src/decompiler/main.rs"
+#[[bin]]
+#name = "decompiler"
+#path = "src/decompiler/main.rs"
 
 [dependencies]
 # Dcb
 dcb = { path = "../dcb" }
+dcb-io = { path = "../dcb-io" }
 
 # Text
 ascii = "1.0"

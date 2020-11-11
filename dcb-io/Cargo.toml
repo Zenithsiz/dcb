@@ -1,5 +1,5 @@
 [package]
-name = "dcb"
+name = "dcb-io"
 version = "0.1.0"
 authors = ["Filipe Rodrigues <filipejacintorodrigues1@gmail.com>"]
 edition = "2018"
@@ -8,8 +8,7 @@ edition = "2018"
 
 # Dcb
 dcb-bytes = { path = "../dcb-bytes" }
-dcb-util = { path = "../dcb-util" }
-dcb-io = { path = "../dcb-io" }
+dcb-util  = { path = "../dcb-util" }
 
 # Log
 log = "0.4"

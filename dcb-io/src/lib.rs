@@ -1,30 +1,27 @@
-//! Data extractor
+//! `dcb` Input / Output.
 //!
-//! # Details
-//! Extracts data from the game file to several other files, that can be
-//! edited and then used by `patcher` to modify the game file.
-//!
-//! # Syntax
-//! The executable may be called as `./extractor <game file> {-o <output directory>}`
-//!
-//! Use the command `./extractor --help` for more information.
-//!
-//! # Data extracted
-//! Currently only the following is extracted:
-//! - Card table
-//! - Deck table
+//! The Io crate takes care of interacting with the game file itself, such
+//! as ensuring that only the data sections in the game file are written to.
+//! As well as making conversions between coordinates in data to real file
+//! coordinates. (For more details, visit the [`address`] module)
 
 // Features
-#![feature(box_syntax, backtrace, panic_info_message, unsafe_block_in_unsafe_fn, array_value_iter)]
+#![feature(
+	stmt_expr_attributes,
+	seek_convenience,
+	format_args_capture,
+	exclusive_range_pattern,
+	unsafe_block_in_unsafe_fn
+)]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]
+// We'll disable the ones we don't need
+#![allow(clippy::blanket_clippy_restriction_lints)]
 // Instead of `unwrap`, we must use `expect` and provide a reason
 #![forbid(clippy::unwrap_used)]
 // We must use `unsafe` in unsafe `fn`s and specify if the guarantee is
 // made by the caller or by us.
 #![forbid(unsafe_op_in_unsafe_fn)]
-// We'll disable the ones we don't need
-#![allow(clippy::blanket_clippy_restriction_lints)]
 // Necessary items may be inlined using `LTO`, so we don't need to mark them as inline
 #![allow(clippy::missing_inline_in_public_items)]
 // We prefer tail returns where possible, as they help with code readability in most cases.
@@ -65,40 +62,15 @@
 #![allow(clippy::if_not_else)]
 // This lint triggers when using `assert`s and `todo`s, which is unsuitable for this project
 #![allow(clippy::panic_in_result_fn)]
+// A `match Option / Result / Bool` can sometimes look cleaner than a `if let / else`
+#![allow(clippy::single_match_else, clippy::match_bool)]
+// We're usually fine with missing future variants
+#![allow(clippy::wildcard_enum_match_arm)]
 
 // Modules
-mod cli;
-#[path = "../logger.rs"]
-mod logger;
+pub mod address;
+pub mod game_file;
 
-// Imports
-use anyhow::Context;
-use dcb::{card::Table as CardTable, deck::Table as DeckTable};
-use dcb_io::GameFile;
-
-fn main() -> Result<(), anyhow::Error> {
-	// Initialize the logger and set the panic handler
-	logger::init();
-
-	// Get all data from cli
-	let cli::CliData { game_file_path, output_dir } = cli::CliData::new();
-
-	// Open the game file
-	let input_file = std::fs::File::open(&game_file_path).context("Unable to open input file")?;
-	let mut game_file = GameFile::from_reader(input_file).context("Unable to parse input file as dcb")?;
-
-	// Get the cards table
-	let cards_table = CardTable::deserialize(&mut game_file).context("Unable to deserialize cards table from game file")?;
-	let cards_table_yaml = serde_yaml::to_string(&cards_table).context("Unable to serialize cards table to yaml")?;
-	log::info!("Extracted {} cards", cards_table.card_count());
-
-	// Get the decks table
-	let decks_table = DeckTable::deserialize(&mut game_file).context("Unable to deserialize decks table from game file")?;
-	let decks_table_yaml = serde_yaml::to_string(&decks_table).context("Unable to serialize decks table to yaml")?;
-
-	// And output everything to the files
-	std::fs::write(&output_dir.join("cards.yaml"), cards_table_yaml).context("Unable to write cards table to file")?;
-	std::fs::write(&output_dir.join("decks.yaml"), decks_table_yaml).context("Unable to write decks table to file")?;
-
-	Ok(())
-}
+// Exports
+pub use address::{Data, Real};
+pub use game_file::GameFile;
