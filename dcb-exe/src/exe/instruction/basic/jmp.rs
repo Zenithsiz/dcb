@@ -1,74 +1,50 @@
-//! Alu register instructions
+//! Jmp register instructions
 
-// Imports
-use std::fmt;
+// Modules
+pub mod imm;
+pub mod reg;
 
-/// Alu register func (bottom bit)
-#[derive(PartialEq, Eq, Clone, Copy, Debug)]
-pub enum JmpKind {
-	/// Jump
-	Jump,
-
-	/// Jump and link
-	Link,
-}
+// Exports
+pub use imm::{JmpImmInst, JmpImmInstRaw};
+pub use reg::{JmpRegInst, JmpRegInstRaw};
 
 /// Raw representation
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
-pub struct JmpRaw {
-	/// Opcode (bottom bit)
-	pub p: u32,
-
+pub enum JmpInstRaw {
 	/// Immediate
-	pub i: u32,
+	Imm(JmpImmInstRaw),
+
+	/// Register
+	Reg(JmpRegInstRaw),
 }
 
-/// Alu register instructions
+/// Jmp register instructions
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
-pub struct JmpInst {
-	/// Target
-	pub target: u32,
+#[derive(derive_more::Display)]
+pub enum JmpInst {
+	/// Immediate
+	Imm(JmpImmInst),
 
-	/// Kind
-	pub kind: JmpKind,
+	/// Register
+	Reg(JmpRegInst),
 }
 
 impl JmpInst {
 	/// Decodes this instruction
 	#[must_use]
-	pub fn decode(raw: JmpRaw) -> Self {
-		let kind = match raw.p {
-			0 => JmpKind::Jump,
-			1 => JmpKind::Link,
-			_ => unreachable!("Received invalid bit in opcode."),
-		};
-
-		Self { target: raw.i, kind }
+	pub fn decode(raw: JmpInstRaw) -> Option<Self> {
+		match raw {
+			JmpInstRaw::Imm(raw) => Self::Imm(JmpImmInst::decode(raw)?),
+			JmpInstRaw::Reg(raw) => Self::Reg(JmpRegInst::decode(raw)?),
+		}
 	}
 
 	/// Encodes this instruction
 	#[must_use]
-	pub const fn encode(self) -> JmpRaw {
-		let p = match self.kind {
-			JmpKind::Jump => 0,
-			JmpKind::Link => 1,
-		};
-
-		JmpRaw { p, i: self.target }
-	}
-}
-
-// TODO: Format with `pc` / `label`.
-
-impl fmt::Display for JmpInst {
-	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-		let Self { target, kind } = self;
-
-		let mnemonic = match kind {
-			JmpKind::Jump => "j",
-			JmpKind::Link => "jal",
-		};
-
-		write!(f, "{mnemonic} {target:#x}")
+	pub fn encode(self) -> JmpInstRaw {
+		match self {
+			JmpInst::Imm(inst) => JmpInstRaw::Imm(inst.encode()),
+			JmpInst::Reg(inst) => JmpInstRaw::Reg(inst.encode()),
+		}
 	}
 }

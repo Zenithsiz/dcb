@@ -1,26 +1,10 @@
 //! Alu immediate instructions
 
 // Imports
-use crate::{exe::instruction::Register, util::SignedHex};
+use crate::exe::instruction::Register;
+use dcb_util::SignedHex;
 use int_conv::{Signed, Truncated, ZeroExtended};
 use std::fmt;
-
-/// Raw representation
-#[derive(PartialEq, Eq, Clone, Copy, Debug)]
-pub struct AluImmInstRaw {
-	/// Opcode (lower 3 bits)
-	pub p: u32,
-
-	/// Rs
-	pub s: u32,
-
-	/// Rt
-	pub t: u32,
-
-	/// Immediate
-	pub i: u32,
-}
-
 
 /// Alu immediate instruction kind
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -79,6 +63,22 @@ impl AluImmInstKind {
 
 		FmtValue(self)
 	}
+}
+
+/// Raw representation
+#[derive(PartialEq, Eq, Clone, Copy, Debug)]
+pub struct AluImmInstRaw {
+	/// Opcode (lower 3 bits)
+	pub p: u32,
+
+	/// Rs
+	pub s: u32,
+
+	/// Rt
+	pub t: u32,
+
+	/// Immediate
+	pub i: u32,
 }
 
 /// Alu register instructions

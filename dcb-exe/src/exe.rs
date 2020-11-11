@@ -20,8 +20,8 @@ pub use instruction::Instruction;
 pub use pos::Pos;
 
 // Imports
-use crate::{io::address::Data as DataAddress, GameFile};
 use dcb_bytes::{ByteArray, Bytes};
+use dcb_io::GameFile;
 use std::{
 	convert::TryFrom,
 	io::{Read, Seek, Write},
@@ -45,7 +45,7 @@ impl Exe {
 	/// Everything outside of this range will be considered data.
 	pub const CODE_RANGE: std::ops::Range<Pos> = Pos(0x80013e4c)..Pos(0x8006dd3c);
 	/// Start address of the executable
-	const START_ADDRESS: DataAddress = DataAddress::from_u64(0x58b9000);
+	const START_ADDRESS: dcb_io::Data = dcb_io::Data::from_u64(0x58b9000);
 }
 
 impl Exe {

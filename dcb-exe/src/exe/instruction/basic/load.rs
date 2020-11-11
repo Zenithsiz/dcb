@@ -1,7 +1,8 @@
 //! Load instructions
 
 // Imports
-use crate::{exe::instruction::Register, util::SignedHex};
+use crate::exe::instruction::Register;
+use dcb_util::SignedHex;
 use int_conv::{Signed, Truncated, ZeroExtended};
 use std::convert::TryFrom;
 

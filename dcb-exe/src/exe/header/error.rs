@@ -2,7 +2,7 @@
 
 // Imports
 use super::Header;
-use crate::util::null_ascii_string;
+use dcb_util::null_ascii_string;
 
 /// Error type for [`Bytes::from_bytes`](dcb_bytes::Bytes::from_bytes)
 #[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]

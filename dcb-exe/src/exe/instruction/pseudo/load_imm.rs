@@ -1,13 +1,11 @@
 //! Load immediate
 
 // Imports
-use crate::{
-	exe::instruction::{
-		basic::{alu_imm::AluImmKind, AluImmInst, InstIter},
-		BasicInst, Register,
-	},
-	util::SignedHex,
+use crate::exe::instruction::{
+	basic::{alu_imm::AluImmKind, AluImmInst, InstIter},
+	BasicInst, Register,
 };
+use dcb_util::SignedHex;
 use std::fmt;
 
 /// Immediate kind

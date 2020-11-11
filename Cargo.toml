@@ -4,7 +4,7 @@ members = [
 	"dcb",
 	"dcb-io",
 	"dcb-util",
-#	"dcb-exe",
+	"dcb-exe",
 	"dcb-bytes",
 	"dcb-bytes-derive",
 	"dcb-tools"

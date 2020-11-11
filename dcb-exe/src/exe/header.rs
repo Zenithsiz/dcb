@@ -9,12 +9,9 @@ use std::fmt;
 pub use error::{FromBytesError, ToBytesError};
 
 // Import
-use crate::{
-	util::{array_split, null_ascii_string::NullAsciiString},
-	AsciiStrArr,
-};
 use byteorder::{ByteOrder, LittleEndian};
 use dcb_bytes::Bytes;
+use dcb_util::{array_split, null_ascii_string::NullAsciiString, AsciiStrArr};
 
 /// The header of the executable.
 #[derive(PartialEq, Eq, Clone, Copy, Hash, Debug)]

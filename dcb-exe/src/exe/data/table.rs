@@ -16,7 +16,8 @@ pub use error::GetKnownError;
 
 // Imports
 use super::Data;
-use crate::{exe::Pos, util::DiscardingSortedMergeIter};
+use crate::exe::Pos;
+use dcb_util::DiscardingSortedMergeIter;
 use std::{collections::BTreeSet, fs::File, iter::FromIterator};
 
 /// Data table

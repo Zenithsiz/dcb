@@ -3,22 +3,6 @@
 // Imports
 use crate::exe::instruction::Register;
 
-/// Raw representation
-#[derive(PartialEq, Eq, Clone, Copy, Debug)]
-pub struct AluRegInstRaw {
-	/// Rs
-	s: u32,
-
-	/// Rt
-	t: u32,
-
-	/// Rd
-	d: u32,
-
-	/// Func
-	f: u32,
-}
-
 /// Alu register instruction kind
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 #[derive(derive_more::Display)]
@@ -64,6 +48,22 @@ pub enum AluRegInstKind {
 	SetLessThanUnsigned,
 }
 
+/// Raw representation
+#[derive(PartialEq, Eq, Clone, Copy, Debug)]
+pub struct AluRegInstRaw {
+	/// Rs
+	s: u32,
+
+	/// Rt
+	t: u32,
+
+	/// Rd
+	d: u32,
+
+	/// Func (lower 4 bits)
+	f: u32,
+}
+
 /// Alu register instructions
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 #[derive(derive_more::Display)]
@@ -87,16 +87,16 @@ impl AluRegInst {
 	#[must_use]
 	pub fn decode(raw: AluRegInstRaw) -> Option<Self> {
 		let kind = match raw.f {
-			0x20 => AluRegInstKind::Add,
-			0x21 => AluRegInstKind::AddUnsigned,
-			0x22 => AluRegInstKind::Sub,
-			0x23 => AluRegInstKind::SubUnsigned,
-			0x24 => AluRegInstKind::And,
-			0x25 => AluRegInstKind::Or,
-			0x26 => AluRegInstKind::Xor,
-			0x27 => AluRegInstKind::Nor,
-			0x2a => AluRegInstKind::SetLessThan,
-			0x2b => AluRegInstKind::SetLessThanUnsigned,
+			0x0 => AluRegInstKind::Add,
+			0x1 => AluRegInstKind::AddUnsigned,
+			0x2 => AluRegInstKind::Sub,
+			0x3 => AluRegInstKind::SubUnsigned,
+			0x4 => AluRegInstKind::And,
+			0x5 => AluRegInstKind::Or,
+			0x6 => AluRegInstKind::Xor,
+			0x7 => AluRegInstKind::Nor,
+			0xa => AluRegInstKind::SetLessThan,
+			0xb => AluRegInstKind::SetLessThanUnsigned,
 			_ => return None,
 		};
 
@@ -112,16 +112,16 @@ impl AluRegInst {
 	#[must_use]
 	pub fn encode(self) -> AluRegInstRaw {
 		let f = match self.kind {
-			AluRegInstKind::Add => 0x20,
-			AluRegInstKind::AddUnsigned => 0x21,
-			AluRegInstKind::Sub => 0x22,
-			AluRegInstKind::SubUnsigned => 0x23,
-			AluRegInstKind::And => 0x24,
-			AluRegInstKind::Or => 0x25,
-			AluRegInstKind::Xor => 0x26,
-			AluRegInstKind::Nor => 0x27,
-			AluRegInstKind::SetLessThan => 0x2a,
-			AluRegInstKind::SetLessThanUnsigned => 0x2b,
+			AluRegInstKind::Add => 0x0,
+			AluRegInstKind::AddUnsigned => 0x1,
+			AluRegInstKind::Sub => 0x2,
+			AluRegInstKind::SubUnsigned => 0x3,
+			AluRegInstKind::And => 0x4,
+			AluRegInstKind::Or => 0x5,
+			AluRegInstKind::Xor => 0x6,
+			AluRegInstKind::Nor => 0x7,
+			AluRegInstKind::SetLessThan => 0xa,
+			AluRegInstKind::SetLessThanUnsigned => 0xb,
 		};
 
 		let d = self.dst.idx();

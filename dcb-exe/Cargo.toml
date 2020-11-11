@@ -7,7 +7,9 @@ edition = "2018"
 [dependencies]
 
 # Dcb
-dcb-bytes = { version = "0.1", path = "../dcb-bytes" }
+dcb-bytes = { path = "../dcb-bytes" }
+dcb-io = { path = "../dcb-io" }
+dcb-util = { path = "../dcb-util" }
 
 # Log
 log = "0.4"

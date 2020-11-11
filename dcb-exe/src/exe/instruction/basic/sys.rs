@@ -1,89 +1,70 @@
 //! System calls
 
-// Imports
-use int_conv::{Truncated, ZeroExtended};
-use std::{convert::TryFrom, fmt};
-
 /// Sys instruction func
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
-#[derive(num_enum::IntoPrimitive, num_enum::TryFromPrimitive)]
-#[repr(u8)]
-pub enum SysFunc {
-	/// Sys
-	Sys   = 0xc,
+pub enum SysInstKind {
+	/// Syscall
+	Sys,
 
 	/// Break
-	Break = 0xd,
+	Break,
+}
+
+impl SysInstKind {
+	/// Returns the mnemonic associated with this syscall kind
+	pub fn mnemonic(self) -> &'static str {
+		match self {
+			SysInstKind::Sys => "sys",
+			SysInstKind::Break => "break",
+		}
+	}
 }
 
 /// Raw representation
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
-pub struct SysRaw {
-	/// Rs
-	pub s: u32,
+pub struct SysInstRaw {
+	/// Comment
+	pub c: u32,
 
-	/// Rt
-	pub t: u32,
-
-	/// Rd
-	pub d: u32,
-
-	/// Immediate
-	pub i: u32,
-
-	/// Func
+	/// Func (bottom bit)
 	pub f: u32,
 }
 
 /// Syscall instructions
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
+#[derive(derive_more::Display)]
+#[display(fmt = "{}, {comment:#x}", "kind.mnemonic()")]
 pub struct SysInst {
 	/// Comment
 	pub comment: u32,
 
-	/// Function
-	pub func: SysFunc,
+	/// Kind
+	pub kind: SysInstKind,
 }
 
 impl SysInst {
 	/// Decodes this instruction
 	#[must_use]
-	pub fn decode(SysRaw { t, d, s, i, f }: SysRaw) -> Option<Self> {
-		let s = s.truncated::<u8>();
-		let t = t.truncated::<u8>();
-		let d = d.truncated::<u8>();
-		let i = i.truncated::<u8>();
-		let comment = u32::from_be_bytes([s, t, d, i]);
+	pub fn decode(SysInstRaw { c, f }: SysInstRaw) -> Option<Self> {
+		let kind = match f {
+			0 => SysInstKind::Sys,
+			1 => SysInstKind::Break,
+			_ => return None,
+		};
 
-		let func = SysFunc::try_from(f.truncated::<u8>()).ok()?;
-
-		Some(Self { comment, func })
+		Some(Self { comment: c, kind })
 	}
 
 	/// Encodes this instruction
 	#[must_use]
 	#[allow(clippy::many_single_char_names)] // `Raw` has single character names
-	pub fn encode(self) -> SysRaw {
-		let [s, t, d, i] = self.comment.to_be_bytes();
-		let s = s.zero_extended::<u32>();
-		let t = t.zero_extended::<u32>();
-		let d = d.zero_extended::<u32>();
-		let i = i.zero_extended::<u32>();
-		let f = u8::from(self.func).zero_extended::<u32>();
-
-		SysRaw { s, t, d, i, f }
-	}
-}
-
-impl fmt::Display for SysInst {
-	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-		let Self { func, comment } = self;
-
-		let mnemonic = match func {
-			SysFunc::Sys => "sys",
-			SysFunc::Break => "break",
+	pub fn encode(self) -> SysInstRaw {
+		let c = self.comment.to_be_bytes();
+		let f = match self.kind {
+			SysInstKind::Sys => 0,
+			SysInstKind::Break => 1,
 		};
 
-		write!(f, "{mnemonic} {comment:#x}")
+		SysInstRaw { c, f }
 	}
 }
