@@ -214,17 +214,17 @@ impl Bytes for Effect {
 
 		// Get all byte arrays we need
 		let bytes = array_split!(bytes,
-			effect_type: 0x1,
-			a          : 0x1,
-			_unknown_3 : 0x1,
-			b          : 0x1,
-			_unknown_5 : 0x1,
-			c          : 0x1,
-			_unknown_7 : [0x3],
-			x          : [0x2],
-			y          : [0x2],
-			_unknown_e : 0x1,
-			op         : 0x1,
+			effect_type: 0x1,   // 0x0
+			a          : 0x1,   // 0x1
+			_unknown_2 : 0x1,   // 0x2
+			b          : 0x1,   // 0x3
+			_unknown_4 : 0x1,   // 0x4
+			c          : 0x1,   // 0x5
+			_unknown_6 : [0x3], // 0x6
+			x          : [0x2], // 0x9
+			y          : [0x2], // 0xb
+			_unknown_d : 0x1,   // 0xd
+			op         : 0x1,   // 0xe
 		);
 
 		// Else create getters for all arguments
@@ -252,8 +252,8 @@ impl Bytes for Effect {
 		let y = LittleEndian::read_u16(bytes.y);
 
 		// Attack type
-		// Lower byte of `x`
-		let get_attack_type = || AttackType::from_bytes(&x.to_le_bytes()[0]).map_err(FromBytesError::UseAttackAttackType);
+		// Lower byte of `y`
+		let get_attack_type = || AttackType::from_bytes(&y.to_le_bytes()[0]).map_err(FromBytesError::UseAttackAttackType);
 
 		// The operation argument
 		let get_op = || EffectOperation::from_bytes(bytes.op).map_err(FromBytesError::Operation);
@@ -325,14 +325,14 @@ impl Bytes for Effect {
 		let bytes = array_split_mut!(bytes,
 			effect_type: 0x1,
 			a          : 0x1,
-			_unknown_3 : 0x1,
+			_unknown_2 : 0x1,
 			b          : 0x1,
-			_unknown_5 : 0x1,
+			_unknown_4 : 0x1,
 			c          : 0x1,
-			_unknown_7 : [0x3],
+			_unknown_6 : [0x3],
 			x          : [0x2],
 			y          : [0x2],
-			_unknown_e : 0x1,
+			_unknown_d : 0x1,
 			op         : 0x1,
 		);
 
@@ -340,33 +340,33 @@ impl Bytes for Effect {
 		let bytes_a = bytes.a;
 		let bytes_b = bytes.b;
 		let bytes_c = bytes.c;
-		let mut set_a = |a: &Option<DigimonProperty>| {
+		let mut set_a = |a: Option<DigimonProperty>| {
 			if let Some(a) = a {
 				a.to_bytes(bytes_a).into_ok();
 			} else {
 				*bytes_a = 0;
 			}
 		};
-		let mut set_b = |b: &Option<DigimonProperty>| {
+		let mut set_b = |b: Option<DigimonProperty>| {
 			if let Some(b) = b {
 				b.to_bytes(bytes_b).into_ok();
 			} else {
 				*bytes_b = 0;
 			}
 		};
-		let mut set_c = |c: &Option<DigimonProperty>| {
+		let mut set_c = |c: Option<DigimonProperty>| {
 			if let Some(c) = c {
 				c.to_bytes(bytes_c).into_ok();
 			} else {
 				*bytes_c = 0;
 			}
 		};
-		let bytes_attack_type = &mut bytes.x[0];
-		let mut set_attack_type = |attack: &AttackType| attack.to_bytes(bytes_attack_type).into_ok();
+		let bytes_attack_type = &mut bytes.y[0];
+		let mut set_attack_type = |attack: AttackType| attack.to_bytes(bytes_attack_type).into_ok();
 
 		// Check our variant and fill `bytes` with info
 		#[rustfmt::skip]
-		match self {
+		match *self {
 			Self::ChangeProperty { property, a, b, c, x, y, op } => {
 				// Write the property minus one
 				property.to_bytes(bytes.effect_type).into_ok();
@@ -376,8 +376,8 @@ impl Bytes for Effect {
 				set_a(a);
 				set_b(b);
 				set_c(c);
-				LittleEndian::write_u16(bytes.x, *x);
-				LittleEndian::write_u16(bytes.y, *y);
+				LittleEndian::write_u16(bytes.x, x);
+				LittleEndian::write_u16(bytes.y, y);
 				op.to_bytes(bytes.op).into_ok();
 			},
 
@@ -414,9 +414,9 @@ impl Bytes for Effect {
 					(Player  , DpSlot, OfflineDeck) => 36,
 					(Opponent, DpSlot, OfflineDeck) => 37,
 
-					(_, &from, &to) => return Err( ToBytesError::InvalidMoveCards { from, to } ),
+					(_, from, to) => return Err( ToBytesError::InvalidMoveCards { from, to } ),
 				};
-				LittleEndian::write_u16(bytes.y, *count);
+				LittleEndian::write_u16(bytes.y, count);
 			}
 
 			Self::ShuffleOnlineDeck { player } => *bytes.effect_type = match player {
@@ -432,7 +432,7 @@ impl Bytes for Effect {
 			Self::CycleOpponentAttackType => *bytes.effect_type = 47,
 
 			Self::KoDigimonRevives { health } => {
-				LittleEndian::write_u16(bytes.y, *health);
+				LittleEndian::write_u16(bytes.y, health);
 			},
 
 			Self::DrawCards { player, count } => {
@@ -440,7 +440,7 @@ impl Bytes for Effect {
 					Player   => 49,
 					Opponent => 50,
 				};
-				LittleEndian::write_u16(bytes.y, *count);
+				LittleEndian::write_u16(bytes.y, count);
 			}
 
 			Self::OwnAttackBecomesEatUpHP => *bytes.effect_type = 51,
