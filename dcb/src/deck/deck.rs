@@ -18,22 +18,15 @@ use ref_cast::RefCast;
 #[serde(transparent)]
 pub struct CardId(pub u16);
 
-// TODO: Remove these
-/// Name alias for [`Digimon`]
-type NameString = AsciiStrArr<0x12>;
-
-/// Owner alias for [`Digimon`]
-type OwnerString = AsciiStrArr<0x14>;
-
 /// A deck
 #[derive(PartialEq, Eq, Clone, Debug)]
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Deck {
 	/// Name of this deck
-	pub name: NameString,
+	pub name: AsciiStrArr<0x12>,
 
 	/// Digimon who plays this deck
-	pub owner: OwnerString,
+	pub owner: AsciiStrArr<0x14>,
 
 	/// All of the card ids that make up this deck
 	pub cards: [CardId; 30],

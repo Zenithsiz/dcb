@@ -11,13 +11,6 @@ use dcb_util::{
 };
 use ref_cast::RefCast;
 
-// TODO: Remove these
-/// Name alias for [`Digimon`]
-type NameString = AsciiStrArr<0x14>;
-
-/// Effect description alias for [`Digimon`]
-type EffectDescriptionString = AsciiStrArr<0x14>;
-
 /// An item card
 ///
 /// Contains all information about each item card stored in the [`Card Table`](crate::card::table::Table)
@@ -27,13 +20,13 @@ pub struct Item {
 	/// The item's name
 	///
 	/// An ascii string with 20 characters at most
-	pub name: NameString,
+	pub name: AsciiStrArr<0x14>,
 
 	/// The effect's description.
 	///
 	/// The description is split along 4 lines, each
 	/// being an ascii string with 20 characters at most.
-	pub effect_description: [EffectDescriptionString; 4],
+	pub effect_description: [AsciiStrArr<0x14>; 4],
 
 	/// The effect's arrow color
 	#[serde(default)]

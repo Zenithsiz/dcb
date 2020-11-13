@@ -8,13 +8,6 @@ use dcb_util::{
 	AsciiStrArr,
 };
 
-// TODO: Remove these
-/// Name alias for [`Digimon`]
-type NameString = AsciiStrArr<0x14>;
-
-/// Effect description alias for [`Digimon`]
-type EffectDescriptionString = AsciiStrArr<0x14>;
-
 /// A digivolve card
 ///
 /// Contains all information about each digivolve card stored in the [`Card Table`](crate::card::table::Table)
@@ -22,12 +15,12 @@ type EffectDescriptionString = AsciiStrArr<0x14>;
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Digivolve {
 	/// The item's name
-	pub name: NameString,
+	pub name: AsciiStrArr<0x14>,
 
 	/// The effect's description.
 	///
 	/// The description is split along 4 lines
-	pub effect_description: [EffectDescriptionString; 4],
+	pub effect_description: [AsciiStrArr<0x14>; 4],
 
 	/// Unknown field at `0x15`
 	pub unknown_15: [u8; 3],

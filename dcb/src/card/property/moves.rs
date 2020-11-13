@@ -14,16 +14,12 @@ use dcb_util::{
 	AsciiStrArr,
 };
 
-// TODO: Remove these
-/// Name alias for [`Digimon`]
-type NameString = AsciiStrArr<0x15>;
-
 /// A digimon's move
 #[derive(PartialEq, Eq, Clone, Hash, Debug)]
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Move {
 	/// The move's name
-	name: NameString,
+	name: AsciiStrArr<0x15>,
 
 	/// The move's power
 	power: u16,
