@@ -10,6 +10,7 @@ pub mod jmp;
 pub mod load;
 pub mod lui;
 pub mod mult;
+pub mod shift;
 pub mod store;
 pub mod sys;
 
@@ -19,6 +20,9 @@ use crate::exe::inst::InstFmt;
 /// All basic instructions
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum Inst {
+	/// Shift
+	Shift(shift::Inst),
+
 	/// Store
 	Store(store::Inst),
 
@@ -49,6 +53,10 @@ impl Decodable for Inst {
 	fn decode(raw: Self::Raw) -> Option<Self> {
 		let inst = #[bitmatch]
 		match raw {
+			// Shift
+			"000000_?????_ttttt_ddddd_iiiii_0000ff" => Self::Shift(shift::Inst::decode_from(shift::imm::Raw { t, d, i, f })?),
+			"000000_sssss_ttttt_ddddd_?????_0001ff" => Self::Shift(shift::Inst::decode_from(shift::reg::Raw { s, t, d, f })?),
+
 			// Jump
 			"00001p_iiiii_iiiii_iiiii_iiiii_iiiiii" => Self::Jmp(jmp::Inst::decode_from(jmp::imm::Raw { p, i })?),
 			"000000_sssss_?????_ddddd_?????_00100f" => Self::Jmp(jmp::Inst::decode_from(jmp::reg::Raw { s, d, f })?),
@@ -91,6 +99,10 @@ impl Encodable for Inst {
 	#[bitmatch::bitmatch]
 	fn encode(&self) -> u32 {
 		match self {
+			Self::Shift(inst) => match inst.encode() {
+				shift::Raw::Imm(shift::imm::Raw { t, d, i, f }) => bitpack!("000000_?????_ttttt_ddddd_iiiii_0000ff"),
+				shift::Raw::Reg(shift::reg::Raw { s, t, d, f }) => bitpack!("000000_sssss_ttttt_ddddd_?????_0001ff"),
+			},
 			Self::Jmp(inst) => match inst.encode() {
 				jmp::Raw::Imm(jmp::imm::Raw { p, i }) => bitpack!("00001p_iiiii_iiiii_iiiii_iiiii_iiiiii"),
 				jmp::Raw::Reg(jmp::reg::Raw { s, d, f }) => bitpack!("000000_sssss_?????_ddddd_?????_00100f"),
@@ -133,6 +145,7 @@ impl InstFmt for Inst {
 			Self::Alu(inst) => inst.mnemonic(),
 			Self::Lui(inst) => inst.mnemonic(),
 			Self::Sys(inst) => inst.mnemonic(),
+			Self::Shift(inst) => inst.mnemonic(),
 		}
 	}
 
@@ -145,6 +158,7 @@ impl InstFmt for Inst {
 			Self::Alu(inst) => inst.fmt(pos, bytes, f),
 			Self::Lui(inst) => inst.fmt(pos, bytes, f),
 			Self::Sys(inst) => inst.fmt(pos, bytes, f),
+			Self::Shift(inst) => inst.fmt(pos, bytes, f),
 		}
 	}
 }
