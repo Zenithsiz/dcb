@@ -1,7 +1,10 @@
 //! Alu immediate instructions
 
 // Imports
-use crate::exe::inst::Register;
+use crate::exe::inst::{
+	basic::{Decodable, Encodable},
+	Register,
+};
 use dcb_util::SignedHex;
 use int_conv::{Signed, Truncated, ZeroExtended};
 use std::fmt;
@@ -98,10 +101,10 @@ pub struct Inst {
 	pub kind: Kind,
 }
 
-impl Inst {
-	/// Decodes this instruction
-	#[must_use]
-	pub fn decode(raw: Raw) -> Option<Self> {
+impl Decodable for Inst {
+	type Raw = Raw;
+
+	fn decode(raw: Self::Raw) -> Option<Self> {
 		#[rustfmt::skip]
 		let kind = match raw.p {
 			0x0 => Kind::Add                (raw.i.truncated::<u16>().as_signed()),
@@ -120,10 +123,10 @@ impl Inst {
 			kind,
 		})
 	}
+}
 
-	/// Encodes this instruction
-	#[must_use]
-	pub fn encode(self) -> Raw {
+impl Encodable for Inst {
+	fn encode(&self) -> Self::Raw {
 		#[rustfmt::skip]
 		let (p, i) = match self.kind {
 			Kind::Add                (rhs) => (0x0, rhs.as_unsigned().zero_extended::<u32>()),

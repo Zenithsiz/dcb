@@ -1,7 +1,10 @@
 //! Alu register instructions
 
 // Imports
-use crate::exe::inst::Register;
+use crate::exe::inst::{
+	basic::{Decodable, Encodable},
+	Register,
+};
 
 /// Alu register instruction kind
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -90,10 +93,10 @@ pub struct Inst {
 	pub kind: Kind,
 }
 
-impl Inst {
-	/// Decodes this instruction
-	#[must_use]
-	pub fn decode(raw: Raw) -> Option<Self> {
+impl Decodable for Inst {
+	type Raw = Raw;
+
+	fn decode(raw: Self::Raw) -> Option<Self> {
 		let kind = match raw.f {
 			0x0 => Kind::Add,
 			0x1 => Kind::AddUnsigned,
@@ -115,10 +118,9 @@ impl Inst {
 			kind,
 		})
 	}
-
-	/// Encodes this instruction
-	#[must_use]
-	pub const fn encode(self) -> Raw {
+}
+impl Encodable for Inst {
+	fn encode(&self) -> Raw {
 		let f = match self.kind {
 			Kind::Add => 0x0,
 			Kind::AddUnsigned => 0x1,

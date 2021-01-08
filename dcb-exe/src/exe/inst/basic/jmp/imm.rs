@@ -1,5 +1,8 @@
 //! Jump immediate instructions
 
+// Imports
+use crate::exe::inst::basic::{Decodable, Encodable};
+
 /// Jmp immediate instruction kind
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum Kind {
@@ -43,10 +46,10 @@ pub struct Inst {
 	pub kind: Kind,
 }
 
-impl Inst {
-	/// Decodes this instruction
-	#[must_use]
-	pub const fn decode(raw: Raw) -> Option<Self> {
+impl Decodable for Inst {
+	type Raw = Raw;
+
+	fn decode(raw: Self::Raw) -> Option<Self> {
 		let kind = match raw.p {
 			0 => Kind::Jump,
 			1 => Kind::JumpLink,
@@ -55,10 +58,10 @@ impl Inst {
 
 		Some(Self { target: raw.i, kind })
 	}
+}
 
-	/// Encodes this instruction
-	#[must_use]
-	pub const fn encode(self) -> Raw {
+impl Encodable for Inst {
+	fn encode(&self) -> Raw {
 		let p = match self.kind {
 			Kind::Jump => 0,
 			Kind::JumpLink => 1,

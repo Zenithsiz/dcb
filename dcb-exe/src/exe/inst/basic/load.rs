@@ -1,7 +1,10 @@
 //! Load instructions
 
 // Imports
-use crate::exe::inst::Register;
+use crate::exe::inst::{
+	basic::{Decodable, Encodable},
+	Register,
+};
 use dcb_util::SignedHex;
 use int_conv::{Signed, Truncated, ZeroExtended};
 use std::convert::TryFrom;
@@ -85,10 +88,10 @@ pub struct Inst {
 	pub kind: Kind,
 }
 
-impl Inst {
-	/// Decodes this instruction
-	#[must_use]
-	pub fn decode(raw: Raw) -> Option<Self> {
+impl Decodable for Inst {
+	type Raw = Raw;
+
+	fn decode(raw: Self::Raw) -> Option<Self> {
 		let op = Kind::try_from(raw.p.truncated::<u8>()).ok()?;
 
 		Some(Self {
@@ -98,10 +101,10 @@ impl Inst {
 			kind:   op,
 		})
 	}
+}
 
-	/// Encodes this instruction
-	#[must_use]
-	pub fn encode(self) -> Raw {
+impl Encodable for Inst {
+	fn encode(&self) -> Raw {
 		let t = self.src.idx();
 		let s = self.dst.idx();
 		let i = self.offset.as_unsigned().zero_extended::<u32>();

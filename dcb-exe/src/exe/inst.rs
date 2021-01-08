@@ -16,6 +16,8 @@ pub use reg::Register;
 use crate::Pos;
 use dcb_util::NextFromBytes;
 
+use self::basic::Decodable;
+
 /// An assembler instruction
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum Inst {

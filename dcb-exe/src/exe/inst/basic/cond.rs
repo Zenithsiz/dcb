@@ -1,7 +1,10 @@
 //! Condition branches
 
 // Imports
-use crate::exe::inst::Register;
+use crate::exe::inst::{
+	basic::{Decodable, Encodable},
+	Register,
+};
 use dcb_util::SignedHex;
 use int_conv::{Signed, Truncated, ZeroExtended};
 use std::fmt;
@@ -63,10 +66,10 @@ pub struct Inst {
 	pub kind: Kind,
 }
 
-impl Inst {
-	/// Decodes this instruction
-	#[must_use]
-	pub fn decode(raw: Raw) -> Option<Self> {
+impl Decodable for Inst {
+	type Raw = Raw;
+
+	fn decode(raw: Self::Raw) -> Option<Self> {
 		let kind = match raw.p {
 			0x1 => match raw.t {
 				0b00000 => Kind::LessThanZero,
@@ -88,10 +91,10 @@ impl Inst {
 			kind,
 		})
 	}
+}
 
-	/// Encodes this instruction
-	#[must_use]
-	pub fn encode(self) -> Raw {
+impl Encodable for Inst {
+	fn encode(&self) -> Raw {
 		#[rustfmt::skip]
 		let (p, t) = match self.kind {
 			Kind::Equal(reg)             => (0x4, reg.idx()),

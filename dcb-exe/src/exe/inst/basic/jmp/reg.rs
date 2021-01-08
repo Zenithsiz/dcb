@@ -1,7 +1,10 @@
 //! Jump register instructions
 
 // Imports
-use crate::exe::inst::Register;
+use crate::exe::inst::{
+	basic::{Decodable, Encodable},
+	Register,
+};
 use std::fmt;
 
 /// Jmp register instruction kind
@@ -48,10 +51,10 @@ pub struct Inst {
 	pub kind: Kind,
 }
 
-impl Inst {
-	/// Decodes this instruction
-	#[must_use]
-	pub fn decode(raw: Raw) -> Option<Self> {
+impl Decodable for Inst {
+	type Raw = Raw;
+
+	fn decode(raw: Self::Raw) -> Option<Self> {
 		let kind = match raw.f {
 			0 => Kind::Jump,
 			1 => Kind::JumpLink(Register::new(raw.d)?),
@@ -61,10 +64,10 @@ impl Inst {
 
 		Some(Self { target, kind })
 	}
+}
 
-	/// Encodes this instruction
-	#[must_use]
-	pub const fn encode(self) -> Raw {
+impl Encodable for Inst {
+	fn encode(&self) -> Raw {
 		let (f, d) = match self.kind {
 			Kind::Jump => (0, 0),
 			Kind::JumpLink(reg) => (1, reg.idx()),

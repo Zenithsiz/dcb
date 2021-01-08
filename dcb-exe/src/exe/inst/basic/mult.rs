@@ -1,10 +1,13 @@
 //! Multiplications
 
 // Imports
-use crate::exe::inst::Register;
+use crate::exe::inst::{
+	basic::{Decodable, Encodable},
+	Register,
+};
 use std::fmt;
 
-/// Operation func
+/// Operation kind
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum MultKind {
 	/// Multiplication
@@ -36,7 +39,7 @@ pub enum MultReg {
 
 /// Raw representation
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
-pub struct MultRaw {
+pub struct Raw {
 	/// Rs
 	pub s: u32,
 
@@ -52,7 +55,7 @@ pub struct MultRaw {
 
 /// Multiplication instructions
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
-pub enum MultInst {
+pub enum Inst {
 	/// Multiplication
 	Mult {
 		/// Kind
@@ -87,11 +90,11 @@ pub enum MultInst {
 	},
 }
 
-impl MultInst {
-	/// Decodes this instruction
-	#[must_use]
+impl Decodable for Inst {
+	type Raw = Raw;
+
 	#[rustfmt::skip]
-	pub fn decode(raw: MultRaw) -> Option<Self> {
+	fn decode(raw: Self::Raw) -> Option<Self> {
 		Some(match raw.f {
 			0x10 => Self::MoveFrom { dst: Register::new(raw.d)?, src: MultReg::Hi },
 			0x12 => Self::MoveFrom { dst: Register::new(raw.d)?, src: MultReg::Lo },
@@ -107,12 +110,12 @@ impl MultInst {
 			_ => return None,
 		})
 	}
+}
 
-	/// Encodes this instruction
-	#[must_use]
-	pub const fn encode(self) -> MultRaw {
+impl Encodable for Inst {
+	fn encode(&self) -> Raw {
 		match self {
-			Self::Mult { kind, mode, lhs, rhs } => MultRaw {
+			Self::Mult { kind, mode, lhs, rhs } => Raw {
 				s: lhs.idx(),
 				t: rhs.idx(),
 				d: 0,
@@ -123,7 +126,7 @@ impl MultInst {
 					(MultKind::Div, MultMode::Unsigned) => 0x1b,
 				},
 			},
-			Self::MoveFrom { dst, src } => MultRaw {
+			Self::MoveFrom { dst, src } => Raw {
 				s: 0,
 				t: 0,
 				d: dst.idx(),
@@ -132,7 +135,7 @@ impl MultInst {
 					MultReg::Lo => 0x12,
 				},
 			},
-			Self::MoveTo { dst: src, src: dst } => MultRaw {
+			Self::MoveTo { dst: src, src: dst } => Raw {
 				s: src.idx(),
 				t: 0,
 				d: 0,
@@ -145,7 +148,7 @@ impl MultInst {
 	}
 }
 
-impl fmt::Display for MultInst {
+impl fmt::Display for Inst {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 		match self {
 			#[rustfmt::skip]

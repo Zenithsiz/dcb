@@ -19,7 +19,6 @@ pub use pos::Pos;
 //pub use func::Func;
 
 // Imports
-use self::inst::Inst;
 use dcb_bytes::{ByteArray, Bytes};
 use dcb_io::GameFile;
 use std::io::{Read, Seek, Write};

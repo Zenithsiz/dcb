@@ -6,7 +6,6 @@
 // Modules
 pub mod alu;
 pub mod cond;
-//pub mod iter;
 pub mod jmp;
 pub mod load;
 pub mod lui;
@@ -40,24 +39,24 @@ pub enum Inst {
 	Sys(sys::Inst),
 }
 
-impl Inst {
-	/// Decodes an instruction
-	#[must_use]
+impl Decodable for Inst {
+	type Raw = u32;
+
 	#[bitmatch::bitmatch]
 	#[allow(clippy::many_single_char_names)] // `bitmatch` can only output single character names.
-	pub fn decode(raw: u32) -> Option<Self> {
+	fn decode(raw: Self::Raw) -> Option<Self> {
 		let inst = #[bitmatch]
 		match raw {
 			// Jump
-			"00001p_iiiii_iiiii_iiiii_iiiii_iiiiii" => Self::Jmp(jmp::Inst::decode(jmp::imm::Raw { p, i })?),
-			"000000_sssss_?????_ddddd_?????_00100f" => Self::Jmp(jmp::Inst::decode(jmp::reg::Raw { s, d, f })?),
+			"00001p_iiiii_iiiii_iiiii_iiiii_iiiiii" => Self::Jmp(jmp::Inst::decode_from(jmp::imm::Raw { p, i })?),
+			"000000_sssss_?????_ddddd_?????_00100f" => Self::Jmp(jmp::Inst::decode_from(jmp::reg::Raw { s, d, f })?),
 
 			"000ppp_sssss_ttttt_iiiii_iiiii_iiiiii" => Self::Cond(cond::Inst::decode(cond::Raw { p, s, t, i })?),
 			"001111_?????_ttttt_iiiii_iiiii_iiiiii" => Self::Lui(lui::Inst::decode(lui::Raw { t, i })?),
 
 			// Alu
-			"000000_sssss_ttttt_ddddd_?????_10ffff" => Self::Alu(alu::Inst::decode(alu::reg::Raw { s, t, d, f })?),
-			"001ppp_sssss_ttttt_iiiii_iiiii_iiiiii" => Self::Alu(alu::Inst::decode(alu::imm::Raw { p, s, t, i })?),
+			"000000_sssss_ttttt_ddddd_?????_10ffff" => Self::Alu(alu::Inst::decode_from(alu::reg::Raw { s, t, d, f })?),
+			"001ppp_sssss_ttttt_iiiii_iiiii_iiiiii" => Self::Alu(alu::Inst::decode_from(alu::imm::Raw { p, s, t, i })?),
 
 			// Syscall
 			"000000_ccccc_ccccc_ccccc_ccccc_00110f" => Self::Sys(sys::Inst::decode(sys::Raw { c, f })?),
@@ -84,11 +83,11 @@ impl Inst {
 
 		Some(inst)
 	}
+}
 
-	/// Encodes this instruction
-	#[must_use]
+impl Encodable for Inst {
 	#[bitmatch::bitmatch]
-	pub fn encode(self) -> u32 {
+	fn encode(&self) -> u32 {
 		match self {
 			Self::Jmp(inst) => match inst.encode() {
 				jmp::Raw::Imm(jmp::imm::Raw { p, i }) => bitpack!("00001p_iiiii_iiiii_iiiii_iiiii_iiiiii"),
@@ -120,4 +119,27 @@ impl Inst {
 			},
 		}
 	}
+}
+
+/// A decodable basic instruction
+pub trait Decodable: Sized {
+	/// 'Raw' type to parse from
+	type Raw;
+
+	/// Decodes this instruction
+	#[must_use]
+	fn decode(raw: Self::Raw) -> Option<Self>;
+
+	/// Decodes this instruction from any type that can be converted into the raw form
+	#[must_use]
+	fn decode_from(raw: impl Into<Self::Raw>) -> Option<Self> {
+		Self::decode(raw.into())
+	}
+}
+
+/// An encodable basic instruction
+pub trait Encodable: Decodable {
+	/// Encodes this instruction
+	#[must_use]
+	fn encode(&self) -> Self::Raw;
 }

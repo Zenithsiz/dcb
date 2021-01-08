@@ -1,5 +1,8 @@
 //! System calls
 
+// Imports
+use crate::exe::inst::basic::{Decodable, Encodable};
+
 /// Sys instruction func
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum Kind {
@@ -43,23 +46,22 @@ pub struct Inst {
 	pub kind: Kind,
 }
 
-impl Inst {
-	/// Decodes this instruction
-	#[must_use]
-	pub const fn decode(Raw { c, f }: Raw) -> Option<Self> {
-		let kind = match f {
+impl Decodable for Inst {
+	type Raw = Raw;
+
+	fn decode(raw: Self::Raw) -> Option<Self> {
+		let kind = match raw.f {
 			0 => Kind::Sys,
 			1 => Kind::Break,
 			_ => return None,
 		};
 
-		Some(Self { comment: c, kind })
+		Some(Self { comment: raw.c, kind })
 	}
+}
 
-	/// Encodes this instruction
-	#[must_use]
-	#[allow(clippy::many_single_char_names)] // `Raw` has single character names
-	pub const fn encode(self) -> Raw {
+impl Encodable for Inst {
+	fn encode(&self) -> Raw {
 		let c = self.comment;
 		let f = match self.kind {
 			Kind::Sys => 0,

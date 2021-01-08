@@ -1,7 +1,10 @@
 //! Lui instruction
 
 // Imports
-use crate::exe::inst::Register;
+use crate::exe::inst::{
+	basic::{Decodable, Encodable},
+	Register,
+};
 use int_conv::{Truncated, ZeroExtended};
 
 /// Raw representation
@@ -26,19 +29,18 @@ pub struct Inst {
 	pub value: u16,
 }
 
-impl Inst {
-	/// Decodes this instruction
-	#[must_use]
-	pub fn decode(raw: Raw) -> Option<Self> {
+impl Decodable for Inst {
+	type Raw = Raw;
+
+	fn decode(raw: Self::Raw) -> Option<Self> {
 		Some(Self {
 			dst:   Register::new(raw.t)?,
 			value: raw.i.truncated::<u16>(),
 		})
 	}
-
-	/// Encodes this instruction
-	#[must_use]
-	pub fn encode(self) -> Raw {
+}
+impl Encodable for Inst {
+	fn encode(&self) -> Raw {
 		Raw {
 			t: self.dst.idx(),
 			i: self.value.zero_extended::<u32>(),
