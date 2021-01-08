@@ -8,6 +8,8 @@ use std::{convert::TryFrom, fmt, ops};
 /// An instruction position
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Hash, Debug)]
 #[derive(ref_cast::RefCast)]
+#[derive(derive_more::Display)]
+#[display(fmt = "{_0:#x?}")]
 #[repr(transparent)]
 pub struct Pos(pub u32);
 
@@ -46,6 +48,23 @@ impl ops::Add<i32> for Pos {
 
 	fn add(self, rhs: i32) -> Self::Output {
 		Self((self.0.as_signed() + rhs).as_unsigned())
+	}
+}
+
+impl ops::Add<i16> for Pos {
+	type Output = Self;
+
+	fn add(self, rhs: i16) -> Self::Output {
+		self + rhs.sign_extended::<i32>()
+	}
+}
+
+impl<T> ops::AddAssign<T> for Pos
+where
+	Pos: ops::Add<T, Output = Self>,
+{
+	fn add_assign(&mut self, rhs: T) {
+		*self = *self + rhs;
 	}
 }
 

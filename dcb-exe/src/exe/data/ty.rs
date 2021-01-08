@@ -10,8 +10,8 @@ use serde::de::Visitor;
 #[derive(PartialEq, Eq, Clone, Hash, Debug)]
 #[derive(derive_more::Display)]
 pub enum DataType {
-	/// Ascii character
-	#[display(fmt = "AsciiChar")]
+	/// Ascii string
+	#[display(fmt = "str")]
 	AsciiChar,
 
 	/// Word
@@ -88,24 +88,27 @@ impl std::str::FromStr for DataType {
 	type Err = FromStrError;
 
 	fn from_str(s: &str) -> Result<Self, Self::Err> {
-		// Strip any whitespace.
-		let s = s.trim();
-
 		// If it starts with '[', read it as an array
 		if let Some(s) = s.strip_prefix('[') {
+			// Find the first ';' from the end to split.
 			let s = s.strip_suffix(']').ok_or(FromStrError::MissingArraySuffix)?;
-			// Note: We find the first ';' from the end to split.
 			let (ty, len) = s
 				.char_indices()
 				.rev()
 				.find_map(|(pos, c)| c.eq(&';').then(|| s.split_at(pos)))
 				.ok_or(FromStrError::MissingArraySep)?;
-			// Ignore the leading ';'
-			#[allow(clippy::indexing_slicing)] // This can't panic, as `pos < len.`
+
+			// Ignore the leading ';' on the second.
+			#[allow(clippy::indexing_slicing)] // This can't panic, as `pos < len`.
 			let len = &len[1..];
 
-			let ty = box Self::from_str(ty).map_err(|err| FromStrError::InvalidArrayTy(box err))?;
-			let len = self::parse_u32(len).map_err(|err| FromStrError::InvalidArrayLen { len: len.to_string(), err })?;
+			// Trim both strings
+			let ty = ty.trim();
+			let len = len.trim();
+
+			let ty = Self::from_str(ty).map_err(|err| FromStrError::InvalidArrayTy(Box::new(err)))?;
+			let ty = Box::new(ty);
+			let len = self::parse_u32(len).map_err(|err| FromStrError::InvalidArrayLen { len: len.to_owned(), err })?;
 
 			return Ok(Self::Array { ty, len });
 		}
@@ -116,7 +119,7 @@ impl std::str::FromStr for DataType {
 			"u8" => Ok(Self::Byte),
 			"u16" => Ok(Self::HalfWord),
 			"u32" => Ok(Self::Word),
-			_ => Err(FromStrError::UnknownTy { ty: s.to_string() }),
+			_ => Err(FromStrError::UnknownTy { ty: s.to_owned() }),
 		}
 	}
 }

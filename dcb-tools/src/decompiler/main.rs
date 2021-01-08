@@ -76,7 +76,7 @@ mod logger;
 
 // Imports
 use anyhow::Context;
-use dcb::{exe::data::DataTable, GameFile};
+use dcb_io::GameFile;
 
 #[allow(clippy::cognitive_complexity, clippy::too_many_lines)] // TODO: Refactor
 fn main() -> Result<(), anyhow::Error> {
@@ -88,47 +88,18 @@ fn main() -> Result<(), anyhow::Error> {
 
 	// Open the game file
 	let input_file = std::fs::File::open(&game_file_path).context("Unable to open input file")?;
-	let _game_file = GameFile::from_reader(input_file).context("Unable to parse input file as dcb")?;
+	let mut game_file = GameFile::from_reader(input_file).context("Unable to parse input file as dcb")?;
 
 	// Read the executable
 	log::debug!("Deserializing executable");
-	//let exe = dcb::Exe::deserialize(&mut game_file).context("Unable to parse game executable")?;
+	let exe = dcb_exe::Exe::deserialize(&mut game_file).context("Unable to parse game executable")?;
 
-	//log::info!("Header:\n{}\n", exe.header);
+	println!("Header:\n{}", exe.header);
 
-	/*
-	// Get all instructions
-	log::debug!("Retrieving all instructions");
-	let instructions: Vec<(Pos, Instruction)> = Instruction::new_iter(
-		exe.data
-			.array_chunks::<4>()
-			.map(|bytes| LittleEndian::read_u32(bytes))
-			.zip(0..)
-			.map(|(word, offset)| Raw {
-				repr: word,
-				pos:  Pos(exe.header.dest + 4 * offset),
-			}),
-	)
-	.collect();
-	*/
+	println!("Data table:\n{:#?}", exe.data_table);
 
-	/*
-	// Get all functions
-	log::debug!("Retrieving all functions");
-	let functions: FuncTable = FuncTable::get_known()
-		.context("Unable to get known function table")?
-		.merge(FuncTable::from_instructions(
-			&instructions.iter().map(|(pos, instruction)| (*pos, instruction)),
-		));
-	*/
-
-	// Get all data
-	log::debug!("Retrieving all locations");
-	let data_pos: DataTable = DataTable::get_known().context("Unable to get known function table")?;
-
-	#[allow(clippy::use_debug)]
-	{
-		println!("{data_pos:#?}");
+	for (pos, inst) in exe.parse_iter() {
+		println!("{}: {:?}", pos, inst);
 	}
 
 	/*

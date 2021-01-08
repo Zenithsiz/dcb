@@ -21,15 +21,13 @@ use std::{borrow::Borrow, cmp::Ordering};
 /// A data location.
 ///
 /// Two data locations are considered equal if they
-/// share the same position and kind.
-///
-/// Their relative
-/// order is also firstly dependent on their position
-/// and kind, although when 2 data locations share
-/// the same position, the larger one will appear first
-/// in the ordering. This is to implement 'specialized'
-/// data locations, where one may have a certain data location
-/// inside of another for a specific purpose.
+/// share the same position.
+/// 
+/// Their relative order first depends on their position.
+/// When their positions are equal, the larger one will
+/// appear first in the order.
+/// This is to implement `specialized` data locations, where
+/// a large data location can have multiple data locations inside.
 #[derive(Clone, Debug)]
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Data {

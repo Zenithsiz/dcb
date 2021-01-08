@@ -4,14 +4,13 @@
 pub mod error;
 
 // Exports
-use std::fmt;
-
 pub use error::{FromBytesError, ToBytesError};
 
 // Import
 use byteorder::{ByteOrder, LittleEndian};
 use dcb_bytes::Bytes;
 use dcb_util::{array_split, null_ascii_string::NullAsciiString, AsciiStrArr};
+use std::fmt;
 
 /// The header of the executable.
 #[derive(PartialEq, Eq, Clone, Copy, Hash, Debug)]
@@ -66,12 +65,12 @@ impl fmt::Display for Header {
 			..
 		} = self;
 
-		write!(f, "PC: {pc0:#x}")?;
-		write!(f, "GP: {gp0:#x}")?;
-		write!(f, "Destination: {dest:#x} / size: {size:#x}")?;
-		write!(f, "Memfill: {memfill_start:#X} / size: {memfill_size:#x}")?;
-		write!(f, "SP: {initial_sp_base:#x} / offset: {initial_sp_offset:#x}")?;
-		write!(f, "Marker: {marker:?}")
+		writeln!(f, "PC: {pc0:#x}")?;
+		writeln!(f, "GP: {gp0:#x}")?;
+		writeln!(f, "Destination: {dest:#x} / size: {size:#x}")?;
+		writeln!(f, "Memfill: {memfill_start:#X} / size: {memfill_size:#x}")?;
+		writeln!(f, "SP: {initial_sp_base:#x} / offset: {initial_sp_offset:#x}")?;
+		writeln!(f, "Marker: {marker:?}")
 	}
 }
 

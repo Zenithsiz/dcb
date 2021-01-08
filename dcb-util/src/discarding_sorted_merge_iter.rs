@@ -20,7 +20,6 @@ pub struct DiscardingSortedMergeIter<T: Ord, Li: Iterator<Item = T>, Ri: Iterato
 
 impl<T: Ord, Li: Iterator<Item = T>, Ri: Iterator<Item = T>> DiscardingSortedMergeIter<T, Li, Ri> {
 	/// Creates a new merging iterator
-	#[allow(dead_code)] // TODO: Remove
 	pub fn new(lhs: Li, rhs: Ri) -> Self {
 		Self { lhs, rhs, last: None }
 	}

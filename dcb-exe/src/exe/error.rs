@@ -1,7 +1,7 @@
 //! Errors
 
 // Imports
-use super::header;
+use super::{data, header, Exe, Header};
 
 /// Error type for [`Table::deserialize`]
 #[derive(Debug, thiserror::Error)]
@@ -18,7 +18,18 @@ pub enum DeserializeError {
 	#[error("Unable to parse header")]
 	ParseHeader(#[source] header::FromBytesError),
 
+	/// Data had wrong size
+	#[error("Wrong data size, expected {}, found {}", Exe::SIZE, header.size)]
+	WrongDataSize {
+		/// The read header
+		header: Box<Header>,
+	},
+
 	/// Unable to read data
 	#[error("Unable to read data")]
 	ReadData(#[source] std::io::Error),
+
+	/// Unable to get known data
+	#[error("Unable to get known data table")]
+	KnownDataTable(#[source] data::table::GetKnownError),
 }

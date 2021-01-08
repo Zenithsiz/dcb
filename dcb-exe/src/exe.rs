@@ -6,46 +6,46 @@
 // Modules
 pub mod data;
 pub mod error;
-//pub mod func;
 pub mod header;
-pub mod instruction;
+pub mod inst;
 pub mod pos;
+//pub mod func;
 
 // Exports
 pub use data::{Data, DataTable, DataType};
 pub use error::DeserializeError;
-//pub use func::Func;
 pub use header::Header;
-pub use instruction::Instruction;
 pub use pos::Pos;
+//pub use func::Func;
 
 // Imports
+use self::inst::Inst;
 use dcb_bytes::{ByteArray, Bytes};
 use dcb_io::GameFile;
-use std::{
-	convert::TryFrom,
-	io::{Read, Seek, Write},
-};
+use std::io::{Read, Seek, Write};
 
 /// The game executable
 #[derive(PartialEq, Eq, Clone, Debug)]
-#[derive(serde::Serialize, serde::Deserialize)]
+//#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::as_conversions)] // `SIZE` always fits
 pub struct Exe {
 	/// The executable header
 	pub header: Header,
 
+	/// All bytes within the exe
+	pub bytes: Box<[u8; Self::SIZE as usize]>,
+
 	/// The data table.
 	pub data_table: DataTable,
-	//pub data: Vec<u8>,
 }
 
 impl Exe {
-	/// Code range
-	///
-	/// Everything outside of this range will be considered data.
-	pub const CODE_RANGE: std::ops::Range<Pos> = Pos(0x80013e4c)..Pos(0x8006dd3c);
+	/// Size of the executable
+	const SIZE: u32 = 0x68000;
 	/// Start address of the executable
 	const START_ADDRESS: dcb_io::Data = dcb_io::Data::from_u64(0x58b9000);
+	/// Start memory address of the executable
+	const START_MEM_ADDRESS: Pos = Pos(0x80010000);
 }
 
 impl Exe {
@@ -60,13 +60,31 @@ impl Exe {
 		file.read_exact(&mut header_bytes).map_err(DeserializeError::ReadHeader)?;
 		let header = Header::from_bytes(&header_bytes).map_err(DeserializeError::ParseHeader)?;
 
-		//
-		//file.bytes();
+		// Make sure the header size is the one we expect
+		if header.size != Self::SIZE {
+			return Err(DeserializeError::WrongDataSize { header: Box::new(header) });
+		}
 
-		let mut data = vec![0u8; usize::try_from(header.size).expect("Header size didn't fit into a `usize`")];
-		file.read_exact(data.as_mut()).map_err(DeserializeError::ReadData)?;
+		// Read all of the bytes
+		#[allow(clippy::as_conversions)] // `SIZE` always fits
+		let mut bytes = Box::new([0u8; Self::SIZE as usize]);
+		file.read_exact(bytes.as_mut()).map_err(DeserializeError::ReadData)?;
 
-		todo!();
-		//Ok(Self { header, data })
+		// Parse all instructions
+		let insts = inst::ParseIter::new(&*bytes, Self::START_MEM_ADDRESS);
+
+		// Parse all data and code
+		let known_data_table = DataTable::get_known().map_err(DeserializeError::KnownDataTable)?;
+		let heuristics_data_table = DataTable::search_instructions(insts);
+
+		let data_table = known_data_table.merge_with(heuristics_data_table);
+
+		Ok(Self { header, bytes, data_table })
+	}
+
+	/// Returns a parsing iterator for all instructions
+	#[must_use]
+	pub const fn parse_iter(&self) -> inst::ParseIter {
+		inst::ParseIter::new(&*self.bytes, Self::START_MEM_ADDRESS)
 	}
 }

@@ -7,5 +7,5 @@ members = [
 	"dcb-exe",
 	"dcb-bytes",
 	"dcb-bytes-derive",
-	"dcb-tools"
+	"dcb-tools",
 ]

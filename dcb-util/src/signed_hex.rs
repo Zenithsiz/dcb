@@ -4,7 +4,7 @@
 // Imports
 use int_conv::Extended;
 use ref_cast::RefCast;
-use std::fmt::{self, Formatter, LowerHex};
+use std::fmt;
 
 /// A signed numeric type that uses signed hexadecimal formatting.
 #[derive(ref_cast::RefCast)]
@@ -13,20 +13,20 @@ pub struct SignedHex<T>(pub T);
 
 // All references implement it for their underlying type.
 #[allow(clippy::use_self)] // We're using a generic version `SignedHex`, not `Self`
-impl<'a, T> LowerHex for SignedHex<&'a T>
+impl<'a, T> fmt::Display for SignedHex<&'a T>
 where
-	SignedHex<T>: LowerHex,
+	SignedHex<T>: fmt::Display,
 {
-	fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-		<SignedHex<T> as LowerHex>::fmt(SignedHex::<T>::ref_cast(self.0), f)
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+		<SignedHex<T> as fmt::Display>::fmt(SignedHex::<T>::ref_cast(self.0), f)
 	}
 }
 
 /// Macro to help implement [`SignedHex`]
 macro impl_signed_hex($($T:ty => $TBigger:ty),* $(,)?) {
 	$(
-		impl LowerHex for SignedHex<$T> {
-			fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+		impl fmt::Display for SignedHex<$T> {
+			fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 				let sign = match (self.0 < 0, f.sign_plus()) {
 					(true, _) => "-",
 					(false, true) => "+",
@@ -40,7 +40,7 @@ macro impl_signed_hex($($T:ty => $TBigger:ty),* $(,)?) {
 
 				// TODO: Remove `+` from the formatter flags when we do
 				//       this to fully support the `+` flag.
-				LowerHex::fmt(&self.0.extended::<$TBigger>().abs(), f)
+				fmt::LowerHex::fmt(&self.0.extended::<$TBigger>().abs(), f)
 			}
 		}
 	)*

@@ -1,31 +1,4 @@
-//! `dcb` is a library for interacting with the game file of `Digimon Digital Card Battle`.
-//!
-//! # Modules
-//! `dcb` is split across 2 main modules, [`io`] and [`game`].
-//!
-//! ## Io
-//! The Io module is responsible for interacting with the game file. In the future it may be responsible
-//! for also interacting with the game extracted database, once work on that is complete.
-//!
-//! ## Game
-//! The game module is responsible for representing in-game structures such as cards, sprites, text, and
-//! others. The trait has various interfaces to be able to deserialize these structures from both the game
-//! file, database or even other sources, depending on the structure.
-//!
-//! # Example
-//!
-//! The following is an example of how to use the `dcb` library.
-//! This example extracts the card table and prints it to screen
-//!
-//! ```no_run
-//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
-//! #   use std::fs::File;
-//! let mut game_file = dcb::GameFile::from_reader( File::open("Digimon Digital Card Battle.bin")? )?;
-//! let card_table = dcb::CardTable::deserialize(&mut game_file)?;
-//! println!("Card table: {:?}", card_table);
-//! #   Ok(())
-//! # }
-//! ```
+//! Dcb utilities
 
 // Features
 #![feature(
@@ -53,7 +26,8 @@
 	or_patterns,
 	once_cell,
 	box_syntax,
-	str_split_once
+	str_split_once,
+	try_trait
 )]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]
@@ -117,13 +91,17 @@ pub mod null_ascii_string;
 #[macro_use]
 pub mod impl_bytes;
 pub mod discarding_sorted_merge_iter;
+pub mod peekable_iter;
 pub mod signed_hex;
+pub mod next_from_bytes;
 
 // Exports
 //pub use array_split::{array_split, array_split_mut};
 pub use ascii_str_arr::AsciiStrArr;
 pub use discarding_sorted_merge_iter::DiscardingSortedMergeIter;
+pub use peekable_iter::PeekableIter;
 pub use signed_hex::SignedHex;
+pub use next_from_bytes::NextFromBytes;
 
 /// Returns the absolute different between `a` and `b`, `a - b` as a `i64`.
 ///

@@ -13,10 +13,14 @@ pub mod error;
 
 // Exports
 pub use error::GetKnownError;
+use inst::directive::Directive;
 
 // Imports
-use super::Data;
-use crate::exe::Pos;
+use super::{Data, DataType};
+use crate::exe::{
+	inst::{self, basic, Inst},
+	Pos,
+};
 use dcb_util::DiscardingSortedMergeIter;
 use std::{collections::BTreeSet, fs::File, iter::FromIterator};
 
@@ -43,7 +47,7 @@ impl DataTable {
 	/// discovered data locations, as the known functions are always kept, and the
 	/// duplicate discovered ones are discarded.
 	#[must_use]
-	pub fn merge(self, other: Self) -> Self {
+	pub fn merge_with(self, other: Self) -> Self {
 		// Note: We don't return the iterator, as we want the user to
 		//       keep the guarantees supplied by this type.
 		DiscardingSortedMergeIter::new(self.0.into_iter(), other.0.into_iter()).collect()
@@ -67,15 +71,17 @@ impl DataTable {
 		serde_yaml::from_reader(file).map_err(GetKnownError::Parse)
 	}
 
-	/*
 	/// Searches all instructions for references to
 	/// executable data using certain heuristics.
 	#[must_use]
-	pub fn search_instructions<'a>(instructions: impl Iterator<Item = (Pos, &'a Instruction)> + Clone) -> Self {
+	pub fn search_instructions(insts: impl Iterator<Item = (Pos, Inst)> + Clone) -> Self {
 		// Get all possible references to data
-		let data_references: BTreeSet<Pos> = instructions
+		let references: BTreeSet<Pos> = insts
 			.clone()
-			.filter_map(|(_, instruction)| match instruction {
+			.filter_map(|(pos, inst)| match inst {
+				Inst::Basic(basic::Inst::Load(basic::load::Inst { offset, .. }) | basic::Inst::Store(basic::store::Inst { offset, .. })) => {
+					Some(pos + offset)
+				},
 				/*
 				Instruction::Pseudo(
 					PseudoInst::La { target: offset, .. } |
@@ -94,48 +100,47 @@ impl DataTable {
 					PseudoInst::SwrImm { offset, .. },
 				) |
 				*/
-				Instruction::Directive(Directive::Dw(offset)) => Some(Pos(*offset)),
+				Inst::Directive(Directive::Dw(address)) => Some(Pos(address)),
 				_ => None,
 			})
 			.collect();
 
 		// Then filter the instructions for data locations.
-		instructions
+		insts
 			// Filter all non-directives
 			.filter_map(|(pos, instruction)| match instruction {
-				Instruction::Directive(directive) if data_references.contains(&pos) => Some((pos, directive)),
+				Inst::Directive(directive) if references.contains(&pos) => Some((pos, directive)),
 				_ => None,
 			})
 			.zip(0..)
 			.map(|((pos, directive), idx)| {
 				match directive {
-					Directive::Ascii(ascii) => Data {
+					Directive::Ascii { len } => Data {
 						name: format!("string_{idx}"),
 						desc: String::new(),
 						pos,
-						kind: DataKind::AsciiStr { len: ascii.len().try_into().expect("String length didn't fit into a `u32`") },
+						ty: DataType::Array { ty: Box::new(DataType::AsciiChar), len },
 					},
 					Directive::Dw(_) => Data {
 						name: format!("data_w{idx}"),
 						desc: String::new(),
 						pos,
-						kind: DataKind::Word,
+						ty: DataType::Word,
 					},
 					Directive::Dh(_) => Data {
 						name: format!("data_h{idx}"),
 						desc: String::new(),
 						pos,
-						kind: DataKind::HalfWord,
+						ty: DataType::HalfWord,
 					},
 					Directive::Db(_) => Data {
 						name: format!("data_b{idx}"),
 						desc: String::new(),
 						pos,
-						kind: DataKind::Byte,
+						ty: DataType::Byte,
 					},
 				}
 			})
 			.collect()
 	}
-	*/
 }

@@ -13,12 +13,6 @@ macro_rules! array_split {
 
 		),* $(,)?
 	) => {{
-		#![allow(
-			clippy::used_underscore_binding,
-			clippy::ptr_offset_with_cast,
-			clippy::indexing_slicing,
-		)]
-
 		// Struct holding all fields
 		struct Fields<'a, T> {
 			$(
@@ -30,6 +24,11 @@ macro_rules! array_split {
 		}
 
 		// Get everything from `array_refs`
+		#[allow(
+			clippy::used_underscore_binding,
+			clippy::ptr_offset_with_cast,
+			clippy::indexing_slicing,
+		)]
 		let (
 			$(
 				$name
