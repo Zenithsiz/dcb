@@ -149,7 +149,9 @@ impl InstFmt for Inst {
 
 	fn fmt(&self, _pos: crate::Pos, _bytes: &[u8], f: &mut std::fmt::Formatter) -> std::fmt::Result {
 		let Self { dst, lhs, kind } = self;
+		let mnemonic = kind.mnemonic();
+		let value = kind.value_fmt();
 
-		write!(f, "{} {dst}, {lhs}, {}", kind.mnemonic(), kind.value_fmt())
+		write!(f, "{mnemonic} {dst}, {lhs}, {value}")
 	}
 }

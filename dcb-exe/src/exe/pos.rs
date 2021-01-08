@@ -5,13 +5,23 @@
 use int_conv::{SignExtended, Signed};
 use std::{convert::TryFrom, fmt, ops};
 
+use crate::Exe;
+
 /// An instruction position
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Hash, Debug)]
 #[derive(ref_cast::RefCast)]
 #[derive(derive_more::Display)]
-#[display(fmt = "{_0:#x?}")]
+#[display(fmt = "{_0:#x}")]
 #[repr(transparent)]
 pub struct Pos(pub u32);
+
+impl Pos {
+	/// Returns the memory position of this position
+	#[must_use]
+	pub fn as_mem_idx(self) -> usize {
+		usize::try_from(self - Exe::START_MEM_ADDRESS).expect("Failed to compute index")
+	}
+}
 
 impl fmt::LowerHex for Pos {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

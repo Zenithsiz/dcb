@@ -3,7 +3,7 @@
 // Imports
 use crate::exe::inst::{
 	basic::{self, alu},
-	Register,
+	InstFmt, Register,
 };
 use std::fmt;
 
@@ -62,8 +62,6 @@ impl Kind {
 /// [alu] $dst, $dst, $i
 /// ```
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
-#[derive(derive_more::Display)]
-#[display(fmt = "{} {dst}, {}", "kind.mnemonic()", "kind.value_fmt()")]
 pub struct Inst {
 	/// Destination and source register
 	pub dst: Register,
@@ -92,5 +90,20 @@ impl Inst {
 		};
 
 		inst.map(|inst| (inst, 0))
+	}
+}
+
+
+impl InstFmt for Inst {
+	fn mnemonic(&self) -> &'static str {
+		self.kind.mnemonic()
+	}
+
+	fn fmt(&self, _pos: crate::Pos, _bytes: &[u8], f: &mut std::fmt::Formatter) -> std::fmt::Result {
+		let Self { dst, kind } = self;
+		let mnemonic = kind.mnemonic();
+		let value = kind.value_fmt();
+
+		write!(f, "{mnemonic} {dst}, {value}")
 	}
 }

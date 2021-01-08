@@ -2,9 +2,9 @@
 
 // Imports
 //use super::{FromRawIter, Instruction, Raw};
-use super::Inst;
+use super::{Inst, InstFmt};
 use crate::exe::Pos;
-use ascii::AsciiChar;
+use ascii::{AsciiChar, AsciiStr};
 use dcb_util::NextFromBytes;
 use std::ops::{
 	Bound::{self, Excluded, Included, Unbounded},
@@ -136,6 +136,34 @@ impl Directive {
 
 		// Else read a single byte
 		bytes.next_u8().map(|value| (Self::Db(value), 1))
+	}
+}
+
+impl InstFmt for Directive {
+	fn mnemonic(&self) -> &'static str {
+		match self {
+			Self::Dw(_) => "dw",
+			Self::Dh(_) => "dh",
+			Self::Db(_) => "db",
+			Self::Ascii { .. } => ".ascii",
+		}
+	}
+
+	fn fmt(&self, pos: Pos, bytes: &[u8], f: &mut std::fmt::Formatter) -> std::fmt::Result {
+		let mnemonic = self.mnemonic();
+		#[allow(clippy::as_conversions)] // `len` will always fit into a `usize`.
+		#[allow(clippy::indexing_slicing)] // `pos .. pos + len` will always be valid.
+		match self {
+			Self::Dw(value) => write!(f, "{mnemonic} {value:#x}"),
+			Self::Dh(value) => write!(f, "{mnemonic} {value:#x}"),
+			Self::Db(value) => write!(f, "{mnemonic} {value:#x}"),
+			&Self::Ascii { len } => {
+				let pos = pos.as_mem_idx();
+				let string = &bytes[pos..pos + len as usize];
+				let string = AsciiStr::from_ascii(string).expect("Ascii string was invalid").as_str();
+				write!(f, "{mnemonic} \"{}\"", string.escape_debug())
+			},
+		}
 	}
 }
 

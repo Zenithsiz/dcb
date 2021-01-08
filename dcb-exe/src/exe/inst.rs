@@ -25,7 +25,7 @@ pub enum Inst {
 	Basic(basic::Inst),
 
 	/// A pseudo instruction
-	Pseudo(pseudo::PseudoInst),
+	Pseudo(pseudo::Inst),
 
 	/// A directive
 	Directive(Directive),
@@ -44,16 +44,16 @@ impl InstFmt for Inst {
 	fn mnemonic(&self) -> &'static str {
 		match self {
 			Self::Basic(inst) => inst.mnemonic(),
-			Self::Pseudo(_) => todo!(),
-			Self::Directive(_) => todo!(),
+			Self::Pseudo(inst) => inst.mnemonic(),
+			Self::Directive(directive) => directive.mnemonic(),
 		}
 	}
 
 	fn fmt(&self, pos: Pos, bytes: &[u8], f: &mut fmt::Formatter) -> fmt::Result {
 		match self {
 			Self::Basic(inst) => inst.fmt(pos, bytes, f),
-			Self::Pseudo(_) => todo!(),
-			Self::Directive(_) => todo!(),
+			Self::Pseudo(inst) => inst.fmt(pos, bytes, f),
+			Self::Directive(directive) => directive.fmt(pos, bytes, f),
 		}
 	}
 }

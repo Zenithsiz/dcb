@@ -48,7 +48,7 @@ impl<'a> Iterator for ParseIter<'a> {
 				self.bytes = &self.bytes[4..];
 				let pos = self.cur_pos;
 				self.cur_pos += 4;
-				match pseudo::PseudoInst::decode(inst, self.bytes) {
+				match pseudo::Inst::decode(inst, self.bytes) {
 					Some((inst, len)) => {
 						self.bytes = &self.bytes[len..];
 						self.cur_pos += len as u32;

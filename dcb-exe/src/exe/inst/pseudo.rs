@@ -13,12 +13,11 @@ pub mod alu_assign;
 //pub mod store;
 
 // Imports
-use super::basic;
+use super::{basic, InstFmt};
 
 /// A pseudo instruction
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
-#[derive(derive_more::Display)]
-pub enum PseudoInst {
+pub enum Inst {
 	/// Alu self-assign
 	AluAssign(alu_assign::Inst),
 	/*
@@ -61,12 +60,26 @@ pub enum PseudoInst {
 	*/
 }
 
-impl PseudoInst {
+impl Inst {
 	/// Attempts to parse a pseudo instruction from a start
 	/// basic instruction and remaining bytes
 	#[must_use]
 	pub fn decode(inst: basic::Inst, bytes: &[u8]) -> Option<(Self, usize)> {
 		alu_assign::Inst::decode(inst, bytes).map(|(inst, len)| (Self::AluAssign(inst), len))
+	}
+}
+
+impl InstFmt for Inst {
+	fn mnemonic(&self) -> &'static str {
+		match self {
+			Self::AluAssign(inst) => inst.mnemonic(),
+		}
+	}
+
+	fn fmt(&self, pos: crate::Pos, bytes: &[u8], f: &mut std::fmt::Formatter) -> std::fmt::Result {
+		match self {
+			Self::AluAssign(inst) => inst.fmt(pos, bytes, f),
+		}
 	}
 }
 
