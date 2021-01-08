@@ -136,7 +136,7 @@ impl InstFmt for Inst {
 	}
 
 	fn fmt(&self, pos: crate::Pos, _bytes: &[u8], f: &mut fmt::Formatter) -> fmt::Result {
-		let address = pos + self.offset;
+		let address = pos + 4 * self.offset;
 		let mnemonic = self.kind.mnemonic();
 		let arg = self.arg;
 

@@ -83,6 +83,6 @@ impl InstFmt for Inst {
 		let Self { comment, kind } = self;
 		let mnemonic = kind.mnemonic();
 
-		write!(f, "{mnemonic}, {comment:#x}")
+		write!(f, "{mnemonic} {comment:#x}")
 	}
 }

@@ -23,6 +23,9 @@ pub enum Inst {
 	/// Shift
 	Shift(shift::Inst),
 
+	/// Multiplication
+	Mult(mult::Inst),
+
 	/// Store
 	Store(store::Inst),
 
@@ -53,29 +56,18 @@ impl Decodable for Inst {
 	fn decode(raw: Self::Raw) -> Option<Self> {
 		let inst = #[bitmatch]
 		match raw {
-			// Shift
 			"000000_?????_ttttt_ddddd_iiiii_0000ff" => Self::Shift(shift::Inst::decode_from(shift::imm::Raw { t, d, i, f })?),
 			"000000_sssss_ttttt_ddddd_?????_0001ff" => Self::Shift(shift::Inst::decode_from(shift::reg::Raw { s, t, d, f })?),
-
-			// Jump
-			"00001p_iiiii_iiiii_iiiii_iiiii_iiiiii" => Self::Jmp(jmp::Inst::decode_from(jmp::imm::Raw { p, i })?),
 			"000000_sssss_?????_ddddd_?????_00100f" => Self::Jmp(jmp::Inst::decode_from(jmp::reg::Raw { s, d, f })?),
-
+			"000000_ccccc_ccccc_ccccc_ccccc_00110f" => Self::Sys(sys::Inst::decode(sys::Raw { c, f })?),
+			"000000_sssss_ttttt_ddddd_?????_01ffff" => Self::Mult(mult::Inst::decode(mult::Raw { s, t, d, f })?),
+			"000000_sssss_ttttt_ddddd_?????_10ffff" => Self::Alu(alu::Inst::decode_from(alu::reg::Raw { s, t, d, f })?),
+			"00001p_iiiii_iiiii_iiiii_iiiii_iiiiii" => Self::Jmp(jmp::Inst::decode_from(jmp::imm::Raw { p, i })?),
 			"000ppp_sssss_ttttt_iiiii_iiiii_iiiiii" => Self::Cond(cond::Inst::decode(cond::Raw { p, s, t, i })?),
 			"001111_?????_ttttt_iiiii_iiiii_iiiiii" => Self::Lui(lui::Inst::decode(lui::Raw { t, i })?),
-
-			// Alu
-			"000000_sssss_ttttt_ddddd_?????_10ffff" => Self::Alu(alu::Inst::decode_from(alu::reg::Raw { s, t, d, f })?),
 			"001ppp_sssss_ttttt_iiiii_iiiii_iiiiii" => Self::Alu(alu::Inst::decode_from(alu::imm::Raw { p, s, t, i })?),
-
-			// Syscall
-			"000000_ccccc_ccccc_ccccc_ccccc_00110f" => Self::Sys(sys::Inst::decode(sys::Raw { c, f })?),
-
-			// Store / Load
-			"100ppp_sssss_ttttt_iiiii_iiiii_iiiiii" => Self::Store(store::Inst::decode(store::Raw { p, s, t, i })?),
-			"101ppp_sssss_ttttt_iiiii_iiiii_iiiiii" => Self::Load(load::Inst::decode(load::Raw { p, s, t, i })?),
-
-			// TODO: Remaining instructions, such as shift
+			"100ppp_sssss_ttttt_iiiii_iiiii_iiiiii" => Self::Load(load::Inst::decode(load::Raw { p, s, t, i })?),
+			"101ppp_sssss_ttttt_iiiii_iiiii_iiiiii" => Self::Store(store::Inst::decode(store::Raw { p, s, t, i })?),
 
 			/*
 			"0100nn_1iiii_iiiii_iiiii_iiiii_iiiiii" => CopN { n: n.truncate(), imm: i},
@@ -102,6 +94,10 @@ impl Encodable for Inst {
 			Self::Shift(inst) => match inst.encode() {
 				shift::Raw::Imm(shift::imm::Raw { t, d, i, f }) => bitpack!("000000_?????_ttttt_ddddd_iiiii_0000ff"),
 				shift::Raw::Reg(shift::reg::Raw { s, t, d, f }) => bitpack!("000000_sssss_ttttt_ddddd_?????_0001ff"),
+			},
+			Self::Mult(inst) => {
+				let mult::Raw { s, t, d, f } = inst.encode();
+				bitpack!("000000_sssss_ttttt_ddddd_?????_01ffff")
 			},
 			Self::Jmp(inst) => match inst.encode() {
 				jmp::Raw::Imm(jmp::imm::Raw { p, i }) => bitpack!("00001p_iiiii_iiiii_iiiii_iiiii_iiiiii"),
@@ -141,6 +137,7 @@ impl InstFmt for Inst {
 			Self::Store(inst) => inst.mnemonic(),
 			Self::Load(inst) => inst.mnemonic(),
 			Self::Cond(inst) => inst.mnemonic(),
+			Self::Mult(inst) => inst.mnemonic(),
 			Self::Jmp(inst) => inst.mnemonic(),
 			Self::Alu(inst) => inst.mnemonic(),
 			Self::Lui(inst) => inst.mnemonic(),
@@ -155,6 +152,7 @@ impl InstFmt for Inst {
 			Self::Load(inst) => inst.fmt(pos, bytes, f),
 			Self::Cond(inst) => inst.fmt(pos, bytes, f),
 			Self::Jmp(inst) => inst.fmt(pos, bytes, f),
+			Self::Mult(inst) => inst.fmt(pos, bytes, f),
 			Self::Alu(inst) => inst.fmt(pos, bytes, f),
 			Self::Lui(inst) => inst.fmt(pos, bytes, f),
 			Self::Sys(inst) => inst.fmt(pos, bytes, f),

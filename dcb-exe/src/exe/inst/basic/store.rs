@@ -6,29 +6,24 @@ use crate::exe::inst::{
 	InstFmt, Register,
 };
 use int_conv::{Signed, Truncated, ZeroExtended};
-use std::convert::TryFrom;
 
 /// Store instruction kind
-///
-/// Each variant's value is equal to the lower 3 bits of the opcode
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
-#[derive(num_enum::IntoPrimitive, num_enum::TryFromPrimitive)]
-#[repr(u8)]
 pub enum Kind {
-	/// Byte, `u8`
-	Byte      = 0x0,
+	/// Byte, `i8`
+	Byte,
 
-	/// Half-word, `u16`
-	HalfWord  = 0x1,
+	/// Half-word, `i16`
+	HalfWord,
 
 	/// Word left-bits, `u32`
-	WordLeft  = 0x2,
+	WordLeft,
 
 	/// Word, `u32`
-	Word      = 0x3,
+	Word,
 
 	/// Word right-bits, `u32`
-	WordRight = 0x6,
+	WordRight,
 }
 
 impl Kind {
@@ -81,7 +76,14 @@ impl Decodable for Inst {
 	type Raw = Raw;
 
 	fn decode(raw: Self::Raw) -> Option<Self> {
-		let kind = Kind::try_from(raw.p.truncated::<u8>()).ok()?;
+		let kind = match raw.p {
+			0x0 => Kind::Byte,
+			0x1 => Kind::HalfWord,
+			0x2 => Kind::WordLeft,
+			0x3 => Kind::Word,
+			0x6 => Kind::WordRight,
+			_ => return None,
+		};
 
 		Some(Self {
 			src: Register::new(raw.t)?,
@@ -93,10 +95,16 @@ impl Decodable for Inst {
 }
 impl Encodable for Inst {
 	fn encode(&self) -> Raw {
+		let p = match self.kind {
+			Kind::Byte => 0x0,
+			Kind::HalfWord => 0x1,
+			Kind::WordLeft => 0x2,
+			Kind::Word => 0x3,
+			Kind::WordRight => 0x6,
+		};
 		let t = self.src.idx();
 		let s = self.dst.idx();
 		let i = self.offset.as_unsigned().zero_extended::<u32>();
-		let p = u8::from(self.kind).zero_extended::<u32>();
 
 		Raw { p, s, t, i }
 	}
@@ -110,7 +118,7 @@ impl InstFmt for Inst {
 	fn fmt(&self, pos: crate::Pos, _bytes: &[u8], f: &mut std::fmt::Formatter) -> std::fmt::Result {
 		let Self { dst, src, offset, kind } = self;
 		let mnemonic = kind.mnemonic();
-		let address = pos + *offset;
+		let address = pos + 4 * offset;
 
 		write!(f, "{mnemonic} {dst}, {address}({src})")
 	}

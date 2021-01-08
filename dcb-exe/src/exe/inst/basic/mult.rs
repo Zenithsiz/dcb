@@ -48,7 +48,7 @@ pub struct Raw {
 	/// Rd
 	pub d: u32,
 
-	/// Func
+	/// Func (bottom 4 bits)
 	pub f: u32,
 }
 
@@ -95,16 +95,19 @@ impl Decodable for Inst {
 	#[rustfmt::skip]
 	fn decode(raw: Self::Raw) -> Option<Self> {
 		Some(match raw.f {
-			0x10 => Self::MoveFrom { dst: Register::new(raw.d)?, src: MultReg::Hi },
-			0x12 => Self::MoveFrom { dst: Register::new(raw.d)?, src: MultReg::Lo },
+			// 00x0
+			0x0 => Self::MoveFrom { dst: Register::new(raw.d)?, src: MultReg::Hi },
+			0x2 => Self::MoveFrom { dst: Register::new(raw.d)?, src: MultReg::Lo },
 
-			0x11 => Self::MoveTo { src: Register::new(raw.s)?, dst: MultReg::Hi },
-			0x13 => Self::MoveTo { src: Register::new(raw.s)?, dst: MultReg::Lo },
+			// 00x1
+			0x1 => Self::MoveTo { src: Register::new(raw.s)?, dst: MultReg::Hi },
+			0x3 => Self::MoveTo { src: Register::new(raw.s)?, dst: MultReg::Lo },
 
-			0x18 => Self::Mult { kind: MultKind::Mult, mode: MultMode::  Signed, lhs: Register::new(raw.s)?, rhs: Register::new(raw.t)? },
-			0x19 => Self::Mult { kind: MultKind::Mult, mode: MultMode::Unsigned, lhs: Register::new(raw.s)?, rhs: Register::new(raw.t)? },
-			0x1a => Self::Mult { kind: MultKind::Div , mode: MultMode::  Signed, lhs: Register::new(raw.s)?, rhs: Register::new(raw.t)? },
-			0x1b => Self::Mult { kind: MultKind::Div , mode: MultMode::Unsigned, lhs: Register::new(raw.s)?, rhs: Register::new(raw.t)? },
+			// 10xx
+			0x8 => Self::Mult { kind: MultKind::Mult, mode: MultMode::  Signed, lhs: Register::new(raw.s)?, rhs: Register::new(raw.t)? },
+			0x9 => Self::Mult { kind: MultKind::Mult, mode: MultMode::Unsigned, lhs: Register::new(raw.s)?, rhs: Register::new(raw.t)? },
+			0xa => Self::Mult { kind: MultKind::Div , mode: MultMode::  Signed, lhs: Register::new(raw.s)?, rhs: Register::new(raw.t)? },
+			0xb => Self::Mult { kind: MultKind::Div , mode: MultMode::Unsigned, lhs: Register::new(raw.s)?, rhs: Register::new(raw.t)? },
 
 			_ => return None,
 		})
@@ -118,11 +121,12 @@ impl Encodable for Inst {
 				s: lhs.idx(),
 				t: rhs.idx(),
 				d: 0,
+
 				f: match (kind, mode) {
-					(MultKind::Mult, MultMode::Signed) => 0x18,
-					(MultKind::Mult, MultMode::Unsigned) => 0x19,
-					(MultKind::Div, MultMode::Signed) => 0x1a,
-					(MultKind::Div, MultMode::Unsigned) => 0x1b,
+					(MultKind::Mult, MultMode::Signed) => 0x8,
+					(MultKind::Mult, MultMode::Unsigned) => 0x9,
+					(MultKind::Div, MultMode::Signed) => 0xa,
+					(MultKind::Div, MultMode::Unsigned) => 0xb,
 				},
 			},
 			Self::MoveFrom { dst, src } => Raw {
@@ -130,8 +134,8 @@ impl Encodable for Inst {
 				t: 0,
 				d: dst.idx(),
 				f: match src {
-					MultReg::Hi => 0x10,
-					MultReg::Lo => 0x12,
+					MultReg::Hi => 0x0,
+					MultReg::Lo => 0x2,
 				},
 			},
 			Self::MoveTo { dst, src } => Raw {
@@ -139,8 +143,8 @@ impl Encodable for Inst {
 				t: 0,
 				d: 0,
 				f: match dst {
-					MultReg::Hi => 0x11,
-					MultReg::Lo => 0x13,
+					MultReg::Hi => 0x1,
+					MultReg::Lo => 0x3,
 				},
 			},
 		}

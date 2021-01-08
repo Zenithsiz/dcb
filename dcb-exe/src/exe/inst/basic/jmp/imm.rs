@@ -81,6 +81,6 @@ impl InstFmt for Inst {
 	fn fmt(&self, _pos: crate::Pos, _bytes: &[u8], f: &mut std::fmt::Formatter) -> std::fmt::Result {
 		let Self { kind, target } = self;
 
-		write!(f, "{} {target}", kind.mnemonic())
+		write!(f, "{} {target:#x}", kind.mnemonic())
 	}
 }
