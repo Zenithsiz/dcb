@@ -13,9 +13,11 @@ pub mod mult;
 pub mod store;
 pub mod sys;
 
+// Imports
+use crate::exe::inst::InstFmt;
+
 /// All basic instructions
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
-#[derive(derive_more::Display)]
 pub enum Inst {
 	/// Store
 	Store(store::Inst),
@@ -117,6 +119,32 @@ impl Encodable for Inst {
 				let load::Raw { p, s, t, i } = inst.encode();
 				bitpack!("101ppp_sssss_ttttt_iiiii_iiiii_iiiiii")
 			},
+		}
+	}
+}
+
+impl InstFmt for Inst {
+	fn mnemonic(&self) -> &'static str {
+		match self {
+			Self::Store(inst) => inst.mnemonic(),
+			Self::Load(inst) => inst.mnemonic(),
+			Self::Cond(inst) => inst.mnemonic(),
+			Self::Jmp(inst) => inst.mnemonic(),
+			Self::Alu(inst) => inst.mnemonic(),
+			Self::Lui(inst) => inst.mnemonic(),
+			Self::Sys(inst) => inst.mnemonic(),
+		}
+	}
+
+	fn fmt(&self, pos: crate::Pos, bytes: &[u8], f: &mut std::fmt::Formatter) -> std::fmt::Result {
+		match self {
+			Self::Store(inst) => inst.fmt(pos, bytes, f),
+			Self::Load(inst) => inst.fmt(pos, bytes, f),
+			Self::Cond(inst) => inst.fmt(pos, bytes, f),
+			Self::Jmp(inst) => inst.fmt(pos, bytes, f),
+			Self::Alu(inst) => inst.fmt(pos, bytes, f),
+			Self::Lui(inst) => inst.fmt(pos, bytes, f),
+			Self::Sys(inst) => inst.fmt(pos, bytes, f),
 		}
 	}
 }

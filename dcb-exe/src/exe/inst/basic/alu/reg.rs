@@ -3,7 +3,7 @@
 // Imports
 use crate::exe::inst::{
 	basic::{Decodable, Encodable},
-	Register,
+	InstFmt, Register,
 };
 
 /// Alu register instruction kind
@@ -77,8 +77,6 @@ pub struct Raw {
 
 /// Alu register instructions
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
-#[derive(derive_more::Display)]
-#[display(fmt = "{} {dst}, {lhs}, {rhs}", "kind.mnemonic()")]
 pub struct Inst {
 	/// Destination register
 	pub dst: Register,
@@ -139,5 +137,17 @@ impl Encodable for Inst {
 		let t = self.rhs.idx();
 
 		Raw { f, t, d, s }
+	}
+}
+
+impl InstFmt for Inst {
+	fn mnemonic(&self) -> &'static str {
+		self.kind.mnemonic()
+	}
+
+	fn fmt(&self, _pos: crate::Pos, _bytes: &[u8], f: &mut std::fmt::Formatter) -> std::fmt::Result {
+		let Self { dst, lhs, rhs, kind } = self;
+
+		write!(f, "{} {dst}, {lhs}, {rhs}", kind.mnemonic())
 	}
 }

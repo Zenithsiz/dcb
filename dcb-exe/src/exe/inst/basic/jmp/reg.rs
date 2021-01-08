@@ -3,9 +3,8 @@
 // Imports
 use crate::exe::inst::{
 	basic::{Decodable, Encodable},
-	Register,
+	InstFmt, Register,
 };
-use std::fmt;
 
 /// Jmp register instruction kind
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -78,12 +77,16 @@ impl Encodable for Inst {
 	}
 }
 
-impl fmt::Display for Inst {
-	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-		let mnemonic = self.kind.mnemonic();
-		let target = self.target;
+impl InstFmt for Inst {
+	fn mnemonic(&self) -> &'static str {
+		self.kind.mnemonic()
+	}
 
-		match self.kind {
+	fn fmt(&self, _pos: crate::Pos, _bytes: &[u8], f: &mut std::fmt::Formatter) -> std::fmt::Result {
+		let Self { target, kind } = self;
+		let mnemonic = kind.mnemonic();
+
+		match kind {
 			Kind::Jump => write!(f, "{mnemonic} {target}"),
 			Kind::JumpLink(reg) => write!(f, "{mnemonic} {target}, {reg}"),
 		}

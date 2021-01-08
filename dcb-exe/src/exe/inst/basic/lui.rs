@@ -3,7 +3,7 @@
 // Imports
 use crate::exe::inst::{
 	basic::{Decodable, Encodable},
-	Register,
+	InstFmt, Register,
 };
 use int_conv::{Truncated, ZeroExtended};
 
@@ -19,8 +19,6 @@ pub struct Raw {
 
 /// Load instructions
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
-#[derive(derive_more::Display)]
-#[display(fmt = "lui {dst}, {value:#x}")]
 pub struct Inst {
 	/// Destination register, `rt`
 	pub dst: Register,
@@ -45,5 +43,18 @@ impl Encodable for Inst {
 			t: self.dst.idx(),
 			i: self.value.zero_extended::<u32>(),
 		}
+	}
+}
+
+
+impl InstFmt for Inst {
+	fn mnemonic(&self) -> &'static str {
+		"lui"
+	}
+
+	fn fmt(&self, _pos: crate::Pos, _bytes: &[u8], f: &mut std::fmt::Formatter) -> std::fmt::Result {
+		let Self { dst, value } = self;
+
+		write!(f, "lui {dst}, {value:#x}")
 	}
 }

@@ -3,9 +3,8 @@
 // Imports
 use crate::exe::inst::{
 	basic::{Decodable, Encodable},
-	Register,
+	InstFmt, Register,
 };
-use dcb_util::SignedHex;
 use int_conv::{Signed, Truncated, ZeroExtended};
 use std::fmt;
 
@@ -51,6 +50,23 @@ pub enum Kind {
 
 	/// Greater than or zero and link
 	GreaterOrEqualZeroLink,
+}
+
+impl Kind {
+	/// Returns this instruction kind's mnemonic
+	#[must_use]
+	pub const fn mnemonic(self) -> &'static str {
+		match self {
+			Self::Equal(_) => "beq",
+			Self::NotEqual(_) => "bne",
+			Self::LessOrEqualZero => "blez",
+			Self::GreaterThanZero => "bgtz",
+			Self::LessThanZero => "bltz",
+			Self::GreaterOrEqualZero => "bgez",
+			Self::LessThanZeroLink => "bltzal",
+			Self::GreaterOrEqualZeroLink => "bgezal",
+		}
+	}
 }
 
 /// Condition instructions
@@ -114,22 +130,24 @@ impl Encodable for Inst {
 	}
 }
 
-// TODO: Fmt given `pc` / label
+impl InstFmt for Inst {
+	fn mnemonic(&self) -> &'static str {
+		self.kind.mnemonic()
+	}
 
-impl fmt::Display for Inst {
-	#[rustfmt::skip]
-	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-		let Self { arg, offset, kind } = self;
+	fn fmt(&self, pos: crate::Pos, _bytes: &[u8], f: &mut fmt::Formatter) -> fmt::Result {
+		let address = pos + self.offset;
+		let mnemonic = self.kind.mnemonic();
+		let arg = self.arg;
 
-		match kind {
-			Kind::Equal(reg)             => write!(f, "beq {arg}, {reg}, {}", SignedHex(offset)),
-			Kind::NotEqual(reg)          => write!(f, "bne {arg}, {reg}, {}", SignedHex(offset)),
-			Kind::LessOrEqualZero        => write!(f, "blez {arg}, {}"      , SignedHex(offset)),
-			Kind::GreaterThanZero        => write!(f, "bgtz {arg}, {}"      , SignedHex(offset)),
-			Kind::LessThanZero           => write!(f, "bltz {arg}, {}"      , SignedHex(offset)),
-			Kind::GreaterOrEqualZero     => write!(f, "bgez {arg}, {}"      , SignedHex(offset)),
-			Kind::LessThanZeroLink       => write!(f, "bltzal {arg}, {}"    , SignedHex(offset)),
-			Kind::GreaterOrEqualZeroLink => write!(f, "bgezal {arg}, {}"    , SignedHex(offset)),
+		match self.kind {
+			Kind::Equal(reg) | Kind::NotEqual(reg) => write!(f, "{mnemonic} {arg}, {reg}, {address}"),
+			Kind::LessOrEqualZero |
+			Kind::GreaterThanZero |
+			Kind::LessThanZero |
+			Kind::GreaterOrEqualZero |
+			Kind::LessThanZeroLink |
+			Kind::GreaterOrEqualZeroLink => write!(f, "{mnemonic} {arg}, {address}"),
 		}
 	}
 }

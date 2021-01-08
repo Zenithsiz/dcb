@@ -40,6 +40,14 @@ impl FromIterator<Data> for DataTable {
 	}
 }
 
+impl std::ops::Deref for DataTable {
+	type Target = BTreeSet<Data>;
+
+	fn deref(&self) -> &Self::Target {
+		&self.0
+	}
+}
+
 impl DataTable {
 	/// Merges two data tables, discarding duplicates from `other`.
 	///

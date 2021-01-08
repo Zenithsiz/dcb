@@ -3,9 +3,8 @@
 // Imports
 use crate::exe::inst::{
 	basic::{Decodable, Encodable},
-	Register,
+	InstFmt, Register,
 };
-use std::fmt;
 
 /// Operation kind
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -83,10 +82,10 @@ pub enum Inst {
 	/// Move to
 	MoveTo {
 		/// Source
-		dst: Register,
+		src: Register,
 
 		/// Destination
-		src: MultReg,
+		dst: MultReg,
 	},
 }
 
@@ -99,8 +98,8 @@ impl Decodable for Inst {
 			0x10 => Self::MoveFrom { dst: Register::new(raw.d)?, src: MultReg::Hi },
 			0x12 => Self::MoveFrom { dst: Register::new(raw.d)?, src: MultReg::Lo },
 
-			0x11 => Self::MoveTo { dst: Register::new(raw.s)?, src: MultReg::Hi },
-			0x13 => Self::MoveTo { dst: Register::new(raw.s)?, src: MultReg::Lo },
+			0x11 => Self::MoveTo { src: Register::new(raw.s)?, dst: MultReg::Hi },
+			0x13 => Self::MoveTo { src: Register::new(raw.s)?, dst: MultReg::Lo },
 
 			0x18 => Self::Mult { kind: MultKind::Mult, mode: MultMode::  Signed, lhs: Register::new(raw.s)?, rhs: Register::new(raw.t)? },
 			0x19 => Self::Mult { kind: MultKind::Mult, mode: MultMode::Unsigned, lhs: Register::new(raw.s)?, rhs: Register::new(raw.t)? },
@@ -135,7 +134,7 @@ impl Encodable for Inst {
 					MultReg::Lo => 0x12,
 				},
 			},
-			Self::MoveTo { dst: src, src: dst } => Raw {
+			Self::MoveTo { dst, src } => Raw {
 				s: src.idx(),
 				t: 0,
 				d: 0,
@@ -148,23 +147,45 @@ impl Encodable for Inst {
 	}
 }
 
-impl fmt::Display for Inst {
-	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+impl InstFmt for Inst {
+	fn mnemonic(&self) -> &'static str {
+		match self {
+			#[rustfmt::skip]
+			Self::Mult { kind, mode, .. } => match (kind, mode) {
+				(MultKind::Mult, MultMode::  Signed) => "mult",
+				(MultKind::Mult, MultMode::Unsigned) => "multu",
+				(MultKind::Div , MultMode::  Signed) => "div",
+				(MultKind::Div , MultMode::Unsigned) => "diu",
+			},
+			Self::MoveFrom { src, .. } => match src {
+				MultReg::Hi => "mfhi",
+				MultReg::Lo => "mflo",
+			},
+			Self::MoveTo { dst, .. } => match dst {
+				MultReg::Hi => "mthi",
+				MultReg::Lo => "mtlo",
+			},
+		}
+	}
+
+	fn fmt(&self, _pos: crate::Pos, _bytes: &[u8], f: &mut std::fmt::Formatter) -> std::fmt::Result {
+		let mnemonic = self.mnemonic();
+
 		match self {
 			#[rustfmt::skip]
 			Self::Mult { kind, mode, lhs, rhs } => match (kind, mode) {
-				(MultKind::Mult, MultMode::  Signed) => write!(f, "mult {lhs}, {rhs}"),
-				(MultKind::Mult, MultMode::Unsigned) => write!(f, "multu {lhs}, {rhs}"),
-				(MultKind::Div , MultMode::  Signed) => write!(f, "div {lhs}, {rhs}"),
-				(MultKind::Div , MultMode::Unsigned) => write!(f, "diu {lhs}, {rhs}"),
+				(MultKind::Mult, MultMode::  Signed) => write!(f, "{mnemonic} {lhs}, {rhs}"),
+				(MultKind::Mult, MultMode::Unsigned) => write!(f, "{mnemonic} {lhs}, {rhs}"),
+				(MultKind::Div , MultMode::  Signed) => write!(f, "{mnemonic} {lhs}, {rhs}"),
+				(MultKind::Div , MultMode::Unsigned) => write!(f, "{mnemonic} {lhs}, {rhs}"),
 			},
 			Self::MoveFrom { dst, src } => match src {
-				MultReg::Hi => write!(f, "mfhi {dst}"),
-				MultReg::Lo => write!(f, "mflo {dst}"),
+				MultReg::Hi => write!(f, "{mnemonic} {dst}"),
+				MultReg::Lo => write!(f, "{mnemonic} {dst}"),
 			},
-			Self::MoveTo { dst: src, src: dst } => match dst {
-				MultReg::Hi => write!(f, "mthi {src}"),
-				MultReg::Lo => write!(f, "mtlo {src}"),
+			Self::MoveTo { dst, src } => match dst {
+				MultReg::Hi => write!(f, "{mnemonic} {src}"),
+				MultReg::Lo => write!(f, "{mnemonic} {src}"),
 			},
 		}
 	}

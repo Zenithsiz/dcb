@@ -1,7 +1,10 @@
 //! Jump immediate instructions
 
 // Imports
-use crate::exe::inst::basic::{Decodable, Encodable};
+use crate::exe::inst::{
+	basic::{Decodable, Encodable},
+	InstFmt,
+};
 
 /// Jmp immediate instruction kind
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -36,8 +39,6 @@ pub struct Raw {
 
 /// Jmp register instructions
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
-#[derive(derive_more::Display)]
-#[display(fmt = "{} {target}", "kind.mnemonic()")]
 pub struct Inst {
 	/// Target
 	pub target: u32,
@@ -69,5 +70,17 @@ impl Encodable for Inst {
 		let i = self.target;
 
 		Raw { p, i }
+	}
+}
+
+impl InstFmt for Inst {
+	fn mnemonic(&self) -> &'static str {
+		self.kind.mnemonic()
+	}
+
+	fn fmt(&self, _pos: crate::Pos, _bytes: &[u8], f: &mut std::fmt::Formatter) -> std::fmt::Result {
+		let Self { kind, target } = self;
+
+		write!(f, "{} {target}", kind.mnemonic())
 	}
 }

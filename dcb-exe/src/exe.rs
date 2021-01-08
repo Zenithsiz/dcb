@@ -86,4 +86,10 @@ impl Exe {
 	pub const fn parse_iter(&self) -> inst::ParseIter {
 		inst::ParseIter::new(&*self.bytes, Self::START_MEM_ADDRESS)
 	}
+
+	/// Returns this executable's bytes
+	#[must_use]
+	pub const fn bytes(&self) -> &[u8] {
+		&*self.bytes
+	}
 }

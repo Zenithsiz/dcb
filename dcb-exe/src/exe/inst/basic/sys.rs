@@ -1,7 +1,10 @@
 //! System calls
 
 // Imports
-use crate::exe::inst::basic::{Decodable, Encodable};
+use crate::exe::inst::{
+	basic::{Decodable, Encodable},
+	InstFmt,
+};
 
 /// Sys instruction func
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -36,8 +39,6 @@ pub struct Raw {
 
 /// Syscall instructions
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
-#[derive(derive_more::Display)]
-#[display(fmt = "{}, {comment:#x}", "kind.mnemonic()")]
 pub struct Inst {
 	/// Comment
 	pub comment: u32,
@@ -69,5 +70,19 @@ impl Encodable for Inst {
 		};
 
 		Raw { c, f }
+	}
+}
+
+
+impl InstFmt for Inst {
+	fn mnemonic(&self) -> &'static str {
+		self.kind.mnemonic()
+	}
+
+	fn fmt(&self, _pos: crate::Pos, _bytes: &[u8], f: &mut std::fmt::Formatter) -> std::fmt::Result {
+		let Self { comment, kind } = self;
+		let mnemonic = kind.mnemonic();
+
+		write!(f, "{mnemonic}, {comment:#x}")
 	}
 }

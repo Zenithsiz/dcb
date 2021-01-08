@@ -3,9 +3,8 @@
 // Imports
 use crate::exe::inst::{
 	basic::{Decodable, Encodable},
-	Register,
+	InstFmt, Register,
 };
-use dcb_util::SignedHex;
 use int_conv::{Signed, Truncated, ZeroExtended};
 use std::convert::TryFrom;
 
@@ -64,8 +63,6 @@ pub struct Raw {
 
 /// Store instructions
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
-#[derive(derive_more::Display)]
-#[display(fmt = "{} {dst}, {}({src})", "kind.mnemonic()", "SignedHex(offset)")]
 pub struct Inst {
 	/// Source register, `rt`
 	pub src: Register,
@@ -102,5 +99,19 @@ impl Encodable for Inst {
 		let p = u8::from(self.kind).zero_extended::<u32>();
 
 		Raw { p, s, t, i }
+	}
+}
+
+impl InstFmt for Inst {
+	fn mnemonic(&self) -> &'static str {
+		self.kind.mnemonic()
+	}
+
+	fn fmt(&self, pos: crate::Pos, _bytes: &[u8], f: &mut std::fmt::Formatter) -> std::fmt::Result {
+		let Self { dst, src, offset, kind } = self;
+		let mnemonic = kind.mnemonic();
+		let address = pos + *offset;
+
+		write!(f, "{mnemonic} {dst}, {address}({src})")
 	}
 }

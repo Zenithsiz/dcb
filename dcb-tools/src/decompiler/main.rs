@@ -76,6 +76,7 @@ mod logger;
 
 // Imports
 use anyhow::Context;
+use dcb_exe::exe::inst::InstFmtWrapper;
 use dcb_io::GameFile;
 
 #[allow(clippy::cognitive_complexity, clippy::too_many_lines)] // TODO: Refactor
@@ -96,10 +97,13 @@ fn main() -> Result<(), anyhow::Error> {
 
 	println!("Header:\n{}", exe.header);
 
-	println!("Data table:\n{:#?}", exe.data_table);
-
 	for (pos, inst) in exe.parse_iter() {
-		println!("{}: {:?}", pos, inst);
+		let fmt = InstFmtWrapper {
+			inst: &inst,
+			pos,
+			bytes: exe.bytes(),
+		};
+		println!("{}: {}", pos, fmt);
 	}
 
 	/*
