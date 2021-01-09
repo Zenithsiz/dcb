@@ -105,7 +105,7 @@ impl Decodable for Inst {
 }
 
 impl Encodable for Inst {
-	fn encode(&self) -> Raw {
+	fn encode(&self) -> Self::Raw {
 		let p = match self.kind {
 			Kind::Byte => 0x0,
 			Kind::HalfWord => 0x1,

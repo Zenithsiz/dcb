@@ -110,7 +110,7 @@ impl Decodable for Inst {
 }
 
 impl Encodable for Inst {
-	fn encode(&self) -> Raw {
+	fn encode(&self) -> Self::Raw {
 		#[rustfmt::skip]
 		let (p, t) = match self.kind {
 			Kind::Equal(reg)             => (0x4, reg.idx()),

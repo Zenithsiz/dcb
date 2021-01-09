@@ -73,7 +73,7 @@ impl Decodable for Inst {
 }
 
 impl Encodable for Inst {
-	fn encode(&self) -> Raw {
+	fn encode(&self) -> Self::Raw {
 		let p = match self.kind {
 			Kind::Jump => 0,
 			Kind::JumpLink => 1,

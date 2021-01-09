@@ -115,7 +115,7 @@ impl Decodable for Inst {
 }
 
 impl Encodable for Inst {
-	fn encode(&self) -> Raw {
+	fn encode(&self) -> Self::Raw {
 		match self {
 			Self::Mult { kind, mode, lhs, rhs } => Raw {
 				s: lhs.idx(),

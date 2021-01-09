@@ -83,7 +83,7 @@ impl Decodable for Inst {
 	}
 }
 impl Encodable for Inst {
-	fn encode(&self) -> Raw {
+	fn encode(&self) -> Self::Raw {
 		let f = match self.kind {
 			Kind::LeftLogical => 0x0,
 			Kind::RightLogical => 0x2,

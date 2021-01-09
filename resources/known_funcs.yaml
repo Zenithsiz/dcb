@@ -192,6 +192,12 @@
   start_pos: 0x8006a674
   end_pos: 0x8006a6b0
 
+- name: load_registers
+  signature: fn(u32* pos)
+  desc: "Loads the following registers from `pos[0x0 .. 0x30]`.\n$ra, $gp, $sp, $fp,\n$s0, $s1, $s2, $s3,\n$s4, $s5, $s6, $s7,\n"
+  start_pos: 0x8006a6b0
+  end_pos: 0x8006a6fc
+
 - name: main_loop_sub1
   signature: fn()
   desc: "Called on loop by `main_loop` forever, maybe an interrupt breaks

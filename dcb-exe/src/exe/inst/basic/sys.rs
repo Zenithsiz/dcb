@@ -62,7 +62,7 @@ impl Decodable for Inst {
 }
 
 impl Encodable for Inst {
-	fn encode(&self) -> Raw {
+	fn encode(&self) -> Self::Raw {
 		let c = self.comment;
 		let f = match self.kind {
 			Kind::Sys => 0,

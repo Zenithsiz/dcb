@@ -43,7 +43,7 @@ impl Decodable for Inst {
 }
 
 impl Encodable for Inst {
-	fn encode(&self) -> Raw {
+	fn encode(&self) -> Self::Raw {
 		match self {
 			Self::Imm(inst) => Raw::Imm(inst.encode()),
 			Self::Reg(inst) => Raw::Reg(inst.encode()),

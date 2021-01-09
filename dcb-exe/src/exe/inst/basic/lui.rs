@@ -38,7 +38,7 @@ impl Decodable for Inst {
 	}
 }
 impl Encodable for Inst {
-	fn encode(&self) -> Raw {
+	fn encode(&self) -> Self::Raw {
 		Raw {
 			t: self.dst.idx(),
 			i: self.value.zero_extended::<u32>(),
