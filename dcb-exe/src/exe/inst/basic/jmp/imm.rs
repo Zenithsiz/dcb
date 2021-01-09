@@ -1,9 +1,12 @@
 //! Jump immediate instructions
 
 // Imports
-use crate::exe::inst::{
-	basic::{Decodable, Encodable},
-	InstFmt,
+use crate::{
+	exe::inst::{
+		basic::{Decodable, Encodable},
+		InstFmt,
+	},
+	Pos,
 };
 
 /// Jmp immediate instruction kind
@@ -47,6 +50,14 @@ pub struct Inst {
 	pub kind: Kind,
 }
 
+impl Inst {
+	/// Returns the address of this instruction
+	#[must_use]
+	pub fn address(self, pos: Pos) -> Pos {
+		(pos & 0xf0000000) + self.target * 4
+	}
+}
+
 impl Decodable for Inst {
 	type Raw = Raw;
 
@@ -78,9 +89,10 @@ impl InstFmt for Inst {
 		self.kind.mnemonic()
 	}
 
-	fn fmt(&self, _pos: crate::Pos, _bytes: &[u8], f: &mut std::fmt::Formatter) -> std::fmt::Result {
-		let Self { kind, target } = self;
+	fn fmt(&self, pos: Pos, _bytes: &[u8], f: &mut std::fmt::Formatter) -> std::fmt::Result {
+		let mnemonic = self.kind.mnemonic();
+		let address = self.address(pos);
 
-		write!(f, "{} {target:#x}", kind.mnemonic())
+		write!(f, "{mnemonic} {address:#x}")
 	}
 }

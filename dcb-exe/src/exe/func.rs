@@ -4,9 +4,6 @@
 //! within the executable, as well as
 //! info on them, represented by the [`Func`]
 //! type.
-//!
-//! The full list of known function may
-//! be found at [`Func::known`].
 
 // Modules
 pub mod table;
@@ -16,7 +13,7 @@ pub use table::FuncTable;
 
 // Imports
 use crate::exe::Pos;
-use std::{borrow::Borrow, collections::HashMap};
+use std::{borrow::Borrow, collections::BTreeMap};
 
 /// A function within the executable
 #[derive(Clone, Debug)]
@@ -35,11 +32,11 @@ pub struct Func {
 
 	/// Comments
 	#[serde(default)]
-	pub comments: HashMap<Pos, String>,
+	pub comments: BTreeMap<Pos, String>,
 
 	/// Labels
 	#[serde(default)]
-	pub labels: HashMap<Pos, String>,
+	pub labels: BTreeMap<Pos, String>,
 
 	/// Start position
 	pub start_pos: Pos,

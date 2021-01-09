@@ -1,7 +1,7 @@
 //! Errors
 
 // Imports
-use super::{data, header, Exe, Header};
+use super::{data, func, header, Exe, Header};
 
 /// Error type for [`Table::deserialize`]
 #[derive(Debug, thiserror::Error)]
@@ -32,4 +32,8 @@ pub enum DeserializeError {
 	/// Unable to get known data
 	#[error("Unable to get known data table")]
 	KnownDataTable(#[source] data::table::GetKnownError),
+
+	/// Unable to get known data
+	#[error("Unable to get known func table")]
+	KnownFuncTable(#[source] func::table::GetKnownError),
 }

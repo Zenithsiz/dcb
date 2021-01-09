@@ -21,6 +21,7 @@ path = "src/decompiler/main.rs"
 dcb = { path = "../dcb" }
 dcb-io = { path = "../dcb-io" }
 dcb-exe = { path = "../dcb-exe" }
+dcb-util = { path = "../dcb-util" }
 
 # Text
 ascii = "1.0"

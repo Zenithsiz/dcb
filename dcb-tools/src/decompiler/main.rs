@@ -76,7 +76,7 @@ mod logger;
 
 // Imports
 use anyhow::Context;
-use dcb_exe::exe::inst::InstFmtWrapper;
+use dcb_exe::exe::{inst::InstFmt, iter::ExeItem};
 use dcb_io::GameFile;
 
 #[allow(clippy::cognitive_complexity, clippy::too_many_lines)] // TODO: Refactor
@@ -97,13 +97,75 @@ fn main() -> Result<(), anyhow::Error> {
 
 	println!("Header:\n{}", exe.header);
 
-	for (pos, inst) in exe.parse_iter() {
-		let fmt = InstFmtWrapper {
-			inst: &inst,
-			pos,
-			bytes: exe.bytes(),
-		};
-		println!("{}: {}", pos, fmt);
+	for item in exe.iter() {
+		match item {
+			// For each function or header, print a header and all it's instructions
+			ExeItem::Func(func) => {
+				println!("####################");
+				println!("{}:", func.name);
+				if !func.signature.is_empty() {
+					println!("# {}", func.signature);
+				}
+				for description in func.desc.lines() {
+					println!("# {}", description);
+				}
+				/*
+				#[allow(
+					clippy::as_conversions,
+					clippy::cast_precision_loss,
+					clippy::cast_possible_truncation,
+					clippy::cast_sign_loss
+				)] // TODO: Check if this is fine
+				let pos_width = ((func.end_pos - func.start_pos) as f64).log10() as usize;
+				for pos in (func.start_pos.0..func.end_pos.0).map(Pos) {
+					let inst = exe.get(pos).expect("Unable to get function instruction");
+					println!(
+						"{:0width$}: {}",
+						SignedHex(pos - func.start_pos),
+						inst.fmt_value(pos, &*exe.bytes),
+						width = pos_width,
+					);
+				}
+				*/
+				println!("####################");
+			},
+
+			ExeItem::Data(data) => {
+				println!("####################");
+				println!("{}:", data.name);
+				for description in data.desc.lines() {
+					println!("# {}", description);
+				}
+				/*
+				#[allow(
+					clippy::as_conversions,
+					clippy::cast_precision_loss,
+					clippy::cast_possible_truncation,
+					clippy::cast_sign_loss
+				)] // TODO: Check if this is fine
+				let pos_width = f64::from(data.size()).log10() as usize;
+				for pos in (data.pos.0..data.end_pos().0).map(Pos) {
+					let inst = exe.get(pos).expect("Unable to get data instruction");
+					println!(
+						"{:0width$}: {}",
+						SignedHex(pos - data.pos),
+						inst.fmt_value(pos, &*exe.bytes),
+						width = pos_width,
+					);
+				}
+				*/
+				println!("####################");
+			},
+
+			// If it's standalone, print it by it's own
+			ExeItem::Inst(pos, inst) => {
+				println!("{}: {}", pos, inst.fmt_value(pos, &*exe.bytes));
+			},
+		}
+
+		/*
+
+		*/
 	}
 
 	/*

@@ -67,7 +67,7 @@ impl DataTable {
 		// Find the closest one and check if it contains `pos`
 		// Note: We search from the end to make sure we grab the
 		//       smaller locations first.
-		self.0.range(..=pos).next_back().filter(|data| pos <= data.end_pos())
+		self.0.range(..=pos).next_back().filter(|data| pos < data.end_pos())
 	}
 }
 

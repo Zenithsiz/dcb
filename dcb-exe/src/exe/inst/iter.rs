@@ -24,6 +24,12 @@ impl<'a> ParseIter<'a> {
 	pub const fn new(bytes: &'a [u8], start_pos: Pos) -> Self {
 		Self { bytes, cur_pos: start_pos }
 	}
+
+	/// Returns the current position of the iterator
+	#[must_use]
+	pub const fn cur_pos(&self) -> Pos {
+		self.cur_pos
+	}
 }
 
 impl<'a> Iterator for ParseIter<'a> {

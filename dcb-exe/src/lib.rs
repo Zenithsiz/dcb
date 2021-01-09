@@ -1,7 +1,14 @@
 //! `dcb` executable debugging
 
 // Features
-#![feature(unsafe_block_in_unsafe_fn, format_args_capture, never_type, or_patterns, associated_type_bounds)]
+#![feature(
+	unsafe_block_in_unsafe_fn,
+	format_args_capture,
+	never_type,
+	or_patterns,
+	associated_type_bounds,
+	bindings_after_at
+)]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]
 // Instead of `unwrap`, we must use `expect` and provide a reason

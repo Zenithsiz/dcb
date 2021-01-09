@@ -65,11 +65,16 @@ pub trait InstFmt {
 
 	/// Formats this instruction given it's position and input bytes
 	fn fmt(&self, pos: Pos, bytes: &[u8], f: &mut fmt::Formatter) -> fmt::Result;
+
+	/// Returns a wrapped value that may be formatted using [`fmt::Display`]
+	fn fmt_value<'a>(&'a self, pos: Pos, bytes: &'a [u8]) -> InstFmtWrapper<Self> {
+		InstFmtWrapper { inst: self, pos, bytes }
+	}
 }
 
 /// Wrapper over [`InstFmt`] values to be displayed using [`fmt::Display`]
 #[derive(Clone, Copy, Debug)]
-pub struct InstFmtWrapper<'a, T: InstFmt> {
+pub struct InstFmtWrapper<'a, T: ?Sized + InstFmt> {
 	/// Value
 	pub inst: &'a T,
 
@@ -80,7 +85,7 @@ pub struct InstFmtWrapper<'a, T: InstFmt> {
 	pub bytes: &'a [u8],
 }
 
-impl<'a, T: InstFmt> fmt::Display for InstFmtWrapper<'a, T> {
+impl<'a, T: ?Sized + InstFmt> fmt::Display for InstFmtWrapper<'a, T> {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 		self.inst.fmt(self.pos, self.bytes, f)
 	}

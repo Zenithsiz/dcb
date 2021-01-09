@@ -59,9 +59,9 @@ impl Kind {
 			fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 				match self.0 {
 					// Signed
-					Kind::Add(rhs) | Kind::AddUnsigned(rhs) | Kind::SetLessThan(rhs) => write!(f, "{}", SignedHex(rhs)),
+					Kind::Add(rhs) | Kind::AddUnsigned(rhs) | Kind::SetLessThan(rhs) => write!(f, "{:#}", SignedHex(rhs)),
 					// Unsigned
-					Kind::SetLessThanUnsigned(rhs) | Kind::And(rhs) | Kind::Or(rhs) | Kind::Xor(rhs) => write!(f, "{rhs}"),
+					Kind::SetLessThanUnsigned(rhs) | Kind::And(rhs) | Kind::Or(rhs) | Kind::Xor(rhs) => write!(f, "{rhs:#x}"),
 				}
 			}
 		}
