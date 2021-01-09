@@ -48,7 +48,7 @@ impl<'a> Iterator for ParseIter<'a> {
 		}
 
 		// Else decode an instruction, falling back to a directive if unable to
-		match self.bytes.next_u32().and_then(basic::Inst::decode) {
+		match self.bytes.next_u32().and_then(basic::Raw::from_u32).and_then(basic::Inst::decode) {
 			// If we got one, update our bytes and check if it's a pseudo instruction
 			Some(inst) => {
 				self.bytes = &self.bytes[4..];

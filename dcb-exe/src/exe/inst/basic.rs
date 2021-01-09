@@ -1,7 +1,8 @@
 //! Basic instructions
 //!
-//! This modules defines all the basic instructions from the psx.
-//! They are all 1 word (`u32`) long.
+//! All instructions in this module are a single word long, and
+//! may be decoded from a `u32` via the [`Inst::decode`](<Inst as Decodable>::decode) method,
+//! using the [`Decodable`] trait.
 
 // Modules
 pub mod alu;
@@ -17,57 +18,58 @@ pub mod sys;
 // Imports
 use crate::exe::inst::InstFmt;
 
-/// All basic instructions
+/// Raw instruction
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
-pub enum Inst {
-	/// Shift
-	Shift(shift::Inst),
-
-	/// Multiplication
-	Mult(mult::Inst),
-
-	/// Store
-	Store(store::Inst),
-
-	/// Load
-	Load(load::Inst),
+pub enum Raw {
+	/// Alu
+	Alu(alu::Raw),
 
 	/// Condition
-	Cond(cond::Inst),
+	Cond(cond::Raw),
 
 	/// Jump
-	Jmp(jmp::Inst),
+	Jmp(jmp::Raw),
 
-	/// Alu
-	Alu(alu::Inst),
+	/// Load
+	Load(load::Raw),
 
 	/// Load upper immediate
-	Lui(lui::Inst),
+	Lui(lui::Raw),
+
+	/// Multiplication
+	Mult(mult::Raw),
+
+	/// Shift
+	Shift(shift::Raw),
+
+	/// Store
+	Store(store::Raw),
 
 	/// Syscall
-	Sys(sys::Inst),
+	Sys(sys::Raw),
 }
 
-impl Decodable for Inst {
-	type Raw = u32;
-
+impl Raw {
+	/// Constructs a raw instruction from a `u32`.
+	#[must_use]
 	#[bitmatch::bitmatch]
 	#[allow(clippy::many_single_char_names)] // `bitmatch` can only output single character names.
-	fn decode(raw: Self::Raw) -> Option<Self> {
-		let inst = #[bitmatch]
+	pub fn from_u32(raw: u32) -> Option<Self> {
+		#[rustfmt::skip]
+		let raw = #[bitmatch]
 		match raw {
-			"000000_?????_ttttt_ddddd_iiiii_0000ff" => Self::Shift(shift::Inst::decode_from(shift::imm::Raw { t, d, i, f })?),
-			"000000_sssss_ttttt_ddddd_?????_0001ff" => Self::Shift(shift::Inst::decode_from(shift::reg::Raw { s, t, d, f })?),
-			"000000_sssss_?????_ddddd_?????_00100f" => Self::Jmp(jmp::Inst::decode_from(jmp::reg::Raw { s, d, f })?),
-			"000000_ccccc_ccccc_ccccc_ccccc_00110f" => Self::Sys(sys::Inst::decode(sys::Raw { c, f })?),
-			"000000_sssss_ttttt_ddddd_?????_01ffff" => Self::Mult(mult::Inst::decode(mult::Raw { s, t, d, f })?),
-			"000000_sssss_ttttt_ddddd_?????_10ffff" => Self::Alu(alu::Inst::decode_from(alu::reg::Raw { s, t, d, f })?),
-			"00001p_iiiii_iiiii_iiiii_iiiii_iiiiii" => Self::Jmp(jmp::Inst::decode_from(jmp::imm::Raw { p, i })?),
-			"000ppp_sssss_ttttt_iiiii_iiiii_iiiiii" => Self::Cond(cond::Inst::decode(cond::Raw { p, s, t, i })?),
-			"001111_?????_ttttt_iiiii_iiiii_iiiiii" => Self::Lui(lui::Inst::decode(lui::Raw { t, i })?),
-			"001ppp_sssss_ttttt_iiiii_iiiii_iiiiii" => Self::Alu(alu::Inst::decode_from(alu::imm::Raw { p, s, t, i })?),
-			"100ppp_sssss_ttttt_iiiii_iiiii_iiiiii" => Self::Load(load::Inst::decode(load::Raw { p, s, t, i })?),
-			"101ppp_sssss_ttttt_iiiii_iiiii_iiiiii" => Self::Store(store::Inst::decode(store::Raw { p, s, t, i })?),
+			"000000_?????_ttttt_ddddd_iiiii_0000ff" => Self::Shift(shift::Raw::Imm(shift::imm::Raw {       t, d, i, f })),
+			"000000_sssss_ttttt_ddddd_?????_0001ff" => Self::Shift(shift::Raw::Reg(shift::reg::Raw {    s, t, d,    f })),
+			"000000_sssss_?????_ddddd_?????_00100f" => Self::Jmp  (jmp  ::Raw::Reg(jmp  ::reg::Raw {    s,    d,    f })),
+			"000000_ccccc_ccccc_ccccc_ccccc_00110f" => Self::Sys  (                sys  ::     Raw {             c, f } ),
+			"000000_sssss_ttttt_ddddd_?????_01ffff" => Self::Mult (                mult ::     Raw {    s, t, d,    f } ),
+			"000000_sssss_ttttt_ddddd_?????_10ffff" => Self::Alu  (alu  ::Raw::Reg(alu  ::reg::Raw {    s, t, d,    f })),
+			"00001p_iiiii_iiiii_iiiii_iiiii_iiiiii" => Self::Jmp  (jmp  ::Raw::Imm(jmp  ::imm::Raw { p,          i    })),
+			"000ppp_sssss_ttttt_iiiii_iiiii_iiiiii" => Self::Cond (                cond ::     Raw { p, s, t,    i    } ),
+			"001111_?????_ttttt_iiiii_iiiii_iiiiii" => Self::Lui  (                lui  ::     Raw {       t,    i    } ),
+			"001ppp_sssss_ttttt_iiiii_iiiii_iiiiii" => Self::Alu  (alu  ::Raw::Imm(alu  ::imm::Raw { p, s, t,    i    })),
+			"100ppp_sssss_ttttt_iiiii_iiiii_iiiiii" => Self::Load (                load ::     Raw { p, s, t,    i    } ),
+			"101ppp_sssss_ttttt_iiiii_iiiii_iiiiii" => Self::Store(                store::     Raw { p, s, t,    i    } ),
 
 			/*
 			"0100nn_1iiii_iiiii_iiiii_iiiii_iiiiii" => CopN { n: n.truncate(), imm: i},
@@ -83,80 +85,131 @@ impl Decodable for Inst {
 			_ => return None,
 		};
 
+		Some(raw)
+	}
+
+	/// Encodes this raw as a `u32`
+	#[must_use]
+	#[bitmatch::bitmatch]
+	#[rustfmt::skip]
+	pub const fn as_u32(&self) -> u32 {
+		match *self {
+			Self::Shift(shift::Raw::Imm(shift::imm::Raw {       t, d, i, f })) => bitpack!("000000_?????_ttttt_ddddd_iiiii_0000ff"),
+			Self::Shift(shift::Raw::Reg(shift::reg::Raw {    s, t, d,    f })) => bitpack!("000000_sssss_ttttt_ddddd_?????_0001ff"),
+			Self::Jmp  (jmp  ::Raw::Reg(jmp  ::reg::Raw {    s,    d,    f })) => bitpack!("000000_sssss_?????_ddddd_?????_00100f"),
+			Self::Sys  (                sys  ::     Raw {             c, f } ) => bitpack!("000000_ccccc_ccccc_ccccc_ccccc_00110f"),
+			Self::Mult (                mult ::     Raw {    s, t, d,    f } ) => bitpack!("000000_sssss_ttttt_ddddd_?????_01ffff"),
+			Self::Alu  (alu  ::Raw::Reg(alu  ::reg::Raw {    s, t, d,    f })) => bitpack!("000000_sssss_ttttt_ddddd_?????_10ffff"),
+			Self::Jmp  (jmp  ::Raw::Imm(jmp  ::imm::Raw { p,          i    })) => bitpack!("00001p_iiiii_iiiii_iiiii_iiiii_iiiiii"),
+			Self::Cond (                cond ::     Raw { p, s, t,    i    } ) => bitpack!("000ppp_sssss_ttttt_iiiii_iiiii_iiiiii"),
+			Self::Lui  (                lui  ::     Raw {       t,    i    } ) => bitpack!("001111_?????_ttttt_iiiii_iiiii_iiiiii"),
+			Self::Alu  (alu  ::Raw::Imm(alu  ::imm::Raw { p, s, t,    i    })) => bitpack!("001ppp_sssss_ttttt_iiiii_iiiii_iiiiii"),
+			Self::Load (                load ::     Raw { p, s, t,    i    } ) => bitpack!("100ppp_sssss_ttttt_iiiii_iiiii_iiiiii"),
+			Self::Store(                store::     Raw { p, s, t,    i    } ) => bitpack!("101ppp_sssss_ttttt_iiiii_iiiii_iiiiii"),
+		}
+	}
+}
+
+
+/// All basic instructions
+#[derive(PartialEq, Eq, Clone, Copy, Debug)]
+pub enum Inst {
+	/// Alu
+	Alu(alu::Inst),
+
+	/// Condition
+	Cond(cond::Inst),
+
+	/// Jump
+	Jmp(jmp::Inst),
+
+	/// Load
+	Load(load::Inst),
+
+	/// Load upper immediate
+	Lui(lui::Inst),
+
+	/// Multiplication
+	Mult(mult::Inst),
+
+	/// Shift
+	Shift(shift::Inst),
+
+	/// Store
+	Store(store::Inst),
+
+	/// Syscall
+	Sys(sys::Inst),
+}
+
+
+impl Decodable for Inst {
+	type Raw = Raw;
+
+	fn decode(raw: Self::Raw) -> Option<Self> {
+		#[rustfmt::skip]
+		let inst =
+		match raw {
+			Raw::Alu  (raw) => Self::Alu  (alu  ::Inst::decode(raw)?),
+			Raw::Cond (raw) => Self::Cond (cond ::Inst::decode(raw)?),
+			Raw::Jmp  (raw) => Self::Jmp  (jmp  ::Inst::decode(raw)?),
+			Raw::Load (raw) => Self::Load (load ::Inst::decode(raw)?),
+			Raw::Lui  (raw) => Self::Lui  (lui  ::Inst::decode(raw)?),
+			Raw::Mult (raw) => Self::Mult (mult ::Inst::decode(raw)?),
+			Raw::Shift(raw) => Self::Shift(shift::Inst::decode(raw)?),
+			Raw::Store(raw) => Self::Store(store::Inst::decode(raw)?),
+			Raw::Sys  (raw) => Self::Sys  (sys  ::Inst::decode(raw)?),
+		};
+
 		Some(inst)
 	}
 }
 
 impl Encodable for Inst {
-	#[bitmatch::bitmatch]
-	fn encode(&self) -> u32 {
+	#[rustfmt::skip]
+	fn encode(&self) -> Self::Raw {
 		match self {
-			Self::Shift(inst) => match inst.encode() {
-				shift::Raw::Imm(shift::imm::Raw { t, d, i, f }) => bitpack!("000000_?????_ttttt_ddddd_iiiii_0000ff"),
-				shift::Raw::Reg(shift::reg::Raw { s, t, d, f }) => bitpack!("000000_sssss_ttttt_ddddd_?????_0001ff"),
-			},
-			Self::Mult(inst) => {
-				let mult::Raw { s, t, d, f } = inst.encode();
-				bitpack!("000000_sssss_ttttt_ddddd_?????_01ffff")
-			},
-			Self::Jmp(inst) => match inst.encode() {
-				jmp::Raw::Imm(jmp::imm::Raw { p, i }) => bitpack!("00001p_iiiii_iiiii_iiiii_iiiii_iiiiii"),
-				jmp::Raw::Reg(jmp::reg::Raw { s, d, f }) => bitpack!("000000_sssss_?????_ddddd_?????_00100f"),
-			},
-			Self::Cond(inst) => {
-				let cond::Raw { p, s, t, i } = inst.encode();
-				bitpack!("000ppp_sssss_ttttt_iiiii_iiiii_iiiiii")
-			},
-			Self::Lui(inst) => {
-				let lui::Raw { t, i } = inst.encode();
-				bitpack!("001111_?????_ttttt_iiiii_iiiii_iiiiii")
-			},
-			Self::Alu(inst) => match inst.encode() {
-				alu::Raw::Imm(alu::imm::Raw { p, s, t, i }) => bitpack!("001ppp_sssss_ttttt_iiiii_iiiii_iiiiii"),
-				alu::Raw::Reg(alu::reg::Raw { s, t, d, f }) => bitpack!("000000_sssss_ttttt_ddddd_?????_10ffff"),
-			},
-			Self::Sys(inst) => {
-				let sys::Raw { c, f } = inst.encode();
-				bitpack!("000000_ccccc_ccccc_ccccc_ccccc_00110f")
-			},
-			Self::Store(inst) => {
-				let store::Raw { p, s, t, i } = inst.encode();
-				bitpack!("100ppp_sssss_ttttt_iiiii_iiiii_iiiiii")
-			},
-			Self::Load(inst) => {
-				let load::Raw { p, s, t, i } = inst.encode();
-				bitpack!("101ppp_sssss_ttttt_iiiii_iiiii_iiiiii")
-			},
+			Self::Alu  (inst) => Raw::Alu  (inst.encode()),
+			Self::Cond (inst) => Raw::Cond (inst.encode()),
+			Self::Jmp  (inst) => Raw::Jmp  (inst.encode()),
+			Self::Load (inst) => Raw::Load (inst.encode()),
+			Self::Lui  (inst) => Raw::Lui  (inst.encode()),
+			Self::Mult (inst) => Raw::Mult (inst.encode()),
+			Self::Shift(inst) => Raw::Shift(inst.encode()),
+			Self::Store(inst) => Raw::Store(inst.encode()),
+			Self::Sys  (inst) => Raw::Sys  (inst.encode()),
 		}
 	}
 }
 
 impl InstFmt for Inst {
+	#[rustfmt::skip]
 	fn mnemonic(&self) -> &'static str {
 		match self {
-			Self::Store(inst) => inst.mnemonic(),
-			Self::Load(inst) => inst.mnemonic(),
-			Self::Cond(inst) => inst.mnemonic(),
-			Self::Mult(inst) => inst.mnemonic(),
-			Self::Jmp(inst) => inst.mnemonic(),
-			Self::Alu(inst) => inst.mnemonic(),
-			Self::Lui(inst) => inst.mnemonic(),
-			Self::Sys(inst) => inst.mnemonic(),
+			Self::Alu  (inst) => inst.mnemonic(),
+			Self::Cond (inst) => inst.mnemonic(),
+			Self::Jmp  (inst) => inst.mnemonic(),
+			Self::Load (inst) => inst.mnemonic(),
+			Self::Lui  (inst) => inst.mnemonic(),
+			Self::Mult (inst) => inst.mnemonic(),
 			Self::Shift(inst) => inst.mnemonic(),
+			Self::Store(inst) => inst.mnemonic(),
+			Self::Sys  (inst) => inst.mnemonic(),
 		}
 	}
 
+	#[rustfmt::skip]
 	fn fmt(&self, pos: crate::Pos, bytes: &[u8], f: &mut std::fmt::Formatter) -> std::fmt::Result {
 		match self {
-			Self::Store(inst) => inst.fmt(pos, bytes, f),
-			Self::Load(inst) => inst.fmt(pos, bytes, f),
-			Self::Cond(inst) => inst.fmt(pos, bytes, f),
-			Self::Jmp(inst) => inst.fmt(pos, bytes, f),
-			Self::Mult(inst) => inst.fmt(pos, bytes, f),
-			Self::Alu(inst) => inst.fmt(pos, bytes, f),
-			Self::Lui(inst) => inst.fmt(pos, bytes, f),
-			Self::Sys(inst) => inst.fmt(pos, bytes, f),
+			Self::Alu  (inst) => inst.fmt(pos, bytes, f),
+			Self::Cond (inst) => inst.fmt(pos, bytes, f),
+			Self::Jmp  (inst) => inst.fmt(pos, bytes, f),
+			Self::Load (inst) => inst.fmt(pos, bytes, f),
+			Self::Lui  (inst) => inst.fmt(pos, bytes, f),
+			Self::Mult (inst) => inst.fmt(pos, bytes, f),
 			Self::Shift(inst) => inst.fmt(pos, bytes, f),
+			Self::Store(inst) => inst.fmt(pos, bytes, f),
+			Self::Sys  (inst) => inst.fmt(pos, bytes, f),
 		}
 	}
 }
@@ -169,12 +222,6 @@ pub trait Decodable: Sized {
 	/// Decodes this instruction
 	#[must_use]
 	fn decode(raw: Self::Raw) -> Option<Self>;
-
-	/// Decodes this instruction from any type that can be converted into the raw form
-	#[must_use]
-	fn decode_from(raw: impl Into<Self::Raw>) -> Option<Self> {
-		Self::decode(raw.into())
-	}
 }
 
 /// An encodable basic instruction
