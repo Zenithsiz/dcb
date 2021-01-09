@@ -1,16 +1,14 @@
 //! Instruction position
-// TODO: More implementations for `Pos`
 
 // Imports
+use crate::Exe;
 use int_conv::{SignExtended, Signed};
 use std::{convert::TryFrom, fmt, ops};
 
-use crate::Exe;
-
 /// An instruction position
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Hash, Debug)]
-#[derive(ref_cast::RefCast)]
 #[derive(derive_more::Display)]
+#[derive(ref_cast::RefCast)]
 #[display(fmt = "{_0:#x}")]
 #[repr(transparent)]
 pub struct Pos(pub u32);
@@ -30,28 +28,8 @@ impl Pos {
 	}
 }
 
-impl fmt::LowerHex for Pos {
-	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-		<u32 as fmt::LowerHex>::fmt(&self.0, f)
-	}
-}
 
-impl ops::Sub<u32> for Pos {
-	type Output = Self;
-
-	fn sub(self, rhs: u32) -> Self::Output {
-		Self(self.0 - rhs)
-	}
-}
-
-impl ops::Sub<Pos> for Pos {
-	type Output = i64;
-
-	fn sub(self, rhs: Self) -> Self::Output {
-		self.0.as_signed().sign_extended::<i64>() - rhs.0.as_signed().sign_extended::<i64>()
-	}
-}
-
+// `Pos + u32 = Pos`
 impl ops::Add<u32> for Pos {
 	type Output = Self;
 
@@ -60,6 +38,7 @@ impl ops::Add<u32> for Pos {
 	}
 }
 
+// `Pos + i32 = Pos`
 impl ops::Add<i32> for Pos {
 	type Output = Self;
 
@@ -68,6 +47,7 @@ impl ops::Add<i32> for Pos {
 	}
 }
 
+// `Pos + i16 = Pos`
 impl ops::Add<i16> for Pos {
 	type Output = Self;
 
@@ -76,6 +56,35 @@ impl ops::Add<i16> for Pos {
 	}
 }
 
+
+// `Pos - u32 = Pos`
+impl ops::Sub<u32> for Pos {
+	type Output = Self;
+
+	fn sub(self, rhs: u32) -> Self::Output {
+		Self(self.0 - rhs)
+	}
+}
+
+// `Pos - Pos = i64`
+impl ops::Sub<Pos> for Pos {
+	type Output = i64;
+
+	fn sub(self, rhs: Self) -> Self::Output {
+		self.0.as_signed().sign_extended::<i64>() - rhs.0.as_signed().sign_extended::<i64>()
+	}
+}
+
+// `Pos & u32 = Pos`
+impl ops::BitAnd<u32> for Pos {
+	type Output = Self;
+
+	fn bitand(self, rhs: u32) -> Self::Output {
+		Self(self.0 & rhs)
+	}
+}
+
+// `Pos += T <=> Pos = Pos + T`
 impl<T> ops::AddAssign<T> for Pos
 where
 	Pos: ops::Add<T, Output = Self>,
@@ -85,33 +94,27 @@ where
 	}
 }
 
-impl ops::BitAnd<u32> for Pos {
-	type Output = Self;
-
-	fn bitand(self, rhs: u32) -> Self::Output {
-		Self(self.0 & rhs)
-	}
-}
-
-impl<'a, T> ops::Sub<T> for &'_ Pos
+// `&Pos + T`
+impl<T> ops::Add<T> for &'_ Pos
 where
-	Pos: ops::Sub<T, Output = Pos>,
+	Pos: ops::Add<T>,
 {
-	type Output = Pos;
-
-	fn sub(self, rhs: T) -> Self::Output {
-		<Pos as ops::Sub<T>>::sub(Pos(self.0), rhs)
-	}
-}
-
-impl<'a, T> ops::Add<T> for &'_ Pos
-where
-	Pos: ops::Add<T, Output = Pos>,
-{
-	type Output = Pos;
+	type Output = <Pos as ops::Add<T>>::Output;
 
 	fn add(self, rhs: T) -> Self::Output {
-		<Pos as ops::Add<T>>::add(Pos(self.0), rhs)
+		<Pos as ops::Add<T>>::add(*self, rhs)
+	}
+}
+
+// `&Pos - T`
+impl<T> ops::Sub<T> for &'_ Pos
+where
+	Pos: ops::Sub<T>,
+{
+	type Output = <Pos as ops::Sub<T>>::Output;
+
+	fn sub(self, rhs: T) -> Self::Output {
+		<Pos as ops::Sub<T>>::sub(*self, rhs)
 	}
 }
 
@@ -120,7 +123,7 @@ impl serde::Serialize for Pos {
 	where
 		S: serde::Serializer,
 	{
-		format_args!("{:#x}", self).serialize(serializer)
+		format_args!("{}", self).serialize(serializer)
 	}
 }
 
@@ -129,7 +132,6 @@ impl<'de> serde::Deserialize<'de> for Pos {
 	where
 		D: serde::Deserializer<'de>,
 	{
-		//deserializer.deserialize_any(PosVisitor)
 		deserializer.deserialize_u32(PosVisitor)
 	}
 }
@@ -137,6 +139,7 @@ impl<'de> serde::Deserialize<'de> for Pos {
 /// Visitor for deserializing a `Pos`.
 struct PosVisitor;
 
+#[allow(clippy::map_err_ignore)] // It's clearer to provide a string than the error from `try_from`
 impl<'de> serde::de::Visitor<'de> for PosVisitor {
 	type Value = Pos;
 
@@ -148,9 +151,7 @@ impl<'de> serde::de::Visitor<'de> for PosVisitor {
 	where
 		E: serde::de::Error,
 	{
-		#[allow(clippy::map_err_ignore)] // It's clearer to provide a string than the error from `try_from`
 		let pos = u32::try_from(pos).map_err(|_| E::custom("Position must fit within a `u32`"))?;
-
 		Ok(Pos(pos))
 	}
 
@@ -158,9 +159,7 @@ impl<'de> serde::de::Visitor<'de> for PosVisitor {
 	where
 		E: serde::de::Error,
 	{
-		#[allow(clippy::map_err_ignore)] // It's clearer to provide a string than the error from `try_from`
 		let pos = u32::try_from(pos).map_err(|_| E::custom("Position must fit within a `u32`"))?;
-
 		Ok(Pos(pos))
 	}
 

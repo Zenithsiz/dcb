@@ -7,11 +7,9 @@ pub mod error;
 pub use error::FromBytesError;
 
 // Imports
-use dcb_util::{
-	array_split, array_split_mut,
-};
 use byteorder::{ByteOrder, LittleEndian};
 use dcb_bytes::Bytes;
+use dcb_util::{array_split, array_split_mut};
 
 /// The header
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]

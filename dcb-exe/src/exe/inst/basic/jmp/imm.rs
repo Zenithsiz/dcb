@@ -93,6 +93,6 @@ impl InstFmt for Inst {
 		let mnemonic = self.kind.mnemonic();
 		let address = self.address(pos);
 
-		write!(f, "{mnemonic} {address:#x}")
+		write!(f, "{mnemonic} {address}")
 	}
 }

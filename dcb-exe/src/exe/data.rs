@@ -22,7 +22,7 @@ use std::{borrow::Borrow, cmp::Ordering};
 ///
 /// Two data locations are considered equal if they
 /// share the same position.
-/// 
+///
 /// Their relative order first depends on their position.
 /// When their positions are equal, the larger one will
 /// appear first in the order.

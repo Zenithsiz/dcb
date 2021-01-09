@@ -91,17 +91,17 @@ pub mod null_ascii_string;
 #[macro_use]
 pub mod impl_bytes;
 pub mod discarding_sorted_merge_iter;
+pub mod next_from_bytes;
 pub mod peekable_iter;
 pub mod signed_hex;
-pub mod next_from_bytes;
 
 // Exports
 //pub use array_split::{array_split, array_split_mut};
 pub use ascii_str_arr::AsciiStrArr;
 pub use discarding_sorted_merge_iter::DiscardingSortedMergeIter;
+pub use next_from_bytes::NextFromBytes;
 pub use peekable_iter::PeekableIter;
 pub use signed_hex::SignedHex;
-pub use next_from_bytes::NextFromBytes;
 
 /// Returns the absolute different between `a` and `b`, `a - b` as a `i64`.
 ///
