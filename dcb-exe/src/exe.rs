@@ -1,7 +1,7 @@
 //! Executable
 //!
-//! This module contains the executable portion of the game,
-//! as well as tools to decompile and recompile it.
+//! This module defines the `Exe` type, which encompasses the whole
+//! executable part of the game file (`SLUS_013`).
 
 // Modules
 pub mod data;
@@ -15,7 +15,7 @@ pub mod pos;
 // Exports
 pub use data::{Data, DataTable, DataType};
 pub use error::DeserializeError;
-pub use func::Func;
+pub use func::{Func, FuncTable};
 pub use header::Header;
 pub use pos::Pos;
 
@@ -24,39 +24,73 @@ use dcb_bytes::{ByteArray, Bytes};
 use dcb_io::GameFile;
 use std::io::{Read, Seek, Write};
 
-use self::func::FuncTable;
-
 /// The game executable
 #[derive(PartialEq, Eq, Clone, Debug)]
-//#[derive(serde::Serialize, serde::Deserialize)]
-#[allow(clippy::as_conversions)] // `SIZE` always fits
 pub struct Exe {
 	/// The executable header
-	pub header: Header,
+	header: Header,
 
-	/// All bytes within the exe
-	pub bytes: Box<[u8; Self::SIZE as usize]>,
+	/// All bytes within the executable
+	bytes: Box<[u8]>,
 
 	/// The data table.
-	pub data_table: DataTable,
+	data_table: DataTable,
 
 	/// The function table.
-	pub func_table: FuncTable,
+	func_table: FuncTable,
 }
 
 impl Exe {
-	/// End memory address of the executable
-	pub const END_MEM_ADDRESS: Pos = Pos(Self::START_MEM_ADDRESS.0 + Self::SIZE);
-	/// Size of the executable
+	/// Size of the executable section.
 	pub const SIZE: u32 = 0x68000;
-	/// Start address of the executable
+	/// Start address of the executable in the game file.
 	pub const START_ADDRESS: dcb_io::Data = dcb_io::Data::from_u64(0x58b9000);
-	/// Start memory address of the executable
-	pub const START_MEM_ADDRESS: Pos = Pos(0x80010000);
+}
+
+// Memory address
+impl Exe {
+	/// End memory address of the executable.
+	pub const MEM_END_ADDRESS: Pos = Self::MEM_START_ADDRESS.add_offset_u32(Self::SIZE);
+	/// Memory range of the executable
+	pub const MEM_RANGE: std::ops::Range<Pos> = Self::MEM_START_ADDRESS..Self::MEM_END_ADDRESS;
+	/// Start memory address of the executable.
+	pub const MEM_START_ADDRESS: Pos = Pos(0x80010000);
 }
 
 impl Exe {
-	/// Deserializes the card table from a game file
+	/// Returns this executable's header
+	#[must_use]
+	pub const fn header(&self) -> &Header {
+		&self.header
+	}
+
+	/// Returns this executable's bytes
+	#[must_use]
+	pub const fn bytes(&self) -> &[u8] {
+		&*self.bytes
+	}
+
+	/// Creates an iterator over this executable
+	#[must_use]
+	pub const fn iter(&self) -> iter::Iter {
+		iter::Iter::new(self)
+	}
+
+	/// Returns a parsing iterator for all instructions
+	#[must_use]
+	pub const fn parse_iter(&self) -> inst::ParseIter {
+		inst::ParseIter::new(&*self.bytes, Self::MEM_START_ADDRESS)
+	}
+
+	/// Returns the instruction at `pos`
+	#[must_use]
+	pub fn get(&self, pos: Pos) -> Option<inst::Inst> {
+		inst::ParseIter::new(&*self.bytes, pos).next().map(|(_, inst)| inst)
+	}
+}
+
+impl Exe {
+	/// Deserializes the executable from a game file
 	pub fn deserialize<R: Read + Write + Seek>(file: &mut GameFile<R>) -> Result<Self, DeserializeError> {
 		// Seek to the table
 		file.seek(std::io::SeekFrom::Start(Self::START_ADDRESS.as_u64()))
@@ -78,7 +112,7 @@ impl Exe {
 		file.read_exact(bytes.as_mut()).map_err(DeserializeError::ReadData)?;
 
 		// Parse all instructions
-		let insts = inst::ParseIter::new(&*bytes, Self::START_MEM_ADDRESS);
+		let insts = inst::ParseIter::new(&*bytes, Self::MEM_START_ADDRESS);
 
 		// Parse all data and code
 		let known_data_table = DataTable::get_known().map_err(DeserializeError::KnownDataTable)?;
@@ -95,31 +129,5 @@ impl Exe {
 			data_table,
 			func_table,
 		})
-	}
-
-	/*
-	/// Returns a parsing iterator for all instructions
-	#[must_use]
-	pub const fn parse_iter(&self) -> inst::ParseIter {
-		inst::ParseIter::new(&*self.bytes, Self::START_MEM_ADDRESS)
-	}
-
-	/// Returns this executable's bytes
-	#[must_use]
-	pub const fn bytes(&self) -> &[u8] {
-		&*self.bytes
-	}
-	*/
-
-	/// Creates an iterator over this executable
-	#[must_use]
-	pub const fn iter(&self) -> iter::Iter {
-		iter::Iter::new(self)
-	}
-
-	/// Returns the instruction at `pos`
-	#[must_use]
-	pub fn get(&self, pos: Pos) -> Option<inst::Inst> {
-		inst::ParseIter::new(&*self.bytes, pos).next().map(|(_, inst)| inst)
 	}
 }

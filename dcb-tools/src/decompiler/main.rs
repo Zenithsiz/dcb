@@ -95,7 +95,7 @@ fn main() -> Result<(), anyhow::Error> {
 	log::debug!("Deserializing executable");
 	let exe = dcb_exe::Exe::deserialize(&mut game_file).context("Unable to parse game executable")?;
 
-	println!("Header:\n{}", exe.header);
+	println!("Header:\n{}", exe.header());
 
 	for item in exe.iter() {
 		match item {
@@ -159,7 +159,7 @@ fn main() -> Result<(), anyhow::Error> {
 
 			// If it's standalone, print it by it's own
 			ExeItem::Inst(pos, inst) => {
-				println!("{}: {}", pos, inst.fmt_value(pos, &*exe.bytes));
+				println!("{}: {}", pos, inst.fmt_value(pos, exe.bytes()));
 			},
 		}
 

@@ -21,7 +21,7 @@ impl<'a> Iter<'a> {
 	pub(crate) const fn new(exe: &'a Exe) -> Self {
 		Self {
 			exe,
-			cur_pos: Exe::START_MEM_ADDRESS,
+			cur_pos: Exe::MEM_START_ADDRESS,
 		}
 	}
 }
@@ -43,7 +43,7 @@ impl<'a> Iterator for Iter<'a> {
 
 	fn next(&mut self) -> Option<Self::Item> {
 		// If we're at the end, return `None`
-		if self.cur_pos == Exe::END_MEM_ADDRESS {
+		if self.cur_pos == Exe::MEM_END_ADDRESS {
 			return None;
 		}
 
