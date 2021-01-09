@@ -174,23 +174,10 @@ impl InstFmt for Inst {
 
 	fn fmt(&self, _pos: crate::Pos, _bytes: &[u8], f: &mut std::fmt::Formatter) -> std::fmt::Result {
 		let mnemonic = self.mnemonic();
-
 		match self {
 			#[rustfmt::skip]
-			Self::Mult { kind, mode, lhs, rhs } => match (kind, mode) {
-				(MultKind::Mult, MultMode::  Signed) => write!(f, "{mnemonic} {lhs}, {rhs}"),
-				(MultKind::Mult, MultMode::Unsigned) => write!(f, "{mnemonic} {lhs}, {rhs}"),
-				(MultKind::Div , MultMode::  Signed) => write!(f, "{mnemonic} {lhs}, {rhs}"),
-				(MultKind::Div , MultMode::Unsigned) => write!(f, "{mnemonic} {lhs}, {rhs}"),
-			},
-			Self::MoveFrom { dst, src } => match src {
-				MultReg::Hi => write!(f, "{mnemonic} {dst}"),
-				MultReg::Lo => write!(f, "{mnemonic} {dst}"),
-			},
-			Self::MoveTo { dst, src } => match dst {
-				MultReg::Hi => write!(f, "{mnemonic} {src}"),
-				MultReg::Lo => write!(f, "{mnemonic} {src}"),
-			},
+			Self::Mult { lhs, rhs, .. } => write!(f, "{mnemonic} {lhs}, {rhs}"),
+			Self::MoveFrom { dst: arg, .. } | Self::MoveTo { src: arg, .. } => write!(f, "{mnemonic} {arg}"),
 		}
 	}
 }
