@@ -13,7 +13,8 @@
 	never_type,
 	or_patterns,
 	associated_type_bounds,
-	bindings_after_at
+	bindings_after_at,
+	iter_map_while,
 )]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]

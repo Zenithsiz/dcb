@@ -2,11 +2,12 @@
 
 // Imports
 use super::{
-	basic::{self, Decodable},
-	pseudo, Directive, Inst,
+	basic::{self, Decodable as _},
+	pseudo::{self, Decodable as _},
+	Directive, Inst,
 };
 use crate::Pos;
-use dcb_util::NextFromBytes;
+use std::convert::TryFrom;
 
 /// Parsing iterator, reads instructions from a `[u8]` slice
 #[derive(PartialEq, Eq, Clone, Debug)]
@@ -47,34 +48,42 @@ impl<'a> Iterator for ParseIter<'a> {
 			return Some((pos, Inst::Directive(directive)));
 		}
 
-		// Else decode an instruction, falling back to a directive if unable to
-		match self.bytes.next_u32().and_then(basic::Raw::from_u32).and_then(basic::Inst::decode) {
-			// If we got one, update our bytes and check if it's a pseudo instruction
-			Some(inst) => {
-				self.bytes = &self.bytes[4..];
-				let pos = self.cur_pos;
-				self.cur_pos += 4;
-				match pseudo::Inst::decode(inst, self.bytes) {
-					Some((inst, len)) => {
-						self.bytes = &self.bytes[len..];
-						self.cur_pos += len as u32;
-						Some((pos, Inst::Pseudo(inst)))
-					},
-					None => Some((pos, Inst::Basic(inst))),
-				}
-			},
+		// Else make the instruction iterator
+		// Note: We fuse it to make sure that pseudo instructions don't try to skip
+		//       invalid instructions.
+		let mut insts = self
+			.bytes
+			.chunks(4)
+			.map(|word| u32::from_ne_bytes([word[0], word[1], word[2], word[3]]))
+			.map_while(|word| basic::Raw::from_u32(word).and_then(basic::Inst::decode))
+			.fuse();
 
-			// If we don't have enough for a `u32` or we didn't manage to
-			// parse an instruction, try to parse a directive
-			None => match Directive::decode(self.cur_pos, self.bytes) {
-				Some((directive, len)) => {
-					self.bytes = &self.bytes[len..];
-					let pos = self.cur_pos;
-					self.cur_pos += len as u32;
-					Some((pos, Inst::Directive(directive)))
-				},
-				None => None,
+		// Try to decode a pseudo-instruction
+		if let Some(inst) = pseudo::Inst::decode(insts.clone()) {
+			let len = inst.size() * 4;
+			self.bytes = &self.bytes[usize::try_from(len).expect("Instruction size didn't fit into a `usize`")..];
+			let pos = self.cur_pos;
+			self.cur_pos += len;
+			return Some((pos, Inst::Pseudo(inst)));
+		}
+
+		// Else try to decode it as an basic instruction
+		if let Some(inst) = insts.next() {
+			self.bytes = &self.bytes[4..];
+			let pos = self.cur_pos;
+			self.cur_pos += 4;
+			return Some((pos, Inst::Basic(inst)));
+		}
+
+		// Else read it as a directive
+		match Directive::decode(self.cur_pos, self.bytes) {
+			Some((directive, len)) => {
+				self.bytes = &self.bytes[len..];
+				let pos = self.cur_pos;
+				self.cur_pos += len as u32;
+				Some((pos, Inst::Directive(directive)))
 			},
+			None => None,
 		}
 	}
 }

@@ -113,6 +113,7 @@ impl Raw {
 
 /// All basic instructions
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
+#[derive(derive_more::TryInto)]
 pub enum Inst {
 	/// Alu
 	Alu(alu::Inst),

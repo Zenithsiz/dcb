@@ -1,7 +1,8 @@
 //! Pseudo instructions
 //!
-//! This modules defines all the pseudo instructions usually
-//! used in mips. They are variable length.
+//! All instructions in this module are variable length, and are decoded
+//! from a starting basic instruction and remaining instruction bytes,
+//! via the [`Decodable`] trait.
 
 // Modules
 pub mod alu_assign;
@@ -60,12 +61,15 @@ pub enum Inst {
 	*/
 }
 
-impl Inst {
-	/// Attempts to parse a pseudo instruction from a start
-	/// basic instruction and remaining bytes
-	#[must_use]
-	pub fn decode(inst: basic::Inst, bytes: &[u8]) -> Option<(Self, usize)> {
-		alu_assign::Inst::decode(inst, bytes).map(|(inst, len)| (Self::AluAssign(inst), len))
+impl Decodable for Inst {
+	fn decode(insts: impl Iterator<Item = basic::Inst> + Clone) -> Option<Self> {
+		alu_assign::Inst::decode(insts).map(Self::AluAssign)
+	}
+
+	fn size(&self) -> u32 {
+		match self {
+			Self::AluAssign(inst) => inst.size(),
+		}
 	}
 }
 
@@ -94,5 +98,24 @@ impl PseudoInst {
 			.or_else(|| AluAssignInst::decode(iter))
 			.or_else(|| JmpPseudoInst::decode(iter))
 	}
+}
+*/
+
+/// A decodable pseudo instruction
+pub trait Decodable: Sized {
+	/// Decodes this instruction
+	#[must_use]
+	fn decode(insts: impl Iterator<Item = basic::Inst> + Clone) -> Option<Self>;
+
+	/// Returns how many _words_ long this instruction is
+	fn size(&self) -> u32;
+}
+
+/*
+/// An encodable pseudo instruction
+pub trait Encodable: Decodable {
+	/// Encodes this instruction
+	#[must_use]
+	fn encode(&self) -> Self::Raw;
 }
 */

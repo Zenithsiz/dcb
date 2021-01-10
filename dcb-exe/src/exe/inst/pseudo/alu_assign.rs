@@ -1,11 +1,12 @@
 //! Alu self-assign instructions
 
 // Imports
+use super::Decodable;
 use crate::exe::inst::{
 	basic::{self, alu},
 	InstFmt, Register,
 };
-use std::fmt;
+use std::{convert::TryInto, fmt};
 
 /// Alu assign kind
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -61,29 +62,25 @@ pub struct Inst {
 	pub kind: Kind,
 }
 
-impl Inst {
-	/// Decodes this pseudo instruction
-	#[must_use]
-	pub fn decode(inst: basic::Inst, _bytes: &[u8]) -> Option<(Self, usize)> {
-		let inst = match inst {
-			basic::Inst::Alu(inst) => match inst {
-				alu::Inst::Imm(alu::imm::Inst { dst, lhs, kind }) if dst == lhs => Some(Self {
-					dst,
-					kind: Kind::Imm { kind },
-				}),
-				alu::Inst::Reg(alu::reg::Inst { dst, lhs, rhs, kind }) if dst == lhs => Some(Self {
-					dst,
-					kind: Kind::Reg { kind, rhs },
-				}),
-				_ => None,
-			},
+impl Decodable for Inst {
+	fn decode(mut insts: impl Iterator<Item = basic::Inst> + Clone) -> Option<Self> {
+		match insts.next()?.try_into().ok()? {
+			alu::Inst::Imm(alu::imm::Inst { dst, lhs, kind }) if dst == lhs => Some(Self {
+				dst,
+				kind: Kind::Imm { kind },
+			}),
+			alu::Inst::Reg(alu::reg::Inst { dst, lhs, rhs, kind }) if dst == lhs => Some(Self {
+				dst,
+				kind: Kind::Reg { kind, rhs },
+			}),
 			_ => None,
-		};
+		}
+	}
 
-		inst.map(|inst| (inst, 0))
+	fn size(&self) -> u32 {
+		1
 	}
 }
-
 
 impl InstFmt for Inst {
 	fn mnemonic(&self) -> &'static str {
