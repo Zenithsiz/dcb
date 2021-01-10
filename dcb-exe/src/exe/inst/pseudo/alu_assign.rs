@@ -39,19 +39,10 @@ impl Kind {
 	/// Returns a displayable with the value of this kind
 	#[must_use]
 	pub fn value_fmt(self) -> impl fmt::Display {
-		/// Display wrapper
-		struct FmtValue(Kind);
-
-		impl fmt::Display for FmtValue {
-			fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-				match self.0 {
-					Kind::Imm { kind } => write!(f, "{}", kind.value_fmt()),
-					Kind::Reg { rhs, .. } => write!(f, "{}", rhs),
-				}
-			}
-		}
-
-		FmtValue(self)
+		dcb_util::DisplayWrapper::new(move |f| match self {
+			Self::Imm { kind } => write!(f, "{}", kind.value_fmt()),
+			Self::Reg { rhs, .. } => write!(f, "{}", rhs),
+		})
 	}
 }
 

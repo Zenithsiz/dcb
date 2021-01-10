@@ -45,21 +45,13 @@ impl LoadImmKind {
 
 	/// Returns a displayable with the value of this load kind formatted.
 	pub fn value_fmt(self) -> impl fmt::Display {
-		struct FmtValue(Self);
-
-		impl fmt::Display for FmtValue {
-			#[rustfmt::skip]
-			fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-				match self.0 {
-					LoadImmKind::Address(address)        => write!(f, "{address:#x}"),
-					LoadImmKind::Word(value)             => write!(f, "{value:#x}"),
-					LoadImmKind::HalfWordUnsigned(value) => write!(f, "{value:#x}"),
-					LoadImmKind::HalfWordSigned(value)   => write!(f, "{}", SignedHex(value)),
-				}
-			}
-		}
-
-		FmtValue(self)
+		#[rustfmt::skip]
+		dcb_util::DisplayWrapper::new(move |f| match self {
+			Self::Address(address)        => write!(f, "{address:#x}"),
+			Self::Word(value)             => write!(f, "{value:#x}"),
+			Self::HalfWordUnsigned(value) => write!(f, "{value:#x}"),
+			Self::HalfWordSigned(value)   => write!(f, "{}", SignedHex(value)),
+		})
 	}
 }
 

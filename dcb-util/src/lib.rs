@@ -91,6 +91,7 @@ pub mod null_ascii_string;
 #[macro_use]
 pub mod impl_bytes;
 pub mod discarding_sorted_merge_iter;
+pub mod display_wrapper;
 pub mod next_from_bytes;
 pub mod peekable_iter;
 pub mod signed_hex;
@@ -99,6 +100,7 @@ pub mod signed_hex;
 //pub use array_split::{array_split, array_split_mut};
 pub use ascii_str_arr::AsciiStrArr;
 pub use discarding_sorted_merge_iter::DiscardingSortedMergeIter;
+pub use display_wrapper::DisplayWrapper;
 pub use next_from_bytes::NextFromBytes;
 pub use peekable_iter::PeekableIter;
 pub use signed_hex::SignedHex;

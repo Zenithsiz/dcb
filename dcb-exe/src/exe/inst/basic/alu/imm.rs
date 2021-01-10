@@ -52,21 +52,12 @@ impl Kind {
 	/// Returns a displayable with the value of this kind
 	#[must_use]
 	pub fn value_fmt(self) -> impl fmt::Display {
-		/// Display wrapper
-		struct FmtValue(Kind);
-
-		impl fmt::Display for FmtValue {
-			fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-				match self.0 {
-					// Signed
-					Kind::Add(rhs) | Kind::AddUnsigned(rhs) | Kind::SetLessThan(rhs) => write!(f, "{:#}", SignedHex(rhs)),
-					// Unsigned
-					Kind::SetLessThanUnsigned(rhs) | Kind::And(rhs) | Kind::Or(rhs) | Kind::Xor(rhs) => write!(f, "{rhs:#x}"),
-				}
-			}
-		}
-
-		FmtValue(self)
+		dcb_util::DisplayWrapper::new(move |f| match self {
+			// Signed
+			Self::Add(rhs) | Self::AddUnsigned(rhs) | Self::SetLessThan(rhs) => write!(f, "{:#}", SignedHex(rhs)),
+			// Unsigned
+			Self::SetLessThanUnsigned(rhs) | Self::And(rhs) | Self::Or(rhs) | Self::Xor(rhs) => write!(f, "{rhs:#x}"),
+		})
 	}
 }
 
