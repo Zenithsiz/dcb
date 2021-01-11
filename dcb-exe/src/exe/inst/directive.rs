@@ -100,6 +100,7 @@ impl Directive {
 	/// Decodes a directive
 	#[must_use]
 	pub fn decode(pos: Pos, bytes: &[u8]) -> Option<Self> {
+		/*
 		// Check if we need to force decode it
 		if let Some(ForceDecodeRange { kind, .. }) = Self::FORCE_DECODE_RANGES.iter().find(|range| range.contains(&pos)) {
 			#[rustfmt::skip]
@@ -109,17 +110,31 @@ impl Directive {
 				ForceDecodeKind::Byte     => bytes.next_u8 ().map(Self::Db),
 			};
 		}
+		*/
 
-		// TODO: Respect alignment
+		// If we're not half-word aligned, read a byte
+		if !pos.is_half_word_aligned() {
+			return Some(Self::Db(bytes.next_u8()?));
+		}
 
-		// Else try to get a string
+		// If we're not word aligned, read a half-word
+		if !pos.is_word_aligned() {
+			return Some(Self::Dh(bytes.next_u16()?));
+		}
+
+		// Else try to get a string, since we're word aligned
 		if let Some(len) = self::read_ascii_until_null(bytes) {
 			return Some(Self::Ascii { len });
 		}
 
-		// Else try to read a `u32`
+		// Else try to read a word
 		if let Some(value) = bytes.next_u32() {
 			return Some(Self::Dw(value));
+		}
+
+		// Else try to read a half-word
+		if let Some(value) = bytes.next_u16() {
+			return Some(Self::Dh(value));
 		}
 
 		// Else read a single byte
@@ -158,8 +173,15 @@ impl InstFmt for Directive {
 			Self::Db(value) => write!(f, "{mnemonic} {value:#x}"),
 			&Self::Ascii { len } => {
 				let pos = pos.as_mem_idx();
-				let string = &bytes[pos..pos + len];
-				let string = AsciiStr::from_ascii(string).expect("Ascii string was invalid").as_str();
+				let mut bytes = &bytes[pos..pos + len];
+
+				// Strip any nulls from the strings
+				while let [start @ .., 0] = bytes {
+					bytes = start;
+				}
+
+				// Then convert it to a string
+				let string = AsciiStr::from_ascii(bytes).expect("Ascii string was invalid").as_str();
 				write!(f, "{mnemonic} \"{}\"", string.escape_debug())
 			},
 		}

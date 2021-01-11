@@ -28,6 +28,34 @@ impl Pos {
 	}
 }
 
+// Alignment
+impl Pos {
+	/// Returns if this memory address is aligned to `align`
+	#[must_use]
+	pub fn is_aligned_to(self, align: usize) -> bool {
+		// We're definitely not aligned to anything above
+		// `u32::MAX`
+		let align = match u32::try_from(align) {
+			Ok(align) => align,
+			Err(_) => return false,
+		};
+
+		self.0 % align == 0
+	}
+
+	/// Returns if this memory address is aligned to a word
+	#[must_use]
+	pub fn is_word_aligned(self) -> bool {
+		self.is_aligned_to(4)
+	}
+
+	/// Returns if this memory address is aligned to a half-word
+	#[must_use]
+	pub fn is_half_word_aligned(self) -> bool {
+		self.is_aligned_to(2)
+	}
+}
+
 
 // `Pos + u32 = Pos`
 impl ops::Add<u32> for Pos {
