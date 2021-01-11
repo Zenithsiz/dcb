@@ -50,7 +50,7 @@ impl Kind {
 			Self::Address(address)        => write!(f, "{address:#x}"),
 			Self::Word(value)             => write!(f, "{value:#x}"),
 			Self::HalfWordUnsigned(value) => write!(f, "{value:#x}"),
-			Self::HalfWordSigned(value)   => write!(f, "{}", SignedHex(value)),
+			Self::HalfWordSigned(value)   => write!(f, "{:#}", SignedHex(value)),
 		})
 	}
 }
