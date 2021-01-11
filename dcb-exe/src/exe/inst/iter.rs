@@ -4,12 +4,13 @@
 use super::{
 	basic::{self, Decodable as _},
 	pseudo::{self, Decodable as _},
-	Directive, Inst,
+	Directive, Inst, InstSize,
 };
 use crate::Pos;
-use std::convert::TryFrom;
 
-/// Parsing iterator, reads instructions from a `[u8]` slice
+/// Parsing iterator.
+///
+/// Parses instructions from a byte slice, `[u8]` along with it's position.
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub struct ParseIter<'a> {
 	/// Remaining bytes
@@ -59,8 +60,8 @@ impl<'a> Iterator for ParseIter<'a> {
 
 		// Try to decode a pseudo-instruction
 		if let Some(inst) = pseudo::Inst::decode(insts.clone()) {
-			let len = inst.size() * 4;
-			self.bytes = &self.bytes[usize::try_from(len).expect("Instruction size didn't fit into a `usize`")..];
+			let len = inst.size();
+			self.bytes = &self.bytes[len..];
 			let pos = self.cur_pos;
 			self.cur_pos += len;
 			return Some((pos, Inst::Pseudo(inst)));

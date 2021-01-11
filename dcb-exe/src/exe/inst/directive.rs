@@ -2,7 +2,7 @@
 
 // Imports
 //use super::{FromRawIter, Instruction, Raw};
-use super::{Inst, InstFmt};
+use super::{Inst, InstFmt, InstSize};
 use crate::exe::Pos;
 use ascii::{AsciiChar, AsciiStr};
 use dcb_util::NextFromBytes;
@@ -26,7 +26,7 @@ pub enum Directive {
 	/// Ascii string
 	Ascii {
 		/// String length
-		len: u32,
+		len: usize,
 	},
 }
 
@@ -94,19 +94,6 @@ impl Directive {
 			kind:  ForceDecodeKind::Word,
 		},
 	];
-
-	/// Returns the size of this directive
-	#[must_use]
-	pub const fn size(self) -> u32 {
-		match self {
-			Self::Dw(_) => 4,
-			Self::Dh(_) => 2,
-			Self::Db(_) => 1,
-			// Round ascii strings' len up to the
-			// nearest word (or one after if exactly 1 word).
-			Self::Ascii { len } => len + 4 - (len % 4),
-		}
-	}
 }
 
 impl Directive {
@@ -136,6 +123,19 @@ impl Directive {
 
 		// Else read a single byte
 		bytes.next_u8().map(|value| (Self::Db(value), 1))
+	}
+}
+
+impl InstSize for Directive {
+	fn size(&self) -> usize {
+		match self {
+			Self::Dw(_) => 4,
+			Self::Dh(_) => 2,
+			Self::Db(_) => 1,
+			// Round ascii strings' len up to the
+			// nearest word (or one after if exactly 1 word).
+			Self::Ascii { len } => len + 4 - (len % 4),
+		}
 	}
 }
 
@@ -170,7 +170,7 @@ impl InstFmt for Directive {
 ///
 /// Will always read in multiples of a word (4 bytes), including the null.
 #[allow(clippy::as_conversions, clippy::cast_possible_truncation)] // Our length will always fit into a `u32`.
-fn read_ascii_until_null(pos: Pos, bytes: &[u8]) -> Option<(u32, usize)> {
+fn read_ascii_until_null(pos: Pos, bytes: &[u8]) -> Option<(usize, usize)> {
 	// Get the next null or invalid character
 	let (idx, null) = bytes.iter().enumerate().find_map(|(idx, &byte)| match AsciiChar::from_ascii(byte) {
 		Ok(AsciiChar::Null) => Some((idx, true)),
@@ -191,5 +191,5 @@ fn read_ascii_until_null(pos: Pos, bytes: &[u8]) -> Option<(u32, usize)> {
 	}
 
 	// Else return both lengths
-	Some((idx as u32, idx + nulls_len))
+	Some((idx, idx + nulls_len))
 }

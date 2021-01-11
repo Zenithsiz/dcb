@@ -16,6 +16,7 @@ pub mod store;
 pub mod sys;
 
 // Imports
+use super::InstSize;
 use crate::exe::inst::InstFmt;
 
 /// Raw instruction
@@ -180,6 +181,13 @@ impl Encodable for Inst {
 			Self::Store(inst) => Raw::Store(inst.encode()),
 			Self::Sys  (inst) => Raw::Sys  (inst.encode()),
 		}
+	}
+}
+
+// Any basic decodable instruction is 4 bytes
+impl<T: Decodable> InstSize for T {
+	fn size(&self) -> usize {
+		4
 	}
 }
 

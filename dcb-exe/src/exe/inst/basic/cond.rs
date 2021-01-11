@@ -5,7 +5,7 @@ use crate::exe::inst::{
 	basic::{Decodable, Encodable},
 	InstFmt, Register,
 };
-use int_conv::{Signed, Truncated, ZeroExtended};
+use int_conv::{SignExtended, Signed, Truncated, ZeroExtended};
 use std::fmt;
 
 /// Raw representation
@@ -136,11 +136,11 @@ impl InstFmt for Inst {
 	}
 
 	fn fmt(&self, pos: crate::Pos, _bytes: &[u8], f: &mut fmt::Formatter) -> fmt::Result {
-		let address = pos + 4 * self.offset;
-		let mnemonic = self.kind.mnemonic();
-		let arg = self.arg;
+		let Self { arg, offset, kind } = self;
+		let mnemonic = kind.mnemonic();
+		let address = pos + 4 * offset.sign_extended::<i32>();
 
-		match self.kind {
+		match kind {
 			Kind::Equal(reg) | Kind::NotEqual(reg) => write!(f, "{mnemonic} {arg}, {reg}, {address}"),
 			Kind::LessOrEqualZero |
 			Kind::GreaterThanZero |

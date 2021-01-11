@@ -25,12 +25,14 @@ pub mod fmt;
 pub mod iter;
 pub mod pseudo;
 pub mod reg;
+pub mod size;
 
 // Exports
 pub use directive::Directive;
 pub use fmt::InstFmt;
 pub use iter::ParseIter;
 pub use reg::Register;
+pub use size::InstSize;
 
 // Imports
 use crate::Pos;
@@ -55,6 +57,16 @@ impl Inst {
 	pub const CODE_RANGE: std::ops::Range<Pos> = Self::CODE_START..Self::CODE_END;
 	/// Start of the code itself in the executable.
 	pub const CODE_START: Pos = Pos(0x80013e4c);
+}
+
+impl InstSize for Inst {
+	fn size(&self) -> usize {
+		match self {
+			Self::Basic(inst) => inst.size(),
+			Self::Pseudo(inst) => inst.size(),
+			Self::Directive(directive) => directive.size(),
+		}
+	}
 }
 
 impl InstFmt for Inst {

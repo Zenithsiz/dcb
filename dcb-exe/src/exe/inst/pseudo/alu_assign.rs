@@ -4,7 +4,7 @@
 use super::Decodable;
 use crate::exe::inst::{
 	basic::{self, alu},
-	InstFmt, Register,
+	InstFmt, InstSize, Register,
 };
 use std::{convert::TryInto, fmt};
 
@@ -76,9 +76,11 @@ impl Decodable for Inst {
 			_ => None,
 		}
 	}
+}
 
-	fn size(&self) -> u32 {
-		1
+impl InstSize for Inst {
+	fn size(&self) -> usize {
+		4
 	}
 }
 

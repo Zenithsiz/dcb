@@ -54,7 +54,7 @@ impl Data {
 
 	/// Returns the size, in bytes, of this data
 	#[must_use]
-	pub fn size(&self) -> u32 {
+	pub fn size(&self) -> usize {
 		self.ty.size()
 	}
 }

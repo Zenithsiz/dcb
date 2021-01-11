@@ -14,7 +14,7 @@ pub mod alu_assign;
 //pub mod store;
 
 // Imports
-use super::{basic, InstFmt};
+use super::{basic, InstFmt, InstSize};
 
 /// A pseudo instruction
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -65,8 +65,10 @@ impl Decodable for Inst {
 	fn decode(insts: impl Iterator<Item = basic::Inst> + Clone) -> Option<Self> {
 		alu_assign::Inst::decode(insts).map(Self::AluAssign)
 	}
+}
 
-	fn size(&self) -> u32 {
+impl InstSize for Inst {
+	fn size(&self) -> usize {
 		match self {
 			Self::AluAssign(inst) => inst.size(),
 		}
@@ -102,13 +104,10 @@ impl PseudoInst {
 */
 
 /// A decodable pseudo instruction
-pub trait Decodable: Sized {
+pub trait Decodable: InstSize + Sized {
 	/// Decodes this instruction
 	#[must_use]
 	fn decode(insts: impl Iterator<Item = basic::Inst> + Clone) -> Option<Self>;
-
-	/// Returns how many _words_ long this instruction is
-	fn size(&self) -> u32;
 }
 
 /*

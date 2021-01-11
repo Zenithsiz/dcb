@@ -47,12 +47,12 @@ impl ops::Add<i32> for Pos {
 	}
 }
 
-// `Pos + i16 = Pos`
-impl ops::Add<i16> for Pos {
+// `Pos + usize = Pos`
+impl ops::Add<usize> for Pos {
 	type Output = Self;
 
-	fn add(self, rhs: i16) -> Self::Output {
-		self + rhs.sign_extended::<i32>()
+	fn add(self, rhs: usize) -> Self::Output {
+		self + u32::try_from(rhs).expect("Value was too large")
 	}
 }
 

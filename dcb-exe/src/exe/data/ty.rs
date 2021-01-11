@@ -33,14 +33,14 @@ pub enum DataType {
 		ty: Box<DataType>,
 
 		/// Array length
-		len: u32,
+		len: usize,
 	},
 }
 
 impl DataType {
 	/// Returns the size of this data kind
 	#[must_use]
-	pub fn size(&self) -> u32 {
+	pub fn size(&self) -> usize {
 		match self {
 			Self::Word => 4,
 			Self::HalfWord => 2,
@@ -107,7 +107,7 @@ impl std::str::FromStr for DataType {
 
 			let ty = Self::from_str(ty).map_err(|err| FromStrError::InvalidArrayTy(Box::new(err)))?;
 			let ty = Box::new(ty);
-			let len = self::parse_u32(len).map_err(|err| FromStrError::InvalidArrayLen { len: len.to_owned(), err })?;
+			let len = self::parse_usize(len).map_err(|err| FromStrError::InvalidArrayLen { len: len.to_owned(), err })?;
 
 			return Ok(Self::Array { ty, len });
 		}
@@ -160,13 +160,13 @@ impl serde::Serialize for DataType {
 }
 
 /// Helper function to parse a `u32` from a string with any base.
-pub fn parse_u32(s: &str) -> Result<u32, std::num::ParseIntError> {
+pub fn parse_usize(s: &str) -> Result<usize, std::num::ParseIntError> {
 	let (s, base) = match s.trim().as_bytes() {
-		[b'0', b'x', len @ ..] => (len, 16),
-		[b'0', b'o', len @ ..] => (len, 8),
-		[b'0', b'b', len @ ..] => (len, 2),
+		[b'0', b'x', rest @ ..] => (rest, 16),
+		[b'0', b'o', rest @ ..] => (rest, 8),
+		[b'0', b'b', rest @ ..] => (rest, 2),
 		s => (s, 10),
 	};
 	let s = std::str::from_utf8(s).expect("Failed to convert `str` -> `[u8]` -> `str`");
-	u32::from_str_radix(s, base)
+	usize::from_str_radix(s, base)
 }

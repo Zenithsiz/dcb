@@ -14,6 +14,7 @@ pub mod error;
 
 // Exports
 pub use error::GetKnownError;
+use int_conv::SignExtended;
 //pub use iter::WithInstructionsIter;
 
 // Imports
@@ -136,7 +137,7 @@ impl FuncTable {
 					},
 				))) => Some(inst.address(pos)),
 				// Conditional jumps
-				Inst::Basic(basic::Inst::Cond(basic::cond::Inst { offset, .. })) => Some(pos + offset),
+				Inst::Basic(basic::Inst::Cond(basic::cond::Inst { offset, .. })) => Some(pos + offset.sign_extended::<i32>()),
 				_ => None,
 			})
 			.filter(|target| Inst::CODE_RANGE.contains(target))

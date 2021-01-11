@@ -14,6 +14,7 @@ pub mod error;
 // Exports
 pub use error::GetKnownError;
 use inst::directive::Directive;
+use int_conv::SignExtended;
 
 // Imports
 use super::{Data, DataType};
@@ -88,7 +89,7 @@ impl DataTable {
 			.clone()
 			.filter_map(|(pos, inst)| match inst {
 				Inst::Basic(basic::Inst::Load(basic::load::Inst { offset, .. }) | basic::Inst::Store(basic::store::Inst { offset, .. })) => {
-					Some(pos + offset)
+					Some(pos + offset.sign_extended::<i32>())
 				},
 				/*
 				Instruction::Pseudo(
