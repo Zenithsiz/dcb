@@ -15,6 +15,7 @@
 	associated_type_bounds,
 	bindings_after_at,
 	iter_map_while,
+	array_chunks,
 )]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]

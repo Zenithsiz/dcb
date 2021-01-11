@@ -99,30 +99,31 @@ impl Directive {
 impl Directive {
 	/// Decodes a directive
 	#[must_use]
-	pub fn decode(pos: Pos, bytes: &[u8]) -> Option<(Self, usize)> {
+	pub fn decode(pos: Pos, bytes: &[u8]) -> Option<Self> {
 		// Check if we need to force decode it
 		if let Some(ForceDecodeRange { kind, .. }) = Self::FORCE_DECODE_RANGES.iter().find(|range| range.contains(&pos)) {
 			#[rustfmt::skip]
 			return match kind {
-				ForceDecodeKind::Word     => bytes.next_u32().map(|value| (Self::Dw(value), 4)),
-				ForceDecodeKind::HalfWord => bytes.next_u16().map(|value| (Self::Dh(value), 2)),
-				ForceDecodeKind::Byte     => bytes.next_u8 ().map(|value| (Self::Db(value), 1)),
+				ForceDecodeKind::Word     => bytes.next_u32().map(Self::Dw),
+				ForceDecodeKind::HalfWord => bytes.next_u16().map(Self::Dh),
+				ForceDecodeKind::Byte     => bytes.next_u8 ().map(Self::Db),
 			};
 		}
 
+		// TODO: Respect alignment
+
 		// Else try to get a string
-		if let Some((str_len, with_nulls_len)) = self::read_ascii_until_null(pos, bytes) {
-			debug_assert!(with_nulls_len % 4 == 0, "Ascii string length wasn't multiple of 4");
-			return Some((Self::Ascii { len: str_len }, with_nulls_len));
+		if let Some(len) = self::read_ascii_until_null(bytes) {
+			return Some(Self::Ascii { len });
 		}
 
 		// Else try to read a `u32`
 		if let Some(value) = bytes.next_u32() {
-			return Some((Self::Dw(value), 4));
+			return Some(Self::Dw(value));
 		}
 
 		// Else read a single byte
-		bytes.next_u8().map(|value| (Self::Db(value), 1))
+		bytes.next_u8().map(Self::Db)
 	}
 }
 
@@ -151,14 +152,13 @@ impl InstFmt for Directive {
 
 	fn fmt(&self, pos: Pos, bytes: &[u8], f: &mut std::fmt::Formatter) -> std::fmt::Result {
 		let mnemonic = self.mnemonic();
-		#[allow(clippy::as_conversions)] // `len` will always fit into a `usize`.
 		match self {
 			Self::Dw(value) => write!(f, "{mnemonic} {value:#x}"),
 			Self::Dh(value) => write!(f, "{mnemonic} {value:#x}"),
 			Self::Db(value) => write!(f, "{mnemonic} {value:#x}"),
 			&Self::Ascii { len } => {
 				let pos = pos.as_mem_idx();
-				let string = &bytes[pos..pos + len as usize];
+				let string = &bytes[pos..pos + len];
 				let string = AsciiStr::from_ascii(string).expect("Ascii string was invalid").as_str();
 				write!(f, "{mnemonic} \"{}\"", string.escape_debug())
 			},
@@ -166,30 +166,35 @@ impl InstFmt for Directive {
 	}
 }
 
-/// Reads an ascii string from a byte slice until null.
-///
-/// Will always read in multiples of a word (4 bytes), including the null.
+/// Reads an ascii string from a byte slice until null, aligned to a word
 #[allow(clippy::as_conversions, clippy::cast_possible_truncation)] // Our length will always fit into a `u32`.
-fn read_ascii_until_null(pos: Pos, bytes: &[u8]) -> Option<(usize, usize)> {
-	// Get the next null or invalid character
-	let (idx, null) = bytes.iter().enumerate().find_map(|(idx, &byte)| match AsciiChar::from_ascii(byte) {
-		Ok(AsciiChar::Null) => Some((idx, true)),
-		Err(_) => Some((idx, false)),
-		_ => None,
-	})?;
+fn read_ascii_until_null(bytes: &[u8]) -> Option<usize> {
+	// For each set of 4 bytes in the input
+	for (bytes, cur_size) in bytes.array_chunks::<4>().zip((0..).step_by(4)) {
+		// If the bytes aren't all ascii, return
+		if !bytes.iter().all(|&ch| AsciiChar::from_ascii(ch).is_ok()) {
+			return None;
+		}
 
-	// If it wasn't a null or the first character was a null, return None
-	if !null || idx == 0 {
-		return None;
+		// Else check if we got any nulls
+		// Note: In order to return, after the first null, we must have
+		//       all nulls until the end of the word.
+		#[allow(clippy::match_same_arms)] // We can't change the order of the arms.
+		return match bytes {
+			// If we got all nulls, as long as we aren't empty, return the string
+			[0, 0, 0, 0] => match cur_size {
+				0 => None,
+				_ => Some(cur_size + 4),
+			},
+			[0, _, _, _] => None,
+			[_, 0, 0, 0] => Some(cur_size + 4),
+			[_, 0, _, _] => None,
+			[_, _, 0, 0] => Some(cur_size + 4),
+			[_, _, 0, _] => None,
+			[_, _, _, 0] => Some(cur_size + 4),
+
+			_ => continue,
+		};
 	}
-
-	// Else make sure until the end of the word it's all nulls
-	let nulls_len = 4 - ((pos.0 as usize + idx) % 4);
-	let nulls = bytes.get(idx..idx + nulls_len)?;
-	if !nulls.iter().all(|&byte| byte == 0) {
-		return None;
-	}
-
-	// Else return both lengths
-	Some((idx, idx + nulls_len))
+	None
 }

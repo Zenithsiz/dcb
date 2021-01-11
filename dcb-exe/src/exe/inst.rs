@@ -35,6 +35,7 @@ pub use reg::Register;
 pub use size::InstSize;
 
 // Imports
+use self::{basic::Decodable as _, pseudo::Decodable as _};
 use crate::Pos;
 
 /// An assembler instruction.
@@ -57,6 +58,40 @@ impl Inst {
 	pub const CODE_RANGE: std::ops::Range<Pos> = Self::CODE_START..Self::CODE_END;
 	/// Start of the code itself in the executable.
 	pub const CODE_START: Pos = Pos(0x80013e4c);
+}
+
+impl Inst {
+	/// Decodes an instruction from bytes and it's position.
+	pub fn decode(pos: Pos, bytes: &[u8]) -> Option<Self> {
+		// If we're outside of code range, decode a directive
+		if !Self::CODE_RANGE.contains(&pos) {
+			let directive = Directive::decode(pos, bytes)?;
+			return Some(Self::Directive(directive));
+		}
+
+		// Else make the instruction iterator
+		// Note: We fuse it to make sure that pseudo instructions don't try to skip
+		//       invalid instructions.
+		let mut insts = bytes
+			.array_chunks::<4>()
+			.copied()
+			.map(u32::from_ne_bytes)
+			.map_while(|word| basic::Raw::from_u32(word).and_then(basic::Inst::decode))
+			.fuse();
+
+		// Try to decode a pseudo-instruction
+		if let Some(inst) = pseudo::Inst::decode(insts.clone()) {
+			return Some(Self::Pseudo(inst));
+		}
+
+		// Else try to decode it as an basic instruction
+		if let Some(inst) = insts.next() {
+			return Some(Self::Basic(inst));
+		}
+
+		// Else read it as a directive
+		Directive::decode(pos, bytes).map(Self::Directive)
+	}
 }
 
 impl InstSize for Inst {

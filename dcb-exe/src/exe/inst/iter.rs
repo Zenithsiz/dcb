@@ -1,11 +1,7 @@
 //! Parsing iterator
 
 // Imports
-use super::{
-	basic::{self, Decodable as _},
-	pseudo::{self, Decodable as _},
-	Directive, Inst, InstSize,
-};
+use super::{Inst, InstSize};
 use crate::Pos;
 
 /// Parsing iterator.
@@ -37,53 +33,17 @@ impl<'a> ParseIter<'a> {
 impl<'a> Iterator for ParseIter<'a> {
 	type Item = (Pos, Inst);
 
-	#[allow(clippy::as_conversions, clippy::cast_possible_truncation)] // Byte lengths will always fit into a `u32`, as `self.bytes.len()` is always smaller than `u32`.
 	fn next(&mut self) -> Option<Self::Item> {
-		// If we're outside of code range, decode a directive
-		if !Inst::CODE_RANGE.contains(&self.cur_pos) {
-			let (directive, len) = Directive::decode(self.cur_pos, self.bytes)?;
-			self.bytes = &self.bytes[len..];
-			let pos = self.cur_pos;
-			self.cur_pos += len as u32;
-			return Some((pos, Inst::Directive(directive)));
-		}
+		// Try to read an instruction
+		let inst = Inst::decode(self.cur_pos, self.bytes)?;
+		let pos = self.cur_pos;
 
-		// Else make the instruction iterator
-		// Note: We fuse it to make sure that pseudo instructions don't try to skip
-		//       invalid instructions.
-		let mut insts = self
-			.bytes
-			.chunks(4)
-			.map(|word| u32::from_ne_bytes([word[0], word[1], word[2], word[3]]))
-			.map_while(|word| basic::Raw::from_u32(word).and_then(basic::Inst::decode))
-			.fuse();
+		// Then skip it in our bytes
+		let len = inst.size();
+		self.cur_pos += len;
+		self.bytes = &self.bytes[len..];
 
-		// Try to decode a pseudo-instruction
-		if let Some(inst) = pseudo::Inst::decode(insts.clone()) {
-			let len = inst.size();
-			self.bytes = &self.bytes[len..];
-			let pos = self.cur_pos;
-			self.cur_pos += len;
-			return Some((pos, Inst::Pseudo(inst)));
-		}
-
-		// Else try to decode it as an basic instruction
-		if let Some(inst) = insts.next() {
-			self.bytes = &self.bytes[4..];
-			let pos = self.cur_pos;
-			self.cur_pos += 4;
-			return Some((pos, Inst::Basic(inst)));
-		}
-
-		// Else read it as a directive
-		match Directive::decode(self.cur_pos, self.bytes) {
-			Some((directive, len)) => {
-				self.bytes = &self.bytes[len..];
-				let pos = self.cur_pos;
-				self.cur_pos += len as u32;
-				Some((pos, Inst::Directive(directive)))
-			},
-			None => None,
-		}
+		// And return it
+		Some((pos, inst))
 	}
 }
