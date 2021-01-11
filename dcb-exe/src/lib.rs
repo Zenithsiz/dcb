@@ -58,7 +58,9 @@
 // We only use wildcards when we only care about certain variants
 #![allow(clippy::wildcard_enum_match_arm, clippy::match_wildcard_for_single_variants)]
 // We're fine with shadowing, as long as it's related
-#![allow(clippy::shadow_reuse)]
+#![allow(clippy::shadow_reuse, clippy::shadow_same)]
+// Matching on booleans can look better than `if / else`
+#![allow(clippy::match_bool)]
 
 // Modules
 pub mod exe;
