@@ -1,17 +1,16 @@
 //! Load immediate
 
 // Imports
-use crate::exe::inst::{
-	basic::{alu_imm::AluImmKind, AluImmInst, InstIter},
-	BasicInst, Register,
-};
+use super::Decodable;
+use crate::exe::inst::{basic, InstFmt, InstSize, Register};
 use dcb_util::SignedHex;
-use std::fmt;
+use int_conv::{Join, SignExtended, Signed};
+use std::convert::TryInto;
 
 /// Immediate kind
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 #[derive(derive_more::Display)]
-pub enum LoadImmKind {
+pub enum Kind {
 	/// Address
 	///
 	/// Alias for `lui $dst, {hi} / addiu $dst, $dst, {lo}`
@@ -33,19 +32,20 @@ pub enum LoadImmKind {
 	HalfWordSigned(i16),
 }
 
-impl LoadImmKind {
+impl Kind {
 	/// Returns the mnemonic for this load kind
 	#[must_use]
 	pub const fn mnemonic(self) -> &'static str {
 		match self {
-			LoadImmKind::Address(_) => "la",
-			LoadImmKind::Word(_) | LoadImmKind::HalfWordUnsigned(_) | LoadImmKind::HalfWordSigned(_) => "li",
+			Self::Address(_) => "la",
+			Self::Word(_) | Self::HalfWordUnsigned(_) | Self::HalfWordSigned(_) => "li",
 		}
 	}
 
 	/// Returns a displayable with the value of this load kind formatted.
-	pub fn value_fmt(self) -> impl fmt::Display {
-		#[rustfmt::skip]
+	#[rustfmt::skip]
+	#[must_use]
+	pub fn value_fmt(self) -> impl std::fmt::Display {
 		dcb_util::DisplayWrapper::new(move |f| match self {
 			Self::Address(address)        => write!(f, "{address:#x}"),
 			Self::Word(value)             => write!(f, "{value:#x}"),
@@ -57,45 +57,70 @@ impl LoadImmKind {
 
 /// Load immediate instruction
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
-#[derive(derive_more::Display)]
-#[display(fmt = "{} {dst}, {}", "kind.mnemonic()", "kind.value_fmt()")]
-pub struct LoadImmInst {
+pub struct Inst {
 	/// Destination register
 	pub dst: Register,
 
 	/// Load kind
-	pub kind: LoadImmKind,
+	pub kind: Kind,
 }
 
-impl LoadImmInst {
-	/// Decodes this pseudo instruction
-	#[must_use]
-	pub fn decode(iter: InstIter<'_, impl Iterator<Item = u32> + Clone>) -> Option<Self> {
-		let peeker = iter.peeker();
-		let inst = match peeker.next()?? {
-			BasicInst::AluImm(alu @ AluImmInst { lhs: Register::Zr, .. }) => Self {
-				dst:  alu.dst,
-				kind: match alu.kind {
-					AluImmKind::AddUnsigned(rhs) => LoadImmKind::HalfWordSigned(rhs),
-					AluImmKind::Or(rhs) => LoadImmKind::HalfWordUnsigned(rhs),
-					_ => return None,
-				},
-			},
-			BasicInst::Lui(lui) => match peeker.next()?? {
-				BasicInst::AluImm(alu) if lui.dst == alu.dst && lui.dst == alu.lhs => Self {
+impl Decodable for Inst {
+	fn decode(mut insts: impl Iterator<Item = basic::Inst> + Clone) -> Option<Self> {
+		use basic::alu::imm::Kind::{AddUnsigned, Or};
+		let inst = match insts.next()? {
+			// `lui $dst, $value`
+			basic::Inst::Lui(lui) => match insts.next()?.try_into().ok()? {
+				// Filter for same `$dst` and equal `$dst` and `$lhs`.
+				basic::alu::Inst::Imm(alu) if lui.dst == alu.dst && alu.dst == alu.lhs => Self {
 					dst:  lui.dst,
 					kind: match alu.kind {
-						AluImmKind::AddUnsigned(rhs) => LoadImmKind::Address(lui.value.zero_extended::<u32>().shl(16) + rhs.sign_extended::<i32>()),
-						AluImmKind::Or(rhs) => LoadImmKind::Word(u32::join(rhs, lui.value)),
+						// lui << 16 + rhs
+						AddUnsigned(rhs) => Kind::Address((u32::join(0, lui.value).as_signed() + rhs.sign_extended::<i32>()).as_unsigned()),
+						Or(rhs) => Kind::Word(u32::join(rhs, lui.value)),
 						_ => return None,
 					},
 				},
 				_ => return None,
 			},
+			// `addiu $zr, $value`
+			// `ori   $zr, $value`
+			#[rustfmt::skip]
+			basic::Inst::Alu(basic::alu::Inst::Imm(inst)) if inst.lhs == Register::Zr => Self {
+				dst:        inst.dst,
+				kind: match inst.kind {
+					AddUnsigned(value) => Kind::HalfWordSigned  (value),
+					Or         (value) => Kind::HalfWordUnsigned(value),
+					_ => return None,
+				},
+			},
+
 			_ => return None,
 		};
 
-		peeker.apply();
-		return inst;
+		Some(inst)
+	}
+}
+
+impl InstSize for Inst {
+	fn size(&self) -> usize {
+		match self.kind {
+			Kind::Address(_) | Kind::Word(_) => 8,
+			Kind::HalfWordUnsigned(_) | Kind::HalfWordSigned(_) => 4,
+		}
+	}
+}
+
+impl InstFmt for Inst {
+	fn mnemonic(&self) -> &'static str {
+		self.kind.mnemonic()
+	}
+
+	fn fmt(&self, _pos: crate::Pos, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+		let Self { dst, kind } = self;
+		let mnemonic = kind.mnemonic();
+		let value = kind.value_fmt();
+
+		write!(f, "{mnemonic} {dst}, {value}")
 	}
 }

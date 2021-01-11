@@ -23,6 +23,7 @@ pub enum Raw {
 
 /// Jmp register instructions
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
+#[derive(derive_more::TryInto)]
 pub enum Inst {
 	/// Immediate
 	Imm(imm::Inst),

@@ -40,6 +40,7 @@ use crate::Pos;
 
 /// An assembler instruction.
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
+#[derive(derive_more::TryInto)]
 pub enum Inst<'a> {
 	/// A basic instruction
 	Basic(basic::Inst),
@@ -63,8 +64,8 @@ impl<'a> Inst<'a> {
 impl<'a> Inst<'a> {
 	/// Decodes an instruction from bytes and it's position.
 	pub fn decode(pos: Pos, bytes: &'a [u8]) -> Option<Self> {
-		// If we're outside of code range, decode a directive
-		if !Self::CODE_RANGE.contains(&pos) {
+		// If we're outside of code range, or not aligned to a word, decode a directive
+		if !Self::CODE_RANGE.contains(&pos) || !pos.is_word_aligned() {
 			let directive = Directive::decode(pos, bytes)?;
 			return Some(Self::Directive(directive));
 		}

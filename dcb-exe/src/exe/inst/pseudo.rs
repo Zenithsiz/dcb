@@ -6,9 +6,9 @@
 
 // Modules
 pub mod alu_assign;
+pub mod load_imm;
 //pub mod jmp;
 //pub mod load;
-//pub mod load_imm;
 //pub mod move_reg;
 //pub mod nop;
 //pub mod store;
@@ -18,9 +18,13 @@ use super::{basic, InstFmt, InstSize};
 
 /// A pseudo instruction
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
+#[derive(derive_more::TryInto)]
 pub enum Inst {
 	/// Alu self-assign
 	AluAssign(alu_assign::Inst),
+
+	/// Load immediate
+	LoadImm(load_imm::Inst),
 	/*
 	/// Load
 	Load(LoadPseudoInst),
@@ -63,7 +67,10 @@ pub enum Inst {
 
 impl Decodable for Inst {
 	fn decode(insts: impl Iterator<Item = basic::Inst> + Clone) -> Option<Self> {
-		alu_assign::Inst::decode(insts).map(Self::AluAssign)
+		// Note: Order is important
+		load_imm::Inst::decode(insts.clone())
+			.map(Self::LoadImm)
+			.or_else(|| alu_assign::Inst::decode(insts).map(Self::AluAssign))
 	}
 }
 
@@ -71,6 +78,7 @@ impl InstSize for Inst {
 	fn size(&self) -> usize {
 		match self {
 			Self::AluAssign(inst) => inst.size(),
+			Self::LoadImm(inst) => inst.size(),
 		}
 	}
 }
@@ -79,12 +87,14 @@ impl InstFmt for Inst {
 	fn mnemonic(&self) -> &'static str {
 		match self {
 			Self::AluAssign(inst) => inst.mnemonic(),
+			Self::LoadImm(inst) => inst.mnemonic(),
 		}
 	}
 
 	fn fmt(&self, pos: crate::Pos, f: &mut std::fmt::Formatter) -> std::fmt::Result {
 		match self {
 			Self::AluAssign(inst) => inst.fmt(pos, f),
+			Self::LoadImm(inst) => inst.fmt(pos, f),
 		}
 	}
 }

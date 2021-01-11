@@ -51,7 +51,7 @@ impl Kind {
 ///
 /// Alias for
 /// ```mips
-/// [alu] $dst, $dst, $i
+/// [alu] $dst, $dst, ...
 /// ```
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub struct Inst {
