@@ -18,7 +18,7 @@ pub enum Kind {
 
 	/// Word
 	///
-	/// Alias for `lui $dst, {hi} / ori $dst, $dst, {imm-lo}`
+	/// Alias for `lui $dst, {hi} / ori $dst, $dst, {lo}`
 	Word(u32),
 
 	/// Unsigned half-word

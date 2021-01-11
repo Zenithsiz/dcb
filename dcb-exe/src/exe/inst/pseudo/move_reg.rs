@@ -1,30 +1,19 @@
 //! Move register instruction
 
 // Imports
-use crate::exe::inst::{
-	basic::{
-		alu_imm::AluImmKind,
-		special::{
-			alu_reg::AluRegKind,
-			shift::{ShiftImmInst, ShiftRegInst},
-			AluRegInst, ShiftInst,
-		},
-		AluImmInst, InstIter, SpecialInst,
-	},
-	BasicInst, Register,
-};
+use std::convert::TryInto;
+
+use super::Decodable;
+use crate::exe::inst::{basic, InstFmt, InstSize, Register};
 
 /// Move register instruction
 ///
 /// Alias for
 /// ```mips
-/// Alias for `{add|addu|sub|subu|and|or|xor|sllv|srlv|srav} $dst, $src, $zr` or
-/// `{addi|addiu|andi|ori|xori|sll|srl|sra} $dst, $src, 0`
+/// addu $dst, $src, $zr
 /// ```
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
-#[derive(derive_more::Display)]
-#[display(fmt = "move {dst}, {src}")]
-pub struct MoveRegPseudoInst {
+pub struct Inst {
 	/// Destination register
 	pub dst: Register,
 
@@ -32,46 +21,36 @@ pub struct MoveRegPseudoInst {
 	pub src: Register,
 }
 
-impl MoveRegPseudoInst {
-	/// Decodes this pseudo instruction
-	#[must_use]
-	pub fn decode(iter: InstIter<'_, impl Iterator<Item = u32> + Clone>) -> Option<Self> {
-		let peeker = iter.peeker();
-		let inst = match peeker.next()?? {
-			BasicInst::Special(
-				SpecialInst::Shift(
-					ShiftInst::Imm(ShiftImmInst { dst, lhs: src, rhs: 0, .. }) |
-					ShiftInst::Reg(ShiftRegInst {
-						dst,
-						lhs: src,
-						rhs: Register::Zr,
-						..
-					}),
-				) |
-				SpecialInst::Alu(AluRegInst {
-					dst,
-					lhs: src,
-					rhs: Register::Zr,
-					kind:
-						AluRegKind::Add |
-						AluRegKind::AddUnsigned |
-						AluRegKind::Sub |
-						AluRegKind::SubUnsigned |
-						AluRegKind::And |
-						AluRegKind::Or |
-						AluRegKind::Xor |
-						AluRegKind::Nor,
-				}),
-			) |
-			BasicInst::AluImm(AluImmInst {
-				dst,
-				lhs: src,
-				kind: AluImmKind::Add(0) | AluImmKind::AddUnsigned(0) | AluImmKind::And(0) | AluImmKind::Or(0) | AluImmKind::Xor(0),
-			}) => Self { dst, src },
-			_ => return None,
-		};
 
-		peeker.apply();
-		Some(inst)
+impl Decodable for Inst {
+	fn decode(mut insts: impl Iterator<Item = basic::Inst> + Clone) -> Option<Self> {
+		match insts.next()?.try_into().ok()? {
+			basic::alu::Inst::Reg(basic::alu::reg::Inst {
+				dst,
+				lhs,
+				rhs: Register::Zr,
+				kind: basic::alu::reg::Kind::AddUnsigned,
+			}) => Some(Self { dst, src: lhs }),
+			_ => None,
+		}
+	}
+}
+
+impl InstSize for Inst {
+	fn size(&self) -> usize {
+		4
+	}
+}
+
+impl InstFmt for Inst {
+	fn mnemonic(&self) -> &'static str {
+		"move"
+	}
+
+	fn fmt(&self, _pos: crate::Pos, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+		let Self { dst, src } = self;
+		let mnemonic = self.mnemonic();
+
+		write!(f, "{mnemonic} {dst}, {src}")
 	}
 }

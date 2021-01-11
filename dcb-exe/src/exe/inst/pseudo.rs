@@ -9,7 +9,7 @@ pub mod alu_assign;
 pub mod load_imm;
 //pub mod jmp;
 //pub mod load;
-//pub mod move_reg;
+pub mod move_reg;
 pub mod nop;
 //pub mod store;
 
@@ -28,6 +28,9 @@ pub enum Inst {
 
 	/// No-op
 	Nop(nop::Inst),
+
+	/// Move register
+	MoveReg(move_reg::Inst),
 	/*
 	/// Load
 	Load(LoadPseudoInst),
@@ -35,8 +38,7 @@ pub enum Inst {
 	/// Store
 	Store(StorePseudoInst),
 
-	/// Move register
-	MoveRegPseudo(MoveRegPseudoInst),
+
 
 	/// Load immediate
 	LoadImm(LoadImmInst),
@@ -66,12 +68,13 @@ pub enum Inst {
 }
 
 impl Decodable for Inst {
+	#[rustfmt::skip]
 	fn decode(insts: impl Iterator<Item = basic::Inst> + Clone) -> Option<Self> {
 		// Note: Order is important
-		load_imm::Inst::decode(insts.clone())
-			.map(Self::LoadImm)
-			.or_else(|| alu_assign::Inst::decode(insts.clone()).map(Self::AluAssign))
-			.or_else(move || nop::Inst::decode(insts).map(Self::Nop))
+		                 load_imm  ::Inst::decode(insts.clone()).map(Self::LoadImm  )
+		.or_else(     || alu_assign::Inst::decode(insts.clone()).map(Self::AluAssign))
+		.or_else(     || nop       ::Inst::decode(insts.clone()).map(Self::Nop      ))
+		.or_else(move || move_reg  ::Inst::decode(       insts        ).map(Self::MoveReg  ))
 	}
 }
 
@@ -81,6 +84,7 @@ impl InstSize for Inst {
 			Self::AluAssign(inst) => inst.size(),
 			Self::LoadImm(inst) => inst.size(),
 			Self::Nop(inst) => inst.size(),
+			Self::MoveReg(inst) => inst.size(),
 		}
 	}
 }
@@ -91,6 +95,7 @@ impl InstFmt for Inst {
 			Self::AluAssign(inst) => inst.mnemonic(),
 			Self::LoadImm(inst) => inst.mnemonic(),
 			Self::Nop(inst) => inst.mnemonic(),
+			Self::MoveReg(inst) => inst.mnemonic(),
 		}
 	}
 
@@ -99,6 +104,7 @@ impl InstFmt for Inst {
 			Self::AluAssign(inst) => inst.fmt(pos, f),
 			Self::LoadImm(inst) => inst.fmt(pos, f),
 			Self::Nop(inst) => inst.fmt(pos, f),
+			Self::MoveReg(inst) => inst.fmt(pos, f),
 		}
 	}
 }

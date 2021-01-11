@@ -1,9 +1,8 @@
 //! Nop
 
 // Imports
-use crate::exe::inst::{basic, InstFmt, InstSize, Register};
-
 use super::Decodable;
+use crate::exe::inst::{basic, InstFmt, InstSize, Register};
 
 /// No-op
 ///
