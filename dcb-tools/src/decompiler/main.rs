@@ -76,7 +76,7 @@ mod logger;
 
 // Imports
 use anyhow::Context;
-use dcb_exe::exe::{inst::InstFmt, iter::ExeItem};
+use dcb_exe::exe::inst::InstFmt;
 use dcb_io::GameFile;
 
 #[allow(clippy::cognitive_complexity, clippy::too_many_lines)] // TODO: Refactor
@@ -97,6 +97,11 @@ fn main() -> Result<(), anyhow::Error> {
 
 	println!("Header:\n{}", exe.header());
 
+	for (pos, inst) in exe.parse_iter() {
+		println!("{}: {}", pos, inst.fmt_value(pos));
+	}
+
+	/*
 	for item in exe.iter() {
 		match item {
 			// For each function or header, print a header and all it's instructions
@@ -162,11 +167,8 @@ fn main() -> Result<(), anyhow::Error> {
 				println!("{}: {}", pos, inst.fmt_value(pos));
 			},
 		}
-
-		/*
-
-		*/
 	}
+	*/
 
 	/*
 	// Build the full instructions iterator
