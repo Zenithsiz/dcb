@@ -152,7 +152,6 @@ impl InstFmt for Directive {
 	fn fmt(&self, pos: Pos, bytes: &[u8], f: &mut std::fmt::Formatter) -> std::fmt::Result {
 		let mnemonic = self.mnemonic();
 		#[allow(clippy::as_conversions)] // `len` will always fit into a `usize`.
-		#[allow(clippy::indexing_slicing)] // `pos .. pos + len` will always be valid.
 		match self {
 			Self::Dw(value) => write!(f, "{mnemonic} {value:#x}"),
 			Self::Dh(value) => write!(f, "{mnemonic} {value:#x}"),

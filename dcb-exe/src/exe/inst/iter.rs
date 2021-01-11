@@ -37,7 +37,6 @@ impl<'a> Iterator for ParseIter<'a> {
 	type Item = (Pos, Inst);
 
 	#[allow(clippy::as_conversions, clippy::cast_possible_truncation)] // Byte lengths will always fit into a `u32`, as `self.bytes.len()` is always smaller than `u32`.
-	#[allow(clippy::indexing_slicing)] // Our lengths will always be smaller than the bytes array they are used to index.
 	fn next(&mut self) -> Option<Self::Item> {
 		// If we're outside of code range, decode a directive
 		if !Inst::CODE_RANGE.contains(&self.cur_pos) {

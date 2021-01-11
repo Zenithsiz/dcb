@@ -99,7 +99,6 @@ impl std::str::FromStr for DataType {
 				.ok_or(FromStrError::MissingArraySep)?;
 
 			// Ignore the leading ';' on the second.
-			#[allow(clippy::indexing_slicing)] // This can't panic, as `pos < len`.
 			let len = &len[1..];
 
 			// Trim both strings

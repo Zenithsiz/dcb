@@ -61,7 +61,6 @@ impl<'a> Iterator for Iter<'a> {
 		}
 
 		// Else simply get an instruction
-		#[allow(clippy::indexing_slicing)] // Can't panic, as `cur_pos < END`
 		let mut iter = ParseIter::new(&self.exe.bytes[self.cur_pos.as_mem_idx()..], self.cur_pos);
 		let (pos, inst) = iter.next().expect("Iterator was empty before code ending");
 		self.cur_pos = iter.cur_pos();

@@ -30,7 +30,7 @@
 #![allow(clippy::unreadable_literal)]
 // We prefer suffixes to be glued to the literal
 #![allow(clippy::unseparated_literal_suffix)]
-// We're fine with panicking when entering an unexpected state or on unfinished code.
+// We're fine with panicking when entering an unexpected state
 // TODO: Remove `clippy::todo` once everything is finished.
 #![allow(
 	clippy::panic,
@@ -38,7 +38,8 @@
 	clippy::expect_used,
 	clippy::todo,
 	clippy::panic_in_result_fn,
-	clippy::unwrap_in_result
+	clippy::unwrap_in_result,
+	clippy::indexing_slicing
 )]
 // We prefer tail calls
 #![allow(clippy::implicit_return)]
