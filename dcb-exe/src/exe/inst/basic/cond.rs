@@ -1,9 +1,12 @@
 //! Condition branches
 
 // Imports
-use crate::exe::inst::{
-	basic::{Decodable, Encodable},
-	InstFmt, Register,
+use crate::{
+	exe::inst::{
+		basic::{Decodable, Encodable},
+		InstFmt, Register,
+	},
+	Pos,
 };
 use int_conv::{SignExtended, Signed, Truncated, ZeroExtended};
 use std::fmt;
@@ -82,6 +85,20 @@ pub struct Inst {
 	pub kind: Kind,
 }
 
+impl Inst {
+	/// Returns the target for this instruction
+	#[must_use]
+	pub fn target(self, pos: Pos) -> Pos {
+		Self::target_of(self.offset, pos)
+	}
+
+	/// Returns the target using an offset
+	#[must_use]
+	pub fn target_of(offset: i16, pos: Pos) -> Pos {
+		pos + 4 * offset.sign_extended::<i32>()
+	}
+}
+
 impl Decodable for Inst {
 	type Raw = Raw;
 
@@ -135,19 +152,19 @@ impl InstFmt for Inst {
 		self.kind.mnemonic()
 	}
 
-	fn fmt(&self, pos: crate::Pos, f: &mut fmt::Formatter) -> fmt::Result {
-		let Self { arg, offset, kind } = self;
+	fn fmt(&self, pos: Pos, f: &mut fmt::Formatter) -> fmt::Result {
+		let Self { kind, arg, .. } = self;
 		let mnemonic = kind.mnemonic();
-		let address = pos + 4 * offset.sign_extended::<i32>();
+		let target = self.target(pos);
 
 		match kind {
-			Kind::Equal(reg) | Kind::NotEqual(reg) => write!(f, "{mnemonic} {arg}, {reg}, {address}"),
+			Kind::Equal(reg) | Kind::NotEqual(reg) => write!(f, "{mnemonic} {arg}, {reg}, {target}"),
 			Kind::LessOrEqualZero |
 			Kind::GreaterThanZero |
 			Kind::LessThanZero |
 			Kind::GreaterOrEqualZero |
 			Kind::LessThanZeroLink |
-			Kind::GreaterOrEqualZeroLink => write!(f, "{mnemonic} {arg}, {address}"),
+			Kind::GreaterOrEqualZeroLink => write!(f, "{mnemonic} {arg}, {target}"),
 		}
 	}
 }

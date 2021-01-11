@@ -43,18 +43,24 @@ pub struct Raw {
 /// Jmp register instructions
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub struct Inst {
-	/// Target
-	pub target: u32,
+	/// Immediate
+	pub imm: u32,
 
 	/// Kind
 	pub kind: Kind,
 }
 
 impl Inst {
-	/// Returns the address of this instruction
+	/// Returns the target of this instruction
 	#[must_use]
-	pub fn address(self, pos: Pos) -> Pos {
-		(pos & 0xf0000000) + self.target * 4
+	pub fn target(self, pos: Pos) -> Pos {
+		Self::target_of(self.imm, pos)
+	}
+
+	/// Returns the target using an immediate
+	#[must_use]
+	pub fn target_of(imm: u32, pos: Pos) -> Pos {
+		(pos & 0xf0000000) + imm * 4
 	}
 }
 
@@ -68,7 +74,7 @@ impl Decodable for Inst {
 			_ => return None,
 		};
 
-		Some(Self { target: raw.i, kind })
+		Some(Self { imm: raw.i, kind })
 	}
 }
 
@@ -78,7 +84,7 @@ impl Encodable for Inst {
 			Kind::Jump => 0,
 			Kind::JumpLink => 1,
 		};
-		let i = self.target;
+		let i = self.imm;
 
 		Raw { p, i }
 	}
@@ -91,8 +97,8 @@ impl InstFmt for Inst {
 
 	fn fmt(&self, pos: Pos, f: &mut std::fmt::Formatter) -> std::fmt::Result {
 		let mnemonic = self.kind.mnemonic();
-		let address = self.address(pos);
+		let target = self.target(pos);
 
-		write!(f, "{mnemonic} {address}")
+		write!(f, "{mnemonic} {target}")
 	}
 }

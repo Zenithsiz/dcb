@@ -135,7 +135,7 @@ impl FuncTable {
 						kind: basic::jmp::imm::Kind::Jump,
 						..
 					},
-				))) => Some(inst.address(pos)),
+				))) => Some(inst.target(pos)),
 				// Conditional jumps
 				Inst::Basic(basic::Inst::Cond(basic::cond::Inst { offset, .. })) => Some(pos + offset.sign_extended::<i32>()),
 				_ => None,
@@ -152,7 +152,7 @@ impl FuncTable {
 						kind: basic::jmp::imm::Kind::JumpLink,
 						..
 					},
-				))) => Some(inst.address(pos)),
+				))) => Some(inst.target(pos)),
 				// `dw`
 				Inst::Directive(Directive::Dw(address)) => Some(Pos(address)),
 				_ => None,

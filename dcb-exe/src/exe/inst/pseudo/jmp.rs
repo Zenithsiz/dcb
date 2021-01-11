@@ -1,62 +1,98 @@
 //! Jump pseudo instructions
 
 // Imports
-use crate::exe::inst::{
-	basic::{
-		cond::CondKind,
-		special::{jmp::JmpKind, JmpInst},
-		CondInst, InstIter, SpecialInst,
-	},
-	BasicInst, Pos, Register,
-};
+use crate::exe::inst::{basic, InstFmt, InstSize, Register};
+
+use super::Decodable;
 
 /// Jump / Branch instructions
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
-#[derive(derive_more::Display)]
-pub enum JmpPseudoInst {
+pub enum Inst {
 	/// Jump and link with return address
-	/// Alias for `jalr $ra, $dst`
-	#[display(fmt = "jalr {target}")]
-	JalrRa { target: Register },
+	/// Alias for `jalr $target, $ra`
+	JalrRa {
+		/// Target for the jump
+		target: Register,
+	},
 
 	/// Branch if equal to zero
 	/// Alias for `beq $arg, $zr, offset`
-	#[display(fmt = "beqz {arg}, {offset:#x}")]
-	Beqz { arg: Register, offset: Pos },
+	Beqz {
+		/// Argument to compare
+		arg: Register,
+
+		/// Jump offset
+		offset: i16,
+	},
 
 	/// Branch if different from zero
 	/// Alias for `bne $arg, $zr, offset`
-	#[display(fmt = "bnez {arg}, {offset:#x}")]
-	Bnez { arg: Register, offset: Pos },
+	Bnez {
+		/// Argument to compare
+		arg: Register,
+
+		/// Jump offset
+		offset: i16,
+	},
 
 	/// Jump relative
 	/// Alias for `beq $zr, $zr, offset`
-	#[display(fmt = "b {offset:#x}")]
-	B { offset: Pos },
+	B {
+		/// Jump offset
+		offset: i16,
+	},
 }
 
-impl JmpPseudoInst {
-	/// Decodes this pseudo instruction
-	#[must_use]
-	pub fn decode(iter: InstIter<'_, impl Iterator<Item = u32> + Clone>) -> Option<Self> {
-		let peeker = iter.peeker();
-		let inst = match peeker.next()?? {
-			BasicInst::Cond(CondInst { arg, offset, kind }) => match kind {
-				CondKind::Equal(Register::Zr) => match arg == Register::Zr {
-					true => Self::B { offset },
-					false => Self::Beqz { arg, offset },
+impl Decodable for Inst {
+	fn decode(mut insts: impl Iterator<Item = basic::Inst> + Clone) -> Option<Self> {
+		let inst = match insts.next()? {
+			basic::Inst::Cond(basic::cond::Inst { arg, offset, kind }) => match kind {
+				basic::cond::Kind::Equal(Register::Zr) => match arg {
+					// `beq $zr, $zr, offset`
+					Register::Zr => Self::B { offset },
+					// `beq $zr, $arg, offset`
+					_ => Self::Beqz { arg, offset },
 				},
-				CondKind::NotEqual(Register::Zr) => Self::Bnez { arg, offset },
+				// `bnq $zr, $arg, offset`
+				basic::cond::Kind::NotEqual(Register::Zr) => Self::Bnez { arg, offset },
 				_ => return None,
 			},
-			BasicInst::Special(SpecialInst::Jmp(JmpInst { target, kind })) => match kind {
-				JmpKind::Link(Register::At) => Self::JalrRa { target },
-				_ => return None,
-			},
+			// `jalr $ra, $target`
+			basic::Inst::Jmp(basic::jmp::Inst::Reg(basic::jmp::reg::Inst {
+				target,
+				kind: basic::jmp::reg::Kind::JumpLink(Register::Ra),
+			})) => Self::JalrRa { target },
+
 			_ => return None,
 		};
 
-		peeker.apply();
 		Some(inst)
+	}
+}
+
+impl InstSize for Inst {
+	fn size(&self) -> usize {
+		4
+	}
+}
+
+impl InstFmt for Inst {
+	fn mnemonic(&self) -> &'static str {
+		match self {
+			Self::JalrRa { .. } => "jalr",
+			Self::Beqz { .. } => "beqz",
+			Self::Bnez { .. } => "bnez",
+			Self::B { .. } => "b",
+		}
+	}
+
+	fn fmt(&self, pos: crate::Pos, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+		let mnemonic = self.mnemonic();
+
+		match *self {
+			Self::JalrRa { target } => write!(f, "{mnemonic} {target}"),
+			Self::Beqz { arg, offset } | Self::Bnez { arg, offset } => write!(f, "{mnemonic} {arg}, {}", basic::cond::Inst::target_of(offset, pos)),
+			Self::B { offset } => write!(f, "{mnemonic} {}", basic::cond::Inst::target_of(offset, pos)),
+		}
 	}
 }
