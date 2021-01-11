@@ -13,7 +13,7 @@ use super::Decodable;
 ///
 /// Alias for
 /// ```mips
-/// lui $dst, {hi}
+/// lui $at, {hi}
 /// s* $dst, {lo}($at)
 /// ```
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -31,8 +31,8 @@ pub struct Inst {
 impl Decodable for Inst {
 	fn decode(mut insts: impl Iterator<Item = basic::Inst> + Clone) -> Option<Self> {
 		let inst = match insts.next()? {
-			basic::Inst::Lui(lui) => match insts.next()? {
-				basic::Inst::Store(store) if store.dst == lui.dst && store.src == Register::At => Self {
+			basic::Inst::Lui(lui) if lui.dst == Register::At => match insts.next()? {
+				basic::Inst::Store(store) if store.src == Register::At => Self {
 					dst:    lui.dst,
 					target: Pos((u32::join(0, lui.value).as_signed() + store.offset.sign_extended::<i32>()).as_unsigned()),
 					kind:   store.kind,
