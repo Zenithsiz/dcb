@@ -82,9 +82,9 @@ impl InstFmt for Inst {
 		}
 	}
 
-	fn fmt(&self, pos: crate::Pos, bytes: &[u8], f: &mut std::fmt::Formatter) -> std::fmt::Result {
+	fn fmt(&self, pos: crate::Pos, f: &mut std::fmt::Formatter) -> std::fmt::Result {
 		match self {
-			Self::AluAssign(inst) => inst.fmt(pos, bytes, f),
+			Self::AluAssign(inst) => inst.fmt(pos, f),
 		}
 	}
 }

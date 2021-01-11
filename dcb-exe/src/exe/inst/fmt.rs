@@ -17,11 +17,11 @@ pub trait InstFmt {
 	fn mnemonic(&self) -> &'static str;
 
 	/// Formats this instruction
-	fn fmt(&self, pos: Pos, bytes: &[u8], f: &mut fmt::Formatter) -> fmt::Result;
+	fn fmt(&self, pos: Pos, f: &mut fmt::Formatter) -> fmt::Result;
 
 	/// Returns a wrapped value that may be formatted using [`fmt::Display`]
-	fn fmt_value<'a>(&'a self, pos: Pos, bytes: &'a [u8]) -> InstFmtWrapper<Self> {
-		InstFmtWrapper { inst: self, pos, bytes }
+	fn fmt_value(&self, pos: Pos) -> InstFmtWrapper<Self> {
+		InstFmtWrapper { inst: self, pos }
 	}
 }
 
@@ -33,13 +33,10 @@ pub struct InstFmtWrapper<'a, T: ?Sized + InstFmt> {
 
 	/// Position
 	pub pos: Pos,
-
-	/// Bytes
-	pub bytes: &'a [u8],
 }
 
 impl<'a, T: ?Sized + InstFmt> fmt::Display for InstFmtWrapper<'a, T> {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-		self.inst.fmt(self.pos, self.bytes, f)
+		self.inst.fmt(self.pos, f)
 	}
 }

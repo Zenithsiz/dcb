@@ -40,7 +40,7 @@ use crate::Pos;
 
 /// An assembler instruction.
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
-pub enum Inst {
+pub enum Inst<'a> {
 	/// A basic instruction
 	Basic(basic::Inst),
 
@@ -48,10 +48,10 @@ pub enum Inst {
 	Pseudo(pseudo::Inst),
 
 	/// A directive
-	Directive(Directive),
+	Directive(Directive<'a>),
 }
 
-impl Inst {
+impl<'a> Inst<'a> {
 	/// End of the code itself in the executable.
 	pub const CODE_END: Pos = Pos(0x8006dd3c);
 	/// Code range
@@ -60,9 +60,9 @@ impl Inst {
 	pub const CODE_START: Pos = Pos(0x80013e4c);
 }
 
-impl Inst {
+impl<'a> Inst<'a> {
 	/// Decodes an instruction from bytes and it's position.
-	pub fn decode(pos: Pos, bytes: &[u8]) -> Option<Self> {
+	pub fn decode(pos: Pos, bytes: &'a [u8]) -> Option<Self> {
 		// If we're outside of code range, decode a directive
 		if !Self::CODE_RANGE.contains(&pos) {
 			let directive = Directive::decode(pos, bytes)?;
@@ -94,17 +94,17 @@ impl Inst {
 	}
 }
 
-impl InstSize for Inst {
+impl<'a> InstSize for Inst<'a> {
 	fn size(&self) -> usize {
 		match self {
-			Self::Basic(inst) => inst.size(),
-			Self::Pseudo(inst) => inst.size(),
-			Self::Directive(directive) => directive.size(),
+			Inst::Basic(inst) => inst.size(),
+			Inst::Pseudo(inst) => inst.size(),
+			Inst::Directive(directive) => directive.size(),
 		}
 	}
 }
 
-impl InstFmt for Inst {
+impl<'a> InstFmt for Inst<'a> {
 	fn mnemonic(&self) -> &'static str {
 		match self {
 			Self::Basic(inst) => inst.mnemonic(),
@@ -113,11 +113,11 @@ impl InstFmt for Inst {
 		}
 	}
 
-	fn fmt(&self, pos: Pos, bytes: &[u8], f: &mut std::fmt::Formatter) -> std::fmt::Result {
+	fn fmt(&self, pos: Pos, f: &mut std::fmt::Formatter) -> std::fmt::Result {
 		match self {
-			Self::Basic(inst) => inst.fmt(pos, bytes, f),
-			Self::Pseudo(inst) => inst.fmt(pos, bytes, f),
-			Self::Directive(directive) => directive.fmt(pos, bytes, f),
+			Self::Basic(inst) => inst.fmt(pos, f),
+			Self::Pseudo(inst) => inst.fmt(pos, f),
+			Self::Directive(directive) => directive.fmt(pos, f),
 		}
 	}
 }

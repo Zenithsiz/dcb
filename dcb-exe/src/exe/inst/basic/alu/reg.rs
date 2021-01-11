@@ -145,7 +145,7 @@ impl InstFmt for Inst {
 		self.kind.mnemonic()
 	}
 
-	fn fmt(&self, _pos: crate::Pos, _bytes: &[u8], f: &mut std::fmt::Formatter) -> std::fmt::Result {
+	fn fmt(&self, _pos: crate::Pos, f: &mut std::fmt::Formatter) -> std::fmt::Result {
 		let Self { dst, lhs, rhs, kind } = self;
 
 		write!(f, "{} {dst}, {lhs}, {rhs}", kind.mnemonic())

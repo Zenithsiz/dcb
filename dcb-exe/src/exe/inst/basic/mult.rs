@@ -172,7 +172,7 @@ impl InstFmt for Inst {
 		}
 	}
 
-	fn fmt(&self, _pos: crate::Pos, _bytes: &[u8], f: &mut std::fmt::Formatter) -> std::fmt::Result {
+	fn fmt(&self, _pos: crate::Pos, f: &mut std::fmt::Formatter) -> std::fmt::Result {
 		let mnemonic = self.mnemonic();
 		match self {
 			#[rustfmt::skip]

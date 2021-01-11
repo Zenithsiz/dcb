@@ -89,7 +89,7 @@ impl InstFmt for Inst {
 		self.kind.mnemonic()
 	}
 
-	fn fmt(&self, pos: Pos, _bytes: &[u8], f: &mut std::fmt::Formatter) -> std::fmt::Result {
+	fn fmt(&self, pos: Pos, f: &mut std::fmt::Formatter) -> std::fmt::Result {
 		let mnemonic = self.kind.mnemonic();
 		let address = self.address(pos);
 

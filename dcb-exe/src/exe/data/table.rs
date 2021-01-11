@@ -83,7 +83,7 @@ impl DataTable {
 	/// Searches all instructions for references to
 	/// executable data using certain heuristics.
 	#[must_use]
-	pub fn search_instructions(insts: impl Iterator<Item = (Pos, Inst)> + Clone) -> Self {
+	pub fn search_instructions<'a>(insts: impl Iterator<Item = (Pos, Inst<'a>)> + Clone) -> Self {
 		// Get all possible references to data
 		let references: BTreeSet<Pos> = insts
 			.clone()
@@ -124,11 +124,11 @@ impl DataTable {
 			.zip(0..)
 			.map(|((pos, directive), idx)| {
 				match directive {
-					Directive::Ascii { len } => Data {
+					Directive::Ascii(string) => Data {
 						name: format!("string_{idx}"),
 						desc: String::new(),
 						pos,
-						ty: DataType::Array { ty: Box::new(DataType::AsciiChar), len },
+						ty: DataType::Array { ty: Box::new(DataType::AsciiChar), len: string.len() },
 					},
 					Directive::Dw(_) => Data {
 						name: format!("data_w{idx}"),

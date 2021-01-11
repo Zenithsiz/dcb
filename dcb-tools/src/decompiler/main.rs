@@ -159,7 +159,7 @@ fn main() -> Result<(), anyhow::Error> {
 
 			// If it's standalone, print it by it's own
 			ExeItem::Inst(pos, inst) => {
-				println!("{}: {}", pos, inst.fmt_value(pos, exe.bytes()));
+				println!("{}: {}", pos, inst.fmt_value(pos));
 			},
 		}
 

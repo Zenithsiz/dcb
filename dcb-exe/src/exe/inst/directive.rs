@@ -4,7 +4,7 @@
 //use super::{FromRawIter, Instruction, Raw};
 use super::{Inst, InstFmt, InstSize};
 use crate::exe::Pos;
-use ascii::{AsciiChar, AsciiStr};
+use ascii::AsciiStr;
 use dcb_util::NextFromBytes;
 use std::ops::{
 	Bound::{self, Excluded, Included, Unbounded},
@@ -13,7 +13,7 @@ use std::ops::{
 
 /// A directive
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
-pub enum Directive {
+pub enum Directive<'a> {
 	/// Write word
 	Dw(u32),
 
@@ -24,10 +24,7 @@ pub enum Directive {
 	Db(u8),
 
 	/// Ascii string
-	Ascii {
-		/// String length
-		len: usize,
-	},
+	Ascii(&'a AsciiStr),
 }
 
 /// A force decode range
@@ -74,7 +71,7 @@ pub enum ForceDecodeKind {
 	Byte,
 }
 
-impl Directive {
+impl<'a> Directive<'a> {
 	/// Positions that should be force decoded using a specific variant.
 	// TODO: Get this at run-time via a file.
 	pub const FORCE_DECODE_RANGES: &'static [ForceDecodeRange] = &[
@@ -96,10 +93,10 @@ impl Directive {
 	];
 }
 
-impl Directive {
+impl<'a> Directive<'a> {
 	/// Decodes a directive
 	#[must_use]
-	pub fn decode(pos: Pos, bytes: &[u8]) -> Option<Self> {
+	pub fn decode(pos: Pos, bytes: &'a [u8]) -> Option<Self> {
 		/*
 		// Check if we need to force decode it
 		if let Some(ForceDecodeRange { kind, .. }) = Self::FORCE_DECODE_RANGES.iter().find(|range| range.contains(&pos)) {
@@ -123,8 +120,8 @@ impl Directive {
 		}
 
 		// Else try to get a string, since we're word aligned
-		if let Some(len) = self::read_ascii_until_null(bytes) {
-			return Some(Self::Ascii { len });
+		if let Some(string) = self::read_ascii_until_null(bytes) {
+			return Some(Self::Ascii(string));
 		}
 
 		// Else try to read a word
@@ -142,7 +139,7 @@ impl Directive {
 	}
 }
 
-impl InstSize for Directive {
+impl<'a> InstSize for Directive<'a> {
 	fn size(&self) -> usize {
 		match self {
 			Self::Dw(_) => 4,
@@ -150,12 +147,12 @@ impl InstSize for Directive {
 			Self::Db(_) => 1,
 			// Round ascii strings' len up to the
 			// nearest word (or one after if exactly 1 word).
-			Self::Ascii { len } => len + 4 - (len % 4),
+			Self::Ascii(string) => string.len() + 4 - (string.len() % 4),
 		}
 	}
 }
 
-impl InstFmt for Directive {
+impl<'a> InstFmt for Directive<'a> {
 	fn mnemonic(&self) -> &'static str {
 		match self {
 			Self::Dw(_) => "dw",
@@ -165,58 +162,50 @@ impl InstFmt for Directive {
 		}
 	}
 
-	fn fmt(&self, pos: Pos, bytes: &[u8], f: &mut std::fmt::Formatter) -> std::fmt::Result {
+	fn fmt(&self, _pos: Pos, f: &mut std::fmt::Formatter) -> std::fmt::Result {
 		let mnemonic = self.mnemonic();
 		match self {
 			Self::Dw(value) => write!(f, "{mnemonic} {value:#x}"),
 			Self::Dh(value) => write!(f, "{mnemonic} {value:#x}"),
 			Self::Db(value) => write!(f, "{mnemonic} {value:#x}"),
-			&Self::Ascii { len } => {
-				let pos = pos.as_mem_idx();
-				let mut bytes = &bytes[pos..pos + len];
-
-				// Strip any nulls from the strings
-				while let [start @ .., 0] = bytes {
-					bytes = start;
-				}
-
-				// Then convert it to a string
-				let string = AsciiStr::from_ascii(bytes).expect("Ascii string was invalid").as_str();
-				write!(f, "{mnemonic} \"{}\"", string.escape_debug())
-			},
+			Self::Ascii(string) => write!(f, "{mnemonic} \"{}\"", string.as_str().escape_debug()),
 		}
 	}
 }
 
 /// Reads an ascii string from a byte slice until null, aligned to a word
 #[allow(clippy::as_conversions, clippy::cast_possible_truncation)] // Our length will always fit into a `u32`.
-fn read_ascii_until_null(bytes: &[u8]) -> Option<usize> {
-	// For each set of 4 bytes in the input
-	for (bytes, cur_size) in bytes.array_chunks::<4>().zip((0..).step_by(4)) {
+fn read_ascii_until_null(bytes: &[u8]) -> Option<&AsciiStr> {
+	// For each word in the input
+	for (word, cur_size) in bytes.array_chunks::<4>().zip((0..).step_by(4)) {
 		// If the bytes aren't all ascii, return
-		if !bytes.iter().all(|&ch| AsciiChar::from_ascii(ch).is_ok()) {
+		if AsciiStr::from_ascii(word).is_err() {
 			return None;
 		}
 
-		// Else check if we got any nulls
+		// Else check if we got any nulls, to finish the string.
 		// Note: In order to return, after the first null, we must have
 		//       all nulls until the end of the word.
 		#[allow(clippy::match_same_arms)] // We can't change the order of the arms.
-		return match bytes {
+		let len = match word {
 			// If we got all nulls, as long as we aren't empty, return the string
 			[0, 0, 0, 0] => match cur_size {
-				0 => None,
-				_ => Some(cur_size + 4),
+				0 => return None,
+				_ => cur_size,
 			},
-			[0, _, _, _] => None,
-			[_, 0, 0, 0] => Some(cur_size + 4),
-			[_, 0, _, _] => None,
-			[_, _, 0, 0] => Some(cur_size + 4),
-			[_, _, 0, _] => None,
-			[_, _, _, 0] => Some(cur_size + 4),
+			[0, _, _, _] => return None,
+			[_, 0, 0, 0] => cur_size + 1,
+			[_, 0, _, _] => return None,
+			[_, _, 0, 0] => cur_size + 2,
+			[_, _, 0, _] => return None,
+			[_, _, _, 0] => cur_size + 3,
 
 			_ => continue,
 		};
+
+		// Then build the string
+		let string = AsciiStr::from_ascii(&bytes[..len]).expect("Checked the string was valid");
+		return Some(string);
 	}
 	None
 }

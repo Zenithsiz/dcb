@@ -208,17 +208,17 @@ impl InstFmt for Inst {
 	}
 
 	#[rustfmt::skip]
-	fn fmt(&self, pos: crate::Pos, bytes: &[u8], f: &mut std::fmt::Formatter) -> std::fmt::Result {
+	fn fmt(&self, pos: crate::Pos, f: &mut std::fmt::Formatter) -> std::fmt::Result {
 		match self {
-			Self::Alu  (inst) => inst.fmt(pos, bytes, f),
-			Self::Cond (inst) => inst.fmt(pos, bytes, f),
-			Self::Jmp  (inst) => inst.fmt(pos, bytes, f),
-			Self::Load (inst) => inst.fmt(pos, bytes, f),
-			Self::Lui  (inst) => inst.fmt(pos, bytes, f),
-			Self::Mult (inst) => inst.fmt(pos, bytes, f),
-			Self::Shift(inst) => inst.fmt(pos, bytes, f),
-			Self::Store(inst) => inst.fmt(pos, bytes, f),
-			Self::Sys  (inst) => inst.fmt(pos, bytes, f),
+			Self::Alu  (inst) => inst.fmt(pos, f),
+			Self::Cond (inst) => inst.fmt(pos, f),
+			Self::Jmp  (inst) => inst.fmt(pos, f),
+			Self::Load (inst) => inst.fmt(pos, f),
+			Self::Lui  (inst) => inst.fmt(pos, f),
+			Self::Mult (inst) => inst.fmt(pos, f),
+			Self::Shift(inst) => inst.fmt(pos, f),
+			Self::Store(inst) => inst.fmt(pos, f),
+			Self::Sys  (inst) => inst.fmt(pos, f),
 		}
 	}
 }

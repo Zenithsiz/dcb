@@ -91,7 +91,7 @@ impl FuncTable {
 	/// Creates a new list of functions from an iterator over insts
 	#[must_use]
 	#[allow(clippy::too_many_lines)] // TODO: Refactor?
-	pub fn search_instructions(insts: impl Iterator<Item = (Pos, Inst)> + Clone) -> Self {
+	pub fn search_instructions<'a>(insts: impl Iterator<Item = (Pos, Inst<'a>)> + Clone) -> Self {
 		// Get all returns
 		let returns: BTreeSet<Pos> = insts
 			.clone()

@@ -35,7 +35,7 @@ pub enum ExeItem<'a> {
 	Data(&'a Data),
 
 	/// Instruction
-	Inst(Pos, Inst),
+	Inst(Pos, Inst<'a>),
 }
 
 impl<'a> Iterator for Iter<'a> {

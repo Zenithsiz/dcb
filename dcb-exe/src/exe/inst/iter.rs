@@ -31,7 +31,7 @@ impl<'a> ParseIter<'a> {
 }
 
 impl<'a> Iterator for ParseIter<'a> {
-	type Item = (Pos, Inst);
+	type Item = (Pos, Inst<'a>);
 
 	fn next(&mut self) -> Option<Self::Item> {
 		// Try to read an instruction
