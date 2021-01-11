@@ -13,9 +13,6 @@ use std::fmt;
 /// branching instructions), as well as the byte array containing the entire
 /// executable.
 pub trait InstFmt {
-	/// Returns this instruction's mnemonic
-	fn mnemonic(&self) -> &'static str;
-
 	/// Formats this instruction
 	fn fmt(&self, pos: Pos, f: &mut fmt::Formatter) -> fmt::Result;
 

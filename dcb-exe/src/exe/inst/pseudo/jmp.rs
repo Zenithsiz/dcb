@@ -77,22 +77,12 @@ impl InstSize for Inst {
 }
 
 impl InstFmt for Inst {
-	fn mnemonic(&self) -> &'static str {
-		match self {
-			Self::JalrRa { .. } => "jalr",
-			Self::Beqz { .. } => "beqz",
-			Self::Bnez { .. } => "bnez",
-			Self::B { .. } => "b",
-		}
-	}
-
 	fn fmt(&self, pos: crate::Pos, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-		let mnemonic = self.mnemonic();
-
 		match *self {
-			Self::JalrRa { target } => write!(f, "{mnemonic} {target}"),
-			Self::Beqz { arg, offset } | Self::Bnez { arg, offset } => write!(f, "{mnemonic} {arg}, {}", basic::cond::Inst::target_of(offset, pos)),
-			Self::B { offset } => write!(f, "{mnemonic} {}", basic::cond::Inst::target_of(offset, pos)),
+			Self::JalrRa { target } => write!(f, "jalr {target}"),
+			Self::Beqz { arg, offset } => write!(f, "beqz {arg}, {}", basic::cond::Inst::target_of(offset, pos)),
+			Self::Bnez { arg, offset } => write!(f, "bnez {arg}, {}", basic::cond::Inst::target_of(offset, pos)),
+			Self::B { offset } => write!(f, "b {}", basic::cond::Inst::target_of(offset, pos)),
 		}
 	}
 }

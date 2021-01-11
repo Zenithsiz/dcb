@@ -106,14 +106,6 @@ impl<'a> InstSize for Inst<'a> {
 }
 
 impl<'a> InstFmt for Inst<'a> {
-	fn mnemonic(&self) -> &'static str {
-		match self {
-			Self::Basic(inst) => inst.mnemonic(),
-			Self::Pseudo(inst) => inst.mnemonic(),
-			Self::Directive(directive) => directive.mnemonic(),
-		}
-	}
-
 	fn fmt(&self, pos: Pos, f: &mut std::fmt::Formatter) -> std::fmt::Result {
 		match self {
 			Self::Basic(inst) => inst.fmt(pos, f),

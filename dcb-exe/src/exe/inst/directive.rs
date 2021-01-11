@@ -153,22 +153,12 @@ impl<'a> InstSize for Directive<'a> {
 }
 
 impl<'a> InstFmt for Directive<'a> {
-	fn mnemonic(&self) -> &'static str {
-		match self {
-			Self::Dw(_) => "dw",
-			Self::Dh(_) => "dh",
-			Self::Db(_) => "db",
-			Self::Ascii { .. } => ".ascii",
-		}
-	}
-
 	fn fmt(&self, _pos: Pos, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-		let mnemonic = self.mnemonic();
 		match self {
-			Self::Dw(value) => write!(f, "{mnemonic} {value:#x}"),
-			Self::Dh(value) => write!(f, "{mnemonic} {value:#x}"),
-			Self::Db(value) => write!(f, "{mnemonic} {value:#x}"),
-			Self::Ascii(string) => write!(f, "{mnemonic} \"{}\"", string.as_str().escape_debug()),
+			Self::Dw(value) => write!(f, "dw {value:#x}"),
+			Self::Dh(value) => write!(f, "dh {value:#x}"),
+			Self::Db(value) => write!(f, "db {value:#x}"),
+			Self::Ascii(string) => write!(f, ".ascii \"{}\"", string.as_str().escape_debug()),
 		}
 	}
 }

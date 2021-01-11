@@ -53,13 +53,6 @@ impl Encodable for Inst {
 }
 
 impl InstFmt for Inst {
-	fn mnemonic(&self) -> &'static str {
-		match self {
-			Self::Imm(inst) => inst.mnemonic(),
-			Self::Reg(inst) => inst.mnemonic(),
-		}
-	}
-
 	fn fmt(&self, pos: crate::Pos, f: &mut std::fmt::Formatter) -> std::fmt::Result {
 		match self {
 			Self::Imm(inst) => inst.fmt(pos, f),

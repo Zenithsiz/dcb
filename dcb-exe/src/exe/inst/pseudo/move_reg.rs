@@ -43,14 +43,9 @@ impl InstSize for Inst {
 }
 
 impl InstFmt for Inst {
-	fn mnemonic(&self) -> &'static str {
-		"move"
-	}
-
 	fn fmt(&self, _pos: crate::Pos, f: &mut std::fmt::Formatter) -> std::fmt::Result {
 		let Self { dst, src } = self;
-		let mnemonic = self.mnemonic();
 
-		write!(f, "{mnemonic} {dst}, {src}")
+		write!(f, "move {dst}, {src}")
 	}
 }

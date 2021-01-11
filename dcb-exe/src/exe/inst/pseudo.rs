@@ -76,19 +76,6 @@ impl InstSize for Inst {
 }
 
 impl InstFmt for Inst {
-	fn mnemonic(&self) -> &'static str {
-		match self {
-			Self::AluAssign(inst) => inst.mnemonic(),
-			Self::ShiftAssign(inst) => inst.mnemonic(),
-			Self::LoadImm(inst) => inst.mnemonic(),
-			Self::Nop(inst) => inst.mnemonic(),
-			Self::MoveReg(inst) => inst.mnemonic(),
-			Self::Jmp(inst) => inst.mnemonic(),
-			Self::Load(inst) => inst.mnemonic(),
-			Self::Store(inst) => inst.mnemonic(),
-		}
-	}
-
 	fn fmt(&self, pos: crate::Pos, f: &mut std::fmt::Formatter) -> std::fmt::Result {
 		match self {
 			Self::AluAssign(inst) => inst.fmt(pos, f),

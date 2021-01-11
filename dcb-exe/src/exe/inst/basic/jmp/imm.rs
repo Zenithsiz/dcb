@@ -91,10 +91,6 @@ impl Encodable for Inst {
 }
 
 impl InstFmt for Inst {
-	fn mnemonic(&self) -> &'static str {
-		self.kind.mnemonic()
-	}
-
 	fn fmt(&self, pos: Pos, f: &mut std::fmt::Formatter) -> std::fmt::Result {
 		let mnemonic = self.kind.mnemonic();
 		let target = self.target(pos);

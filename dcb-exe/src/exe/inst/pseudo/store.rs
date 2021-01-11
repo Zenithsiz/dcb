@@ -53,10 +53,6 @@ impl InstSize for Inst {
 }
 
 impl InstFmt for Inst {
-	fn mnemonic(&self) -> &'static str {
-		self.kind.mnemonic()
-	}
-
 	fn fmt(&self, _pos: crate::Pos, f: &mut std::fmt::Formatter) -> std::fmt::Result {
 		let Self { dst, kind, target } = self;
 		let mnemonic = kind.mnemonic();

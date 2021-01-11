@@ -89,6 +89,30 @@ pub enum Inst {
 	},
 }
 
+impl Inst {
+	/// Returns this instruction's mnemonic
+	#[must_use]
+	const fn mnemonic(self) -> &'static str {
+		match self {
+			#[rustfmt::skip]
+			Self::Mult { kind, mode, .. } => match (kind, mode) {
+				(MultKind::Mult, MultMode::  Signed) => "mult",
+				(MultKind::Mult, MultMode::Unsigned) => "multu",
+				(MultKind::Div , MultMode::  Signed) => "div",
+				(MultKind::Div , MultMode::Unsigned) => "diu",
+			},
+			Self::MoveFrom { src, .. } => match src {
+				MultReg::Hi => "mfhi",
+				MultReg::Lo => "mflo",
+			},
+			Self::MoveTo { dst, .. } => match dst {
+				MultReg::Hi => "mthi",
+				MultReg::Lo => "mtlo",
+			},
+		}
+	}
+}
+
 impl Decodable for Inst {
 	type Raw = Raw;
 
@@ -152,30 +176,9 @@ impl Encodable for Inst {
 }
 
 impl InstFmt for Inst {
-	fn mnemonic(&self) -> &'static str {
-		match self {
-			#[rustfmt::skip]
-			Self::Mult { kind, mode, .. } => match (kind, mode) {
-				(MultKind::Mult, MultMode::  Signed) => "mult",
-				(MultKind::Mult, MultMode::Unsigned) => "multu",
-				(MultKind::Div , MultMode::  Signed) => "div",
-				(MultKind::Div , MultMode::Unsigned) => "diu",
-			},
-			Self::MoveFrom { src, .. } => match src {
-				MultReg::Hi => "mfhi",
-				MultReg::Lo => "mflo",
-			},
-			Self::MoveTo { dst, .. } => match dst {
-				MultReg::Hi => "mthi",
-				MultReg::Lo => "mtlo",
-			},
-		}
-	}
-
 	fn fmt(&self, _pos: crate::Pos, f: &mut std::fmt::Formatter) -> std::fmt::Result {
 		let mnemonic = self.mnemonic();
 		match self {
-			#[rustfmt::skip]
 			Self::Mult { lhs, rhs, .. } => write!(f, "{mnemonic} {lhs}, {rhs}"),
 			Self::MoveFrom { dst: arg, .. } | Self::MoveTo { src: arg, .. } => write!(f, "{mnemonic} {arg}"),
 		}

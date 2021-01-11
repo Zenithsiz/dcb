@@ -6,6 +6,7 @@
 
 // Modules
 pub mod alu;
+pub mod co;
 pub mod cond;
 pub mod jmp;
 pub mod load;
@@ -48,6 +49,9 @@ pub enum Raw {
 
 	/// Syscall
 	Sys(sys::Raw),
+
+	/// Co-processor
+	Co(u32),
 }
 
 impl Raw {
@@ -57,8 +61,7 @@ impl Raw {
 	#[allow(clippy::many_single_char_names)] // `bitmatch` can only output single character names.
 	pub fn from_u32(raw: u32) -> Option<Self> {
 		#[rustfmt::skip]
-		let raw = #[bitmatch]
-		match raw {
+		let raw = #[bitmatch] match raw {
 			"000000_?????_ttttt_ddddd_iiiii_0000ff" => Self::Shift(shift::Raw::Imm(shift::imm::Raw {       t, d, i, f })),
 			"000000_sssss_ttttt_ddddd_?????_0001ff" => Self::Shift(shift::Raw::Reg(shift::reg::Raw {    s, t, d,    f })),
 			"000000_sssss_?????_ddddd_?????_00100f" => Self::Jmp  (jmp  ::Raw::Reg(jmp  ::reg::Raw {    s,    d,    f })),
@@ -71,18 +74,7 @@ impl Raw {
 			"001ppp_sssss_ttttt_iiiii_iiiii_iiiiii" => Self::Alu  (alu  ::Raw::Imm(alu  ::imm::Raw { p, s, t,    i    })),
 			"100ppp_sssss_ttttt_iiiii_iiiii_iiiiii" => Self::Load (                load ::     Raw { p, s, t,    i    } ),
 			"101ppp_sssss_ttttt_iiiii_iiiii_iiiiii" => Self::Store(                store::     Raw { p, s, t,    i    } ),
-
-			/*
-			"0100nn_1iiii_iiiii_iiiii_iiiii_iiiiii" => CopN { n: n.truncate(), imm: i},
-			"0100nn_00000_ttttt_ddddd_?????_000000" => MfcN { n: n.truncate(), rt: reg(t)?, rd: reg(d)? },
-			"0100nn_00010_ttttt_ddddd_?????_000000" => CfcN { n: n.truncate(), rt: reg(t)?, rd: reg(d)? },
-			"0100nn_00100_ttttt_ddddd_?????_000000" => MtcN { n: n.truncate(), rt: reg(t)?, rd: reg(d)? },
-			"0100nn_00110_ttttt_ddddd_?????_000000" => CtcN { n: n.truncate(), rt: reg(t)?, rd: reg(d)? },
-			"0100nn_01000_00000_iiiii_iiiii_iiiiii" => BcNf { n: n.truncate(), target: i.truncate() },
-			"0100nn_01000_00001_iiiii_iiiii_iiiiii" => BcNt { n: n.truncate(), target: i.truncate() },
-			"1100nn_sssss_ttttt_iiiii_iiiii_iiiiii" => LwcN { n: n.truncate(), rs: reg(s)?, rt: reg(t)?, imm: i.truncate() },
-			"1110nn_sssss_ttttt_iiiii_iiiii_iiiiii" => SwcN { n: n.truncate(), rs: reg(s)?, rt: reg(t)?, imm: i.truncate() },
-			*/
+			"?1????_?????_?????_?????_?????_??????" => Self::Co   (raw),
 			_ => return None,
 		};
 
@@ -107,6 +99,7 @@ impl Raw {
 			Self::Alu  (alu  ::Raw::Imm(alu  ::imm::Raw { p, s, t,    i    })) => bitpack!("001ppp_sssss_ttttt_iiiii_iiiii_iiiiii"),
 			Self::Load (                load ::     Raw { p, s, t,    i    } ) => bitpack!("100ppp_sssss_ttttt_iiiii_iiiii_iiiiii"),
 			Self::Store(                store::     Raw { p, s, t,    i    } ) => bitpack!("101ppp_sssss_ttttt_iiiii_iiiii_iiiiii"),
+			Self::Co   (raw) => raw,
 		}
 	}
 }
@@ -142,6 +135,9 @@ pub enum Inst {
 
 	/// Syscall
 	Sys(sys::Inst),
+
+	/// Co-processor
+	Co(co::Inst),
 }
 
 
@@ -161,6 +157,7 @@ impl Decodable for Inst {
 			Raw::Shift(raw) => Self::Shift(shift::Inst::decode(raw)?),
 			Raw::Store(raw) => Self::Store(store::Inst::decode(raw)?),
 			Raw::Sys  (raw) => Self::Sys  (sys  ::Inst::decode(raw)?),
+			Raw::Co   (raw) => Self::Co   (co   ::Inst::decode(raw)?),
 		};
 
 		Some(inst)
@@ -180,6 +177,7 @@ impl Encodable for Inst {
 			Self::Shift(inst) => Raw::Shift(inst.encode()),
 			Self::Store(inst) => Raw::Store(inst.encode()),
 			Self::Sys  (inst) => Raw::Sys  (inst.encode()),
+			Self::Co   (inst) => Raw::Co   (inst.encode()),
 		}
 	}
 }
@@ -193,21 +191,6 @@ impl<T: Decodable> InstSize for T {
 
 impl InstFmt for Inst {
 	#[rustfmt::skip]
-	fn mnemonic(&self) -> &'static str {
-		match self {
-			Self::Alu  (inst) => inst.mnemonic(),
-			Self::Cond (inst) => inst.mnemonic(),
-			Self::Jmp  (inst) => inst.mnemonic(),
-			Self::Load (inst) => inst.mnemonic(),
-			Self::Lui  (inst) => inst.mnemonic(),
-			Self::Mult (inst) => inst.mnemonic(),
-			Self::Shift(inst) => inst.mnemonic(),
-			Self::Store(inst) => inst.mnemonic(),
-			Self::Sys  (inst) => inst.mnemonic(),
-		}
-	}
-
-	#[rustfmt::skip]
 	fn fmt(&self, pos: crate::Pos, f: &mut std::fmt::Formatter) -> std::fmt::Result {
 		match self {
 			Self::Alu  (inst) => inst.fmt(pos, f),
@@ -219,6 +202,7 @@ impl InstFmt for Inst {
 			Self::Shift(inst) => inst.fmt(pos, f),
 			Self::Store(inst) => inst.fmt(pos, f),
 			Self::Sys  (inst) => inst.fmt(pos, f),
+			Self::Co   (inst) => inst.fmt(pos, f),
 		}
 	}
 }

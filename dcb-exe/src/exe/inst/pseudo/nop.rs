@@ -44,16 +44,10 @@ impl InstSize for Inst {
 }
 
 impl InstFmt for Inst {
-	fn mnemonic(&self) -> &'static str {
-		"nop"
-	}
-
 	fn fmt(&self, _pos: crate::Pos, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-		let mnemonic = self.mnemonic();
-
 		match self.len {
-			1 => write!(f, "{mnemonic}"),
-			len => write!(f, "{mnemonic} {}", len),
+			1 => write!(f, "nop"),
+			len => write!(f, "nop {}", len),
 		}
 	}
 }
