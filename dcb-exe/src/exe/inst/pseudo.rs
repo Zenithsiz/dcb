@@ -7,11 +7,11 @@
 // Modules
 pub mod alu_assign;
 pub mod jmp;
+pub mod load;
 pub mod load_imm;
-//pub mod load;
 pub mod move_reg;
 pub mod nop;
-//pub mod store;
+pub mod store;
 
 // Imports
 use super::{basic, InstFmt, InstSize};
@@ -34,35 +34,12 @@ pub enum Inst {
 
 	/// Jump
 	Jmp(jmp::Inst),
-	/*
+
 	/// Load
-	Load(LoadPseudoInst),
+	Load(load::Inst),
 
 	/// Store
-	Store(StorePseudoInst),
-	*/
-
-	/*
-	/// Subtract immediate
-	/// Alias for `addi $rt, $rs, -imm`
-	#[display(fmt = "subi {rt}, {rs}, {imm:#x}")]
-	Subi { rt: Register, rs: Register, imm: u32 },
-
-	/// Subtract immediate sign-extended
-	/// Alias for `addiu $rt, $rs, -imm`
-	#[display(fmt = "subiu {rt}, {rs}, {imm:#x}")]
-	Subiu { rt: Register, rs: Register, imm: u32 },
-
-	/// Subtract immediate assign
-	/// Alias for `subi $rx, $rx, imm`
-	#[display(fmt = "subi {rx}, {imm:#x}")]
-	SubiAssign { rx: Register, imm: u32 },
-
-	/// Subtract immediate sign-extended assign
-	/// Alias for `subiu $rx, $rx, imm`
-	#[display(fmt = "subiu {rx}, {imm:#x}")]
-	SubiuAssign { rx: Register, imm: u32 },
-	*/
+	Store(store::Inst),
 }
 
 impl Decodable for Inst {
@@ -73,6 +50,8 @@ impl Decodable for Inst {
 		.or_else(     || alu_assign::Inst::decode(insts.clone()).map(Self::AluAssign))
 		.or_else(     || nop       ::Inst::decode(insts.clone()).map(Self::Nop      ))
 		.or_else(     || jmp       ::Inst::decode(insts.clone()).map(Self::Jmp      ))
+		.or_else(     || load      ::Inst::decode(insts.clone()).map(Self::Load     ))
+		.or_else(     || store     ::Inst::decode(insts.clone()).map(Self::Store    ))
 		.or_else(move || move_reg  ::Inst::decode(       insts        ).map(Self::MoveReg  ))
 	}
 }
@@ -85,6 +64,8 @@ impl InstSize for Inst {
 			Self::Nop(inst) => inst.size(),
 			Self::MoveReg(inst) => inst.size(),
 			Self::Jmp(inst) => inst.size(),
+			Self::Load(inst) => inst.size(),
+			Self::Store(inst) => inst.size(),
 		}
 	}
 }
@@ -97,6 +78,8 @@ impl InstFmt for Inst {
 			Self::Nop(inst) => inst.mnemonic(),
 			Self::MoveReg(inst) => inst.mnemonic(),
 			Self::Jmp(inst) => inst.mnemonic(),
+			Self::Load(inst) => inst.mnemonic(),
+			Self::Store(inst) => inst.mnemonic(),
 		}
 	}
 
@@ -107,23 +90,11 @@ impl InstFmt for Inst {
 			Self::Nop(inst) => inst.fmt(pos, f),
 			Self::MoveReg(inst) => inst.fmt(pos, f),
 			Self::Jmp(inst) => inst.fmt(pos, f),
+			Self::Load(inst) => inst.fmt(pos, f),
+			Self::Store(inst) => inst.fmt(pos, f),
 		}
 	}
 }
-
-/*
-impl PseudoInst {
-	pub fn decode(iter: InstIter<'_, impl Iterator<Item = u32> + Clone>) -> Option<Self> {
-		LoadPseudoInst::decode(iter)
-			.or_else(|| StorePseudoInst::decode(iter))
-			.or_else(|| MoveRegPseudoInst::decode(iter))
-			.or_else(|| LoadImmInst::decode(iter))
-			.or_else(|| NopInst::decode(iter))
-			.or_else(|| AluAssignInst::decode(iter))
-			.or_else(|| JmpPseudoInst::decode(iter))
-	}
-}
-*/
 
 /// A decodable pseudo instruction
 pub trait Decodable: InstSize + Sized {

@@ -87,8 +87,8 @@ impl Decodable for Inst {
 		};
 
 		Some(Self {
-			src: Register::new(raw.t)?,
-			dst: Register::new(raw.s)?,
+			src: Register::new(raw.s)?,
+			dst: Register::new(raw.t)?,
 			offset: raw.i.truncated::<u16>().as_signed(),
 			kind,
 		})
@@ -103,8 +103,8 @@ impl Encodable for Inst {
 			Kind::Word => 0x3,
 			Kind::WordRight => 0x6,
 		};
-		let t = self.src.idx();
-		let s = self.dst.idx();
+		let s = self.src.idx();
+		let t = self.dst.idx();
 		let i = self.offset.as_unsigned().zero_extended::<u32>();
 
 		Raw { p, s, t, i }
