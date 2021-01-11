@@ -1,42 +1,60 @@
 //! Nop
 
 // Imports
-use crate::exe::inst::{
-	basic::{
-		special::{
-			shift::{reg::ShiftRegFunc, ShiftImmInst},
-			ShiftInst,
-		},
-		InstIter, SpecialInst,
-	},
-	BasicInst, Register,
-};
+use crate::exe::inst::{basic, InstFmt, InstSize, Register};
+
+use super::Decodable;
 
 /// No-op
 ///
-/// Alias for `sll $zr, $zr, 0`.
+/// Alias for any number of `sll $zr, $zr, 0`.
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
-#[derive(derive_more::Display)]
-#[display(fmt = "nop ")]
-pub struct NopInst {}
+pub struct Inst {
+	/// Length of this nop, in instructions
+	len: usize,
+}
 
-impl NopInst {
-	/// Decodes this pseudo instruction
-	#[must_use]
-	pub fn decode(iter: InstIter<'_, impl Iterator<Item = u32> + Clone>) -> Option<Self> {
-		let peeker = iter.peeker();
-		let inst = match peeker.next()?? {
-			BasicInst::AluImm(SpecialInst::Shift(ShiftInst::Imm(ShiftImmInst {
-				dst: Register::Zr,
-				lhs: Register::Zr,
-				rhs: 0,
-				func: ShiftRegFunc::LeftLogical,
-			}))) => Self,
+impl Decodable for Inst {
+	fn decode(insts: impl Iterator<Item = basic::Inst> + Clone) -> Option<Self> {
+		// Get how many nops there are, in a row
+		let len = insts
+			.take_while(|inst| {
+				matches!(
+					inst,
+					basic::Inst::Shift(basic::shift::Inst::Imm(basic::shift::imm::Inst {
+						dst:  Register::Zr,
+						lhs:  Register::Zr,
+						rhs:  0,
+						kind: basic::shift::imm::Kind::LeftLogical,
+					}))
+				)
+			})
+			.count();
 
-			_ => return None,
-		};
+		match len {
+			0 => None,
+			_ => Some(Self { len }),
+		}
+	}
+}
 
-		peeker.apply();
-		return inst;
+impl InstSize for Inst {
+	fn size(&self) -> usize {
+		4 * self.len
+	}
+}
+
+impl InstFmt for Inst {
+	fn mnemonic(&self) -> &'static str {
+		"nop"
+	}
+
+	fn fmt(&self, _pos: crate::Pos, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+		let mnemonic = self.mnemonic();
+
+		match self.len {
+			1 => write!(f, "{mnemonic}"),
+			len => write!(f, "{mnemonic} {}", len),
+		}
 	}
 }

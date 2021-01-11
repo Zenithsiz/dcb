@@ -10,7 +10,7 @@ pub mod load_imm;
 //pub mod jmp;
 //pub mod load;
 //pub mod move_reg;
-//pub mod nop;
+pub mod nop;
 //pub mod store;
 
 // Imports
@@ -25,6 +25,9 @@ pub enum Inst {
 
 	/// Load immediate
 	LoadImm(load_imm::Inst),
+
+	/// No-op
+	Nop(nop::Inst),
 	/*
 	/// Load
 	Load(LoadPseudoInst),
@@ -37,9 +40,6 @@ pub enum Inst {
 
 	/// Load immediate
 	LoadImm(LoadImmInst),
-
-	/// No-op
-	Nop(NopInst),
 
 	*/
 	/*
@@ -70,7 +70,8 @@ impl Decodable for Inst {
 		// Note: Order is important
 		load_imm::Inst::decode(insts.clone())
 			.map(Self::LoadImm)
-			.or_else(|| alu_assign::Inst::decode(insts).map(Self::AluAssign))
+			.or_else(|| alu_assign::Inst::decode(insts.clone()).map(Self::AluAssign))
+			.or_else(move || nop::Inst::decode(insts).map(Self::Nop))
 	}
 }
 
@@ -79,6 +80,7 @@ impl InstSize for Inst {
 		match self {
 			Self::AluAssign(inst) => inst.size(),
 			Self::LoadImm(inst) => inst.size(),
+			Self::Nop(inst) => inst.size(),
 		}
 	}
 }
@@ -88,6 +90,7 @@ impl InstFmt for Inst {
 		match self {
 			Self::AluAssign(inst) => inst.mnemonic(),
 			Self::LoadImm(inst) => inst.mnemonic(),
+			Self::Nop(inst) => inst.mnemonic(),
 		}
 	}
 
@@ -95,6 +98,7 @@ impl InstFmt for Inst {
 		match self {
 			Self::AluAssign(inst) => inst.fmt(pos, f),
 			Self::LoadImm(inst) => inst.fmt(pos, f),
+			Self::Nop(inst) => inst.fmt(pos, f),
 		}
 	}
 }
