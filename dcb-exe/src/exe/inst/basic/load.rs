@@ -5,6 +5,7 @@ use crate::exe::inst::{
 	basic::{Decodable, Encodable},
 	InstFmt, Register,
 };
+use dcb_util::SignedHex;
 use int_conv::{Signed, Truncated, ZeroExtended};
 
 /// Load instruction kind
@@ -128,11 +129,10 @@ impl InstFmt for Inst {
 		self.kind.mnemonic()
 	}
 
-	fn fmt(&self, pos: crate::Pos, _bytes: &[u8], f: &mut std::fmt::Formatter) -> std::fmt::Result {
+	fn fmt(&self, _pos: crate::Pos, _bytes: &[u8], f: &mut std::fmt::Formatter) -> std::fmt::Result {
 		let Self { dst, src, offset, kind } = self;
 		let mnemonic = kind.mnemonic();
-		let address = pos + 4 * offset;
 
-		write!(f, "{mnemonic} {dst}, {address}({src})")
+		write!(f, "{mnemonic} {dst}, {}({src})", SignedHex(offset))
 	}
 }
