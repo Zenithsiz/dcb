@@ -104,6 +104,10 @@ impl InstFmt for Inst {
 		let Self { dst, lhs, rhs, kind } = self;
 		let mnemonic = kind.mnemonic();
 
-		write!(f, "{mnemonic} {dst}, {lhs}, {rhs:#x}")
+		// If `$dst` and `$lhs` are the same, only print one of them
+		match dst == lhs {
+			true => write!(f, "{mnemonic} {dst}, {rhs:#x}"),
+			false => write!(f, "{mnemonic} {dst}, {lhs}, {rhs:#x}"),
+		}
 	}
 }

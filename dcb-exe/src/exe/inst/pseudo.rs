@@ -5,12 +5,10 @@
 //! via the [`Decodable`] trait.
 
 // Modules
-pub mod alu_assign;
 pub mod load;
 pub mod load_imm;
 pub mod move_reg;
 pub mod nop;
-pub mod shift_assign;
 pub mod store;
 
 // Imports
@@ -20,12 +18,6 @@ use super::{basic, InstFmt, InstSize};
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 #[derive(derive_more::TryInto)]
 pub enum Inst {
-	/// Alu self-assign
-	AluAssign(alu_assign::Inst),
-
-	/// Shift self-assign
-	ShiftAssign(shift_assign::Inst),
-
 	/// Load immediate
 	LoadImm(load_imm::Inst),
 
@@ -46,9 +38,7 @@ impl Decodable for Inst {
 	#[rustfmt::skip]
 	fn decode(insts: impl Iterator<Item = basic::Inst> + Clone) -> Option<Self> {
 		                 load_imm    ::Inst::decode(insts.clone()).map(Self::LoadImm    )
-		.or_else(     || nop         ::Inst::decode(insts.clone()).map(Self::Nop        )) // Note: Nop must come before `shift_assign`
-		.or_else(     || alu_assign  ::Inst::decode(insts.clone()).map(Self::AluAssign  ))
-		.or_else(     || shift_assign::Inst::decode(insts.clone()).map(Self::ShiftAssign))
+		.or_else(     || nop         ::Inst::decode(insts.clone()).map(Self::Nop        ))
 		.or_else(     || load        ::Inst::decode(insts.clone()).map(Self::Load       ))
 		.or_else(     || store       ::Inst::decode(insts.clone()).map(Self::Store      ))
 		.or_else(move || move_reg    ::Inst::decode(       insts        ).map(Self::MoveReg    ))
@@ -58,8 +48,6 @@ impl Decodable for Inst {
 impl InstSize for Inst {
 	fn size(&self) -> usize {
 		match self {
-			Self::AluAssign(inst) => inst.size(),
-			Self::ShiftAssign(inst) => inst.size(),
 			Self::LoadImm(inst) => inst.size(),
 			Self::Nop(inst) => inst.size(),
 			Self::MoveReg(inst) => inst.size(),
@@ -72,8 +60,6 @@ impl InstSize for Inst {
 impl InstFmt for Inst {
 	fn fmt(&self, pos: crate::Pos, f: &mut std::fmt::Formatter) -> std::fmt::Result {
 		match self {
-			Self::AluAssign(inst) => inst.fmt(pos, f),
-			Self::ShiftAssign(inst) => inst.fmt(pos, f),
 			Self::LoadImm(inst) => inst.fmt(pos, f),
 			Self::Nop(inst) => inst.fmt(pos, f),
 			Self::MoveReg(inst) => inst.fmt(pos, f),
