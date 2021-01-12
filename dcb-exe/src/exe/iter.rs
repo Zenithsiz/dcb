@@ -58,7 +58,7 @@ impl<'a> Iterator for Iter<'a> {
 	fn next(&mut self) -> Option<Self::Item> {
 		// If we're at the end, return `None`
 		let cur_pos = self.cur_pos;
-		if cur_pos >= self.exe.header.start_pos + self.exe.header.size {
+		if cur_pos >= self.exe.inst_range().end {
 			return None;
 		}
 
@@ -76,10 +76,7 @@ impl<'a> Iterator for Iter<'a> {
 
 			return Some(ExeItem::Data {
 				data,
-				insts: ParseIter::new(
-					&self.exe.bytes[cur_pos.as_mem_idx(self.exe.header.start_pos)..end_pos.as_mem_idx(self.exe.header.start_pos)],
-					cur_pos,
-				),
+				insts: ParseIter::new(&self.exe[cur_pos..end_pos], cur_pos),
 			});
 		}
 
@@ -88,16 +85,13 @@ impl<'a> Iterator for Iter<'a> {
 			self.cur_pos = func.end_pos;
 			return Some(ExeItem::Func {
 				func,
-				insts: ParseIter::new(
-					&self.exe.bytes[cur_pos.as_mem_idx(self.exe.header.start_pos)..func.end_pos.as_mem_idx(self.exe.header.start_pos)],
-					cur_pos,
-				),
+				insts: ParseIter::new(&self.exe[cur_pos..func.end_pos], cur_pos),
 			});
 		}
 
 		// Else return an iterator until the next data / function, or until end, if none or past the end.
-		let next_data = self.exe.data_table.range(cur_pos..).next();
-		let next_func = self.exe.func_table.range(cur_pos..).next();
+		let next_data = self.exe.data_table().range(cur_pos..).next();
+		let next_func = self.exe.func_table().range(cur_pos..).next();
 
 		let end_pos = match (next_data, next_func) {
 			(Some(next_data), Some(next_func)) => match next_data.pos < next_func.start_pos {
@@ -106,19 +100,16 @@ impl<'a> Iterator for Iter<'a> {
 			},
 			(Some(next_data), None) => next_data.pos,
 			(None, Some(next_func)) => next_func.start_pos,
-			(None, None) => self.exe.header.start_pos + self.exe.header.size,
+			(None, None) => self.exe.inst_range().end,
 		};
 
 		// Make sure to limit the end position
-		let end_pos = end_pos.min(self.exe.header.start_pos + self.exe.header.size);
+		let end_pos = end_pos.min(self.exe.inst_range().end);
 		self.cur_pos = end_pos;
 
 
 		Some(ExeItem::Unknown {
-			insts: ParseIter::new(
-				&self.exe.bytes[cur_pos.as_mem_idx(self.exe.header.start_pos)..end_pos.as_mem_idx(self.exe.header.start_pos)],
-				cur_pos,
-			),
+			insts: ParseIter::new(&self.exe[cur_pos..end_pos], cur_pos),
 		})
 	}
 }

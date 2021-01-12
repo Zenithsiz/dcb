@@ -25,6 +25,7 @@ use dcb_io::GameFile;
 use std::{
 	convert::TryFrom,
 	io::{Read, Seek, Write},
+	ops::{self, Range},
 };
 
 /// The game executable
@@ -33,7 +34,7 @@ pub struct Exe {
 	/// The executable header
 	header: Header,
 
-	/// All bytes within the executable
+	/// All instruction bytes within the executable.
 	bytes: Box<[u8]>,
 
 	/// The data table.
@@ -71,6 +72,14 @@ impl Exe {
 	#[must_use]
 	pub const fn func_table(&self) -> &FuncTable {
 		&self.func_table
+	}
+
+	/// Returns this executable's instruction range
+	#[must_use]
+	pub fn inst_range(&self) -> Range<Pos> {
+		let start = self.header.start_pos;
+		let end = self.header.start_pos + self.header.size;
+		start..end
 	}
 
 	/// Creates an iterator over this executable
@@ -121,5 +130,16 @@ impl Exe {
 			data_table,
 			func_table,
 		})
+	}
+}
+
+impl ops::Index<Range<Pos>> for Exe {
+	type Output = [u8];
+
+	fn index(&self, index: Range<Pos>) -> &Self::Output {
+		let start = index.start.offset_from(self.header.start_pos);
+		let end = index.end.offset_from(self.header.start_pos);
+
+		&self.bytes[start..end]
 	}
 }

@@ -13,10 +13,10 @@ use std::{convert::TryFrom, fmt, ops};
 pub struct Pos(pub u32);
 
 impl Pos {
-	/// Returns the memory position of this position
+	/// Calculated the offset between two positions
 	#[must_use]
-	pub fn as_mem_idx(self, start_pos: Self) -> usize {
-		usize::try_from(self - start_pos).expect("Failed to compute index")
+	pub fn offset_from(self, start_pos: Self) -> usize {
+		usize::try_from(self - start_pos).expect("Negative offset")
 	}
 }
 
