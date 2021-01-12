@@ -84,7 +84,11 @@ impl InstFmt for Inst {
 
 		match kind {
 			Kind::Jump => write!(f, "{mnemonic} {target}"),
-			Kind::JumpLink(reg) => write!(f, "{mnemonic} {target}, {reg}"),
+			Kind::JumpLink(reg) => match reg {
+				// If using `$ra`, don't output it.
+				Register::Ra => write!(f, "{mnemonic} {target}"),
+				reg => write!(f, "{mnemonic} {target}, {reg}"),
+			},
 		}
 	}
 }

@@ -55,23 +55,6 @@ pub enum Kind {
 	GreaterOrEqualZeroLink,
 }
 
-impl Kind {
-	/// Returns this instruction kind's mnemonic
-	#[must_use]
-	pub const fn mnemonic(self) -> &'static str {
-		match self {
-			Self::Equal(_) => "beq",
-			Self::NotEqual(_) => "bne",
-			Self::LessOrEqualZero => "blez",
-			Self::GreaterThanZero => "bgtz",
-			Self::LessThanZero => "bltz",
-			Self::GreaterOrEqualZero => "bgez",
-			Self::LessThanZeroLink => "bltzal",
-			Self::GreaterOrEqualZeroLink => "bgezal",
-		}
-	}
-}
-
 /// Condition instructions
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub struct Inst {
@@ -158,15 +141,24 @@ impl Inst {
 	pub fn fmt_target<'a>(self, target: impl fmt::Display + 'a) -> impl fmt::Display + 'a {
 		dcb_util::DisplayWrapper::new(move |f| {
 			let Self { kind, arg, .. } = self;
-			let mnemonic = kind.mnemonic();
+
+			// `beq $zr, $zr, offset` => `b offset`
+			// `beq $zr, $arg, offset` => `beqz $arg, offset`
+			// `beq $zr, $arg, offset` => `bnez $arg, offset`
 			match kind {
-				Kind::Equal(reg) | Kind::NotEqual(reg) => write!(f, "{mnemonic} {arg}, {reg}, {target}"),
-				Kind::LessOrEqualZero |
-				Kind::GreaterThanZero |
-				Kind::LessThanZero |
-				Kind::GreaterOrEqualZero |
-				Kind::LessThanZeroLink |
-				Kind::GreaterOrEqualZeroLink => write!(f, "{mnemonic} {arg}, {target}"),
+				Kind::Equal(Register::Zr) => match arg {
+					Register::Zr => write!(f, "b {target}"),
+					arg => write!(f, "beqz {arg}, {target}"),
+				},
+				Kind::Equal(reg) => write!(f, "beq {arg}, {reg}, {target}"),
+				Kind::NotEqual(Register::Zr) => write!(f, "bnez {arg}, {target}"),
+				Kind::NotEqual(reg) => write!(f, "bne {arg}, {reg}, {target}"),
+				Kind::LessOrEqualZero => write!(f, "blez {arg}, {target}"),
+				Kind::GreaterThanZero => write!(f, "bgtz {arg}, {target}"),
+				Kind::LessThanZero => write!(f, "bltz {arg}, {target}"),
+				Kind::GreaterOrEqualZero => write!(f, "bgez {arg}, {target}"),
+				Kind::LessThanZeroLink => write!(f, "bltzal {arg}, {target}"),
+				Kind::GreaterOrEqualZeroLink => write!(f, "bgezal {arg}, {target}"),
 			}
 		})
 	}

@@ -6,7 +6,6 @@
 
 // Modules
 pub mod alu_assign;
-pub mod jmp;
 pub mod load;
 pub mod load_imm;
 pub mod move_reg;
@@ -36,9 +35,6 @@ pub enum Inst {
 	/// Move register
 	MoveReg(move_reg::Inst),
 
-	/// Jump
-	Jmp(jmp::Inst),
-
 	/// Load
 	Load(load::Inst),
 
@@ -53,7 +49,6 @@ impl Decodable for Inst {
 		.or_else(     || nop         ::Inst::decode(insts.clone()).map(Self::Nop        )) // Note: Nop must come before `shift_assign`
 		.or_else(     || alu_assign  ::Inst::decode(insts.clone()).map(Self::AluAssign  ))
 		.or_else(     || shift_assign::Inst::decode(insts.clone()).map(Self::ShiftAssign))
-		.or_else(     || jmp         ::Inst::decode(insts.clone()).map(Self::Jmp        ))
 		.or_else(     || load        ::Inst::decode(insts.clone()).map(Self::Load       ))
 		.or_else(     || store       ::Inst::decode(insts.clone()).map(Self::Store      ))
 		.or_else(move || move_reg    ::Inst::decode(       insts        ).map(Self::MoveReg    ))
@@ -68,7 +63,6 @@ impl InstSize for Inst {
 			Self::LoadImm(inst) => inst.size(),
 			Self::Nop(inst) => inst.size(),
 			Self::MoveReg(inst) => inst.size(),
-			Self::Jmp(inst) => inst.size(),
 			Self::Load(inst) => inst.size(),
 			Self::Store(inst) => inst.size(),
 		}
@@ -83,7 +77,6 @@ impl InstFmt for Inst {
 			Self::LoadImm(inst) => inst.fmt(pos, f),
 			Self::Nop(inst) => inst.fmt(pos, f),
 			Self::MoveReg(inst) => inst.fmt(pos, f),
-			Self::Jmp(inst) => inst.fmt(pos, f),
 			Self::Load(inst) => inst.fmt(pos, f),
 			Self::Store(inst) => inst.fmt(pos, f),
 		}

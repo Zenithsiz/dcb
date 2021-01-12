@@ -165,7 +165,6 @@ fn main() -> Result<(), anyhow::Error> {
 						Inst::Basic (basic ::Inst::Load   (inst)) => print!("{}", inst.fmt_value(pos)),
 						Inst::Basic (basic ::Inst::Store  (inst)) => print!("{}", inst.fmt_value(pos)),
 						Inst::Pseudo(pseudo::Inst::LoadImm(inst)) => print!("{}", inst.fmt_value(pos)),
-						Inst::Pseudo(pseudo::Inst::Jmp    (inst)) => print!("{}", inst.fmt_value(pos)),
 						Inst::Pseudo(pseudo::Inst::Load   (inst)) => print!("{}", inst.fmt_value(pos)),
 						Inst::Pseudo(pseudo::Inst::Store  (inst)) => print!("{}", inst.fmt_value(pos)),
 						inst => print!("{}", inst.fmt_value(pos)),
