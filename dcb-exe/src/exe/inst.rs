@@ -38,6 +38,7 @@ pub use target::InstTarget;
 
 // Imports
 use self::{basic::Decodable as _, pseudo::Decodable as _};
+use super::{DataTable, FuncTable};
 use crate::Pos;
 
 /// An assembler instruction.
@@ -58,7 +59,10 @@ impl<'a> Inst<'a> {}
 
 impl<'a> Inst<'a> {
 	/// Decodes an instruction from bytes and it's position.
-	pub fn decode(pos: Pos, bytes: &'a [u8]) -> Option<Self> {
+	pub fn decode(pos: Pos, bytes: &'a [u8], data_table: &'a DataTable, _func_table: &'a FuncTable) -> Option<Self> {
+		// If there's data in this position, make sure to read the correct type
+		if let Some(_data) = data_table.get(pos) {}
+
 		// If we're not aligned to a word, decode a directive
 		if !pos.is_word_aligned() {
 			let directive = Directive::decode(pos, bytes)?;

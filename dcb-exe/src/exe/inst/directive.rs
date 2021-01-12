@@ -71,45 +71,9 @@ pub enum ForceDecodeKind {
 }
 
 impl<'a> Directive<'a> {
-	/*
-	/// Positions that should be force decoded using a specific variant.
-	// TODO: Get this at run-time via a file.
-	pub const FORCE_DECODE_RANGES: &'static [ForceDecodeRange] = &[
-		ForceDecodeRange {
-			start: Included(Pos(0x80010000)),
-			end:   Excluded(Pos(0x80010008)),
-			kind:  ForceDecodeKind::Word,
-		},
-		ForceDecodeRange {
-			start: Included(Pos(0x8006fa20)),
-			end:   Excluded(Pos(0x8006fa24)),
-			kind:  ForceDecodeKind::HalfWord,
-		},
-		ForceDecodeRange {
-			start: Included(Inst::CODE_END),
-			end:   Unbounded,
-			kind:  ForceDecodeKind::Word,
-		},
-	];
-	*/
-}
-
-impl<'a> Directive<'a> {
 	/// Decodes a directive
 	#[must_use]
 	pub fn decode(pos: Pos, bytes: &'a [u8]) -> Option<Self> {
-		/*
-		// Check if we need to force decode it
-		if let Some(ForceDecodeRange { kind, .. }) = Self::FORCE_DECODE_RANGES.iter().find(|range| range.contains(&pos)) {
-			#[rustfmt::skip]
-			return match kind {
-				ForceDecodeKind::Word     => bytes.next_u32().map(Self::Dw),
-				ForceDecodeKind::HalfWord => bytes.next_u16().map(Self::Dh),
-				ForceDecodeKind::Byte     => bytes.next_u8 ().map(Self::Db),
-			};
-		}
-		*/
-
 		// If we're not half-word aligned, read a byte
 		if !pos.is_half_word_aligned() {
 			return Some(Self::Db(bytes.next_u8()?));

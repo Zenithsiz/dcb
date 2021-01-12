@@ -25,7 +25,7 @@ use dcb_io::GameFile;
 use std::{
 	convert::TryFrom,
 	io::{Read, Seek, Write},
-	ops::{self, Range},
+	ops::Range,
 };
 
 /// The game executable
@@ -90,8 +90,18 @@ impl Exe {
 
 	/// Returns a parsing iterator for all instructions
 	#[must_use]
-	pub const fn parse_iter(&self) -> inst::ParseIter {
-		inst::ParseIter::new(&*self.bytes, self.header.start_pos)
+	pub fn parse_iter(&self) -> inst::ParseIter {
+		self.parse_iter_from(self.insts_range())
+	}
+
+	/// Returns a parsing iterator starting from a range
+	#[must_use]
+	pub fn parse_iter_from(&self, range: Range<Pos>) -> inst::ParseIter {
+		let start = range.start.offset_from(self.header.start_pos);
+		let end = range.end.offset_from(self.header.start_pos);
+		let bytes = &self.bytes[start..end];
+
+		inst::ParseIter::new(bytes, &self.data_table, &self.func_table, range.start)
 	}
 }
 
@@ -123,12 +133,12 @@ impl Exe {
 		let known_func_table = FuncTable::get_known().map_err(DeserializeError::KnownFuncTable)?;
 
 		// Parse all instructions
-		let insts = inst::ParseIter::new(&*bytes, header.start_pos);
+		let insts = inst::ParseIter::new(&*bytes, &known_data_table, &known_func_table, header.start_pos);
 
 		// Then parse all heuristic tables
 		let heuristics_data_table = DataTable::search_instructions(insts_range.clone(), insts.clone());
-		let data_table = known_data_table.merge_with(heuristics_data_table);
 		let heuristics_func_table = FuncTable::search_instructions(insts_range, insts);
+		let data_table = known_data_table.merge_with(heuristics_data_table);
 		let func_table = known_func_table.merge_with(heuristics_func_table);
 
 		Ok(Self {
@@ -137,16 +147,5 @@ impl Exe {
 			data_table,
 			func_table,
 		})
-	}
-}
-
-impl ops::Index<Range<Pos>> for Exe {
-	type Output = [u8];
-
-	fn index(&self, index: Range<Pos>) -> &Self::Output {
-		let start = index.start.offset_from(self.header.start_pos);
-		let end = index.end.offset_from(self.header.start_pos);
-
-		&self.bytes[start..end]
 	}
 }

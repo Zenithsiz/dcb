@@ -129,7 +129,7 @@ impl DataTable {
 						name: format!("string_{idx}"),
 						desc: String::new(),
 						pos,
-						ty: DataType::Array { ty: Box::new(DataType::AsciiChar), len: string.len() },
+						ty: DataType::AsciiStr { len: string.len() },
 					},
 					Directive::Dw(_) => Data {
 						name: format!("data_w{idx}"),

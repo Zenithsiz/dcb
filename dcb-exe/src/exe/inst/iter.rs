@@ -2,7 +2,10 @@
 
 // Imports
 use super::{Inst, InstSize};
-use crate::Pos;
+use crate::{
+	exe::{DataTable, FuncTable},
+	Pos,
+};
 
 /// Parsing iterator.
 ///
@@ -14,13 +17,24 @@ pub struct ParseIter<'a> {
 
 	/// Starting position of bytes
 	cur_pos: Pos,
+
+	/// Data table
+	data_table: &'a DataTable,
+
+	/// Func table
+	func_table: &'a FuncTable,
 }
 
 impl<'a> ParseIter<'a> {
 	/// Creates a new parsing iterator
 	#[must_use]
-	pub const fn new(bytes: &'a [u8], start_pos: Pos) -> Self {
-		Self { bytes, cur_pos: start_pos }
+	pub const fn new(bytes: &'a [u8], data_table: &'a DataTable, func_table: &'a FuncTable, start_pos: Pos) -> Self {
+		Self {
+			bytes,
+			cur_pos: start_pos,
+			data_table,
+			func_table,
+		}
 	}
 
 	/// Returns the current position of the iterator
@@ -35,7 +49,7 @@ impl<'a> Iterator for ParseIter<'a> {
 
 	fn next(&mut self) -> Option<Self::Item> {
 		// Try to read an instruction
-		let inst = Inst::decode(self.cur_pos, self.bytes)?;
+		let inst = Inst::decode(self.cur_pos, self.bytes, self.data_table, self.func_table)?;
 		let pos = self.cur_pos;
 
 		// Then skip it in our bytes

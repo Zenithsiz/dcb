@@ -2,19 +2,31 @@
 - name: CrossMoveEffectStringsRaw
   desc: The cross move effect string table with raw symbols
   pos: 0x8006e47c
-  ty: "[u32; 16]"
+  ty:
+    Array:
+      ty: u32
+      len: 16
 - name: CrossMoveEffectStrings
   desc: The cross move effect string table with escaped symbols
   pos: 0x8006e4bc
-  ty: "[u32; 16]"
+  ty:
+    Array:
+      ty: u32
+      len: 16
 - name: PartnerEffectStrings
   desc: Partner effects string table.
   pos: 0x8006edb4
-  ty: "[u32; 82]"
+  ty:
+    Array:
+      ty: u32
+      len: 82
 - name: CrossMoveEffectStrings
   desc: The cross move effect string table with escaped symbols
   pos: 0x8006e4bc
-  ty: "[u32; 18]"
+  ty:
+    Array:
+      ty: u32
+      len: 18
 
 - name: HeapStartKuseg
   desc: Stores the start of the heap in KUSEG (Minus 0x4).
@@ -83,20 +95,32 @@
 - name: FuncList1Ptr
   desc: Pointer to FuncList1
   pos: 0x80070aa8
-  ty: "[u32; 7]"
+  ty:
+    Array:
+      ty: u32
+      len: 7
 
 # Expansion region 1
 - name: ExpansionRegion1Header
   pos: 0x1f00000
-  ty: "[u32; 0x40]"
+  ty:
+    Array:
+      ty: u32
+      len: 0x40
 - name: ExpansionRegion1Data
   pos: 0x1f00100
-  ty: "[u32; 0x1ffC0]"
+  ty:
+    Array:
+      ty: u32
+      len: 0x1ffC0
 
 # Scratchpad
 - name: Scratchpad
   pos: 0x1f800000
-  ty: "[u32; 0x400]"
+  ty:
+    Array:
+      ty: u32
+      len: 0x400
 
 # Memory control 1
 - name: Expansion1BaseAddress
@@ -193,31 +217,52 @@
 - name: DMA_MDECin
   desc: DMA0 channel 0
   pos: 0x1f801080
-  ty: "[u32; 4]"
+  ty:
+    Array:
+      ty: u32
+      len: 4
 - name: DMA_MDECout
   desc: DMA1 channel 1
   pos: 0x1f801090
-  ty: "[u32; 4]"
+  ty:
+    Array:
+      ty: u32
+      len: 4
 - name: DMA_GPU
   desc: DMA2 channel 2
   pos: 0x1f8010a0
-  ty: "[u32; 4]"
+  ty:
+    Array:
+      ty: u32
+      len: 4
 - name: DMA_CDROM
   desc: DMA3 channel 3
   pos: 0x1f8010b0
-  ty: "[u32; 4]"
+  ty:
+    Array:
+      ty: u32
+      len: 4
 - name: DMA_SPU
   desc: DMA4 channel 4
   pos: 0x1f8010c0
-  ty: "[u32; 4]"
+  ty:
+    Array:
+      ty: u32
+      len: 4
 - name: DMA_PIO
   desc: DMA5 channel 5, Expansion port
   pos: 0x1f8010d0
-  ty: "[u32; 4]"
+  ty:
+    Array:
+      ty: u32
+      len: 4
 - name: DMA_OTC
   desc: DMA5 channel 5, Reverse clear OT (GPU)
   pos: 0x1f8010e0
-  ty: "[u32; 4]"
+  ty:
+    Array:
+      ty: u32
+      len: 4
 - name: DPCR
   desc: DMA Control register
   pos: 0x1f8010f0
@@ -273,7 +318,10 @@
 #       interleaved memory layout.
 - name: SPU_Voices
   pos: 0x1f801c00
-  ty: "[u32; 0x180]"
+  ty:
+    Array:
+      ty: u32
+      len: 0x180
 
 # SPU Control registers
 - name: SPU_MainVolumeLR
@@ -429,17 +477,29 @@
 - name: SPU_VoiceCurrentVolumeLR
   desc: Voices current volume
   pos: 0x1f801e00
-  ty: "[u32; 0x60]"
+  ty:
+    Array:
+      ty: u32
+      len: 0x60
 - name: SPU_Unknown2
   pos: 0x1f801e60
-  ty: "[u32; 0x4]"
+  ty:
+    Array:
+      ty: u32
+      len: 0x4
 - name: SPU_Unknown3
   pos: 0x1f801e80
-  ty: "[u32; 0x60]"
+  ty:
+    Array:
+      ty: u32
+      len: 0x60
 
 # TODO: Expansion region 2
 
 # BIOS Region
 - name: BIOS
   pos: 0x1fc00000
-  ty: "[u32; 0x20000]"
+  ty:
+    Array:
+      ty: u32
+      len: 0x20000
