@@ -9,7 +9,9 @@ use crate::{
 
 /// Parsing iterator.
 ///
-/// Parses instructions from a byte slice, `[u8]` along with it's position.
+/// Parses instruction from a byte slice, along with it's memory position.
+/// It also references the data and function table, force-decoding certain
+/// instructions if inside a data location or function table.
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub struct ParseIter<'a> {
 	/// Remaining bytes

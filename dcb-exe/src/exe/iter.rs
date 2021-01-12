@@ -4,7 +4,7 @@
 use super::{inst::ParseIter, Data, Func};
 use crate::{Exe, Pos};
 
-/// Iterator over executable parts
+/// Iterator over the executable's data locations, functions and others.
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub struct Iter<'a> {
 	/// Executable
@@ -15,8 +15,8 @@ pub struct Iter<'a> {
 }
 
 impl<'a> Iter<'a> {
-	/// Creates a new executable iterator
-	pub(crate) const fn new(exe: &'a Exe) -> Self {
+	/// Creates a new iterator
+	pub(super) const fn new(exe: &'a Exe) -> Self {
 		Self {
 			exe,
 			cur_pos: exe.header.start_pos,
@@ -24,7 +24,7 @@ impl<'a> Iter<'a> {
 	}
 }
 
-/// An executable item
+/// An executable's item
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub enum ExeItem<'a> {
 	/// A function
