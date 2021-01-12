@@ -4,7 +4,7 @@
 use crate::{
 	exe::inst::{
 		basic::{Decodable, Encodable},
-		InstFmt,
+		InstTarget, InstTargetFmt,
 	},
 	Pos,
 };
@@ -51,12 +51,6 @@ pub struct Inst {
 }
 
 impl Inst {
-	/// Returns the target of this instruction
-	#[must_use]
-	pub fn target(self, pos: Pos) -> Pos {
-		Self::target_of(self.imm, pos)
-	}
-
 	/// Returns the target using an immediate
 	#[must_use]
 	pub fn target_of(imm: u32, pos: Pos) -> Pos {
@@ -90,10 +84,15 @@ impl Encodable for Inst {
 	}
 }
 
-impl InstFmt for Inst {
-	fn fmt(&self, pos: Pos, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+impl InstTarget for Inst {
+	fn target(&self, pos: Pos) -> Pos {
+		Self::target_of(self.imm, pos)
+	}
+}
+
+impl InstTargetFmt for Inst {
+	fn fmt(&self, _pos: Pos, target: impl std::fmt::Display, f: &mut std::fmt::Formatter) -> std::fmt::Result {
 		let mnemonic = self.kind.mnemonic();
-		let target = self.target(pos);
 
 		write!(f, "{mnemonic} {target}")
 	}

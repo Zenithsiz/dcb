@@ -166,19 +166,16 @@ fn main() -> Result<(), anyhow::Error> {
 
 /// Returns a display-able for an instruction inside a possible function
 #[must_use]
-#[rustfmt::skip]
 pub fn inst_display<'a>(inst: &'a Inst, exe: &'a Exe, func: Option<&'a Func>, pos: Pos) -> impl fmt::Display + 'a {
-	dcb_util::DisplayWrapper::new(move |f| {
-		match inst {
-			Inst::Basic (basic ::Inst::Cond   (inst)) => write!(f, "{}", self::inst_target_fmt(inst, pos, self::inst_target(exe, func, inst.target(pos)))),
-			Inst::Basic (basic ::Inst::Jmp    (inst)) => write!(f, "{}", self::inst_fmt(inst, pos)),
-			Inst::Basic (basic ::Inst::Load   (inst)) => write!(f, "{}", self::inst_fmt(inst, pos)),
-			Inst::Basic (basic ::Inst::Store  (inst)) => write!(f, "{}", self::inst_fmt(inst, pos)),
-			Inst::Pseudo(pseudo::Inst::LoadImm(inst)) => write!(f, "{}", self::inst_fmt(inst, pos)),
-			Inst::Pseudo(pseudo::Inst::Load   (inst)) => write!(f, "{}", self::inst_fmt(inst, pos)),
-			Inst::Pseudo(pseudo::Inst::Store  (inst)) => write!(f, "{}", self::inst_fmt(inst, pos)),
-			inst => write!(f, "{}", self::inst_fmt(inst, pos)),
-		}
+	dcb_util::DisplayWrapper::new(move |f| match inst {
+		Inst::Basic(basic::Inst::Cond(inst)) => write!(f, "{}", self::inst_target_fmt(inst, pos, self::inst_target(exe, func, inst.target(pos)))),
+		Inst::Basic(basic::Inst::Jmp(basic::jmp::Inst::Imm(inst))) => {
+			write!(f, "{}", self::inst_target_fmt(inst, pos, self::inst_target(exe, func, inst.target(pos))))
+		},
+		Inst::Pseudo(pseudo::Inst::LoadImm(inst)) => write!(f, "{}", self::inst_fmt(inst, pos)),
+		Inst::Pseudo(pseudo::Inst::Load(inst)) => write!(f, "{}", self::inst_fmt(inst, pos)),
+		Inst::Pseudo(pseudo::Inst::Store(inst)) => write!(f, "{}", self::inst_fmt(inst, pos)),
+		inst => write!(f, "{}", self::inst_fmt(inst, pos)),
 	})
 }
 
