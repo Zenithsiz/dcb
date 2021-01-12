@@ -2,7 +2,7 @@
 
 // Imports
 use crate::{
-	exe::inst::{basic, InstFmt, InstSize, Register},
+	exe::inst::{basic, InstSize, InstTarget, InstTargetFmt, Register},
 	Pos,
 };
 use int_conv::{Join, SignExtended, Signed};
@@ -52,9 +52,15 @@ impl InstSize for Inst {
 	}
 }
 
-impl InstFmt for Inst {
-	fn fmt(&self, _pos: crate::Pos, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-		let Self { dst, kind, target } = self;
+impl InstTarget for Inst {
+	fn target(&self, _pos: Pos) -> Pos {
+		self.target
+	}
+}
+
+impl InstTargetFmt for Inst {
+	fn fmt(&self, _pos: crate::Pos, target: impl std::fmt::Display, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+		let Self { dst, kind, .. } = self;
 		let mnemonic = kind.mnemonic();
 
 		write!(f, "{mnemonic} {dst}, {target}")

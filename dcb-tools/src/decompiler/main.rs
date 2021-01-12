@@ -167,6 +167,7 @@ fn main() -> Result<(), anyhow::Error> {
 /// Returns a display-able for an instruction inside a possible function
 #[must_use]
 pub fn inst_display<'a>(inst: &'a Inst, exe: &'a Exe, func: Option<&'a Func>, pos: Pos) -> impl fmt::Display + 'a {
+	// Overload the target of as many as possible using `inst_target`.
 	dcb_util::DisplayWrapper::new(move |f| match inst {
 		Inst::Basic(basic::Inst::Cond(inst)) => write!(f, "{}", self::inst_target_fmt(inst, pos, self::inst_target(exe, func, inst.target(pos)))),
 		Inst::Basic(basic::Inst::Jmp(basic::jmp::Inst::Imm(inst))) => {
@@ -179,8 +180,8 @@ pub fn inst_display<'a>(inst: &'a Inst, exe: &'a Exe, func: Option<&'a Func>, po
 				..
 			},
 		)) => write!(f, "{}", self::inst_target_fmt(inst, pos, self::inst_target(exe, func, Pos(*target)))),
-		Inst::Pseudo(pseudo::Inst::Load(inst)) => write!(f, "{}", self::inst_fmt(inst, pos)),
-		Inst::Pseudo(pseudo::Inst::Store(inst)) => write!(f, "{}", self::inst_fmt(inst, pos)),
+		Inst::Pseudo(pseudo::Inst::Load(inst)) => write!(f, "{}", self::inst_target_fmt(inst, pos, self::inst_target(exe, func, inst.target(pos)))),
+		Inst::Pseudo(pseudo::Inst::Store(inst)) => write!(f, "{}", self::inst_target_fmt(inst, pos, self::inst_target(exe, func, inst.target(pos)))),
 		inst => write!(f, "{}", self::inst_fmt(inst, pos)),
 	})
 }
