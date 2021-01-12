@@ -26,13 +26,15 @@ pub mod iter;
 pub mod pseudo;
 pub mod reg;
 pub mod size;
+pub mod target;
 
 // Exports
 pub use directive::Directive;
-pub use fmt::InstFmt;
+pub use fmt::{InstFmt, InstTargetFmt};
 pub use iter::ParseIter;
 pub use reg::Register;
 pub use size::InstSize;
+pub use target::InstTarget;
 
 // Imports
 use self::{basic::Decodable as _, pseudo::Decodable as _};

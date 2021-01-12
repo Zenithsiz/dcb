@@ -8,6 +8,7 @@ pub struct DisplayWrapper<F: FnMut(&mut fmt::Formatter) -> fmt::Result>(RefCell<
 
 impl<F: FnMut(&mut fmt::Formatter) -> fmt::Result> DisplayWrapper<F> {
 	/// Creates a new display wrapper
+	#[must_use]
 	pub fn new(func: F) -> Self {
 		Self(RefCell::new(func))
 	}

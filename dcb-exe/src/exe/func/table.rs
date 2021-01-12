@@ -19,7 +19,7 @@ pub use error::GetKnownError;
 // Imports
 use super::Func;
 use crate::exe::{
-	inst::{basic, Directive, Inst, Register},
+	inst::{basic, Directive, Inst, InstTarget, Register},
 	Pos,
 };
 use dcb_util::DiscardingSortedMergeIter;

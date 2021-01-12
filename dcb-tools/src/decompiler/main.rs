@@ -82,7 +82,7 @@ use std::fmt;
 use anyhow::Context;
 use dcb_exe::{
 	exe::{
-		inst::{basic, pseudo, Inst, InstFmt},
+		inst::{basic, pseudo, Inst, InstFmt, InstTarget, InstTargetFmt},
 		iter::ExeItem,
 		Func,
 	},
@@ -132,42 +132,17 @@ fn main() -> Result<(), anyhow::Error> {
 					// Write the position
 					print!("{pos}: ");
 
-					/// Looks up a function, data or label, if possible, else returns the position.
-					fn inst_target<'a>(exe: &'a dcb_exe::Exe, func: &'a Func, pos: Pos) -> impl fmt::Display + 'a {
-						dcb_util::DisplayWrapper::new(move |f| {
-							if let Some(label) = func.labels.get(&pos) {
-								return write!(f, ".{}", label);
-							}
-
-							if let Some(func) = exe.func_table().get(pos) {
-								return match func.start_pos == pos {
-									true => write!(f, "{}", func.name),
-									false => write!(f, "{}{:+#x}", func.name, pos - func.start_pos),
-								};
-							}
-
-							if let Some(data) = exe.data_table().get(pos) {
-								return match data.pos == pos {
-									true => write!(f, "{}", data.name),
-									false => write!(f, "{}{:+#x}", data.name, pos - data.pos),
-								};
-							}
-
-							write!(f, "{}", pos)
-						})
-					}
-
 					// If it's a jump, check if we can replace it with a label
 					#[rustfmt::skip]
 					match inst {
-						Inst::Basic (basic ::Inst::Cond   (inst)) => print!("{}", inst.fmt_target(inst_target(&exe, func, inst.target(pos)))),
-						Inst::Basic (basic ::Inst::Jmp    (inst)) => print!("{}", inst.fmt_value(pos)),
-						Inst::Basic (basic ::Inst::Load   (inst)) => print!("{}", inst.fmt_value(pos)),
-						Inst::Basic (basic ::Inst::Store  (inst)) => print!("{}", inst.fmt_value(pos)),
-						Inst::Pseudo(pseudo::Inst::LoadImm(inst)) => print!("{}", inst.fmt_value(pos)),
-						Inst::Pseudo(pseudo::Inst::Load   (inst)) => print!("{}", inst.fmt_value(pos)),
-						Inst::Pseudo(pseudo::Inst::Store  (inst)) => print!("{}", inst.fmt_value(pos)),
-						inst => print!("{}", inst.fmt_value(pos)),
+						Inst::Basic (basic ::Inst::Cond   (inst)) => print!("{}", self::inst_target_fmt(inst, pos, self::inst_target(&exe, func, inst.target(pos)))),
+						Inst::Basic (basic ::Inst::Jmp    (inst)) => print!("{}", self::inst_fmt(inst, pos)),
+						Inst::Basic (basic ::Inst::Load   (inst)) => print!("{}", self::inst_fmt(inst, pos)),
+						Inst::Basic (basic ::Inst::Store  (inst)) => print!("{}", self::inst_fmt(inst, pos)),
+						Inst::Pseudo(pseudo::Inst::LoadImm(inst)) => print!("{}", self::inst_fmt(inst, pos)),
+						Inst::Pseudo(pseudo::Inst::Load   (inst)) => print!("{}", self::inst_fmt(inst, pos)),
+						Inst::Pseudo(pseudo::Inst::Store  (inst)) => print!("{}", self::inst_fmt(inst, pos)),
+						inst => print!("{}", self::inst_fmt(inst, pos)),
 					};
 
 					// If there's a comment, print it
@@ -186,207 +161,56 @@ fn main() -> Result<(), anyhow::Error> {
 					println!("# {description}");
 				}
 				for (pos, inst) in insts {
-					println!("{}: {}", pos, inst.fmt_value(pos));
+					println!("{}: {}", pos, self::inst_fmt(inst, pos));
 				}
 			},
 
 			// If it's standalone, print it by it's own
 			ExeItem::Unknown { insts } => {
 				for (pos, inst) in insts {
-					println!("{pos}: {}", inst.fmt_value(pos));
+					println!("{pos}: {}", self::inst_fmt(inst, pos));
 				}
 			},
 		}
 	}
-
-	/*
-	// Build the full instructions iterator
-	// TODO: Revamp this, iterate over an enum of `Func | Data | Other`
-	let full_iter = functions
-		.with_instructions(instructions.iter().map(|(pos, instruction)| (*pos, instruction)))
-		.scan(None, |last_instruction, output @ (_, cur_instruction, _)| {
-			Some((output, last_instruction.replace(cur_instruction)))
-		})
-		.map(|((cur_pos, instruction, cur_func), last_instruction)| (cur_pos, instruction, last_instruction, cur_func))
-		.scan(None, |last_func, output @ (_, _, _, cur_func)| {
-			Some((output, match cur_func {
-				Some(cur_func) => last_func.replace(cur_func),
-				None => *last_func,
-			}))
-		})
-		.map(|((cur_pos, instruction, last_instruction, cur_func), last_func)| (cur_pos, instruction, last_instruction, cur_func, last_func));
-
-	// Read all instructions
-	let mut skipped_nops = 0;
-	for (cur_pos, instruction, last_instruction, cur_func, last_func) in full_iter {
-		// Note: Required by `rust-analyzer` currently, it can't determine the type of `cur_func`.
-		let cur_func: Option<&Func> = cur_func;
-		let last_func: Option<&Func> = last_func;
-
-		// If both last and current instructions are nops, skip
-		if let (Some(Instruction::Pseudo(Nop)), Instruction::Pseudo(Nop)) = (last_instruction, instruction) {
-			skipped_nops += 1;
-			continue;
-		}
-
-		// If we skipped any nops, output the number of skipped nops
-		// TODO: Merge nops in `Pseudo` or something.
-		if skipped_nops != 0 {
-			println!("# + {skipped_nops} x nop");
-			skipped_nops = 0;
-		}
-
-		// If we just exited a function, space it out.
-		if let Some(last_func) = last_func {
-			if last_func.end_pos == cur_pos {
-				println!("####################");
-				println!();
-			}
-		}
-
-		// Space out data if it had a name
-		if let Some(data) = data_pos.get(cur_pos - 1) {
-			if data.end_pos() == cur_pos && !data.name.is_empty() {
-				println!("####################");
-				println!();
-			}
-		}
-
-		// Check if we need to prefix
-		if let Some(cur_func) = cur_func {
-			if cur_func.start_pos == cur_pos {
-				println!();
-				println!("####################");
-				println!("{}:", cur_func.name);
-				if !cur_func.signature.is_empty() {
-					println!("# {}", cur_func.signature);
-				}
-				for description in cur_func.desc.lines() {
-					println!("# {}", description);
-				}
-			}
-			if let Some(label) = cur_func.labels.get(&cur_pos) {
-				println!("\t.{label}:");
-			}
-		}
-		if let Some(data) = data_pos.get(cur_pos) {
-			if data.pos == cur_pos {
-				println!();
-				println!("####################");
-				println!("{}:", data.name);
-				for description in data.desc.lines() {
-					println!("# {}", description);
-				}
-			}
-		}
-
-		// Print the instruction and it's location.
-		match cur_func {
-			Some(cur_func) => print!("{:#05x}:\t", cur_pos - cur_func.start_pos),
-			None => print!("{cur_pos:#010x}:\t"),
-		}
-		match instruction {
-			/* Instruction::Basic(
-				BasicInst::J { target } |
-				BasicInst::Jal { target } |
-				BasicInst::Beq { target, .. } |
-				BasicInst::Bne { target, .. } |
-				BasicInst::Bltz { target, .. } |
-				BasicInst::Bgez { target, .. } |
-				BasicInst::Bgtz { target, .. } |
-				BasicInst::Blez { target, .. } |
-				BasicInst::Bltzal { target, .. } |
-				BasicInst::Bgezal { target, .. },
-			) | */
-			Instruction::Pseudo(
-				PseudoInstruction::B { target } | PseudoInstruction::Beqz { target, .. } | PseudoInstruction::Bnez { target, .. },
-			) => match functions
-				.get(*target)
-				.map(|func| (&func.name, ""))
-				.or_else(|| cur_func.and_then(|func| func.labels.get(target).map(|label| (label, "."))))
-			{
-				Some((target, prefix)) => print!("{}", set_instruction_immediate(instruction, format_args!(" {prefix}{target}"))),
-				None => print!("{instruction}"),
-			},
-
-			// Comment loading address, loading and writing values of string and data
-			Instruction::Pseudo(
-				PseudoInstruction::La { target, .. } |
-				PseudoInstruction::Li32 { imm: target, .. } |
-				PseudoInstruction::LbImm { offset: target, .. } |
-				PseudoInstruction::LbuImm { offset: target, .. } |
-				PseudoInstruction::LhImm { offset: target, .. } |
-				PseudoInstruction::LhuImm { offset: target, .. } |
-				PseudoInstruction::LwlImm { offset: target, .. } |
-				PseudoInstruction::LwImm { offset: target, .. } |
-				PseudoInstruction::LwrImm { offset: target, .. } |
-				PseudoInstruction::SbImm { offset: target, .. } |
-				PseudoInstruction::ShImm { offset: target, .. } |
-				PseudoInstruction::SwlImm { offset: target, .. } |
-				PseudoInstruction::SwImm { offset: target, .. } |
-				PseudoInstruction::SwrImm { offset: target, .. },
-			) |
-			Instruction::Directive(Directive::Dw(target)) => match functions
-				.get(Pos(*target))
-				.map(|func| (func.start_pos, &func.name))
-				.or_else(|| data_pos.get(Pos(*target)).map(|data| (data.pos, &data.name)))
-			{
-				Some((start_pos, name)) => {
-					if start_pos == Pos(*target) {
-						print!("{}", set_instruction_immediate(instruction, format_args!(" {name}")));
-					} else {
-						let offset = Pos(*target) - start_pos;
-						if offset > 0 {
-							print!("{}", set_instruction_immediate(instruction, format_args!(" {name} + {offset:#x}")));
-						}
-					}
-				},
-				None => print!("{instruction}"),
-			},
-
-			_ => print!("{instruction}"),
-		}
-
-		// Append any comments in this line
-		if let Some(cur_func) = cur_func {
-			if let Some(comment) = cur_func.comments.get(&cur_pos) {
-				print!(" # {comment}");
-			}
-		}
-
-		// And finish the line
-		println!();
-	}
-	*/
 
 	Ok(())
 }
 
-/*
-/// Helper function to modify the immediate argument from an instruction
-// TODO: Use something better than this
-fn set_instruction_immediate(instruction: &Instruction, fmt: std::fmt::Arguments) -> String {
-	use std::fmt::Write;
+/// Looks up a function, data or label, if possible, else returns the position.
+#[must_use]
+pub fn inst_target<'a>(exe: &'a dcb_exe::Exe, func: &'a Func, pos: Pos) -> impl fmt::Display + 'a {
+	dcb_util::DisplayWrapper::new(move |f| {
+		if let Some(label) = func.labels.get(&pos) {
+			return write!(f, ".{}", label);
+		}
 
-	// Get the string as a string
-	let mut s: String = instruction.to_string();
+		if let Some(func) = exe.func_table().get(pos) {
+			return match func.start_pos == pos {
+				true => write!(f, "{}", func.name),
+				false => write!(f, "{}{:+#x}", func.name, pos - func.start_pos),
+			};
+		}
 
-	// If the instruction is of the form `.. , imm(..)`, then grab
-	// the `(..)`
-	#[allow(clippy::indexing_slicing)] // This can't panic
-	let parens = s.rfind('(').map(|idx| s[idx..].to_string());
+		if let Some(data) = exe.data_table().get(pos) {
+			return match data.pos == pos {
+				true => write!(f, "{}", data.name),
+				false => write!(f, "{}{:+#x}", data.name, pos - data.pos),
+			};
+		}
 
-	// Truncate the string from it's last argument and write the fmt
-	// Note: We use ' ' instead of ',' to support single argument instructions.
-	s.truncate(s.rfind(' ').unwrap_or(0));
-	s.write_fmt(fmt).expect("Unable to write format to string");
-
-	// If we had a paren, write it
-	// Note: This technically shouldn't be needed, but just in case.
-	if let Some(parens) = parens {
-		s.push_str(&parens);
-	}
-
-	s
+		write!(f, "{}", pos)
+	})
 }
-*/
+
+/// Helper function to display an instruction using `InstFmt`
+#[must_use]
+pub fn inst_fmt(inst: impl InstFmt, pos: Pos) -> impl fmt::Display {
+	dcb_util::DisplayWrapper::new(move |f| inst.fmt(pos, f))
+}
+
+/// Helper function to display an instruction using `InstTargetFmt`
+#[must_use]
+pub fn inst_target_fmt(inst: impl InstTargetFmt, pos: Pos, target: impl fmt::Display) -> impl fmt::Display {
+	dcb_util::DisplayWrapper::new(move |f| inst.fmt(pos, &target, f))
+}

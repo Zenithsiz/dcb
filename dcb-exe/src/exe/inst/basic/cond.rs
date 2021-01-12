@@ -4,7 +4,7 @@
 use crate::{
 	exe::inst::{
 		basic::{Decodable, Encodable},
-		InstFmt, Register,
+		InstTarget, InstTargetFmt, Register,
 	},
 	Pos,
 };
@@ -69,12 +69,6 @@ pub struct Inst {
 }
 
 impl Inst {
-	/// Returns the target for this instruction
-	#[must_use]
-	pub fn target(self, pos: Pos) -> Pos {
-		Self::target_of(self.offset, pos)
-	}
-
 	/// Returns the target using an offset
 	#[must_use]
 	pub fn target_of(offset: i16, pos: Pos) -> Pos {
@@ -130,36 +124,33 @@ impl Encodable for Inst {
 	}
 }
 
-impl InstFmt for Inst {
-	fn fmt(&self, pos: Pos, f: &mut fmt::Formatter) -> fmt::Result {
-		write!(f, "{}", self.fmt_target(self.target(pos)))
+impl InstTarget for Inst {
+	fn target(&self, pos: Pos) -> Pos {
+		Self::target_of(self.offset, pos)
 	}
 }
 
-impl Inst {
-	/// Returns a formattable for this instruction using `target` as it's target.
-	pub fn fmt_target<'a>(self, target: impl fmt::Display + 'a) -> impl fmt::Display + 'a {
-		dcb_util::DisplayWrapper::new(move |f| {
-			let Self { kind, arg, .. } = self;
+impl InstTargetFmt for Inst {
+	fn fmt(&self, _pos: Pos, target: impl fmt::Display, f: &mut fmt::Formatter) -> fmt::Result {
+		let Self { kind, arg, .. } = self;
 
-			// `beq $zr, $zr, offset` => `b offset`
-			// `beq $zr, $arg, offset` => `beqz $arg, offset`
-			// `beq $zr, $arg, offset` => `bnez $arg, offset`
-			match kind {
-				Kind::Equal(Register::Zr) => match arg {
-					Register::Zr => write!(f, "b {target}"),
-					arg => write!(f, "beqz {arg}, {target}"),
-				},
-				Kind::Equal(reg) => write!(f, "beq {arg}, {reg}, {target}"),
-				Kind::NotEqual(Register::Zr) => write!(f, "bnez {arg}, {target}"),
-				Kind::NotEqual(reg) => write!(f, "bne {arg}, {reg}, {target}"),
-				Kind::LessOrEqualZero => write!(f, "blez {arg}, {target}"),
-				Kind::GreaterThanZero => write!(f, "bgtz {arg}, {target}"),
-				Kind::LessThanZero => write!(f, "bltz {arg}, {target}"),
-				Kind::GreaterOrEqualZero => write!(f, "bgez {arg}, {target}"),
-				Kind::LessThanZeroLink => write!(f, "bltzal {arg}, {target}"),
-				Kind::GreaterOrEqualZeroLink => write!(f, "bgezal {arg}, {target}"),
-			}
-		})
+		// `beq $zr, $zr, offset` => `b offset`
+		// `beq $zr, $arg, offset` => `beqz $arg, offset`
+		// `beq $zr, $arg, offset` => `bnez $arg, offset`
+		match kind {
+			Kind::Equal(Register::Zr) => match arg {
+				Register::Zr => write!(f, "b {target}"),
+				arg => write!(f, "beqz {arg}, {target}"),
+			},
+			Kind::Equal(reg) => write!(f, "beq {arg}, {reg}, {target}"),
+			Kind::NotEqual(Register::Zr) => write!(f, "bnez {arg}, {target}"),
+			Kind::NotEqual(reg) => write!(f, "bne {arg}, {reg}, {target}"),
+			Kind::LessOrEqualZero => write!(f, "blez {arg}, {target}"),
+			Kind::GreaterThanZero => write!(f, "bgtz {arg}, {target}"),
+			Kind::LessThanZero => write!(f, "bltz {arg}, {target}"),
+			Kind::GreaterOrEqualZero => write!(f, "bgez {arg}, {target}"),
+			Kind::LessThanZeroLink => write!(f, "bltzal {arg}, {target}"),
+			Kind::GreaterOrEqualZeroLink => write!(f, "bgezal {arg}, {target}"),
+		}
 	}
 }
