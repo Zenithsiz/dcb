@@ -68,6 +68,8 @@
 #![allow(clippy::else_if_without_else)]
 // We're usually fine with missing future variants
 #![allow(clippy::wildcard_enum_match_arm)]
+// We're fine with it
+#![allow(clippy::match_bool)]
 
 // Modules
 mod cli;
@@ -75,8 +77,17 @@ mod cli;
 mod logger;
 
 // Imports
+use std::fmt;
+
 use anyhow::Context;
-use dcb_exe::exe::inst::InstFmt;
+use dcb_exe::{
+	exe::{
+		inst::{basic, pseudo, Inst, InstFmt},
+		iter::ExeItem,
+		Func,
+	},
+	Pos,
+};
 use dcb_io::GameFile;
 
 #[allow(clippy::cognitive_complexity, clippy::too_many_lines)] // TODO: Refactor
@@ -97,78 +108,97 @@ fn main() -> Result<(), anyhow::Error> {
 
 	println!("Header:\n{}", exe.header());
 
-	for (pos, inst) in exe.parse_iter() {
-		println!("{}: {}", pos, inst.fmt_value(pos));
-	}
-
-	/*
 	for item in exe.iter() {
 		match item {
 			// For each function or header, print a header and all it's instructions
-			ExeItem::Func(func) => {
-				println!("####################");
+			ExeItem::Func { func, insts } => {
+				println!();
 				println!("{}:", func.name);
 				if !func.signature.is_empty() {
 					println!("# {}", func.signature);
 				}
 				for description in func.desc.lines() {
-					println!("# {}", description);
+					println!("# {description}");
 				}
-				/*
-				#[allow(
-					clippy::as_conversions,
-					clippy::cast_precision_loss,
-					clippy::cast_possible_truncation,
-					clippy::cast_sign_loss
-				)] // TODO: Check if this is fine
-				let pos_width = ((func.end_pos - func.start_pos) as f64).log10() as usize;
-				for pos in (func.start_pos.0..func.end_pos.0).map(Pos) {
-					let inst = exe.get(pos).expect("Unable to get function instruction");
-					println!(
-						"{:0width$}: {}",
-						SignedHex(pos - func.start_pos),
-						inst.fmt_value(pos, &*exe.bytes),
-						width = pos_width,
-					);
+				for (pos, label) in &func.labels {
+					println!("# {pos}: .{label}");
 				}
-				*/
-				println!("####################");
+				for (pos, inst) in insts {
+					// If there's a label, print it
+					if let Some(label) = func.labels.get(&pos) {
+						println!("\t.{label}:");
+					}
+
+					// Write the position
+					print!("{pos}: ");
+
+					/// Looks up a function, data or label, if possible, else returns the position.
+					fn inst_target<'a>(exe: &'a dcb_exe::Exe, func: &'a Func, pos: Pos) -> impl fmt::Display + 'a {
+						dcb_util::DisplayWrapper::new(move |f| {
+							if let Some(label) = func.labels.get(&pos) {
+								return write!(f, "{}", label);
+							}
+
+							if let Some(func) = exe.func_table().get(pos) {
+								return match func.start_pos == pos {
+									true => write!(f, "{}", func.name),
+									false => write!(f, "{}{:+#x}", func.name, pos - func.start_pos),
+								};
+							}
+
+							if let Some(data) = exe.data_table().get(pos) {
+								return match data.pos == pos {
+									true => write!(f, "{}", data.name),
+									false => write!(f, "{}{:+#x}", data.name, pos - data.pos),
+								};
+							}
+
+							write!(f, "{}", pos)
+						})
+					}
+
+					// If it's a jump, check if we can replace it with a label
+					#[rustfmt::skip]
+					match inst {
+						Inst::Basic (basic ::Inst::Cond   (inst)) => print!("{}", inst.fmt_target(inst_target(&exe, func, inst.target(pos)))),
+						Inst::Basic (basic ::Inst::Jmp    (inst)) => print!("{}", inst.fmt_value(pos)),
+						Inst::Basic (basic ::Inst::Load   (inst)) => print!("{}", inst.fmt_value(pos)),
+						Inst::Basic (basic ::Inst::Store  (inst)) => print!("{}", inst.fmt_value(pos)),
+						Inst::Pseudo(pseudo::Inst::LoadImm(inst)) => print!("{}", inst.fmt_value(pos)),
+						Inst::Pseudo(pseudo::Inst::Jmp    (inst)) => print!("{}", inst.fmt_value(pos)),
+						Inst::Pseudo(pseudo::Inst::Load   (inst)) => print!("{}", inst.fmt_value(pos)),
+						Inst::Pseudo(pseudo::Inst::Store  (inst)) => print!("{}", inst.fmt_value(pos)),
+						inst => print!("{}", inst.fmt_value(pos)),
+					};
+
+					// If there's a comment, print it
+					if let Some(comment) = func.comments.get(&pos) {
+						print!(" # {comment}");
+					}
+
+					println!();
+				}
 			},
 
-			ExeItem::Data(data) => {
-				println!("####################");
+			ExeItem::Data { data, insts } => {
+				println!();
 				println!("{}:", data.name);
 				for description in data.desc.lines() {
-					println!("# {}", description);
+					println!("# {description}");
 				}
-				/*
-				#[allow(
-					clippy::as_conversions,
-					clippy::cast_precision_loss,
-					clippy::cast_possible_truncation,
-					clippy::cast_sign_loss
-				)] // TODO: Check if this is fine
-				let pos_width = f64::from(data.size()).log10() as usize;
-				for pos in (data.pos.0..data.end_pos().0).map(Pos) {
-					let inst = exe.get(pos).expect("Unable to get data instruction");
-					println!(
-						"{:0width$}: {}",
-						SignedHex(pos - data.pos),
-						inst.fmt_value(pos, &*exe.bytes),
-						width = pos_width,
-					);
+				for (pos, inst) in insts {
+					println!("{}: {}", pos, inst.fmt_value(pos));
 				}
-				*/
-				println!("####################");
 			},
 
 			// If it's standalone, print it by it's own
-			ExeItem::Inst(pos, inst) => {
-				println!("{}: {}", pos, inst.fmt_value(pos));
+			ExeItem::Unknown { insts } => {
+				for (pos, inst) in insts {
+					println!("{pos}: {}", inst.fmt_value(pos));
+				}
 			},
 		}
 	}
-	*/
 
 	/*
 	// Build the full instructions iterator

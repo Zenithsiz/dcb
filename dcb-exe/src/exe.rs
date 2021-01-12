@@ -70,6 +70,18 @@ impl Exe {
 		&*self.bytes
 	}
 
+	/// Returns this executable's data table
+	#[must_use]
+	pub const fn data_table(&self) -> &DataTable {
+		&self.data_table
+	}
+
+	/// Returns this executable's func table
+	#[must_use]
+	pub const fn func_table(&self) -> &FuncTable {
+		&self.func_table
+	}
+
 	/// Creates an iterator over this executable
 	#[must_use]
 	pub const fn iter(&self) -> iter::Iter {
@@ -80,12 +92,6 @@ impl Exe {
 	#[must_use]
 	pub const fn parse_iter(&self) -> inst::ParseIter {
 		inst::ParseIter::new(&*self.bytes, Self::MEM_START_ADDRESS)
-	}
-
-	/// Returns the instruction at `pos`
-	#[must_use]
-	pub fn get(&self, pos: Pos) -> Option<inst::Inst> {
-		inst::ParseIter::new(&*self.bytes, pos).next().map(|(_, inst)| inst)
 	}
 }
 

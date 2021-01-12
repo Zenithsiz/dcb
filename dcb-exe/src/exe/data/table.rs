@@ -19,11 +19,11 @@ use int_conv::SignExtended;
 // Imports
 use super::{Data, DataType};
 use crate::exe::{
-	inst::{self, basic, Inst},
+	inst::{self, basic, pseudo, Inst},
 	Pos,
 };
 use dcb_util::DiscardingSortedMergeIter;
-use std::{collections::BTreeSet, fs::File, iter::FromIterator};
+use std::{collections::BTreeSet, fs::File, iter::FromIterator, ops::RangeBounds};
 
 /// Data table
 ///
@@ -68,7 +68,13 @@ impl DataTable {
 		// Find the closest one and check if it contains `pos`
 		// Note: We search from the end to make sure we grab the
 		//       smaller locations first.
-		self.0.range(..=pos).next_back().filter(|data| pos < data.end_pos())
+		self.range(..=pos).next_back().filter(|data| pos < data.end_pos())
+	}
+
+	/// Returns a range of data
+	#[must_use]
+	pub fn range(&self, range: impl RangeBounds<Pos>) -> impl DoubleEndedIterator<Item = &Data> + Clone {
+		self.0.range(range)
 	}
 }
 
@@ -91,24 +97,14 @@ impl DataTable {
 				Inst::Basic(basic::Inst::Load(basic::load::Inst { offset, .. }) | basic::Inst::Store(basic::store::Inst { offset, .. })) => {
 					Some(pos + offset.sign_extended::<i32>())
 				},
-				/*
-				Instruction::Pseudo(
-					PseudoInst::La { target: offset, .. } |
-					PseudoInst::Li32 { imm: offset, .. } |
-					PseudoInst::LbImm { offset, .. } |
-					PseudoInst::LbuImm { offset, .. } |
-					PseudoInst::LhImm { offset, .. } |
-					PseudoInst::LhuImm { offset, .. } |
-					PseudoInst::LwlImm { offset, .. } |
-					PseudoInst::LwImm { offset, .. } |
-					PseudoInst::LwrImm { offset, .. } |
-					PseudoInst::SbImm { offset, .. } |
-					PseudoInst::ShImm { offset, .. } |
-					PseudoInst::SwlImm { offset, .. } |
-					PseudoInst::SwImm { offset, .. } |
-					PseudoInst::SwrImm { offset, .. },
+				Inst::Pseudo(
+					pseudo::Inst::LoadImm(pseudo::load_imm::Inst {
+						kind: pseudo::load_imm::Kind::Address(Pos(address)) | pseudo::load_imm::Kind::Word(address),
+						..
+					}) |
+					pseudo::Inst::Load(pseudo::load::Inst { target: Pos(address), .. }) |
+					pseudo::Inst::Store(pseudo::store::Inst { target: Pos(address), .. }),
 				) |
-				*/
 				Inst::Directive(Directive::Dw(address)) => Some(Pos(address)),
 				_ => None,
 			})

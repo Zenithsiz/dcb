@@ -14,7 +14,6 @@ pub mod error;
 
 // Exports
 pub use error::GetKnownError;
-use int_conv::SignExtended;
 //pub use iter::WithInstructionsIter;
 
 // Imports
@@ -28,6 +27,7 @@ use std::{
 	collections::{BTreeMap, BTreeSet},
 	fs::File,
 	iter::FromIterator,
+	ops::RangeBounds,
 };
 
 /// Function table
@@ -69,7 +69,13 @@ impl FuncTable {
 	#[must_use]
 	pub fn get(&self, pos: Pos) -> Option<&Func> {
 		// Note: As we're sorted, we can binary search
-		self.0.range(..=pos).next_back().filter(|func| pos < func.end_pos)
+		self.range(..=pos).next_back().filter(|func| pos < func.end_pos)
+	}
+
+	/// Returns a range of functions
+	#[must_use]
+	pub fn range(&self, range: impl RangeBounds<Pos>) -> impl DoubleEndedIterator<Item = &Func> + Clone {
+		self.0.range(range)
 	}
 
 	/*
@@ -137,7 +143,7 @@ impl FuncTable {
 					},
 				))) => Some(inst.target(pos)),
 				// Conditional jumps
-				Inst::Basic(basic::Inst::Cond(basic::cond::Inst { offset, .. })) => Some(pos + offset.sign_extended::<i32>()),
+				Inst::Basic(basic::Inst::Cond(inst)) => Some(inst.target(pos)),
 				_ => None,
 			})
 			.filter(|target| Inst::CODE_RANGE.contains(target))
@@ -146,7 +152,7 @@ impl FuncTable {
 		// Now check every `Jal` and `Dw` for possible function entrances
 		let function_entries: BTreeSet<Pos> = insts
 			.filter_map(|(pos, inst)| match inst {
-				// `jr`
+				// `jar`
 				Inst::Basic(basic::Inst::Jmp(basic::jmp::Inst::Imm(
 					inst @ basic::jmp::imm::Inst {
 						kind: basic::jmp::imm::Kind::JumpLink,

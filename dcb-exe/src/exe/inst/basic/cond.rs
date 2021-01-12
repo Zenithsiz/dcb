@@ -95,7 +95,7 @@ impl Inst {
 	/// Returns the target using an offset
 	#[must_use]
 	pub fn target_of(offset: i16, pos: Pos) -> Pos {
-		pos + 4 * offset.sign_extended::<i32>()
+		pos + 4 * (offset.sign_extended::<i32>() + 1)
 	}
 }
 
@@ -149,18 +149,25 @@ impl Encodable for Inst {
 
 impl InstFmt for Inst {
 	fn fmt(&self, pos: Pos, f: &mut fmt::Formatter) -> fmt::Result {
-		let Self { kind, arg, .. } = self;
-		let mnemonic = kind.mnemonic();
-		let target = self.target(pos);
+		write!(f, "{}", self.fmt_target(self.target(pos)))
+	}
+}
 
-		match kind {
-			Kind::Equal(reg) | Kind::NotEqual(reg) => write!(f, "{mnemonic} {arg}, {reg}, {target}"),
-			Kind::LessOrEqualZero |
-			Kind::GreaterThanZero |
-			Kind::LessThanZero |
-			Kind::GreaterOrEqualZero |
-			Kind::LessThanZeroLink |
-			Kind::GreaterOrEqualZeroLink => write!(f, "{mnemonic} {arg}, {target}"),
-		}
+impl Inst {
+	/// Returns a formattable for this instruction using `target` as it's target.
+	pub fn fmt_target<'a>(self, target: impl fmt::Display + 'a) -> impl fmt::Display + 'a {
+		dcb_util::DisplayWrapper::new(move |f| {
+			let Self { kind, arg, .. } = self;
+			let mnemonic = kind.mnemonic();
+			match kind {
+				Kind::Equal(reg) | Kind::NotEqual(reg) => write!(f, "{mnemonic} {arg}, {reg}, {target}"),
+				Kind::LessOrEqualZero |
+				Kind::GreaterThanZero |
+				Kind::LessThanZero |
+				Kind::GreaterOrEqualZero |
+				Kind::LessThanZeroLink |
+				Kind::GreaterOrEqualZeroLink => write!(f, "{mnemonic} {arg}, {target}"),
+			}
+		})
 	}
 }

@@ -2,7 +2,10 @@
 
 // Imports
 use super::Decodable;
-use crate::exe::inst::{basic, InstFmt, InstSize, Register};
+use crate::{
+	exe::inst::{basic, InstFmt, InstSize, Register},
+	Pos,
+};
 use dcb_util::SignedHex;
 use int_conv::{Join, SignExtended, Signed};
 use std::convert::TryInto;
@@ -14,7 +17,7 @@ pub enum Kind {
 	/// Address
 	///
 	/// Alias for `lui $dst, {hi} / addiu $dst, $dst, {lo}`
-	Address(u32),
+	Address(Pos),
 
 	/// Word
 	///
@@ -47,7 +50,7 @@ impl Kind {
 	#[must_use]
 	pub fn value_fmt(self) -> impl std::fmt::Display {
 		dcb_util::DisplayWrapper::new(move |f| match self {
-			Self::Address(address)        => write!(f, "{address:#x}"),
+			Self::Address(address)        => write!(f, "{address}"),
 			Self::Word(value)             => write!(f, "{value:#x}"),
 			Self::HalfWordUnsigned(value) => write!(f, "{value:#x}"),
 			Self::HalfWordSigned(value)   => write!(f, "{:#}", SignedHex(value)),
@@ -76,7 +79,7 @@ impl Decodable for Inst {
 					dst:  lui.dst,
 					kind: match alu.kind {
 						// lui << 16 + rhs
-						AddUnsigned(rhs) => Kind::Address((u32::join(0, lui.value).as_signed() + rhs.sign_extended::<i32>()).as_unsigned()),
+						AddUnsigned(rhs) => Kind::Address(Pos((u32::join(0, lui.value).as_signed() + rhs.sign_extended::<i32>()).as_unsigned())),
 						Or(rhs) => Kind::Word(u32::join(rhs, lui.value)),
 						_ => return None,
 					},
