@@ -23,7 +23,12 @@ use crate::exe::{
 	Pos,
 };
 use dcb_util::DiscardingSortedMergeIter;
-use std::{collections::BTreeSet, fs::File, iter::FromIterator, ops::RangeBounds};
+use std::{
+	collections::BTreeSet,
+	fs::File,
+	iter::FromIterator,
+	ops::{Range, RangeBounds},
+};
 
 /// Data table
 ///
@@ -89,7 +94,7 @@ impl DataTable {
 	/// Searches all instructions for references to
 	/// executable data using certain heuristics.
 	#[must_use]
-	pub fn search_instructions<'a>(insts: impl Iterator<Item = (Pos, Inst<'a>)> + Clone) -> Self {
+	pub fn search_instructions<'a>(_insts_range: Range<Pos>, insts: impl Iterator<Item = (Pos, Inst<'a>)> + Clone) -> Self {
 		// Get all possible references to data
 		let references: BTreeSet<Pos> = insts
 			.clone()

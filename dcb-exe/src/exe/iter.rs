@@ -58,7 +58,7 @@ impl<'a> Iterator for Iter<'a> {
 	fn next(&mut self) -> Option<Self::Item> {
 		// If we're at the end, return `None`
 		let cur_pos = self.cur_pos;
-		if cur_pos >= self.exe.inst_range().end {
+		if cur_pos >= self.exe.insts_range().end {
 			return None;
 		}
 
@@ -100,11 +100,11 @@ impl<'a> Iterator for Iter<'a> {
 			},
 			(Some(next_data), None) => next_data.pos,
 			(None, Some(next_func)) => next_func.start_pos,
-			(None, None) => self.exe.inst_range().end,
+			(None, None) => self.exe.insts_range().end,
 		};
 
 		// Make sure to limit the end position
-		let end_pos = end_pos.min(self.exe.inst_range().end);
+		let end_pos = end_pos.min(self.exe.insts_range().end);
 		self.cur_pos = end_pos;
 
 

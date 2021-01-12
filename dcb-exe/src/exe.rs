@@ -76,7 +76,7 @@ impl Exe {
 
 	/// Returns this executable's instruction range
 	#[must_use]
-	pub fn inst_range(&self) -> Range<Pos> {
+	pub fn insts_range(&self) -> Range<Pos> {
 		let start = self.header.start_pos;
 		let end = self.header.start_pos + self.header.size;
 		start..end
@@ -107,6 +107,13 @@ impl Exe {
 		file.read_exact(&mut header_bytes).map_err(DeserializeError::ReadHeader)?;
 		let header = Header::from_bytes(&header_bytes).map_err(DeserializeError::ParseHeader)?;
 
+		// Get the instruction range
+		let insts_range = {
+			let start = header.start_pos;
+			let end = header.start_pos + header.size;
+			start..end
+		};
+
 		// Read all of the bytes
 		let mut bytes = vec![0u8; usize::try_from(header.size).expect("Len didn't fit into `usize`")].into_boxed_slice();
 		file.read_exact(bytes.as_mut()).map_err(DeserializeError::ReadData)?;
@@ -119,9 +126,9 @@ impl Exe {
 		let insts = inst::ParseIter::new(&*bytes, header.start_pos);
 
 		// Then parse all heuristic tables
-		let heuristics_data_table = DataTable::search_instructions(insts.clone());
+		let heuristics_data_table = DataTable::search_instructions(insts_range.clone(), insts.clone());
 		let data_table = known_data_table.merge_with(heuristics_data_table);
-		let heuristics_func_table = FuncTable::search_instructions(insts);
+		let heuristics_func_table = FuncTable::search_instructions(insts_range, insts);
 		let func_table = known_func_table.merge_with(heuristics_func_table);
 
 		Ok(Self {

@@ -27,7 +27,7 @@ use std::{
 	collections::{BTreeMap, BTreeSet},
 	fs::File,
 	iter::FromIterator,
-	ops::RangeBounds,
+	ops::{Range, RangeBounds},
 };
 
 /// Function table
@@ -97,7 +97,7 @@ impl FuncTable {
 	/// Creates a new list of functions from an iterator over insts
 	#[must_use]
 	#[allow(clippy::too_many_lines)] // TODO: Refactor?
-	pub fn search_instructions<'a>(insts: impl Iterator<Item = (Pos, Inst<'a>)> + Clone) -> Self {
+	pub fn search_instructions<'a>(insts_range: Range<Pos>, insts: impl Iterator<Item = (Pos, Inst<'a>)> + Clone) -> Self {
 		// Get all returns
 		let returns: BTreeSet<Pos> = insts
 			.clone()
@@ -146,7 +146,7 @@ impl FuncTable {
 				Inst::Basic(basic::Inst::Cond(inst)) => Some(inst.target(pos)),
 				_ => None,
 			})
-			//.filter(|target| Inst::CODE_RANGE.contains(target))
+			.filter(|target| insts_range.contains(target))
 			.collect();
 
 		// Now check every `Jal` and `Dw` for possible function entrances
@@ -163,7 +163,7 @@ impl FuncTable {
 				Inst::Directive(Directive::Dw(address)) => Some(Pos(address)),
 				_ => None,
 			})
-			//.filter(|target| Inst::CODE_RANGE.contains(target))
+			.filter(|target| insts_range.contains(target))
 			.collect();
 
 		#[allow(clippy::cognitive_complexity)] // TODO: Fix
