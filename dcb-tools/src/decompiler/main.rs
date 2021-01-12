@@ -136,7 +136,7 @@ fn main() -> Result<(), anyhow::Error> {
 					fn inst_target<'a>(exe: &'a dcb_exe::Exe, func: &'a Func, pos: Pos) -> impl fmt::Display + 'a {
 						dcb_util::DisplayWrapper::new(move |f| {
 							if let Some(label) = func.labels.get(&pos) {
-								return write!(f, "{}", label);
+								return write!(f, ".{}", label);
 							}
 
 							if let Some(func) = exe.func_table().get(pos) {
