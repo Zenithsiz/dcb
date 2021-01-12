@@ -86,7 +86,7 @@ use dcb_exe::{
 		iter::ExeItem,
 		Func,
 	},
-	Pos,
+	Exe, Pos,
 };
 use dcb_io::GameFile;
 
@@ -104,7 +104,7 @@ fn main() -> Result<(), anyhow::Error> {
 
 	// Read the executable
 	log::debug!("Deserializing executable");
-	let exe = dcb_exe::Exe::deserialize(&mut game_file).context("Unable to parse game executable")?;
+	let exe = Exe::deserialize(&mut game_file).context("Unable to parse game executable")?;
 
 	println!("Header:\n{}", exe.header());
 
@@ -130,20 +130,7 @@ fn main() -> Result<(), anyhow::Error> {
 					}
 
 					// Write the position
-					print!("{pos}: ");
-
-					// If it's a jump, check if we can replace it with a label
-					#[rustfmt::skip]
-					match inst {
-						Inst::Basic (basic ::Inst::Cond   (inst)) => print!("{}", self::inst_target_fmt(inst, pos, self::inst_target(&exe, func, inst.target(pos)))),
-						Inst::Basic (basic ::Inst::Jmp    (inst)) => print!("{}", self::inst_fmt(inst, pos)),
-						Inst::Basic (basic ::Inst::Load   (inst)) => print!("{}", self::inst_fmt(inst, pos)),
-						Inst::Basic (basic ::Inst::Store  (inst)) => print!("{}", self::inst_fmt(inst, pos)),
-						Inst::Pseudo(pseudo::Inst::LoadImm(inst)) => print!("{}", self::inst_fmt(inst, pos)),
-						Inst::Pseudo(pseudo::Inst::Load   (inst)) => print!("{}", self::inst_fmt(inst, pos)),
-						Inst::Pseudo(pseudo::Inst::Store  (inst)) => print!("{}", self::inst_fmt(inst, pos)),
-						inst => print!("{}", self::inst_fmt(inst, pos)),
-					};
+					print!("{pos}: {}", self::inst_display(&inst, &exe, Some(func), pos));
 
 					// If there's a comment, print it
 					if let Some(comment) = func.comments.get(&pos) {
@@ -161,14 +148,14 @@ fn main() -> Result<(), anyhow::Error> {
 					println!("# {description}");
 				}
 				for (pos, inst) in insts {
-					println!("{}: {}", pos, self::inst_fmt(inst, pos));
+					println!("{}: {}", pos, self::inst_display(&inst, &exe, None, pos));
 				}
 			},
 
 			// If it's standalone, print it by it's own
 			ExeItem::Unknown { insts } => {
 				for (pos, inst) in insts {
-					println!("{pos}: {}", self::inst_fmt(inst, pos));
+					println!("{pos}: {}", self::inst_display(&inst, &exe, None, pos));
 				}
 			},
 		}
@@ -177,11 +164,29 @@ fn main() -> Result<(), anyhow::Error> {
 	Ok(())
 }
 
+/// Returns a display-able for an instruction inside a possible function
+#[must_use]
+#[rustfmt::skip]
+pub fn inst_display<'a>(inst: &'a Inst, exe: &'a Exe, func: Option<&'a Func>, pos: Pos) -> impl fmt::Display + 'a {
+	dcb_util::DisplayWrapper::new(move |f| {
+		match inst {
+			Inst::Basic (basic ::Inst::Cond   (inst)) => write!(f, "{}", self::inst_target_fmt(inst, pos, self::inst_target(exe, func, inst.target(pos)))),
+			Inst::Basic (basic ::Inst::Jmp    (inst)) => write!(f, "{}", self::inst_fmt(inst, pos)),
+			Inst::Basic (basic ::Inst::Load   (inst)) => write!(f, "{}", self::inst_fmt(inst, pos)),
+			Inst::Basic (basic ::Inst::Store  (inst)) => write!(f, "{}", self::inst_fmt(inst, pos)),
+			Inst::Pseudo(pseudo::Inst::LoadImm(inst)) => write!(f, "{}", self::inst_fmt(inst, pos)),
+			Inst::Pseudo(pseudo::Inst::Load   (inst)) => write!(f, "{}", self::inst_fmt(inst, pos)),
+			Inst::Pseudo(pseudo::Inst::Store  (inst)) => write!(f, "{}", self::inst_fmt(inst, pos)),
+			inst => write!(f, "{}", self::inst_fmt(inst, pos)),
+		}
+	})
+}
+
 /// Looks up a function, data or label, if possible, else returns the position.
 #[must_use]
-pub fn inst_target<'a>(exe: &'a dcb_exe::Exe, func: &'a Func, pos: Pos) -> impl fmt::Display + 'a {
+pub fn inst_target<'a>(exe: &'a Exe, func: Option<&'a Func>, pos: Pos) -> impl fmt::Display + 'a {
 	dcb_util::DisplayWrapper::new(move |f| {
-		if let Some(label) = func.labels.get(&pos) {
+		if let Some(label) = func.and_then(|func| func.labels.get(&pos)) {
 			return write!(f, ".{}", label);
 		}
 
@@ -205,12 +210,12 @@ pub fn inst_target<'a>(exe: &'a dcb_exe::Exe, func: &'a Func, pos: Pos) -> impl 
 
 /// Helper function to display an instruction using `InstFmt`
 #[must_use]
-pub fn inst_fmt(inst: impl InstFmt, pos: Pos) -> impl fmt::Display {
+pub fn inst_fmt(inst: &impl InstFmt, pos: Pos) -> impl fmt::Display + '_ {
 	dcb_util::DisplayWrapper::new(move |f| inst.fmt(pos, f))
 }
 
 /// Helper function to display an instruction using `InstTargetFmt`
 #[must_use]
-pub fn inst_target_fmt(inst: impl InstTargetFmt, pos: Pos, target: impl fmt::Display) -> impl fmt::Display {
+pub fn inst_target_fmt<'a>(inst: &'a impl InstTargetFmt, pos: Pos, target: impl fmt::Display + 'a) -> impl fmt::Display + 'a {
 	dcb_util::DisplayWrapper::new(move |f| inst.fmt(pos, &target, f))
 }
