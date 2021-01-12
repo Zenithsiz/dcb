@@ -22,7 +22,10 @@ pub use pos::Pos;
 // Imports
 use dcb_bytes::{ByteArray, Bytes};
 use dcb_io::GameFile;
-use std::io::{Read, Seek, Write};
+use std::{
+	convert::TryFrom,
+	io::{Read, Seek, Write},
+};
 
 /// The game executable
 #[derive(PartialEq, Eq, Clone, Debug)]
@@ -41,20 +44,8 @@ pub struct Exe {
 }
 
 impl Exe {
-	/// Size of the executable section.
-	pub const SIZE: u32 = 0x68000;
 	/// Start address of the executable in the game file.
 	pub const START_ADDRESS: dcb_io::Data = dcb_io::Data::from_u64(0x58b9000);
-}
-
-// Memory address
-impl Exe {
-	/// End memory address of the executable.
-	pub const MEM_END_ADDRESS: Pos = Self::MEM_START_ADDRESS.add_offset_u32(Self::SIZE);
-	/// Memory range of the executable
-	pub const MEM_RANGE: std::ops::Range<Pos> = Self::MEM_START_ADDRESS..Self::MEM_END_ADDRESS;
-	/// Start memory address of the executable.
-	pub const MEM_START_ADDRESS: Pos = Pos(0x80010000);
 }
 
 impl Exe {
@@ -91,7 +82,7 @@ impl Exe {
 	/// Returns a parsing iterator for all instructions
 	#[must_use]
 	pub const fn parse_iter(&self) -> inst::ParseIter {
-		inst::ParseIter::new(&*self.bytes, Self::MEM_START_ADDRESS)
+		inst::ParseIter::new(&*self.bytes, self.header.start_pos)
 	}
 }
 
@@ -107,14 +98,8 @@ impl Exe {
 		file.read_exact(&mut header_bytes).map_err(DeserializeError::ReadHeader)?;
 		let header = Header::from_bytes(&header_bytes).map_err(DeserializeError::ParseHeader)?;
 
-		// Make sure the header size is the one we expect
-		if header.size != Self::SIZE {
-			return Err(DeserializeError::WrongDataSize { header: Box::new(header) });
-		}
-
 		// Read all of the bytes
-		#[allow(clippy::as_conversions)] // `SIZE` always fits
-		let mut bytes = Box::new([0u8; Self::SIZE as usize]);
+		let mut bytes = vec![0u8; usize::try_from(header.size).expect("Len didn't fit into `usize`")].into_boxed_slice();
 		file.read_exact(bytes.as_mut()).map_err(DeserializeError::ReadData)?;
 
 		// Read the known data and func table
@@ -122,7 +107,7 @@ impl Exe {
 		let known_func_table = FuncTable::get_known().map_err(DeserializeError::KnownFuncTable)?;
 
 		// Parse all instructions
-		let insts = inst::ParseIter::new(&*bytes, Self::MEM_START_ADDRESS);
+		let insts = inst::ParseIter::new(&*bytes, header.start_pos);
 
 		// Then parse all heuristic tables
 		let heuristics_data_table = DataTable::search_instructions(insts.clone());

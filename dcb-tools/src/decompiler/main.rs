@@ -120,9 +120,6 @@ fn main() -> Result<(), anyhow::Error> {
 				for description in func.desc.lines() {
 					println!("# {description}");
 				}
-				for (pos, label) in &func.labels {
-					println!("# {pos}: .{label}");
-				}
 				for (pos, inst) in insts {
 					// If there's a label, print it
 					if let Some(label) = func.labels.get(&pos) {

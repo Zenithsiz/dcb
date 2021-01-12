@@ -12,6 +12,8 @@ use dcb_bytes::Bytes;
 use dcb_util::{array_split, null_ascii_string::NullAsciiString, AsciiStrArr};
 use std::fmt;
 
+use crate::Pos;
+
 /// The header of the executable.
 #[derive(PartialEq, Eq, Clone, Copy, Hash, Debug)]
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -22,8 +24,8 @@ pub struct Header {
 	/// Initial global pointer
 	pub gp0: u32,
 
-	/// Destination in memory for the executable
-	pub dest: u32,
+	/// Starting position, in memory, of the executable.
+	pub start_pos: Pos,
 
 	/// Size of the executable
 	pub size: u32,
@@ -55,7 +57,7 @@ impl fmt::Display for Header {
 		let Self {
 			ref pc0,
 			ref gp0,
-			ref dest,
+			ref start_pos,
 			ref size,
 			ref memfill_start,
 			ref memfill_size,
@@ -67,7 +69,7 @@ impl fmt::Display for Header {
 
 		writeln!(f, "PC: {pc0:#x}")?;
 		writeln!(f, "GP: {gp0:#x}")?;
-		writeln!(f, "Destination: {dest:#x} / size: {size:#x}")?;
+		writeln!(f, "Memory position: {start_pos} / size: {size:#x}")?;
 		writeln!(f, "Memfill: {memfill_start:#X} / size: {memfill_size:#x}")?;
 		writeln!(f, "SP: {initial_sp_base:#x} / offset: {initial_sp_offset:#x}")?;
 		writeln!(f, "Marker: {marker:?}")
@@ -112,7 +114,7 @@ impl Bytes for Header {
 		Ok(Self {
 			pc0:               LittleEndian::read_u32(bytes.pc0),
 			gp0:               LittleEndian::read_u32(bytes.gp0),
-			dest:              LittleEndian::read_u32(bytes.dest),
+			start_pos:         Pos(LittleEndian::read_u32(bytes.dest)),
 			size:              LittleEndian::read_u32(bytes.size),
 			unknown20:         LittleEndian::read_u32(bytes.unknown20),
 			unknown24:         LittleEndian::read_u32(bytes.unknown24),

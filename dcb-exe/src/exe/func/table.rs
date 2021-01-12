@@ -146,7 +146,7 @@ impl FuncTable {
 				Inst::Basic(basic::Inst::Cond(inst)) => Some(inst.target(pos)),
 				_ => None,
 			})
-			.filter(|target| Inst::CODE_RANGE.contains(target))
+			//.filter(|target| Inst::CODE_RANGE.contains(target))
 			.collect();
 
 		// Now check every `Jal` and `Dw` for possible function entrances
@@ -163,7 +163,7 @@ impl FuncTable {
 				Inst::Directive(Directive::Dw(address)) => Some(Pos(address)),
 				_ => None,
 			})
-			.filter(|target| Inst::CODE_RANGE.contains(target))
+			//.filter(|target| Inst::CODE_RANGE.contains(target))
 			.collect();
 
 		#[allow(clippy::cognitive_complexity)] // TODO: Fix

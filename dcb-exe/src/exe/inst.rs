@@ -54,20 +54,13 @@ pub enum Inst<'a> {
 	Directive(Directive<'a>),
 }
 
-impl<'a> Inst<'a> {
-	/// End of the code itself in the executable.
-	pub const CODE_END: Pos = Pos(0x8006dd3c);
-	/// Code range
-	pub const CODE_RANGE: std::ops::Range<Pos> = Self::CODE_START..Self::CODE_END;
-	/// Start of the code itself in the executable.
-	pub const CODE_START: Pos = Pos(0x80013e4c);
-}
+impl<'a> Inst<'a> {}
 
 impl<'a> Inst<'a> {
 	/// Decodes an instruction from bytes and it's position.
 	pub fn decode(pos: Pos, bytes: &'a [u8]) -> Option<Self> {
-		// If we're outside of code range, or not aligned to a word, decode a directive
-		if !Self::CODE_RANGE.contains(&pos) || !pos.is_word_aligned() {
+		// If we're not aligned to a word, decode a directive
+		if !pos.is_word_aligned() {
 			let directive = Directive::decode(pos, bytes)?;
 			return Some(Self::Directive(directive));
 		}

@@ -1,8 +1,7 @@
 //! Directives
 
 // Imports
-//use super::{FromRawIter, Instruction, Raw};
-use super::{Inst, InstFmt, InstSize};
+use super::{InstFmt, InstSize};
 use crate::exe::Pos;
 use ascii::AsciiStr;
 use dcb_util::NextFromBytes;
@@ -72,6 +71,7 @@ pub enum ForceDecodeKind {
 }
 
 impl<'a> Directive<'a> {
+	/*
 	/// Positions that should be force decoded using a specific variant.
 	// TODO: Get this at run-time via a file.
 	pub const FORCE_DECODE_RANGES: &'static [ForceDecodeRange] = &[
@@ -91,6 +91,7 @@ impl<'a> Directive<'a> {
 			kind:  ForceDecodeKind::Word,
 		},
 	];
+	*/
 }
 
 impl<'a> Directive<'a> {

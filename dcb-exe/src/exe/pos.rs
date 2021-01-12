@@ -1,7 +1,6 @@
 //! Instruction position
 
 // Imports
-use crate::Exe;
 use int_conv::{SignExtended, Signed};
 use std::{convert::TryFrom, fmt, ops};
 
@@ -14,17 +13,10 @@ use std::{convert::TryFrom, fmt, ops};
 pub struct Pos(pub u32);
 
 impl Pos {
-	/// Adds a `u32` offset to this position
-	// TODO: Remove once we can `impl const Add`
-	#[must_use]
-	pub(crate) const fn add_offset_u32(self, offset: u32) -> Self {
-		Self(self.0 + offset)
-	}
-
 	/// Returns the memory position of this position
 	#[must_use]
-	pub fn as_mem_idx(self) -> usize {
-		usize::try_from(self - Exe::MEM_START_ADDRESS).expect("Failed to compute index")
+	pub fn as_mem_idx(self, start_pos: Self) -> usize {
+		usize::try_from(self - start_pos).expect("Failed to compute index")
 	}
 }
 
