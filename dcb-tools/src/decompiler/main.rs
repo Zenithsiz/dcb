@@ -172,7 +172,13 @@ pub fn inst_display<'a>(inst: &'a Inst, exe: &'a Exe, func: Option<&'a Func>, po
 		Inst::Basic(basic::Inst::Jmp(basic::jmp::Inst::Imm(inst))) => {
 			write!(f, "{}", self::inst_target_fmt(inst, pos, self::inst_target(exe, func, inst.target(pos))))
 		},
-		Inst::Pseudo(pseudo::Inst::LoadImm(inst)) => write!(f, "{}", self::inst_fmt(inst, pos)),
+		Inst::Pseudo(pseudo::Inst::LoadImm(
+			inst
+			@ pseudo::load_imm::Inst {
+				kind: pseudo::load_imm::Kind::Address(Pos(target)) | pseudo::load_imm::Kind::Word(target),
+				..
+			},
+		)) => write!(f, "{}", self::inst_target_fmt(inst, pos, self::inst_target(exe, func, Pos(*target)))),
 		Inst::Pseudo(pseudo::Inst::Load(inst)) => write!(f, "{}", self::inst_fmt(inst, pos)),
 		Inst::Pseudo(pseudo::Inst::Store(inst)) => write!(f, "{}", self::inst_fmt(inst, pos)),
 		inst => write!(f, "{}", self::inst_fmt(inst, pos)),

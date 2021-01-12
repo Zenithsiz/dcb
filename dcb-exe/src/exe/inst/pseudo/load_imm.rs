@@ -3,7 +3,7 @@
 // Imports
 use super::Decodable;
 use crate::{
-	exe::inst::{basic, InstFmt, InstSize, Register},
+	exe::inst::{basic, InstFmt, InstSize, InstTargetFmt, Register},
 	Pos,
 };
 use dcb_util::SignedHex;
@@ -114,12 +114,17 @@ impl InstSize for Inst {
 	}
 }
 
-impl InstFmt for Inst {
-	fn fmt(&self, _pos: crate::Pos, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+impl InstTargetFmt for Inst {
+	fn fmt(&self, _pos: crate::Pos, target: impl std::fmt::Display, f: &mut std::fmt::Formatter) -> std::fmt::Result {
 		let Self { dst, kind } = self;
 		let mnemonic = kind.mnemonic();
-		let value = kind.value_fmt();
 
-		write!(f, "{mnemonic} {dst}, {value}")
+		write!(f, "{mnemonic} {dst}, {target}")
+	}
+}
+
+impl InstFmt for Inst {
+	fn fmt(&self, pos: crate::Pos, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+		<Self as InstTargetFmt>::fmt(self, pos, self.kind.value_fmt(), f)
 	}
 }

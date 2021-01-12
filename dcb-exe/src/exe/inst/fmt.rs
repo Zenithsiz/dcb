@@ -19,12 +19,12 @@ pub trait InstFmt {
 }
 
 /// A formattable instruction that supports overloading it's target.
-pub trait InstTargetFmt: InstTarget {
+pub trait InstTargetFmt {
 	/// Formats this instruction
 	fn fmt(&self, pos: Pos, target: impl fmt::Display, f: &mut fmt::Formatter) -> fmt::Result;
 }
 
-impl<T: InstTargetFmt> InstFmt for T {
+impl<T: InstTarget + InstTargetFmt> InstFmt for T {
 	fn fmt(&self, pos: Pos, f: &mut fmt::Formatter) -> fmt::Result {
 		let target = self.target(pos);
 		self.fmt(pos, target, f)
