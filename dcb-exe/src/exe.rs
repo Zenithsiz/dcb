@@ -117,15 +117,16 @@ impl Exe {
 		let mut bytes = Box::new([0u8; Self::SIZE as usize]);
 		file.read_exact(bytes.as_mut()).map_err(DeserializeError::ReadData)?;
 
+		// Read the known data and func table
+		let known_data_table = DataTable::get_known().map_err(DeserializeError::KnownDataTable)?;
+		let known_func_table = FuncTable::get_known().map_err(DeserializeError::KnownFuncTable)?;
+
 		// Parse all instructions
 		let insts = inst::ParseIter::new(&*bytes, Self::MEM_START_ADDRESS);
 
-		// Parse all data and code
-		let known_data_table = DataTable::get_known().map_err(DeserializeError::KnownDataTable)?;
+		// Then parse all heuristic tables
 		let heuristics_data_table = DataTable::search_instructions(insts.clone());
 		let data_table = known_data_table.merge_with(heuristics_data_table);
-
-		let known_func_table = FuncTable::get_known().map_err(DeserializeError::KnownFuncTable)?;
 		let heuristics_func_table = FuncTable::search_instructions(insts);
 		let func_table = known_func_table.merge_with(heuristics_func_table);
 
