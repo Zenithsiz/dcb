@@ -190,17 +190,26 @@ pub fn inst_display<'a>(inst: &'a Inst, exe: &'a Exe, func: Option<&'a Func>, po
 #[must_use]
 pub fn inst_target<'a>(exe: &'a Exe, func: Option<&'a Func>, pos: Pos) -> impl fmt::Display + 'a {
 	dcb_util::DisplayWrapper::new(move |f| {
+		// Try to get a label for the current function, if it exists
 		if let Some(label) = func.and_then(|func| func.labels.get(&pos)) {
 			return write!(f, ".{}", label);
 		}
 
+		// Try to get a function from it
 		if let Some(func) = exe.func_table().get(pos) {
+			// And then one of it's labels
+			if let Some(label) = func.labels.get(&pos) {
+				return write!(f, "{}.{}", func.name, label);
+			}
+
+			// Or just any position in it
 			return match func.start_pos == pos {
 				true => write!(f, "{}", func.name),
 				false => write!(f, "{}{:+#x}", func.name, pos - func.start_pos),
 			};
 		}
 
+		// Else try a data
 		if let Some(data) = exe.data_table().get(pos) {
 			return match data.pos == pos {
 				true => write!(f, "{}", data.name),
@@ -208,6 +217,7 @@ pub fn inst_target<'a>(exe: &'a Exe, func: Option<&'a Func>, pos: Pos) -> impl f
 			};
 		}
 
+		// Or just return the position itself
 		write!(f, "{}", pos)
 	})
 }
