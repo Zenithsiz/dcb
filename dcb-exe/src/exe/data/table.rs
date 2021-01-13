@@ -31,20 +31,9 @@ use std::{
 };
 
 /// Data table
-///
-/// Stores all data locations sorted by their address.
-/// Data locations may be 'specialized', that is, a large data
-/// location may have several smaller data locations inside of it,
-/// as long as they only belong to the larger data location.
 #[derive(PartialEq, Eq, Clone, Debug)]
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct DataTable(BTreeSet<Data>);
-
-impl FromIterator<Data> for DataTable {
-	fn from_iter<T: IntoIterator<Item = Data>>(iter: T) -> Self {
-		Self(iter.into_iter().collect())
-	}
-}
 
 impl std::ops::Deref for DataTable {
 	type Target = BTreeSet<Data>;
@@ -66,10 +55,10 @@ impl DataTable {
 		//       keep the guarantees supplied by this type.
 		DiscardingSortedMergeIter::new(self.0.into_iter(), other.0.into_iter()).collect()
 	}
-
+	
 	/// Retrieves the smallest data location containing `pos`
 	#[must_use]
-	pub fn get(&self, pos: Pos) -> Option<&Data> {
+	pub fn get_containing(&self, pos: Pos) -> Option<&Data> {
 		// Find the closest one and check if it contains `pos`
 		// Note: We search from the end to make sure we grab the
 		//       smaller locations first.
@@ -152,5 +141,11 @@ impl DataTable {
 				}
 			})
 			.collect()
+	}
+}
+
+impl FromIterator<Data> for DataTable {
+	fn from_iter<T: IntoIterator<Item = Data>>(iter: T) -> Self {
+		Self(iter.into_iter().collect())
 	}
 }

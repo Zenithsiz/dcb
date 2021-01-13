@@ -38,7 +38,7 @@ pub use target::InstTarget;
 
 // Imports
 use self::{basic::Decodable as _, pseudo::Decodable as _};
-use super::{DataTable, FuncTable};
+use super::{Data, DataTable, FuncTable};
 use crate::Pos;
 
 /// An assembler instruction.
@@ -55,18 +55,37 @@ pub enum Inst<'a> {
 	Directive(Directive<'a>),
 }
 
-impl<'a> Inst<'a> {}
+/// Error type for [`Inst::decode`]
+#[derive(Debug, thiserror::Error)]
+pub enum DecodeError<'a> {
+	/// Invalid data location to read from
+	#[error("Attempted to decode instruction from within data location")]
+	InvalidDataLocation {
+		/// The data location
+		data: &'a Data,
+	},
+
+	/// Bytes is empty
+	#[error("No more bytes")]
+	NoBytes,
+}
 
 impl<'a> Inst<'a> {
 	/// Decodes an instruction from bytes and it's position.
-	pub fn decode(pos: Pos, bytes: &'a [u8], data_table: &'a DataTable, _func_table: &'a FuncTable) -> Option<Self> {
-		// If there's data in this position, make sure to read the correct type
-		if let Some(_data) = data_table.get(pos) {}
+	pub fn decode(pos: Pos, bytes: &'a [u8], data_table: &'a DataTable, _func_table: &'a FuncTable) -> Result<Self, DecodeError<'a>> {
+		// If we're contained in some data, check it's type so we can read it
+		if let Some(data) = data_table.get_containing(pos) {
+			return Directive::decode_with_data(pos, bytes, &data.ty, data.pos)
+				.map(Self::Directive)
+				.ok_or(DecodeError::InvalidDataLocation { data });
+		}
+
+		// TODO: Check functions
 
 		// If we're not aligned to a word, decode a directive
 		if !pos.is_word_aligned() {
-			let directive = Directive::decode(pos, bytes)?;
-			return Some(Self::Directive(directive));
+			let directive = Directive::decode(pos, bytes).ok_or(DecodeError::NoBytes)?;
+			return Ok(Self::Directive(directive));
 		}
 
 		// Else make the instruction iterator
@@ -81,16 +100,16 @@ impl<'a> Inst<'a> {
 
 		// Try to decode a pseudo-instruction
 		if let Some(inst) = pseudo::Inst::decode(insts.clone()) {
-			return Some(Self::Pseudo(inst));
+			return Ok(Self::Pseudo(inst));
 		}
 
 		// Else try to decode it as an basic instruction
 		if let Some(inst) = insts.next() {
-			return Some(Self::Basic(inst));
+			return Ok(Self::Basic(inst));
 		}
 
 		// Else read it as a directive
-		Directive::decode(pos, bytes).map(Self::Directive)
+		Directive::decode(pos, bytes).map(Self::Directive).ok_or(DecodeError::NoBytes)
 	}
 }
 

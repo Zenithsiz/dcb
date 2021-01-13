@@ -2,12 +2,15 @@
 
 // Imports
 use super::{InstFmt, InstSize};
-use crate::exe::Pos;
-use ascii::AsciiStr;
+use crate::exe::{DataType, Pos};
+use ascii::{AsciiChar, AsciiStr};
 use dcb_util::NextFromBytes;
-use std::ops::{
-	Bound::{self, Excluded, Included, Unbounded},
-	RangeBounds,
+use std::{
+	convert::TryFrom,
+	ops::{
+		Bound::{self, Excluded, Included, Unbounded},
+		RangeBounds,
+	},
 };
 
 /// A directive
@@ -71,6 +74,56 @@ pub enum ForceDecodeKind {
 }
 
 impl<'a> Directive<'a> {
+	/// Decodes a directive with some data
+	#[must_use]
+	pub fn decode_with_data(pos: Pos, bytes: &'a [u8], ty: &DataType, data_pos: Pos) -> Option<Self> {
+		// Make sure that this function is only called when the data contains `pos`
+		assert!((data_pos..data_pos + ty.size()).contains(&pos));
+
+		// If the data isn't aligned, return None
+		if !pos.is_aligned_to(ty.align()) {
+			return None;
+		}
+
+		// If we're not in an array, but we're not at the start of the data, return
+		if !matches!(ty, DataType::Array { .. }) && pos != data_pos {
+			return None;
+		}
+
+		match ty {
+			&DataType::AsciiStr { len } => {
+				// Read the string
+				let string = bytes.get(..len)?;
+				let string = AsciiStr::from_ascii(string).ok()?;
+
+				// If there are any nulls, return
+				if string.chars().any(|ch| ch == AsciiChar::Null) {
+					return None;
+				}
+
+				// Then make sure there's nulls padding the string
+				let nulls_len = 4 - usize::try_from(pos.0 % 4).expect("0..4 didn't fit into usize");
+				let nulls = bytes.get(len..len + nulls_len)?;
+				if !nulls.iter().all(|&ch| ch == 0) {
+					return None;
+				}
+
+				// Else return the string
+				Some(Self::Ascii(string))
+			},
+			DataType::Word => bytes.next_u32().map(Self::Dw),
+			DataType::HalfWord => bytes.next_u16().map(Self::Dh),
+			DataType::Byte => bytes.next_u8().map(Self::Db),
+			DataType::Array { ty, .. } => {
+				// Get the index we're on in the array.
+				let offset = pos.offset_from(data_pos);
+				let idx = offset / ty.size();
+				let next_data_pos = data_pos + idx * ty.size();
+				Self::decode_with_data(pos, bytes, ty, next_data_pos)
+			},
+		}
+	}
+
 	/// Decodes a directive
 	#[must_use]
 	pub fn decode(pos: Pos, bytes: &'a [u8]) -> Option<Self> {

@@ -52,7 +52,7 @@
 // Due to our module organization, we end up with data types inheriting their module's name
 #![allow(clippy::module_name_repetitions)]
 // We need arithmetic for this crate
-#![allow(clippy::integer_arithmetic)]
+#![allow(clippy::integer_arithmetic, clippy::integer_division)]
 // We want to benefit from match ergonomics where possible
 #![allow(clippy::pattern_type_mismatch)]
 // We only use wildcards when we only care about certain variants

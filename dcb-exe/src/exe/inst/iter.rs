@@ -1,7 +1,7 @@
 //! Parsing iterator
 
 // Imports
-use super::{Inst, InstSize};
+use super::{DecodeError, Inst, InstSize};
 use crate::{
 	exe::{DataTable, FuncTable},
 	Pos,
@@ -51,7 +51,25 @@ impl<'a> Iterator for ParseIter<'a> {
 
 	fn next(&mut self) -> Option<Self::Item> {
 		// Try to read an instruction
-		let inst = Inst::decode(self.cur_pos, self.bytes, self.data_table, self.func_table)?;
+		let inst = match Inst::decode(self.cur_pos, self.bytes, self.data_table, self.func_table) {
+			Ok(inst) => inst,
+			Err(err) => match err {
+				// If we're in an invalid data location, warn and skip it
+				DecodeError::InvalidDataLocation { data } => {
+					log::warn!(
+						"Attempted to decode in position {} from within data location {}({})@{}",
+						self.cur_pos,
+						data.name,
+						data.ty,
+						data.pos
+					);
+					self.cur_pos = data.end_pos();
+					return self.next(); // Tailcall
+				},
+				// If we're out of bytes, return `None`
+				DecodeError::NoBytes => return None,
+			},
+		};
 		let pos = self.cur_pos;
 
 		// Then skip it in our bytes

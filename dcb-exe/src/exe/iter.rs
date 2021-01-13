@@ -63,7 +63,7 @@ impl<'a> Iterator for Iter<'a> {
 		}
 
 		// Try to get data
-		if let Some(data) = self.exe.data_table.get(cur_pos) {
+		if let Some(data) = self.exe.data_table.get_containing(cur_pos) {
 			// Check the next data for our next position that isn't equal to our current one
 			let end_pos = match self.exe.data_table.range(cur_pos..).find(|next_data| next_data.pos != data.pos) {
 				// If it ends before or at the end of this data, use it

@@ -207,7 +207,7 @@ pub fn inst_target<'a>(exe: &'a Exe, func: Option<&'a Func>, pos: Pos) -> impl f
 		}
 
 		// Else try a data
-		if let Some(data) = exe.data_table().get(pos) {
+		if let Some(data) = exe.data_table().get_containing(pos) {
 			return match data.pos == pos {
 				true => write!(f, "{}", data.name),
 				false => write!(f, "{}{:+#x}", data.name, pos - data.pos),
