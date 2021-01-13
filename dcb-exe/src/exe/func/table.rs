@@ -20,7 +20,7 @@ pub use error::GetKnownError;
 use super::Func;
 use crate::exe::{
 	inst::{basic, Directive, Inst, InstTarget, Register},
-	Pos,
+	DataTable, Pos,
 };
 use dcb_util::DiscardingSortedMergeIter;
 use std::{
@@ -97,7 +97,7 @@ impl FuncTable {
 	/// Creates a new list of functions from an iterator over insts
 	#[must_use]
 	#[allow(clippy::too_many_lines)] // TODO: Refactor?
-	pub fn search_instructions<'a>(insts_range: Range<Pos>, insts: impl Iterator<Item = (Pos, Inst<'a>)> + Clone) -> Self {
+	pub fn search_instructions<'a>(insts_range: Range<Pos>, insts: impl Iterator<Item = (Pos, Inst<'a>)> + Clone, data_table: &DataTable) -> Self {
 		// Get all returns
 		let returns: BTreeSet<Pos> = insts
 			.clone()
@@ -164,6 +164,7 @@ impl FuncTable {
 				_ => None,
 			})
 			.filter(|target| insts_range.contains(target))
+			.filter(|&target| data_table.get_containing(target).is_none())
 			.collect();
 
 		#[allow(clippy::cognitive_complexity)] // TODO: Fix

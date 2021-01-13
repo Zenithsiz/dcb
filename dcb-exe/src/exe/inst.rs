@@ -37,7 +37,7 @@ pub use size::InstSize;
 pub use target::InstTarget;
 
 // Imports
-use self::{basic::Decodable as _, pseudo::Decodable as _};
+use self::{basic::Decodable as _, directive::DecodeWithDataError, pseudo::Decodable as _};
 use super::{Data, DataTable, FuncTable};
 use crate::Pos;
 
@@ -63,6 +63,9 @@ pub enum DecodeError<'a> {
 	InvalidDataLocation {
 		/// The data location
 		data: &'a Data,
+
+		/// Underlying error
+		err: DecodeWithDataError,
 	},
 
 	/// Bytes is empty
@@ -73,11 +76,16 @@ pub enum DecodeError<'a> {
 impl<'a> Inst<'a> {
 	/// Decodes an instruction from bytes and it's position.
 	pub fn decode(pos: Pos, bytes: &'a [u8], data_table: &'a DataTable, _func_table: &'a FuncTable) -> Result<Self, DecodeError<'a>> {
+		// If `bytes` is empty, return Err
+		if bytes.is_empty() {
+			return Err(DecodeError::NoBytes);
+		}
+
 		// If we're contained in some data, check it's type so we can read it
 		if let Some(data) = data_table.get_containing(pos) {
 			return Directive::decode_with_data(pos, bytes, &data.ty, data.pos)
 				.map(Self::Directive)
-				.ok_or(DecodeError::InvalidDataLocation { data });
+				.map_err(|err| DecodeError::InvalidDataLocation { data, err });
 		}
 
 		// TODO: Check functions

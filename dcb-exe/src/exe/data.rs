@@ -73,12 +73,6 @@ impl PartialEq for Data {
 
 impl Eq for Data {}
 
-impl std::hash::Hash for Data {
-	fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-		self.pos.hash(state);
-	}
-}
-
 impl PartialOrd for Data {
 	fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
 		// Delegate to `eq` since we have a total order.
@@ -89,8 +83,8 @@ impl PartialOrd for Data {
 impl Ord for Data {
 	fn cmp(&self, other: &Self) -> Ordering {
 		match self.pos.cmp(&other.pos) {
-			// Note: We reverse so the larger size will be first.
-			Ordering::Equal => self.size().cmp(&other.size()).reverse(),
+			// Note: If positions are equal, the smaller one comes first
+			Ordering::Equal => self.size().cmp(&other.size()),
 			cmp => cmp,
 		}
 	}

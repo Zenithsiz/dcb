@@ -46,7 +46,8 @@ impl DataType {
 			Self::Word => 4,
 			Self::HalfWord => 2,
 			Self::Byte => 1,
-			Self::AsciiStr { len } => *len,
+			// Round strings to the nearest word
+			Self::AsciiStr { len } => len + 4 - (len % 4),
 			Self::Array { ty, len } => len * ty.size(),
 		}
 	}

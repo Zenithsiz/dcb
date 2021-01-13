@@ -137,7 +137,7 @@ impl Exe {
 
 		// Then parse all heuristic tables
 		let heuristics_data_table = DataTable::search_instructions(insts_range.clone(), insts.clone());
-		let heuristics_func_table = FuncTable::search_instructions(insts_range, insts);
+		let heuristics_func_table = FuncTable::search_instructions(insts_range, insts, &known_data_table);
 		let data_table = known_data_table.merge_with(heuristics_data_table);
 		let func_table = known_func_table.merge_with(heuristics_func_table);
 

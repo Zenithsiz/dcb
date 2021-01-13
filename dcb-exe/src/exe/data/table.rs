@@ -55,14 +55,19 @@ impl DataTable {
 		//       keep the guarantees supplied by this type.
 		DiscardingSortedMergeIter::new(self.0.into_iter(), other.0.into_iter()).collect()
 	}
-	
+
 	/// Retrieves the smallest data location containing `pos`
 	#[must_use]
 	pub fn get_containing(&self, pos: Pos) -> Option<&Data> {
-		// Find the closest one and check if it contains `pos`
-		// Note: We search from the end to make sure we grab the
-		//       smaller locations first.
-		self.range(..=pos).next_back().filter(|data| pos < data.end_pos())
+		// Find the first data that includes `pos`.
+		self.range(..=pos).find(|data| pos < data.end_pos())
+	}
+
+	/// Retrieves the smallest data location at `pos`
+	#[must_use]
+	pub fn get_starting_at(&self, pos: Pos) -> Option<&Data> {
+		// Get the first data with position `pos`
+		self.range(pos..=pos).next()
 	}
 
 	/// Returns a range of data
@@ -83,7 +88,7 @@ impl DataTable {
 	/// Searches all instructions for references to
 	/// executable data using certain heuristics.
 	#[must_use]
-	pub fn search_instructions<'a>(_insts_range: Range<Pos>, insts: impl Iterator<Item = (Pos, Inst<'a>)> + Clone) -> Self {
+	pub fn search_instructions<'a>(insts_range: Range<Pos>, insts: impl Iterator<Item = (Pos, Inst<'a>)> + Clone) -> Self {
 		// Get all possible references to data
 		let references: BTreeSet<Pos> = insts
 			.clone()
@@ -102,6 +107,7 @@ impl DataTable {
 				Inst::Directive(Directive::Dw(address)) => Some(Pos(address)),
 				_ => None,
 			})
+			.filter(|pos| insts_range.contains(pos))
 			.collect();
 
 		// Then filter the instructions for data locations.

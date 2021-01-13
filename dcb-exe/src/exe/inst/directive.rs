@@ -5,13 +5,6 @@ use super::{InstFmt, InstSize};
 use crate::exe::{DataType, Pos};
 use ascii::{AsciiChar, AsciiStr};
 use dcb_util::NextFromBytes;
-use std::{
-	convert::TryFrom,
-	ops::{
-		Bound::{self, Excluded, Included, Unbounded},
-		RangeBounds,
-	},
-};
 
 /// A directive
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -29,91 +22,74 @@ pub enum Directive<'a> {
 	Ascii(&'a AsciiStr),
 }
 
-/// A force decode range
-#[derive(PartialEq, Eq, Clone, Copy, Debug)]
-pub struct ForceDecodeRange {
-	/// Start bound
-	start: Bound<Pos>,
+/// Error type for [`Directive::decode_with_data`]
+#[derive(Debug, thiserror::Error)]
+pub enum DecodeWithDataError {
+	/// Missing bytes
+	#[error("Missing bytes")]
+	MissingBytes,
 
-	/// End bound
-	end: Bound<Pos>,
+	/// Value wasn't aligned
+	#[error("Value was not aligned")]
+	NotAligned,
 
-	/// Decoding kind
-	kind: ForceDecodeKind,
-}
+	/// Read position was offset from data
+	#[error("Cannot read value offset")]
+	Offset,
 
-impl RangeBounds<Pos> for ForceDecodeRange {
-	fn start_bound(&self) -> Bound<&Pos> {
-		match self.start {
-			Included(ref start) => Included(start),
-			Excluded(ref start) => Excluded(start),
-			Unbounded => Unbounded,
-		}
-	}
+	/// String had invalid characters
+	#[error("String had invalid characters")]
+	StrInvalidChars(#[source] ascii::AsAsciiStrError),
 
-	fn end_bound(&self) -> Bound<&Pos> {
-		match self.end {
-			Included(ref end) => Included(end),
-			Excluded(ref end) => Excluded(end),
-			Unbounded => Unbounded,
-		}
-	}
-}
+	/// String had nulls within it
+	#[error("String had nulls")]
+	StrNullsWithin,
 
-/// Force decode range kind
-#[derive(PartialEq, Eq, Clone, Copy, Debug)]
-pub enum ForceDecodeKind {
-	/// Single Word
-	Word,
-
-	/// Half word
-	HalfWord,
-
-	/// Bytes
-	Byte,
+	/// String didn't have null terminator
+	#[error("String missing null terminator")]
+	StrNullTerminator,
 }
 
 impl<'a> Directive<'a> {
 	/// Decodes a directive with some data
-	#[must_use]
-	pub fn decode_with_data(pos: Pos, bytes: &'a [u8], ty: &DataType, data_pos: Pos) -> Option<Self> {
+	pub fn decode_with_data(pos: Pos, bytes: &'a [u8], ty: &DataType, data_pos: Pos) -> Result<Self, DecodeWithDataError> {
 		// Make sure that this function is only called when the data contains `pos`
 		assert!((data_pos..data_pos + ty.size()).contains(&pos));
 
 		// If the data isn't aligned, return None
-		if !pos.is_aligned_to(ty.align()) {
-			return None;
+		if !data_pos.is_aligned_to(ty.align()) {
+			return Err(DecodeWithDataError::NotAligned);
 		}
 
 		// If we're not in an array, but we're not at the start of the data, return
 		if !matches!(ty, DataType::Array { .. }) && pos != data_pos {
-			return None;
+			return Err(DecodeWithDataError::Offset);
 		}
 
 		match ty {
 			&DataType::AsciiStr { len } => {
 				// Read the string
-				let string = bytes.get(..len)?;
-				let string = AsciiStr::from_ascii(string).ok()?;
+				let string = bytes.get(..len).ok_or(DecodeWithDataError::MissingBytes)?;
+				let string = AsciiStr::from_ascii(string).map_err(DecodeWithDataError::StrInvalidChars)?;
 
 				// If there are any nulls, return
 				if string.chars().any(|ch| ch == AsciiChar::Null) {
-					return None;
+					return Err(DecodeWithDataError::StrNullsWithin);
 				}
 
 				// Then make sure there's nulls padding the string
-				let nulls_len = 4 - usize::try_from(pos.0 % 4).expect("0..4 didn't fit into usize");
-				let nulls = bytes.get(len..len + nulls_len)?;
+				let nulls_len = 4 - len % 4;
+				let nulls = bytes.get(len..len + nulls_len).ok_or(DecodeWithDataError::StrNullTerminator)?;
 				if !nulls.iter().all(|&ch| ch == 0) {
-					return None;
+					return Err(DecodeWithDataError::StrNullTerminator);
 				}
 
 				// Else return the string
-				Some(Self::Ascii(string))
+				Ok(Self::Ascii(string))
 			},
-			DataType::Word => bytes.next_u32().map(Self::Dw),
-			DataType::HalfWord => bytes.next_u16().map(Self::Dh),
-			DataType::Byte => bytes.next_u8().map(Self::Db),
+			DataType::Word => bytes.next_u32().map(Self::Dw).ok_or(DecodeWithDataError::MissingBytes),
+			DataType::HalfWord => bytes.next_u16().map(Self::Dh).ok_or(DecodeWithDataError::MissingBytes),
+			DataType::Byte => bytes.next_u8().map(Self::Db).ok_or(DecodeWithDataError::MissingBytes),
 			DataType::Array { ty, .. } => {
 				// Get the index we're on in the array.
 				let offset = pos.offset_from(data_pos);

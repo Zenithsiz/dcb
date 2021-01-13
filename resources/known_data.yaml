@@ -1,4 +1,17 @@
 ---
+- name: ExeStart
+  pos: 0x80010000
+  ty:
+    Array:
+      ty: u32
+      len: 0xf93
+- name: ExeEnd
+  pos: 0x8006dd3c
+  ty:
+    Array:
+      ty: u32
+      len: 0x28b1
+
 - name: CrossMoveEffectStringsRaw
   desc: The cross move effect string table with raw symbols
   pos: 0x8006e47c
@@ -71,7 +84,9 @@
   ty: u32
 - name: something1_data2
   pos: 0x80010000
-  ty: u32
+  ty:
+    AsciiStr:
+      len: 6
 - name: StackTop
   desc: Stack top address
   pos: 0x8006dd44
@@ -85,7 +100,10 @@
   ty: u32
 - name: something5_data1
   pos: 0x8006fa20
-  ty: u16
+  ty:
+    Array:
+      ty: u16
+      len: 2
 - name: something5_data5
   pos: 0x8006fa5c
   ty: u32

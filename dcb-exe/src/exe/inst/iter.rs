@@ -55,13 +55,14 @@ impl<'a> Iterator for ParseIter<'a> {
 			Ok(inst) => inst,
 			Err(err) => match err {
 				// If we're in an invalid data location, warn and skip it
-				DecodeError::InvalidDataLocation { data } => {
+				DecodeError::InvalidDataLocation { data, err } => {
 					log::warn!(
-						"Attempted to decode in position {} from within data location {}({})@{}",
+						"Attempted to decode in position {} from within data location {}({})@{}:\n{:#}",
 						self.cur_pos,
 						data.name,
 						data.ty,
-						data.pos
+						data.pos,
+						anyhow::Error::new(err),
 					);
 					self.cur_pos = data.end_pos();
 					return self.next(); // Tailcall
