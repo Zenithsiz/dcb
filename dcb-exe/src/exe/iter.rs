@@ -81,7 +81,7 @@ impl<'a> Iterator for Iter<'a> {
 		}
 
 		// Else try to get a function
-		if let Some(func) = self.exe.func_table.get(self.cur_pos) {
+		if let Some(func) = self.exe.func_table.get_starting_at(self.cur_pos) {
 			self.cur_pos = func.end_pos;
 			return Some(ExeItem::Func {
 				func,

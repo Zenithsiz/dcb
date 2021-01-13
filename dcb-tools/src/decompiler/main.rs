@@ -179,6 +179,7 @@ pub fn inst_display<'a>(inst: &'a Inst, exe: &'a Exe, func: Option<&'a Func>, po
 		)) => write!(f, "{}", self::inst_target_fmt(inst, pos, self::inst_target(exe, func, Pos(*target)))),
 		Inst::Pseudo(pseudo::Inst::Load(inst)) => write!(f, "{}", self::inst_target_fmt(inst, pos, self::inst_target(exe, func, inst.target(pos)))),
 		Inst::Pseudo(pseudo::Inst::Store(inst)) => write!(f, "{}", self::inst_target_fmt(inst, pos, self::inst_target(exe, func, inst.target(pos)))),
+		// TODO: Directive
 		inst => write!(f, "{}", self::inst_fmt(inst, pos)),
 	})
 }
@@ -193,7 +194,7 @@ pub fn inst_target<'a>(exe: &'a Exe, func: Option<&'a Func>, pos: Pos) -> impl f
 		}
 
 		// Try to get a function from it
-		if let Some(func) = exe.func_table().get(pos) {
+		if let Some(func) = exe.func_table().get_containing(pos) {
 			// And then one of it's labels
 			if let Some(label) = func.labels.get(&pos) {
 				return write!(f, "{}.{}", func.name, label);

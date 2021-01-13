@@ -10,11 +10,9 @@
 
 // Modules
 pub mod error;
-//pub mod iter;
 
 // Exports
 pub use error::GetKnownError;
-//pub use iter::WithInstructionsIter;
 
 // Imports
 use super::Func;
@@ -38,20 +36,6 @@ use std::{
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct FuncTable(BTreeSet<Func>);
 
-impl FromIterator<Func> for FuncTable {
-	fn from_iter<T: IntoIterator<Item = Func>>(iter: T) -> Self {
-		Self(iter.into_iter().collect())
-	}
-}
-
-impl std::ops::Deref for FuncTable {
-	type Target = BTreeSet<Func>;
-
-	fn deref(&self) -> &Self::Target {
-		&self.0
-	}
-}
-
 impl FuncTable {
 	/// Merges two data tables, discarding duplicates from `other`.
 	///
@@ -67,9 +51,14 @@ impl FuncTable {
 
 	/// Retrieves a function that contains `pos`
 	#[must_use]
-	pub fn get(&self, pos: Pos) -> Option<&Func> {
-		// Note: As we're sorted, we can binary search
+	pub fn get_containing(&self, pos: Pos) -> Option<&Func> {
 		self.range(..=pos).next_back().filter(|func| pos < func.end_pos)
+	}
+
+	/// Retrieves a function that starting at `pos`
+	#[must_use]
+	pub fn get_starting_at(&self, pos: Pos) -> Option<&Func> {
+		self.range(pos..=pos).next()
 	}
 
 	/// Returns a range of functions
@@ -77,13 +66,6 @@ impl FuncTable {
 	pub fn range(&self, range: impl RangeBounds<Pos>) -> impl DoubleEndedIterator<Item = &Func> + Clone {
 		self.0.range(range)
 	}
-
-	/*
-	/// Adapts an inst iterator to extract the current function
-	pub fn with_insts<'a, I: Iterator<Item = (Pos, Inst)>>(&'a self, insts: I) -> WithInstructionsIter<'a, I> {
-		WithInstructionsIter::new(insts, self)
-	}
-	*/
 }
 
 impl FuncTable {
@@ -204,5 +186,11 @@ impl FuncTable {
 				}
 			})
 			.collect()
+	}
+}
+
+impl FromIterator<Func> for FuncTable {
+	fn from_iter<T: IntoIterator<Item = Func>>(iter: T) -> Self {
+		Self(iter.into_iter().collect())
 	}
 }
