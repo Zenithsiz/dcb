@@ -52,6 +52,12 @@ impl Data {
 		self.pos + self.size()
 	}
 
+	/// Checks if this data contains `pos`
+	#[must_use]
+	pub fn contains(&self, pos: Pos) -> bool {
+		(self.pos..self.end_pos()).contains(&pos)
+	}
+
 	/// Returns the size, in bytes, of this data
 	#[must_use]
 	pub fn size(&self) -> usize {

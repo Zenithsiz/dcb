@@ -60,14 +60,13 @@ impl DataTable {
 	#[must_use]
 	pub fn get_containing(&self, pos: Pos) -> Option<&Data> {
 		// Find the first data that includes `pos`.
-		self.range(..=pos).find(|data| pos < data.end_pos())
+		self.range(..=pos).filter(|data| data.contains(pos)).min_by_key(|data| data.size())
 	}
 
 	/// Retrieves the smallest data location at `pos`
 	#[must_use]
 	pub fn get_starting_at(&self, pos: Pos) -> Option<&Data> {
-		// Get the first data with position `pos`
-		self.range(pos..=pos).next()
+		self.get_containing(pos).filter(|data| data.pos == pos)
 	}
 
 	/// Returns a range of data

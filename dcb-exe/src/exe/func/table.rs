@@ -49,16 +49,17 @@ impl FuncTable {
 		DiscardingSortedMergeIter::new(self.0.into_iter(), other.0.into_iter()).collect()
 	}
 
-	/// Retrieves a function that contains `pos`
+	/// Retrieves the function containing `pos`
 	#[must_use]
 	pub fn get_containing(&self, pos: Pos) -> Option<&Func> {
-		self.range(..=pos).next_back().filter(|func| pos < func.end_pos)
+		// Find the first data that includes `pos`.
+		self.range(..=pos).find(|func| func.contains(pos))
 	}
 
-	/// Retrieves a function that starting at `pos`
+	/// Retrieves the function at `pos`
 	#[must_use]
 	pub fn get_starting_at(&self, pos: Pos) -> Option<&Func> {
-		self.range(pos..=pos).next()
+		self.get_containing(pos).filter(|func| func.start_pos == pos)
 	}
 
 	/// Returns a range of functions

@@ -136,7 +136,7 @@ impl<'a> InstFmt for Inst<'a> {
 		match self {
 			Self::Basic(inst) => inst.fmt(pos, f),
 			Self::Pseudo(inst) => inst.fmt(pos, f),
-			Self::Directive(directive) => directive.fmt(pos, f),
+			Self::Directive(directive) => <Directive as InstFmt>::fmt(directive, pos, f),
 		}
 	}
 }

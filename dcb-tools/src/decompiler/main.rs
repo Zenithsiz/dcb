@@ -82,7 +82,7 @@ use std::fmt;
 use anyhow::Context;
 use dcb_exe::{
 	exe::{
-		inst::{basic, pseudo, Inst, InstFmt, InstTarget, InstTargetFmt},
+		inst::{basic, pseudo, Directive, Inst, InstFmt, InstTarget, InstTargetFmt},
 		iter::ExeItem,
 		Func,
 	},
@@ -179,6 +179,9 @@ pub fn inst_display<'a>(inst: &'a Inst, exe: &'a Exe, func: Option<&'a Func>, po
 		)) => write!(f, "{}", self::inst_target_fmt(inst, pos, self::inst_target(exe, func, Pos(*target)))),
 		Inst::Pseudo(pseudo::Inst::Load(inst)) => write!(f, "{}", self::inst_target_fmt(inst, pos, self::inst_target(exe, func, inst.target(pos)))),
 		Inst::Pseudo(pseudo::Inst::Store(inst)) => write!(f, "{}", self::inst_target_fmt(inst, pos, self::inst_target(exe, func, inst.target(pos)))),
+		Inst::Directive(directive @ Directive::Dw(target)) => {
+			write!(f, "{}", self::inst_target_fmt(directive, pos, self::inst_target(exe, func, Pos(*target))))
+		},
 		// TODO: Directive
 		inst => write!(f, "{}", self::inst_fmt(inst, pos)),
 	})

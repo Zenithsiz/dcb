@@ -45,6 +45,14 @@ pub struct Func {
 	pub end_pos: Pos,
 }
 
+impl Func {
+	/// Checks if this function contains `pos`
+	#[must_use]
+	pub fn contains(&self, pos: Pos) -> bool {
+		(self.start_pos..self.end_pos).contains(&pos)
+	}
+}
+
 impl Borrow<Pos> for Func {
 	fn borrow(&self) -> &Pos {
 		&self.start_pos
@@ -60,12 +68,6 @@ impl PartialEq for Func {
 
 impl Eq for Func {}
 
-/// Only the start position is hashed, just as in the [`PartialEq`] impl.
-impl std::hash::Hash for Func {
-	fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-		self.start_pos.hash(state);
-	}
-}
 
 /// Only the start position matters for the order
 impl PartialOrd for Func {

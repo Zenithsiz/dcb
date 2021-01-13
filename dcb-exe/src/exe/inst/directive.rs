@@ -1,7 +1,7 @@
 //! Directives
 
 // Imports
-use super::{InstFmt, InstSize};
+use super::{InstFmt, InstSize, InstTargetFmt};
 use crate::exe::{DataType, Pos};
 use ascii::{AsciiChar, AsciiStr};
 use dcb_util::NextFromBytes;
@@ -156,6 +156,19 @@ impl<'a> InstFmt for Directive<'a> {
 		}
 	}
 }
+
+
+impl<'a> InstTargetFmt for Directive<'a> {
+	fn fmt(&self, _pos: Pos, target: impl std::fmt::Display, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+		match self {
+			Self::Dw(_) => write!(f, "dw {target}"),
+			Self::Dh(_) => write!(f, "dh {target}"),
+			Self::Db(_) => write!(f, "db {target}"),
+			Self::Ascii(_) => write!(f, ".ascii {target}"),
+		}
+	}
+}
+
 
 /// Reads an ascii string from a byte slice until null, aligned to a word
 #[allow(clippy::as_conversions, clippy::cast_possible_truncation)] // Our length will always fit into a `u32`.
