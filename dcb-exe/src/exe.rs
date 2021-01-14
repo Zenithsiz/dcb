@@ -29,7 +29,7 @@ use std::{
 };
 
 /// The game executable
-#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(Clone, Debug)]
 pub struct Exe {
 	/// The executable header
 	header: Header,
@@ -136,9 +136,9 @@ impl Exe {
 		let insts = inst::ParseIter::new(&*bytes, &known_data_table, &known_func_table, header.start_pos);
 
 		// Then parse all heuristic tables
-		let heuristics_data_table = DataTable::search_instructions(insts_range.clone(), insts.clone());
+		let heuristics_data = Data::search_instructions(insts_range.clone(), insts.clone());
 		let heuristics_func_table = FuncTable::search_instructions(insts_range, insts, &known_data_table);
-		let data_table = known_data_table.merge_with(heuristics_data_table);
+		let data_table = known_data_table.extend(heuristics_data).map_err(DeserializeError::MergeDataHeuristics)?;
 		let func_table = known_func_table.merge_with(heuristics_func_table);
 
 		Ok(Self {

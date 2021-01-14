@@ -16,6 +16,9 @@
 	bindings_after_at,
 	iter_map_while,
 	array_chunks,
+	ordering_helpers,
+	const_btree_new,
+	option_expect_none,
 )]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]
@@ -61,6 +64,8 @@
 #![allow(clippy::shadow_reuse, clippy::shadow_same)]
 // Matching on booleans can look better than `if / else`
 #![allow(clippy::match_bool)]
+// If the `else` isn't needed, we don't put it
+#![allow(clippy::else_if_without_else)]
 
 // Modules
 pub mod exe;

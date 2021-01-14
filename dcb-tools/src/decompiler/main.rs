@@ -140,8 +140,8 @@ fn main() -> Result<(), anyhow::Error> {
 
 			ExeItem::Data { data, insts } => {
 				println!();
-				println!("{}:", data.name);
-				for description in data.desc.lines() {
+				println!("{}:", data.name());
+				for description in data.desc().lines() {
 					println!("# {description}");
 				}
 				for (pos, inst) in insts {
@@ -212,9 +212,9 @@ pub fn inst_target<'a>(exe: &'a Exe, func: Option<&'a Func>, pos: Pos) -> impl f
 
 		// Else try a data
 		if let Some(data) = exe.data_table().get_containing(pos) {
-			return match data.pos == pos {
-				true => write!(f, "{}", data.name),
-				false => write!(f, "{}{:+#x}", data.name, pos - data.pos),
+			return match data.start_pos() == pos {
+				true => write!(f, "{}", data.name()),
+				false => write!(f, "{}{:+#x}", data.name(), pos - data.start_pos()),
 			};
 		}
 

@@ -10,49 +10,54 @@
 
 // Modules
 pub mod error;
+mod node;
 
 // Exports
-pub use error::GetKnownError;
-use inst::directive::Directive;
-use int_conv::SignExtended;
+pub use error::{ExtendError, GetKnownError, NewError};
 
 // Imports
-use super::{Data, DataType};
-use crate::exe::{
-	inst::{self, basic, pseudo, Inst},
-	Pos,
-};
-use dcb_util::DiscardingSortedMergeIter;
-use std::{
-	collections::BTreeSet,
-	fs::File,
-	iter::FromIterator,
-	ops::{Range, RangeBounds},
-};
+use self::node::DataNode;
+use super::Data;
+use crate::exe::Pos;
+use std::fs::File;
 
 /// Data table
-#[derive(PartialEq, Eq, Clone, Debug)]
-#[derive(serde::Serialize, serde::Deserialize)]
-pub struct DataTable(BTreeSet<Data>);
+#[derive(Clone, Debug)]
+pub struct DataTable {
+	/// Root node
+	///
+	/// Note: The root data is never actually returned, it is a dummy data
+	///       that encompasses all of the data positions.
+	root: DataNode,
+}
 
 impl DataTable {
-	/// Merges two data tables, discarding duplicates from `other`.
-	///
-	/// This can be useful when combining known data locations and heuristically
-	/// discovered data locations, as the known functions are always kept, and the
-	/// duplicate discovered ones are discarded.
+	/// Creates an empty data table
 	#[must_use]
-	pub fn merge_with(self, other: Self) -> Self {
-		// Note: We don't return the iterator, as we want the user to
-		//       keep the guarantees supplied by this type.
-		DiscardingSortedMergeIter::new(self.0.into_iter(), other.0.into_iter()).collect()
+	pub fn empty() -> Self {
+		let root = DataNode::new(Data::dummy());
+		Self { root }
+	}
+
+	/// Creates a data table from an iterator of data
+	pub fn new(data: impl IntoIterator<Item = Data>) -> Result<Self, NewError> {
+		let table = Self::empty();
+		table.extend(data).map_err(NewError::Extend)
+	}
+
+	/// Extends this data table with all values in `data`
+	pub fn extend(mut self, data: impl IntoIterator<Item = Data>) -> Result<Self, ExtendError> {
+		for data in data {
+			self.root.insert(data).map_err(ExtendError::Insert)?;
+		}
+
+		Ok(self)
 	}
 
 	/// Retrieves the smallest data location containing `pos`
 	#[must_use]
 	pub fn get_containing(&self, pos: Pos) -> Option<&Data> {
-		// Find the first data that includes `pos`.
-		self.range(..=pos).filter(|data| data.contains(pos)).min_by_key(|data| data.size())
+		self.root.get_containing_deepest(pos).map(DataNode::data)
 	}
 
 	/// Retrieves the smallest data location at `pos`
@@ -61,10 +66,28 @@ impl DataTable {
 		self.get_containing(pos).filter(|data| data.pos == pos)
 	}
 
-	/// Returns a range of data
+	/// Returns the smallest data after `pos`
 	#[must_use]
-	pub fn range(&self, range: impl RangeBounds<Pos>) -> impl DoubleEndedIterator<Item = &Data> + Clone {
-		self.0.range(range)
+	pub fn get_next_from(&self, pos: Pos) -> Option<&Data> {
+		// Keep doing down while there's a next node
+		let mut cur_node = &self.root;
+		let mut cur_next_node = None;
+		while let Some(next_node) = cur_node.get_next_from(pos) {
+			// Try to go deeper into the current node
+			match cur_node.get_containing(pos) {
+				// If we can go deeper, save the next node and try deeper
+				Some(node) => {
+					cur_next_node = Some(next_node);
+					cur_node = node;
+				},
+
+				// If we can't go any deeper, go as deep as we can at the start of `next_node`
+				None => return Some(next_node.get_containing_deepest(next_node.data().start_pos()).unwrap_or(next_node).data()),
+			}
+		}
+
+		// If we got any next node, return it
+		cur_next_node.map(DataNode::data)
 	}
 }
 
@@ -73,76 +96,8 @@ impl DataTable {
 	pub fn get_known() -> Result<Self, GetKnownError> {
 		let file = File::open("resources/known_data.yaml").map_err(GetKnownError::File)?;
 
-		serde_yaml::from_reader(file).map_err(GetKnownError::Parse)
-	}
+		let data: Vec<Data> = serde_yaml::from_reader(file).map_err(GetKnownError::Parse)?;
 
-	/// Searches all instructions for references to
-	/// executable data using certain heuristics.
-	#[must_use]
-	pub fn search_instructions<'a>(insts_range: Range<Pos>, insts: impl Iterator<Item = (Pos, Inst<'a>)> + Clone) -> Self {
-		// Get all possible references to data
-		let references: BTreeSet<Pos> = insts
-			.clone()
-			.filter_map(|(pos, inst)| match inst {
-				Inst::Basic(basic::Inst::Load(basic::load::Inst { offset, .. }) | basic::Inst::Store(basic::store::Inst { offset, .. })) => {
-					Some(pos + offset.sign_extended::<i32>())
-				},
-				Inst::Pseudo(
-					pseudo::Inst::LoadImm(pseudo::load_imm::Inst {
-						kind: pseudo::load_imm::Kind::Address(Pos(address)) | pseudo::load_imm::Kind::Word(address),
-						..
-					}) |
-					pseudo::Inst::Load(pseudo::load::Inst { target: Pos(address), .. }) |
-					pseudo::Inst::Store(pseudo::store::Inst { target: Pos(address), .. }),
-				) |
-				Inst::Directive(Directive::Dw(address)) => Some(Pos(address)),
-				_ => None,
-			})
-			.filter(|pos| insts_range.contains(pos))
-			.collect();
-
-		// Then filter the instructions for data locations.
-		insts
-			// Filter all non-directives
-			.filter_map(|(pos, instruction)| match instruction {
-				Inst::Directive(directive) if references.contains(&pos) => Some((pos, directive)),
-				_ => None,
-			})
-			.zip(0..)
-			.map(|((pos, directive), idx)| {
-				match directive {
-					Directive::Ascii(string) => Data {
-						name: format!("string_{idx}"),
-						desc: String::new(),
-						pos,
-						ty: DataType::AsciiStr { len: string.len() },
-					},
-					Directive::Dw(_) => Data {
-						name: format!("data_w{idx}"),
-						desc: String::new(),
-						pos,
-						ty: DataType::Word,
-					},
-					Directive::Dh(_) => Data {
-						name: format!("data_h{idx}"),
-						desc: String::new(),
-						pos,
-						ty: DataType::HalfWord,
-					},
-					Directive::Db(_) => Data {
-						name: format!("data_b{idx}"),
-						desc: String::new(),
-						pos,
-						ty: DataType::Byte,
-					},
-				}
-			})
-			.collect()
-	}
-}
-
-impl FromIterator<Data> for DataTable {
-	fn from_iter<T: IntoIterator<Item = Data>>(iter: T) -> Self {
-		Self(iter.into_iter().collect())
+		Self::new(data).map_err(GetKnownError::New)
 	}
 }

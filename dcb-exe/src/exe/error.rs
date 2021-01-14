@@ -29,4 +29,8 @@ pub enum DeserializeError {
 	/// Unable to get known data
 	#[error("Unable to get known func table")]
 	KnownFuncTable(#[source] func::table::GetKnownError),
+
+	/// Unable to merge heuristics
+	#[error("Unable to merge heuristics")]
+	MergeDataHeuristics(#[source] data::table::ExtendError),
 }

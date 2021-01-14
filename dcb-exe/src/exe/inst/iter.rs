@@ -12,7 +12,7 @@ use crate::{
 /// Parses instruction from a byte slice, along with it's memory position.
 /// It also references the data and function table, force-decoding certain
 /// instructions if inside a data location or function table.
-#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(Clone, Debug)]
 pub struct ParseIter<'a> {
 	/// Remaining bytes
 	bytes: &'a [u8],
@@ -57,11 +57,8 @@ impl<'a> Iterator for ParseIter<'a> {
 				// If we're in an invalid data location, warn and skip it
 				DecodeError::InvalidDataLocation { data, err } => {
 					log::warn!(
-						"Attempted to decode in position {} from within data location {}({})@{}:\n{:#}",
+						"Attempted to decode in position {} from within data location {data}:\n{:#}",
 						self.cur_pos,
-						data.name,
-						data.ty,
-						data.pos,
 						anyhow::Error::new(err),
 					);
 					self.cur_pos = data.end_pos();

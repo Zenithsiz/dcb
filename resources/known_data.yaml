@@ -33,13 +33,6 @@
     Array:
       ty: u32
       len: 82
-- name: CrossMoveEffectStrings
-  desc: The cross move effect string table with escaped symbols
-  pos: 0x8006e4bc
-  ty:
-    Array:
-      ty: u32
-      len: 18
 
 - name: HeapStartKuseg
   desc: Stores the start of the heap in KUSEG (Minus 0x4).
@@ -113,10 +106,7 @@
 - name: FuncList1Ptr
   desc: Pointer to FuncList1
   pos: 0x80070aa8
-  ty:
-    Array:
-      ty: u32
-      len: 7
+  ty: u32
 
 # Expansion region 1
 - name: ExpansionRegion1Header

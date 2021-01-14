@@ -5,7 +5,7 @@ use super::{inst::ParseIter, Data, Func};
 use crate::{Exe, Pos};
 
 /// Iterator over the executable's data locations, functions and others.
-#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(Clone, Debug)]
 pub struct Iter<'a> {
 	/// Executable
 	exe: &'a Exe,
@@ -25,7 +25,7 @@ impl<'a> Iter<'a> {
 }
 
 /// An executable's item
-#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(Clone, Debug)]
 pub enum ExeItem<'a> {
 	/// A function
 	Func {
@@ -65,9 +65,9 @@ impl<'a> Iterator for Iter<'a> {
 		// Try to get data
 		if let Some(data) = self.exe.data_table.get_starting_at(cur_pos) {
 			// Check the next data for our next position that isn't equal to our current one
-			let end_pos = match self.exe.data_table.range(cur_pos..).find(|next_data| next_data.pos != data.pos) {
+			let end_pos = match self.exe.data_table.get_next_from(cur_pos) {
 				// If it ends before or at the end of this data, use it
-				Some(next_data) if next_data.pos <= data.end_pos() => next_data.pos,
+				Some(next_data) if next_data.start_pos() <= data.end_pos() => next_data.start_pos(),
 
 				// Else end at the end of this data
 				_ => data.end_pos(),
@@ -90,15 +90,15 @@ impl<'a> Iterator for Iter<'a> {
 		}
 
 		// Else return an iterator until the next data / function, or until end, if none or past the end.
-		let next_data = self.exe.data_table().range(cur_pos..).next();
+		let next_data = self.exe.data_table().get_next_from(cur_pos);
 		let next_func = self.exe.func_table().range(cur_pos..).next();
 
 		let end_pos = match (next_data, next_func) {
-			(Some(next_data), Some(next_func)) => match next_data.pos < next_func.start_pos {
-				true => next_data.pos,
+			(Some(next_data), Some(next_func)) => match next_data.start_pos() < next_func.start_pos {
+				true => next_data.start_pos(),
 				false => next_func.start_pos,
 			},
-			(Some(next_data), None) => next_data.pos,
+			(Some(next_data), None) => next_data.start_pos(),
 			(None, Some(next_func)) => next_func.start_pos,
 			(None, None) => self.exe.insts_range().end,
 		};

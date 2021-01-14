@@ -83,7 +83,7 @@ impl<'a> Inst<'a> {
 
 		// If we're contained in some data, check it's type so we can read it
 		if let Some(data) = data_table.get_containing(pos) {
-			return Directive::decode_with_data(pos, bytes, &data.ty, data.pos)
+			return Directive::decode_with_data(pos, bytes, data.ty(), data.start_pos())
 				.map(Self::Directive)
 				.map_err(|err| DecodeError::InvalidDataLocation { data, err });
 		}
