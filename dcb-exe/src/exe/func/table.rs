@@ -25,7 +25,7 @@ use std::{
 	collections::{BTreeMap, BTreeSet},
 	fs::File,
 	iter::FromIterator,
-	ops::{Range, RangeBounds},
+	ops::{Bound, Range, RangeBounds},
 };
 
 /// Function table
@@ -168,8 +168,9 @@ impl FuncTable {
 				}
 
 				// Get all labels within this function
+				// Note: We skip labels on the function location itself.
 				let labels = labels
-					.range(func_pos..end_pos)
+					.range((Bound::Excluded(func_pos), Bound::Excluded(end_pos)))
 					.enumerate()
 					.map(|(idx, &pos)| (pos, format!("{idx}")))
 					.collect();

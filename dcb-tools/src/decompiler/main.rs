@@ -111,7 +111,7 @@ fn main() -> Result<(), anyhow::Error> {
 		match item {
 			// For each function or header, print a header and all it's instructions
 			ExeItem::Func { func, insts } => {
-				println!();
+				println!("\n##########");
 				println!("{}:", func.name);
 				if !func.signature.is_empty() {
 					println!("# {}", func.signature);
@@ -135,10 +135,11 @@ fn main() -> Result<(), anyhow::Error> {
 
 					println!();
 				}
+				println!("##########\n");
 			},
 
 			ExeItem::Data { data, insts } => {
-				println!();
+				println!("\n##########");
 				println!("{}:", data.name());
 				for description in data.desc().lines() {
 					println!("# {description}");
@@ -146,6 +147,7 @@ fn main() -> Result<(), anyhow::Error> {
 				for (pos, inst) in insts {
 					println!("{}: {}", pos, self::inst_display(&inst, &exe, None, pos));
 				}
+				println!("##########\n");
 			},
 
 			// If it's standalone, print it by it's own

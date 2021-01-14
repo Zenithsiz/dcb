@@ -27,6 +27,7 @@
     0x80013e54: Just sets `something1_executed` to 1.
     0x80013e5c: Setup interrupts and DMA and possibly other stuff.
     0x80013e6c: "args: (0)"
+    0x80013e84: "args: (0x140, 0xf0, 0, 0)"
   labels:
     0x80013ef4: "0"
     0x80013f48: "1"
@@ -201,12 +202,20 @@
 - name: main_loop_sub1
   signature: fn()
   desc: "Called on loop by `main_loop` forever, maybe an interrupt breaks
-    out of the loop, but not sure how this function is related to that.
-    Simply reads from 0x801ddc10, calculates `(value * 0x41c64e6d) as u32 + 0x3039`,
+    out of the loop, but not sure how this function is related to that.\n
+    Simply reads from 0x801ddc10, calculates `(value * 0x41c64e6d) as u32 + 0x3039`,\n
     storing it back into 0x801ddc10, then returns `value << 10 | 0x7fff`, where `value`
     is the new value, just stored back."
   start_pos: 0x80069124
   end_pos: 0x80069154
+
+- name: something8
+  signature: "fn(a: u32, b: u32, c: u32, d: u32)"
+  desc: ""
+  comments:
+    0x80061910: "args: ($s1, $s0, c & 0xffff, d & 0xffff)"
+  start_pos: 0x800618e4
+  end_pos: 0x80061954
 
 # A functions
 - name: InitHeap
