@@ -2,14 +2,13 @@
 
 // Imports
 use int_conv::{SignExtended, Signed};
-use std::{convert::TryFrom, fmt, ops};
+use std::{convert::TryFrom, ops};
 
 /// An instruction position
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Hash, Debug)]
+#[derive(serde::Serialize, serde::Deserialize)]
 #[derive(derive_more::Display)]
-#[derive(ref_cast::RefCast)]
 #[display(fmt = "{_0:#x}")]
-#[repr(transparent)]
 pub struct Pos(pub u32);
 
 impl Pos {
@@ -135,63 +134,5 @@ where
 
 	fn sub(self, rhs: T) -> Self::Output {
 		<Pos as ops::Sub<T>>::sub(*self, rhs)
-	}
-}
-
-impl serde::Serialize for Pos {
-	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-	where
-		S: serde::Serializer,
-	{
-		format_args!("{}", self).serialize(serializer)
-	}
-}
-
-impl<'de> serde::Deserialize<'de> for Pos {
-	fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-	where
-		D: serde::Deserializer<'de>,
-	{
-		deserializer.deserialize_u32(PosVisitor)
-	}
-}
-
-/// Visitor for deserializing a `Pos`.
-struct PosVisitor;
-
-#[allow(clippy::map_err_ignore)] // It's clearer to provide a string than the error from `try_from`
-impl<'de> serde::de::Visitor<'de> for PosVisitor {
-	type Value = Pos;
-
-	fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-		formatter.write_str("a string-encoded hex value or `u32`")
-	}
-
-	fn visit_u64<E>(self, pos: u64) -> Result<Self::Value, E>
-	where
-		E: serde::de::Error,
-	{
-		let pos = u32::try_from(pos).map_err(|_| E::custom("Position must fit within a `u32`"))?;
-		Ok(Pos(pos))
-	}
-
-	fn visit_i64<E>(self, pos: i64) -> Result<Self::Value, E>
-	where
-		E: serde::de::Error,
-	{
-		let pos = u32::try_from(pos).map_err(|_| E::custom("Position must fit within a `u32`"))?;
-		Ok(Pos(pos))
-	}
-
-	fn visit_str<E>(self, pos: &str) -> Result<Self::Value, E>
-	where
-		E: serde::de::Error,
-	{
-		// If it doesn't begin with `0x`, error
-		if !pos.starts_with("0x") {
-			return Err(E::custom("String-encoded hex values must start with `0x`"));
-		}
-
-		u32::from_str_radix(pos.trim_start_matches("0x"), 16).map(Pos).map_err(E::custom)
 	}
 }

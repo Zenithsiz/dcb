@@ -90,7 +90,6 @@ use dcb_exe::{
 };
 use dcb_io::GameFile;
 
-#[allow(clippy::cognitive_complexity, clippy::too_many_lines)] // TODO: Refactor
 fn main() -> Result<(), anyhow::Error> {
 	// Initialize the logger and set the panic handler
 	logger::init();
