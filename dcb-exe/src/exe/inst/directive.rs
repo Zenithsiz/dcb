@@ -61,8 +61,8 @@ impl<'a> Directive<'a> {
 			return Err(DecodeWithDataError::NotAligned);
 		}
 
-		// If we're not in an array, but we're not at the start of the data, return
-		if !matches!(ty, DataType::Array { .. }) && pos != data_pos {
+		// If we're not in an array or marker, but we're not at the start of the data, return
+		if !matches!(ty, DataType::Array { .. } | DataType::Marker { .. }) && pos != data_pos {
 			return Err(DecodeWithDataError::Offset);
 		}
 
@@ -97,6 +97,9 @@ impl<'a> Directive<'a> {
 				let next_data_pos = data_pos + idx * ty.size();
 				Self::decode_with_data(pos, bytes, ty, next_data_pos)
 			},
+
+			// Auto-decode
+			DataType::Marker { .. } => Self::decode(pos, bytes).ok_or(DecodeWithDataError::MissingBytes),
 		}
 	}
 

@@ -36,6 +36,13 @@ pub enum DataType {
 		/// Array length
 		len: usize,
 	},
+
+	/// Marker
+	#[display(fmt = "Marker<{len}>")]
+	Marker {
+		/// Byte size
+		len: usize,
+	},
 }
 
 impl DataType {
@@ -49,6 +56,7 @@ impl DataType {
 			// Round strings to the nearest word
 			Self::AsciiStr { len } => len + 4 - (len % 4),
 			Self::Array { ty, len } => len * ty.size(),
+			&Self::Marker { len } => len,
 		}
 	}
 
@@ -62,6 +70,7 @@ impl DataType {
 			Self::Byte => 1,
 			Self::AsciiStr { .. } => 4,
 			Self::Array { ty, .. } => ty.align(),
+			Self::Marker { .. } => 1,
 		}
 	}
 }

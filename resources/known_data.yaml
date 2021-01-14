@@ -2,15 +2,13 @@
 - name: ExeStart
   pos: 0x80010000
   ty:
-    Array:
-      ty: u32
-      len: 0xf93
+    Marker:
+      len: 0x3e4c
 - name: ExeEnd
   pos: 0x8006dd3c
   ty:
-    Array:
-      ty: u32
-      len: 0x28b1
+    Marker:
+      len: 0xa2C4
 
 - name: CrossMoveEffectStringsRaw
   desc: The cross move effect string table with raw symbols
