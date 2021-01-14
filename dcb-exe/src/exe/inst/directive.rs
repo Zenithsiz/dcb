@@ -174,7 +174,6 @@ impl<'a> InstTargetFmt for Directive<'a> {
 
 
 /// Reads an ascii string from a byte slice until null, aligned to a word
-#[allow(clippy::as_conversions, clippy::cast_possible_truncation)] // Our length will always fit into a `u32`.
 fn read_ascii_until_null(bytes: &[u8]) -> Option<&AsciiStr> {
 	// For each word in the input
 	for (word, cur_size) in bytes.array_chunks::<4>().zip((0..).step_by(4)) {
