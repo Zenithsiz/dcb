@@ -91,21 +91,23 @@ use dcb_exe::{
 use dcb_io::GameFile;
 
 fn main() -> Result<(), anyhow::Error> {
-	// Initialize the logger and set the panic handler
+	// Initialize our logger.
 	logger::init();
 
 	// Get all data from cli
-	let cli::CliData { game_file_path } = cli::CliData::new();
+	let cli = cli::CliData::new();
 
 	// Open the game file
-	let input_file = std::fs::File::open(&game_file_path).context("Unable to open input file")?;
+	let input_file = std::fs::File::open(&cli.game_file_path).context("Unable to open input file")?;
 	let mut game_file = GameFile::from_reader(input_file).context("Unable to parse input file as dcb")?;
 
 	// Read the executable
 	log::debug!("Deserializing executable");
 	let exe = Exe::deserialize(&mut game_file).context("Unable to parse game executable")?;
 
-	println!("Header:\n{}", exe.header());
+	if cli.print_header {
+		println!("Header:\n{}", exe.header());
+	}
 
 	for item in exe.iter() {
 		match item {
@@ -126,7 +128,12 @@ fn main() -> Result<(), anyhow::Error> {
 					}
 
 					// Write the position
-					print!("{pos}: {}", self::inst_display(&inst, &exe, Some(func), pos));
+					if cli.print_inst_pos {
+						print!("{pos}: ");
+					}
+
+					// Write the instruction
+					print!("{}", self::inst_display(&inst, &exe, Some(func), pos));
 
 					// If there's a comment, print it
 					if let Some(comment) = func.comments.get(&pos) {
@@ -145,7 +152,15 @@ fn main() -> Result<(), anyhow::Error> {
 					println!("# {description}");
 				}
 				for (pos, inst) in insts {
-					println!("{}: {}", pos, self::inst_display(&inst, &exe, None, pos));
+					// Write the position
+					if cli.print_inst_pos {
+						print!("{pos}: ");
+					}
+
+					// Write the instruction
+					print!("{}", self::inst_display(&inst, &exe, None, pos));
+
+					println!();
 				}
 				println!("##########\n");
 			},
@@ -153,7 +168,15 @@ fn main() -> Result<(), anyhow::Error> {
 			// If it's standalone, print it by it's own
 			ExeItem::Unknown { insts } => {
 				for (pos, inst) in insts {
-					println!("{pos}: {}", self::inst_display(&inst, &exe, None, pos));
+					// Write the position
+					if cli.print_inst_pos {
+						print!("{pos}: ");
+					}
+
+					// Write the instruction
+					print!("{}", self::inst_display(&inst, &exe, None, pos));
+
+					println!();
 				}
 			},
 		}

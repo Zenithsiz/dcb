@@ -1,14 +1,20 @@
-//! Cli manager
+//! Command line arguments
 
 // Imports
 use clap::{App as ClapApp, Arg as ClapArg};
 use std::path::{Path, PathBuf};
 
-/// Data from the command line
+/// Command line data
 #[derive(PartialEq, Clone, Debug)]
 pub struct CliData {
 	/// The game file
 	pub game_file_path: PathBuf,
+
+	/// If instruction positions should be printed
+	pub print_inst_pos: bool,
+
+	/// If the header should be printed
+	pub print_header: bool,
 }
 
 impl CliData {
@@ -25,6 +31,8 @@ impl CliData {
 					.required(true)
 					.index(1),
 			)
+			.arg(ClapArg::with_name("print-inst-pos").help("If instructions' positions should be printed"))
+			.arg(ClapArg::with_name("print-header").help("If the header of the executable should be printed"))
 			.get_matches();
 
 		// Get the input filename
@@ -35,7 +43,14 @@ impl CliData {
 			.map(Path::to_path_buf)
 			.expect("Unable to get required argument `GAME_FILE`");
 
+		let print_inst_pos = matches.is_present("print-inst-pos");
+		let print_header = matches.is_present("print-header");
+
 		// Return the cli data
-		Self { game_file_path }
+		Self {
+			game_file_path,
+			print_inst_pos,
+			print_header,
+		}
 	}
 }
