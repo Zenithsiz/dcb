@@ -52,8 +52,11 @@ impl DataNode {
 	}
 
 	/// Inserts a new data into this node
+	///
+	/// If the data already existed with the same position and type, it will
+	/// not be inserted, instead it will be returned.
 	// TODO: Get rid of all these clones.
-	pub fn insert(&mut self, data: Data) -> Result<(), InsertError> {
+	pub fn try_insert(&mut self, data: Data) -> Result<Option<Data>, InsertError> {
 		// If the data isn't contained in ourselves, return Err
 		if !self.contains(&data) {
 			return Err(InsertError::NotContained(data));
@@ -61,11 +64,15 @@ impl DataNode {
 
 		// Check the first node behind it to insert
 		if let Some(node) = self.nodes.range(..=data.start_pos()).next_back() {
+			// If it's equal to the node, don't replace it
+			if node.data.start_pos() == data.start_pos() && node.data.ty() == data.ty() {
+				return Ok(Some(data));
+			}
 			// If it contains it, insert it there
-			if node.contains(&data) {
+			else if node.contains(&data) {
 				let node_data = node.data.clone();
 				let node_pos = node.data.start_pos();
-				return self::btree_set_modify(&mut self.nodes, &node_pos, |node| node.insert(data))
+				return self::btree_set_modify(&mut self.nodes, &node_pos, |node| node.try_insert(data))
 					.map_err(move |err| InsertError::InsertChild(node_data, Box::new(err)));
 			}
 			// If it doesn't contain it, but intersects, return Err
@@ -84,7 +91,7 @@ impl DataNode {
 		// And insert it
 		// TODO: Check bug here where this can fail
 		assert!(self.nodes.insert(Self::new(data)), "No node with this position should exist");
-		Ok(())
+		Ok(None)
 	}
 
 	/// Checks if a data is contained in this node

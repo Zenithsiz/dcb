@@ -46,9 +46,12 @@ impl DataTable {
 	}
 
 	/// Extends this data table with all values in `data`
+	///
+	/// Duplicates are ignored.
 	pub fn extend(mut self, data: impl IntoIterator<Item = Data>) -> Result<Self, ExtendError> {
 		for data in data {
-			self.root.insert(data).map_err(ExtendError::Insert)?;
+			// Note: We ignore duplicates
+			let _ = self.root.try_insert(data).map_err(ExtendError::Insert)?;
 		}
 
 		Ok(self)
