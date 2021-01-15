@@ -226,22 +226,182 @@
     0x8006a73c: "arg: 0x39"
   start_pos: 0x8006a734
   end_pos: 0x8006a744
+- name: FlushCache
+  signature: "fn()"
+  desc: Calls A(0x44)
+  start_pos: 0x8006a744
+  end_pos: 0x8006a754
+- name: GPU_cw
+  signature: "fn(cmd: u32)"
+  desc: Calls A(0x49)
+  start_pos: 0x8006a754
+  end_pos: 0x8006a764
+- name: _bu_init
+  signature: "fn()"
+  desc: Calls A(0x70)
+  start_pos: 0x80068804
+  end_pos: 0x80068814
+- name: CdRemove
+  signature: "fn()"
+  desc: Calls A(0x72)
+  start_pos: 0x8006a76c
+  end_pos: 0x8006a77c
+- name: _card_info
+  signature: "fn(port: u32)"
+  desc: Calls A(0xab)
+  start_pos: 0x80068814
+  end_pos: 0x80068824
+- name: _card_async_load_directory
+  signature: "fn(port: u32)"
+  desc: Calls A(0xac)
+  start_pos: 0x80068824
+  end_pos: 0x80068834
 
 # B Functions
+- name: DeliverEvent
+  signature: "fn(class: u32, spec: u32)"
+  desc: Calls B(0x07)
+  start_pos: 0x8006a784
+  end_pos: 0x8006a794
+- name: OpenEvent
+  signature: "fn(class: u32, spec: u32, mode: u32, func: u32)"
+  desc: Calls B(0x08)
+  start_pos: 0x8006a794
+  end_pos: 0x8006a7a4
+- name: WaitEvent
+  signature: "fn(event: u32)"
+  desc: Calls B(0x0a)
+  start_pos: 0x8006a7a4
+  end_pos: 0x8006a7b4
+- name: TestEvent
+  signature: "fn(event: u32)"
+  desc: Calls B(0x0b)
+  start_pos: 0x8006a7b4
+  end_pos: 0x8006a7c4
+- name: EnableEvent
+  signature: "fn(event: u32)"
+  desc: Calls B(0x0c)
+  start_pos: 0x8006a7c4
+  end_pos: 0x8006a7d4
+- name: InitPad
+  signature: "fn(buf1: *mut u8, size1: u32, buf2: *mut u8, size2: u32)"
+  desc: Calls B(0x12)
+  start_pos: 0x8006af54
+  end_pos: 0x8006af64
+- name: StartPad
+  signature: "fn()"
+  desc: Calls B(0x13)
+  start_pos: 0x8006af64
+  end_pos: 0x8006af74
+- name: OutdatedPadInitAndStart
+  signature: "fn(type: u32, button_dest: *mut u8, unused1: u32, unused2: u32)"
+  desc: Calls B(0x15)
+  start_pos: 0x8006af74
+  end_pos: 0x8006af84
+- name: ReturnFromException
+  signature: "fn()"
+  desc: Calls B(0x17)
+  start_pos: 0x8006a7d4
+  end_pos: 0x8006a7e4
+- name: SetDefaultExitFromException
+  signature: "fn()"
+  desc: Calls B(0x18)
+  start_pos: 0x8006a7e4
+  end_pos: 0x8006a7f4
 - name: SetCustomExitFromException
   signature: "fn(addr: fn())"
   desc: Calls B(0x19)
   start_pos: 0x8006a7f4
-  end_pos: 0x8006a800
+  end_pos: 0x8006a804
+- name: FileOpen
+  signature: "fn(filename: *const str, access_mode: u32)"
+  desc: Calls B(0x32)
+  start_pos: 0x8006a824
+  end_pos: 0x8006a834
+- name: FileSeek
+  signature: "fn(fd: u32, offset: u32, seek_type: u32)"
+  desc: Calls B(0x33)
+  start_pos: 0x8006a834
+  end_pos: 0x8006a844
+- name: FileRead
+  signature: "fn(fd: u32, dst: *mut u8, length: u32)"
+  desc: Calls B(0x34)
+  start_pos: 0x8006a844
+  end_pos: 0x8006a854
+- name: FileWrite
+  signature: "fn(fd: u32, src: *const u8, length: u32)"
+  desc: Calls B(0x35)
+  start_pos: 0x8006a854
+  end_pos: 0x8006a864
+- name: FileClose
+  signature: "fn(fd: u32)"
+  desc: Calls B(0x36)
+  start_pos: 0x8006a864
+  end_pos: 0x8006a874
+- name: firstfile
+  signature: "fn(filename: *const str, dir_entry: u32)"
+  desc: Calls B(0x42)
+  start_pos: 0x8006acb4
+  end_pos: 0x8006acc4
+- name: nextfile
+  signature: "fn(dir_entry: u32)"
+  desc: Calls B(0x43)
+  start_pos: 0x8006a874
+  end_pos: 0x8006a884
+- name: InitCard
+  signature: "fn(pad_enable: u32)"
+  desc: Calls B(0x4a)
+  start_pos: 0x80068994
+  end_pos: 0x800689a4
+- name: StartCard
+  signature: "fn()"
+  desc: Calls B(0x4b)
+  start_pos: 0x800689a4
+  end_pos: 0x800689b4
+- name: StopCard
+  signature: "fn()"
+  desc: Calls B(0x4c)
+  start_pos: 0x800689b4
+  end_pos: 0x800689c4
+- name: write_card_sector
+  signature: "fn(port: u32, sector: u32, src: *const u8)"
+  desc: Calls B(0x4e)
+  start_pos: 0x80068874
+  end_pos: 0x80068884
+- name: read_card_sector
+  signature: "fn(port: u32, sector: u32, dst: *mut u8)"
+  desc: Calls B(0x4f)
+  start_pos: 0x80069024
+  end_pos: 0x80069034
+- name: allow_new_card
+  signature: "fn()"
+  desc: Calls B(0x50)
+  start_pos: 0x80068884
+  end_pos: 0x80068894
 - name: ChangeClearPad
   signature: "fn(pad: u32)"
   desc: Calls B(0x5b)
   start_pos: 0x8006a884
-  end_pos: 0x8006a890
+  end_pos: 0x8006a894
+- name: get_card_status
+  signature: "fn(slot: u32)"
+  desc: Calls B(0x5c)
+  start_pos: 0x80069034
+  end_pos: 0x80069044
 
 # C Functions
+- name: SysEnqIntRP
+  signature: "fn(priority: u32, struct: u32)"
+  desc: Calls C(0x02)
+  start_pos: 0x8006af84
+  end_pos: 0x8006af94
+- name: SysDeqIntRP
+  signature: "fn(priority: u32, struct: u32)"
+  desc: Calls C(0x03)
+  start_pos: 0x8006af94
+  end_pos: 0x8006afa4
 - name: ChangeClearRCnt
   signature: "fn(t: u32, flag: u32)"
-  desc: Calls C(0xa)
+  desc: Calls C(0x0a)
   start_pos: 0x8006a894
   end_pos: 0x8006a8a0
