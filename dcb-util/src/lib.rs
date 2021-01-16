@@ -105,6 +105,9 @@ pub use next_from_bytes::NextFromBytes;
 pub use peekable_iter::PeekableIter;
 pub use signed_hex::SignedHex;
 
+// Imports
+use std::fmt;
+
 /// Returns the absolute different between `a` and `b`, `a - b` as a `i64`.
 ///
 /// If the result would not fit into a `i64`, a panic occurs.
@@ -148,5 +151,19 @@ pub const fn signed_offset(a: u64, b: i64) -> u64 {
 		} else {
 			a - ((-b) as u64)
 		}
+	}
+}
+
+/// Prints an error
+pub fn fmt_err(err: &(dyn std::error::Error + 'static), f: &mut fmt::Formatter) -> fmt::Result {
+	writeln!(f, "{err}")?;
+
+	match err.source() {
+		Some(source) => {
+			writeln!(f, "Caused by:")?;
+			write!(f, "\t")?;
+			fmt_err(source, f)
+		},
+		None => Ok(()),
 	}
 }

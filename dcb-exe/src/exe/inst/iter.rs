@@ -57,9 +57,9 @@ impl<'a> Iterator for ParseIter<'a> {
 				// If we're in an invalid data location, warn and skip it
 				DecodeError::InvalidDataLocation { data, err } => {
 					log::warn!(
-						"Attempted to decode in position {} from within data location {data}:\n{:#}",
+						"Attempted to decode in position {} from within data location {data}:\n{}",
 						self.cur_pos,
-						anyhow::Error::new(err),
+						dcb_util::DisplayWrapper::new(|f| dcb_util::fmt_err(&err, f)),
 					);
 					self.cur_pos = data.end_pos();
 					return self.next(); // Tailcall

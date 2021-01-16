@@ -32,7 +32,6 @@ serde_yaml = "0.8"
 derive_more = "0.99"
 thiserror = "1.0"
 ref-cast = "1.0"
-anyhow = "1.0.38"
 
 [dev-dependencies]
 

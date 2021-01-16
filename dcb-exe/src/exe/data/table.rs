@@ -64,7 +64,7 @@ impl DataTable {
 	pub fn extend(&mut self, data: impl IntoIterator<Item = Data>) {
 		for data in data {
 			if let Err(err) = self.root.try_insert(data) {
-				log::debug!("Unable to add data:\n{:#}", anyhow::Error::new(err))
+				log::debug!("Unable to add data:\n{:#}", dcb_util::DisplayWrapper::new(|f| dcb_util::fmt_err(&err, f)))
 			}
 		}
 	}
