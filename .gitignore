@@ -6,6 +6,7 @@
 !/resources/index.c
 !/resources/known_data.yaml
 !/resources/known_funcs.yaml
+!/resources/filesystem.txt
 
 # Cargo
 /target
