@@ -129,11 +129,11 @@ fn main() -> Result<(), anyhow::Error> {
 
 					// Write the position
 					if cli.print_inst_pos {
-						print!("{pos}: ");
+						print!("{pos}:");
 					}
 
 					// Write the instruction
-					print!("{}", self::inst_display(&inst, &exe, Some(func), pos));
+					print!("\t{}", self::inst_display(&inst, &exe, Some(func), pos));
 
 					// If there's a comment, print it
 					if let Some(comment) = func.comments.get(&pos) {
@@ -154,11 +154,11 @@ fn main() -> Result<(), anyhow::Error> {
 				for (pos, inst) in insts {
 					// Write the position
 					if cli.print_inst_pos {
-						print!("{pos}: ");
+						print!("{pos}:");
 					}
 
 					// Write the instruction
-					print!("{}", self::inst_display(&inst, &exe, None, pos));
+					print!("\t{}", self::inst_display(&inst, &exe, None, pos));
 
 					println!();
 				}
