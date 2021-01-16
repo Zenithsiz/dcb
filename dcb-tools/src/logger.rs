@@ -14,7 +14,7 @@ pub fn init() {
 		Some(TermLogger::new(LevelFilter::Warn, Config::default(), TerminalMode::Stderr)).map(|logger| BoxedLogger::from(logger)),
 		std::fs::File::create("latest.log")
 			.ok()
-			.map(|file| WriteLogger::new(LevelFilter::Trace, Config::default(), file))
+			.map(|file| WriteLogger::new(LevelFilter::Debug, Config::default(), file))
 			.map(|logger| BoxedLogger::from(logger)),
 	];
 

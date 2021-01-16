@@ -6,14 +6,14 @@
 
 // Modules
 pub mod error;
-mod node;
+pub mod node;
 
 // Exports
 pub use error::{ExtendError, NewError};
+pub use node::DataNode;
 
 // Imports
-use self::node::DataNode;
-use super::Data;
+use super::{Data, Found};
 use crate::exe::Pos;
 use std::fmt;
 
@@ -60,15 +60,21 @@ impl DataTable {
 
 	/// Extends this data table with data locations.
 	///
-	/// Any data locations that already exist or overlap will be ignored.
+	/// Any data that cannot be inserted is discarded, see [`DataNode::insert`] for
+	/// more information.
 	pub fn extend(&mut self, data: impl IntoIterator<Item = Data>) {
 		for data in data {
-			let found = data.found();
-			if let Err(err) = self.root.try_insert(data) {
-				// If the data is known, complain
-				if found.is_known() {
-					log::debug!("Unable to add data:\n{:#}", dcb_util::DisplayWrapper::new(|f| dcb_util::fmt_err(&err, f)))
-				}
+			// Try to insert and log if we get an error.
+			if let Err(err) = self.root.insert(data) {
+				let log_level = match err.data().found() {
+					Found::Known => log::Level::Warn,
+					Found::Heuristics => log::Level::Trace,
+				};
+				log::log!(
+					log_level,
+					"Unable to add data:\n{:#}",
+					dcb_util::DisplayWrapper::new(|f| dcb_util::fmt_err(&err, f))
+				);
 			}
 		}
 	}

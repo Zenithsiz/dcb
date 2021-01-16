@@ -1,7 +1,16 @@
 //! Data table nodes
 
+// Modules
+pub mod error;
+
+// Exports
+pub use error::InsertError;
+
 // Imports
-use crate::{exe::Data, Pos};
+use crate::{
+	exe::{Data, DataType},
+	Pos,
+};
 use std::{
 	borrow::Borrow,
 	cmp::Ordering,
@@ -22,28 +31,9 @@ pub struct DataNode {
 	nodes: BTreeSet<Self>,
 }
 
-/// Error for [`DataNode::insert`]
-#[derive(Debug, thiserror::Error)]
-pub enum InsertError {
-	/// The data location is not part of this node
-	#[error("The data location {_0} is not part of this node")]
-	NotContained(Data),
-
-	/// The data location overlapped
-	#[error("The data locations {_0} and {_1} overlap")]
-	Intersection(Data, Data),
-
-	/// The data location already existed
-	#[error("The data locations {_0} and {_1} are duplicates")]
-	Duplicate(Data, Data),
-
-	/// Unable to insert into child node
-	#[error("Unable to insert into child {_0}")]
-	InsertChild(Data, #[source] Box<Self>),
-}
-
 impl DataNode {
 	/// Creates a new data node
+	#[must_use]
 	pub const fn new(data: Data) -> Self {
 		Self {
 			data,
@@ -52,6 +42,7 @@ impl DataNode {
 	}
 
 	/// Returns the data in this node
+	#[must_use]
 	pub const fn data(&self) -> &Data {
 		&self.data
 	}
@@ -62,11 +53,8 @@ impl DataNode {
 	}
 
 	/// Inserts a new data into this node
-	///
-	/// If the data already existed with the same position and type, it will
-	/// not be inserted, instead it will be returned.
 	// TODO: Get rid of all these clones.
-	pub fn try_insert(&mut self, data: Data) -> Result<(), InsertError> {
+	pub fn insert(&mut self, data: Data) -> Result<(), InsertError> {
 		// If the data isn't contained in ourselves, return Err
 		if !self.contains(&data) {
 			return Err(InsertError::NotContained(data));
@@ -76,25 +64,46 @@ impl DataNode {
 		if let Some(node) = self.nodes.range(..=data.start_pos()).next_back() {
 			// If it's position range is the same, ignore it
 			if node.data.start_pos() == data.start_pos() && node.data.ty() == data.ty() {
-				return Err(InsertError::Duplicate(data, node.data.clone()));
+				return Err(InsertError::Duplicate {
+					data,
+					duplicate: node.data.clone(),
+				});
 			}
-			// If it contains it, insert it there
+			// If it contains it, check if we can insert it there
 			else if node.contains(&data) {
-				let node_data = node.data.clone();
+				// If `data` is heuristics and `node`'s data is known and not a marker, return Err
+				if data.found().is_heuristics() && node.data.found().is_known() && !matches!(node.data.ty(), DataType::Marker { .. }) {
+					return Err(InsertError::InsertHeuristicsIntoNonMarkerKnown {
+						data,
+						known: node.data.clone(),
+					});
+				}
+
+				// Else try to insert it
 				let node_pos = node.data.start_pos();
-				return self::btree_set_modify(&mut self.nodes, &node_pos, |node| node.try_insert(data))
-					.map_err(move |err| InsertError::InsertChild(node_data, Box::new(err)));
+				return self::btree_set_modify(&mut self.nodes, &node_pos, |node| {
+					node.insert(data).map_err(|err| InsertError::InsertChild {
+						child: node.data.clone(),
+						err:   Box::new(err),
+					})
+				});
 			}
 			// If it doesn't contain it, but intersects, return Err
 			else if node.intersects(&data) {
-				return Err(InsertError::Intersection(node.data.clone(), data));
-			}
+				return Err(InsertError::Intersection {
+					data,
+					intersecting: node.data.clone(),
+				});
+			};
 		}
 
 		// Else make sure it doesn't intersect the node after
 		if let Some(node) = self.get_next_from(data.start_pos()) {
 			if node.intersects(&data) {
-				return Err(InsertError::Intersection(node.data.clone(), data));
+				return Err(InsertError::Intersection {
+					data,
+					intersecting: node.data.clone(),
+				});
 			}
 		}
 
@@ -104,16 +113,19 @@ impl DataNode {
 	}
 
 	/// Checks if a data is contained in this node
+	#[must_use]
 	pub fn contains(&self, other: &Data) -> bool {
 		self::range_contains_range(self.data.pos_range(), other.pos_range())
 	}
 
 	/// Checks if a data intersects this node
+	#[must_use]
 	pub fn intersects(&self, other: &Data) -> bool {
 		self::range_intersect(self.data.pos_range(), other.pos_range())
 	}
 
 	/// Returns a data node containing `pos`
+	#[must_use]
 	pub fn get_containing(&self, pos: Pos) -> Option<&Self> {
 		// Note: We search backwards as the nodes will be sorted
 		//       by their start position
@@ -121,6 +133,7 @@ impl DataNode {
 	}
 
 	/// Returns the deepest data node containing `pos`
+	#[must_use]
 	pub fn get_containing_deepest(&self, pos: Pos) -> Option<&Self> {
 		// Go as far down the tree as we can
 		let mut cur_node = self.get_containing(pos)?;
@@ -131,6 +144,7 @@ impl DataNode {
 	}
 
 	/// Returns the first data node after `pos`
+	#[must_use]
 	pub fn get_next_from(&self, pos: Pos) -> Option<&Self> {
 		self.nodes.range((Bound::Excluded(pos), Bound::Unbounded)).next()
 	}
