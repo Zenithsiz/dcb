@@ -1,4 +1,5 @@
 ---
+# Executable
 - name: ExeStart
   pos: 0x80010000
   ty:
@@ -107,25 +108,22 @@
   ty: u32
 
 # Expansion region 1
+- name: ExpansionRegion1
+  pos: 0x1f00000
+  ty:
+    Marker:
+      len: 0x80000
 - name: ExpansionRegion1Header
   pos: 0x1f00000
   ty:
-    Array:
-      ty: u32
-      len: 0x40
-- name: ExpansionRegion1Data
-  pos: 0x1f00100
-  ty:
-    Array:
-      ty: u32
-      len: 0x1ffC0
+    Marker:
+      len: 0x100
 
 # Scratchpad
 - name: Scratchpad
   pos: 0x1f800000
   ty:
-    Array:
-      ty: u32
+    Marker:
       len: 0x400
 
 # Memory control 1
@@ -220,6 +218,11 @@
   ty: u32
 
 # DMA Registers
+- name: DMA_Registers
+  pos: 0x1f801080
+  ty:
+    Marker:
+      len: 0x80
 - name: DMA_MDECin
   desc: DMA0 channel 0
   pos: 0x1f801080
@@ -277,12 +280,6 @@
   desc: DMA Interrupt register
   pos: 0x1f8010f4
   ty: u32
-- name: DMA_Unknown0
-  pos: 0x1f8010f8
-  ty: u32
-- name: DMA_Unknown1
-  pos: 0x1f8010fc
-  ty: u32
 
 # Timers / Root counters
 - name: Timer0
@@ -300,6 +297,11 @@
 
 # CDRom Registers
 # TODO: Figure out what Index means for these.
+- name: CDROM_Registers
+  pos: 0x1F801800
+  ty:
+    Marker:
+      len: 0x4
 
 # GPU Registers
 - name: GP0_SEND_OR_GPU_READ
@@ -325,11 +327,15 @@
 - name: SPU_Voices
   pos: 0x1f801c00
   ty:
-    Array:
-      ty: u32
+    Marker:
       len: 0x180
 
 # SPU Control registers
+- name: SPU_Control_Registers
+  pos: 0x1f801d80
+  ty:
+    Marker:
+      len: 0x40
 - name: SPU_MainVolumeLR
   pos: 0x1f801d80
   ty: u32
@@ -354,9 +360,6 @@
 - name: SPU_VoiceChannelOnOffStatus
   pos: 0x1f801d9c
   ty: u32
-- name: SPU_Unknown0
-  pos: 0x1f801da0
-  ty: u16
 - name: SPU_SoundRamReverbWorkAreaStartAddress
   pos: 0x1f801da2
   ty: u16
@@ -388,9 +391,6 @@
   ty: u32
 - name: SPU_CurrentMainVolumeLR
   pos: 0x1f801db8
-  ty: u32
-- name: SPU_Unknown1
-  pos: 0x1f801dbc
   ty: u32
 
 # SPU Reverb configuration area
@@ -486,19 +486,17 @@
   ty:
     Array:
       ty: u32
-      len: 0x60
+      len: 24
 - name: SPU_Unknown2
   pos: 0x1f801e60
   ty:
-    Array:
-      ty: u32
-      len: 0x4
+    Marker:
+      len: 0x20
 - name: SPU_Unknown3
   pos: 0x1f801e80
   ty:
-    Array:
-      ty: u32
-      len: 0x60
+    Marker:
+      len: 0x180
 
 # TODO: Expansion region 2
 
@@ -506,6 +504,5 @@
 - name: BIOS
   pos: 0x1fc00000
   ty:
-    Array:
-      ty: u32
-      len: 0x20000
+    Marker:
+      len: 0x80000
