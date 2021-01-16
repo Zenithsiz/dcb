@@ -6,6 +6,7 @@ use std::{
 	borrow::Borrow,
 	cmp::Ordering,
 	collections::BTreeSet,
+	fmt,
 	ops::{Bound, Range},
 };
 
@@ -32,6 +33,10 @@ pub enum InsertError {
 	#[error("The data locations {_0} and {_1} overlap")]
 	Intersection(Data, Data),
 
+	/// The data location already existed
+	#[error("The data locations {_0} and {_1} are duplicates")]
+	Duplicate(Data, Data),
+
 	/// Unable to insert into child node
 	#[error("Unable to insert into child {_0}")]
 	InsertChild(Data, #[source] Box<Self>),
@@ -51,12 +56,17 @@ impl DataNode {
 		&self.data
 	}
 
+	/// Returns all nodes in this node
+	pub fn nodes(&self) -> impl Iterator<Item = &Self> {
+		self.nodes.iter()
+	}
+
 	/// Inserts a new data into this node
 	///
 	/// If the data already existed with the same position and type, it will
 	/// not be inserted, instead it will be returned.
 	// TODO: Get rid of all these clones.
-	pub fn try_insert(&mut self, data: Data) -> Result<Option<Data>, InsertError> {
+	pub fn try_insert(&mut self, data: Data) -> Result<(), InsertError> {
 		// If the data isn't contained in ourselves, return Err
 		if !self.contains(&data) {
 			return Err(InsertError::NotContained(data));
@@ -64,9 +74,9 @@ impl DataNode {
 
 		// Check the first node behind it to insert
 		if let Some(node) = self.nodes.range(..=data.start_pos()).next_back() {
-			// If it's equal to the node, don't replace it
+			// If it's position range is the same, ignore it
 			if node.data.start_pos() == data.start_pos() && node.data.ty() == data.ty() {
-				return Ok(Some(data));
+				return Err(InsertError::Duplicate(data, node.data.clone()));
 			}
 			// If it contains it, insert it there
 			else if node.contains(&data) {
@@ -89,9 +99,8 @@ impl DataNode {
 		}
 
 		// And insert it
-		// TODO: Check bug here where this can fail
 		assert!(self.nodes.insert(Self::new(data)), "No node with this position should exist");
-		Ok(None)
+		Ok(())
 	}
 
 	/// Checks if a data is contained in this node
@@ -124,6 +133,18 @@ impl DataNode {
 	/// Returns the first data node after `pos`
 	pub fn get_next_from(&self, pos: Pos) -> Option<&Self> {
 		self.nodes.range((Bound::Excluded(pos), Bound::Unbounded)).next()
+	}
+
+	/// Formats this node with a depth
+	fn fmt_with_depth(&self, depth: usize, f: &mut fmt::Formatter) -> fmt::Result {
+		for _ in 0..depth {
+			write!(f, "\t")?;
+		}
+		writeln!(f, "{}", self.data)?;
+		for node in &self.nodes {
+			node.fmt_with_depth(depth + 1, f)?;
+		}
+		Ok(())
 	}
 }
 
@@ -166,6 +187,12 @@ impl Ord for DataNode {
 			true => Ordering::Greater,
 			false => Ordering::Less,
 		}
+	}
+}
+
+impl fmt::Display for DataNode {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		self.fmt_with_depth(0, f)
 	}
 }
 

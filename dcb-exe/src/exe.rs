@@ -129,7 +129,7 @@ impl Exe {
 		file.read_exact(bytes.as_mut()).map_err(DeserializeError::ReadData)?;
 
 		// Read the known data and func table
-		let known_data_table = self::get_known_data_table().map_err(DeserializeError::KnownDataTable)?;
+		let mut known_data_table = self::get_known_data_table().map_err(DeserializeError::KnownDataTable)?;
 		let known_func_table = FuncTable::get_known().map_err(DeserializeError::KnownFuncTable)?;
 
 		// Parse all instructions
@@ -138,13 +138,13 @@ impl Exe {
 		// Then parse all heuristic tables
 		let heuristics_data = Data::search_instructions(insts_range.clone(), insts.clone());
 		let heuristics_func_table = FuncTable::search_instructions(insts_range, insts, &known_data_table);
-		let data_table = known_data_table.extend(heuristics_data).map_err(DeserializeError::MergeDataHeuristics)?;
+		known_data_table.extend(heuristics_data);
 		let func_table = known_func_table.merge_with(heuristics_func_table);
 
 		Ok(Self {
 			header,
 			bytes,
-			data_table,
+			data_table: known_data_table,
 			func_table,
 		})
 	}
@@ -156,5 +156,5 @@ fn get_known_data_table() -> Result<DataTable, GetKnownError> {
 
 	let data: Vec<Data> = serde_yaml::from_reader(file).map_err(GetKnownError::Parse)?;
 
-	DataTable::new(data).map_err(GetKnownError::New)
+	Ok(DataTable::new(data))
 }

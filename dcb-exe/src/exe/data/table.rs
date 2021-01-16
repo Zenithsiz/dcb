@@ -1,12 +1,8 @@
 //! Data table
 //!
-//! This module defines the [`DataTable`] type, which
-//! stores all data locations within the executable.
-//!
-//! Typically this data will be a mix of the known data,
-//! available through [`DataTable::known`] and heuristically
-//! discovered data through instruction references, available
-//! through [`DataTable::search_instructions`].
+//! This module defines the [`DataTable`] type, responsible
+//! for storing all data locations within the executable.
+//! See it's type documentation for more information on how it works.
 
 // Modules
 pub mod error;
@@ -19,8 +15,25 @@ pub use error::{ExtendError, NewError};
 use self::node::DataNode;
 use super::Data;
 use crate::exe::Pos;
+use std::fmt;
 
 /// Data table
+///
+/// The data locations are stored as a tree, where data that contains
+/// other data has them has children, as such:
+///
+/// ```text
+///    /-\       /-\      /----\
+///    /---\   /---\  /-----------\
+/// /-----------------------------\
+/// ```
+///
+/// No two data locations can overlap and not be contained in another, in order
+/// to be able to unambiguously get the smallest data location at a certain position.
+/// There also may be no two data locations with the same position and type.
+///
+/// This tree structure allows getting any data location with a `ln(D)` complexity, `D`
+/// being the depth of the tree, which usually does not go further than 4 or 5.
 #[derive(Clone, Debug)]
 pub struct DataTable {
 	/// Root node
@@ -38,22 +51,22 @@ impl DataTable {
 		Self { root }
 	}
 
-	/// Creates a data table from an iterator of data
-	pub fn new(data: impl IntoIterator<Item = Data>) -> Result<Self, NewError> {
-		let table = Self::empty();
-		table.extend(data).map_err(NewError::Extend)
+	/// Creates a data table from data locations
+	pub fn new(data: impl IntoIterator<Item = Data>) -> Self {
+		let mut table = Self::empty();
+		table.extend(data);
+		table
 	}
 
-	/// Extends this data table with all values in `data`
+	/// Extends this data table with data locations.
 	///
-	/// Duplicates are ignored.
-	pub fn extend(mut self, data: impl IntoIterator<Item = Data>) -> Result<Self, ExtendError> {
+	/// Any data locations that already exist or overlap will be ignored.
+	pub fn extend(&mut self, data: impl IntoIterator<Item = Data>) {
 		for data in data {
-			// Note: We ignore duplicates
-			let _ = self.root.try_insert(data).map_err(ExtendError::Insert)?;
+			if let Err(err) = self.root.try_insert(data) {
+				log::debug!("Unable to add data:\n{:#}", anyhow::Error::new(err))
+			}
 		}
-
-		Ok(self)
 	}
 
 	/// Retrieves the smallest data location containing `pos`
@@ -62,7 +75,7 @@ impl DataTable {
 		self.root.get_containing_deepest(pos).map(DataNode::data)
 	}
 
-	/// Retrieves the smallest data location at `pos`
+	/// Retrieves the smallest data location starting at `pos`
 	#[must_use]
 	pub fn get_starting_at(&self, pos: Pos) -> Option<&Data> {
 		self.get_containing(pos).filter(|data| data.pos == pos)
@@ -90,5 +103,15 @@ impl DataTable {
 
 		// If we got any next node, return it
 		cur_next_node.map(DataNode::data)
+	}
+}
+
+impl fmt::Display for DataTable {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		for node in self.root.nodes() {
+			write!(f, "{node}")?;
+		}
+
+		Ok(())
 	}
 }

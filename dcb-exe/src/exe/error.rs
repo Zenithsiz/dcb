@@ -1,7 +1,7 @@
 //! Errors
 
 // Imports
-use super::{data, func, header};
+use super::{func, header};
 
 /// Error type for [`Table::deserialize`]
 #[derive(Debug, thiserror::Error)]
@@ -29,10 +29,6 @@ pub enum DeserializeError {
 	/// Unable to get known data
 	#[error("Unable to get known func table")]
 	KnownFuncTable(#[source] func::table::GetKnownError),
-
-	/// Unable to merge heuristics
-	#[error("Unable to merge heuristics")]
-	MergeDataHeuristics(#[source] data::table::ExtendError),
 }
 
 /// Error type for getting the known function table
@@ -45,8 +41,4 @@ pub enum GetKnownError {
 	/// Unable to parse file
 	#[error("Unable to parse file")]
 	Parse(#[source] serde_yaml::Error),
-
-	/// Unable to construct data table
-	#[error("Unable to construct data table")]
-	New(#[source] data::table::NewError),
 }
