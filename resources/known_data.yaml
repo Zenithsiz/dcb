@@ -390,7 +390,7 @@
   pos: 0x1f801db8
   ty: u32
 - name: SPU_Unknown1
-  pos: 0x1f801db8
+  pos: 0x1f801dbc
   ty: u32
 
 # SPU Reverb configuration area
