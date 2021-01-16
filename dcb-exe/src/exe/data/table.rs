@@ -63,8 +63,12 @@ impl DataTable {
 	/// Any data locations that already exist or overlap will be ignored.
 	pub fn extend(&mut self, data: impl IntoIterator<Item = Data>) {
 		for data in data {
+			let found = data.found();
 			if let Err(err) = self.root.try_insert(data) {
-				log::debug!("Unable to add data:\n{:#}", dcb_util::DisplayWrapper::new(|f| dcb_util::fmt_err(&err, f)))
+				// If the data is known, complain
+				if found.is_known() {
+					log::debug!("Unable to add data:\n{:#}", dcb_util::DisplayWrapper::new(|f| dcb_util::fmt_err(&err, f)))
+				}
 			}
 		}
 	}

@@ -7,10 +7,12 @@
 //! and description.
 
 // Modules
+pub mod found;
 pub mod table;
 pub mod ty;
 
 // Exports
+pub use found::Found;
 pub use table::DataTable;
 pub use ty::DataType;
 
@@ -50,19 +52,24 @@ pub struct Data {
 
 	/// Data type
 	ty: DataType,
+
+	/// Method found
+	#[serde(default = "Found::known")]
+	found: Found,
 }
 
 impl Data {
 	/// Creates a dummy over all of [`Pos`]'s range
 	pub(crate) fn dummy() -> Self {
 		Self {
-			name: String::new(),
-			desc: String::new(),
-			pos:  Pos(0),
-			ty:   DataType::Array {
+			name:  String::new(),
+			desc:  String::new(),
+			pos:   Pos(0),
+			ty:    DataType::Array {
 				ty:  Box::new(DataType::Word),
 				len: 0xFFFF_FFFF / 4,
 			},
+			found: Found::Known,
 		}
 	}
 
@@ -76,6 +83,12 @@ impl Data {
 	#[must_use]
 	pub fn desc(&self) -> &str {
 		&self.desc
+	}
+
+	/// Returns how this data was discovered
+	#[must_use]
+	pub const fn found(&self) -> Found {
+		self.found
 	}
 
 	/// Returns the start position of this data as a reference
@@ -162,24 +175,28 @@ impl Data {
 						desc: String::new(),
 						pos,
 						ty: DataType::AsciiStr { len: string.len() },
+						found: Found::Heuristics,
 					},
 					Directive::Dw(_) => Self {
 						name: format!("data_w{idx}"),
 						desc: String::new(),
 						pos,
 						ty: DataType::Word,
+						found: Found::Heuristics,
 					},
 					Directive::Dh(_) => Self {
 						name: format!("data_h{idx}"),
 						desc: String::new(),
 						pos,
 						ty: DataType::HalfWord,
+						found: Found::Heuristics,
 					},
 					Directive::Db(_) => Self {
 						name: format!("data_b{idx}"),
 						desc: String::new(),
 						pos,
 						ty: DataType::Byte,
+						found: Found::Heuristics,
 					},
 				}
 			})
