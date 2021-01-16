@@ -182,6 +182,10 @@ fn main() -> Result<(), anyhow::Error> {
 		}
 	}
 
+	if cli.print_data_table {
+		println!("Data Table:\n{}", exe.data_table());
+	}
+
 	Ok(())
 }
 
