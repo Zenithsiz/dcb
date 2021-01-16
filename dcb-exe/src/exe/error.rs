@@ -24,7 +24,7 @@ pub enum DeserializeError {
 
 	/// Unable to get known data
 	#[error("Unable to get known data table")]
-	KnownDataTable(#[source] data::table::GetKnownError),
+	KnownDataTable(#[source] GetKnownError),
 
 	/// Unable to get known data
 	#[error("Unable to get known func table")]
@@ -33,4 +33,20 @@ pub enum DeserializeError {
 	/// Unable to merge heuristics
 	#[error("Unable to merge heuristics")]
 	MergeDataHeuristics(#[source] data::table::ExtendError),
+}
+
+/// Error type for getting the known function table
+#[derive(Debug, thiserror::Error)]
+pub enum GetKnownError {
+	/// Unable to open file
+	#[error("Unable to open file")]
+	File(#[source] std::io::Error),
+
+	/// Unable to parse file
+	#[error("Unable to parse file")]
+	Parse(#[source] serde_yaml::Error),
+
+	/// Unable to construct data table
+	#[error("Unable to construct data table")]
+	New(#[source] data::table::NewError),
 }

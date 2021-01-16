@@ -14,7 +14,7 @@ pub mod pos;
 
 // Exports
 pub use data::{Data, DataTable, DataType};
-pub use error::DeserializeError;
+pub use error::{DeserializeError, GetKnownError};
 pub use func::{Func, FuncTable};
 pub use header::Header;
 pub use pos::Pos;
@@ -129,7 +129,7 @@ impl Exe {
 		file.read_exact(bytes.as_mut()).map_err(DeserializeError::ReadData)?;
 
 		// Read the known data and func table
-		let known_data_table = DataTable::get_known().map_err(DeserializeError::KnownDataTable)?;
+		let known_data_table = self::get_known_data_table().map_err(DeserializeError::KnownDataTable)?;
 		let known_func_table = FuncTable::get_known().map_err(DeserializeError::KnownFuncTable)?;
 
 		// Parse all instructions
@@ -148,4 +148,13 @@ impl Exe {
 			func_table,
 		})
 	}
+}
+
+/// Returns all known data locations
+fn get_known_data_table() -> Result<DataTable, GetKnownError> {
+	let file = std::fs::File::open("resources/known_data.yaml").map_err(GetKnownError::File)?;
+
+	let data: Vec<Data> = serde_yaml::from_reader(file).map_err(GetKnownError::Parse)?;
+
+	DataTable::new(data).map_err(GetKnownError::New)
 }

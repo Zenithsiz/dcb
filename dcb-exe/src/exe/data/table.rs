@@ -13,13 +13,12 @@ pub mod error;
 mod node;
 
 // Exports
-pub use error::{ExtendError, GetKnownError, NewError};
+pub use error::{ExtendError, NewError};
 
 // Imports
 use self::node::DataNode;
 use super::Data;
 use crate::exe::Pos;
-use std::fs::File;
 
 /// Data table
 #[derive(Clone, Debug)]
@@ -91,16 +90,5 @@ impl DataTable {
 
 		// If we got any next node, return it
 		cur_next_node.map(DataNode::data)
-	}
-}
-
-impl DataTable {
-	/// Returns all known data locations
-	pub fn get_known() -> Result<Self, GetKnownError> {
-		let file = File::open("resources/known_data.yaml").map_err(GetKnownError::File)?;
-
-		let data: Vec<Data> = serde_yaml::from_reader(file).map_err(GetKnownError::Parse)?;
-
-		Self::new(data).map_err(GetKnownError::New)
 	}
 }

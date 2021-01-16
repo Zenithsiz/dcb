@@ -18,19 +18,3 @@ pub enum ExtendError {
 	#[error("Unable to insert data into table")]
 	Insert(#[source] node::InsertError),
 }
-
-/// Error for [`DataTable::get_known`](super::DataTable::get_known)
-#[derive(Debug, thiserror::Error)]
-pub enum GetKnownError {
-	/// Unable to open file
-	#[error("Unable to open file")]
-	File(#[source] std::io::Error),
-
-	/// Unable to parse file
-	#[error("Unable to parse file")]
-	Parse(#[source] serde_yaml::Error),
-
-	/// Unable to construct data table
-	#[error("Unable to construct data table")]
-	New(#[source] NewError),
-}
