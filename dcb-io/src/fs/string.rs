@@ -97,6 +97,11 @@ impl Alphabet for FileAlphabet {
 	type Error = ValidateFileAlphabetError;
 
 	fn validate(bytes: &[u8]) -> Result<(), Self::Error> {
+		// Special cases for the root, `.` and `..`, respectively
+		if let [b'\0'] | [] | [b'\x01'] = bytes {
+			return Ok(());
+		}
+
 		// Separate into `<name>.<extension>;<version>`
 		let dot_idx = bytes.iter().position(|&b| b == b'.').ok_or(ValidateFileAlphabetError::MissingExtension)?;
 		let version_idx = bytes.iter().position(|&b| b == b';').ok_or(ValidateFileAlphabetError::MissingVersion)?;

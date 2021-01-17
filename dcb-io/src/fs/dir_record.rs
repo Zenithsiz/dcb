@@ -65,8 +65,6 @@ impl Bytes for DirRecord {
 			name_len                     :  0x1,
 		);
 
-		dbg!(bytes);
-
 		// Then read the name
 		let name = bytes
 			.get(0x21..0x21 + usize::from(*header_bytes.name_len))
