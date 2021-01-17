@@ -99,7 +99,7 @@ fn main() -> Result<(), anyhow::Error> {
 
 	// Open the game file
 	let input_file = std::fs::File::open(&cli.game_file_path).context("Unable to open input file")?;
-	let mut game_file = GameFile::from_reader(input_file).context("Unable to parse input file as dcb")?;
+	let mut game_file = GameFile::new(input_file);
 
 	// Read the executable
 	log::debug!("Deserializing executable");

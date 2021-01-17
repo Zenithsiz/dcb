@@ -73,20 +73,27 @@ mod logger;
 
 // Imports
 use anyhow::Context;
-use dcb::{card::Table as CardTable, deck::Table as DeckTable};
-use dcb_io::GameFile;
+//use dcb::{card::Table as CardTable, deck::Table as DeckTable};
+use dcb_io::{Filesystem, GameFile};
 
+#[allow(clippy::print_stdout, clippy::use_debug)]
 fn main() -> Result<(), anyhow::Error> {
 	// Initialize the logger and set the panic handler
 	logger::init();
 
 	// Get all data from cli
-	let cli::CliData { game_file_path, output_dir } = cli::CliData::new();
+	let cli::CliData { game_file_path, .. } = cli::CliData::new();
 
 	// Open the game file
 	let input_file = std::fs::File::open(&game_file_path).context("Unable to open input file")?;
-	let mut game_file = GameFile::from_reader(input_file).context("Unable to parse input file as dcb")?;
+	let mut game_file = GameFile::new(input_file);
 
+	// Read the file system
+	let filesystem = Filesystem::new(&mut game_file).context("Unable to read filesystem")?;
+
+	println!("{:#?}", filesystem);
+
+	/*
 	// Get the cards table
 	let cards_table = CardTable::deserialize(&mut game_file).context("Unable to deserialize cards table from game file")?;
 	let cards_table_yaml = serde_yaml::to_string(&cards_table).context("Unable to serialize cards table to yaml")?;
@@ -99,6 +106,7 @@ fn main() -> Result<(), anyhow::Error> {
 	// And output everything to the files
 	std::fs::write(&output_dir.join("cards.yaml"), cards_table_yaml).context("Unable to write cards table to file")?;
 	std::fs::write(&output_dir.join("decks.yaml"), decks_table_yaml).context("Unable to write decks table to file")?;
+	*/
 
 	Ok(())
 }

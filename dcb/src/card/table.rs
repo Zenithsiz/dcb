@@ -9,14 +9,9 @@ pub use error::{DeserializeError, SerializeError};
 pub use header::Header;
 
 // Imports
-use crate::card::{self, property::CardType, CardHeader, Digimon, Digivolve, Item};
-use dcb_bytes::Bytes;
-use dcb_io::{Data, GameFile};
-use dcb_util::array_split_mut;
-use std::{
-	convert::TryInto,
-	io::{Read, Seek, Write},
-};
+use crate::card::{self, property::CardType, Digimon, Digivolve, Item};
+use dcb_io::GameFile;
+use std::io::{Read, Seek, Write};
 
 /// Table storing all cards.
 #[derive(PartialEq, Eq, Clone, Debug)]
@@ -35,11 +30,13 @@ pub struct Table {
 
 // Constants
 impl Table {
+	/*
 	/// The max size of the card table
 	// TODO: Check the theoretical max, which is currently thought to be `0x14ff5`
 	pub const MAX_BYTE_SIZE: usize = 0x14970;
 	/// The start address of the card table
 	pub const START_ADDRESS: Data = Data::from_u64(0x216d000);
+	*/
 }
 
 // Utils
@@ -62,7 +59,9 @@ impl Table {
 
 impl Table {
 	/// Deserializes the card table from a game file
-	pub fn deserialize<R: Read + Write + Seek>(file: &mut GameFile<R>) -> Result<Self, DeserializeError> {
+	pub fn deserialize<R: Read + Write + Seek>(_file: &mut GameFile<R>) -> Result<Self, DeserializeError> {
+		todo!();
+		/*
 		// Seek to the table
 		file.seek(std::io::SeekFrom::Start(Self::START_ADDRESS.as_u64()))
 			.map_err(DeserializeError::Seek)?;
@@ -159,10 +158,14 @@ impl Table {
 
 		// Return the table
 		Ok(Self { digimons, items, digivolves })
+		*/
 	}
 
 	/// Serializes this card table to `file`.
-	pub fn serialize<R: Read + Write + Seek>(&self, file: &mut GameFile<R>) -> Result<(), SerializeError> {
+	pub fn serialize<R: Read + Write + Seek>(&self, _file: &mut GameFile<R>) -> Result<(), SerializeError> {
+		let _ = self;
+		todo!()
+		/*
 		// Get the final table size
 		let table_size = self.cards_byte_size();
 
@@ -248,5 +251,6 @@ impl Table {
 
 		// And return Ok
 		Ok(())
+		*/
 	}
 }

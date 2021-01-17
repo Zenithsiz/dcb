@@ -1,7 +1,7 @@
 //! Errors
 
 // Imports
-use super::{card, header, CardType, Table};
+use super::{card, header, CardType};
 
 /// Error type for [`Table::deserialize`]
 #[derive(Debug, thiserror::Error)]
@@ -24,7 +24,8 @@ pub enum DeserializeError {
 		  digimon_cards * (0x3 + CardType::Digimon  .byte_size() + 0x1) +
 		     item_cards * (0x3 + CardType::Item     .byte_size() + 0x1) +
 		digivolve_cards * (0x3 + CardType::Digivolve.byte_size() + 0x1),
-		Table::MAX_BYTE_SIZE
+		0
+		//Table::MAX_BYTE_SIZE
 	)]
 	TooManyCards {
 		/// Number of digimon cards
@@ -127,7 +128,8 @@ pub enum SerializeError {
 		  digimon_cards * (0x3 + CardType::Digimon  .byte_size() + 0x1) +
 		     item_cards * (0x3 + CardType::Item     .byte_size() + 0x1) +
 		digivolve_cards * (0x3 + CardType::Digivolve.byte_size() + 0x1),
-		Table::MAX_BYTE_SIZE
+		0
+		//Table::MAX_BYTE_SIZE
 	)]
 	TooManyCards {
 		/// Number of digimon cards

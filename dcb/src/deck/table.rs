@@ -8,14 +8,9 @@ pub use error::{DeserializeError, SerializeError};
 
 // Imports
 use crate::Deck;
-use byteorder::{ByteOrder, LittleEndian};
 use dcb_bytes::Bytes;
-use dcb_io::{Data, GameFile};
-use dcb_util::array_split_mut;
-use std::{
-	convert::TryInto,
-	io::{Read, Seek, Write},
-};
+use dcb_io::GameFile;
+use std::io::{Read, Seek, Write};
 
 /// The decks table, where all decks are stored
 #[derive(PartialEq, Eq, Clone, Debug)]
@@ -33,19 +28,23 @@ impl Table {
 	/// The magic in the table header
 	/// = "33KD"
 	pub const HEADER_MAGIC: u32 = 0x444b3033;
+	/*
 	/// The max size of the deck table
 	// TODO: Verify this
 	pub const MAX_BYTE_SIZE: usize = 0x4452;
 	/// The start address of the decks table
 	const START_ADDRESS: Data = Data::from_u64(0x21a6800);
+	*/
 }
 
 impl Table {
 	/// Deserializes the deck table from `file`.
-	pub fn deserialize<R>(file: &mut GameFile<R>) -> Result<Self, DeserializeError>
+	pub fn deserialize<R>(_file: &mut GameFile<R>) -> Result<Self, DeserializeError>
 	where
 		R: Read + Write + Seek,
 	{
+		todo!();
+		/*
 		// Seek to the beginning of the deck table
 		file.seek(std::io::SeekFrom::Start(Self::START_ADDRESS.as_u64()))
 			.map_err(DeserializeError::Seek)?;
@@ -88,13 +87,17 @@ impl Table {
 
 		// And return the table
 		Ok(Self { decks })
+		*/
 	}
 
 	/// Serializes the deck table to `file`
-	pub fn serialize<R>(&self, file: &mut GameFile<R>) -> Result<(), SerializeError>
+	pub fn serialize<R>(&self, _file: &mut GameFile<R>) -> Result<(), SerializeError>
 	where
 		R: Read + Write + Seek,
 	{
+		let _ = self;
+		todo!();
+		/*
 		// If the total table size is bigger than the max, return Err
 		if self.decks.len() * std::mem::size_of::<<Deck as Bytes>::ByteArray>() > Self::MAX_BYTE_SIZE {
 			return Err(SerializeError::TooManyDecks {
@@ -137,5 +140,6 @@ impl Table {
 
 		// And return Ok
 		Ok(())
+		*/
 	}
 }

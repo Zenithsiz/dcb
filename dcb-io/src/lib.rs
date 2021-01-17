@@ -11,7 +11,10 @@
 	seek_convenience,
 	format_args_capture,
 	exclusive_range_pattern,
-	unsafe_block_in_unsafe_fn
+	unsafe_block_in_unsafe_fn,
+	never_type,
+	unwrap_infallible,
+	min_const_generics
 )]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]
@@ -68,9 +71,9 @@
 #![allow(clippy::wildcard_enum_match_arm)]
 
 // Modules
-pub mod address;
+pub mod fs;
 pub mod game_file;
 
 // Exports
-pub use address::{Data, Real};
+pub use fs::Filesystem;
 pub use game_file::GameFile;

@@ -95,7 +95,7 @@ fn main() -> Result<(), anyhow::Error> {
 		.truncate(false)
 		.open(game_file_path)
 		.context("Unable to open game file")?;
-	let mut game_file = GameFile::from_reader(game_file).context("Unable to initialize game file")?;
+	let mut game_file = GameFile::new(game_file);
 
 	// And write everything
 	cards_table.serialize(&mut game_file).context("Unable to serialize cards table")?;
