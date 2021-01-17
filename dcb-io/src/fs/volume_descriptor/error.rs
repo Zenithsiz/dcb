@@ -2,7 +2,7 @@
 
 // Imports
 use super::TypeCode;
-use crate::fs::{date_time, string};
+use crate::fs::{date_time, dir_record, string};
 
 /// Error type for [`Bytes::from_bytes`](dcb_bytes::Bytes::from_bytes)
 #[derive(Debug, thiserror::Error)]
@@ -27,6 +27,7 @@ pub enum FromBytesError {
 	#[error("Unable to parse primary")]
 	ParsePrimary(#[source] ParsePrimaryError),
 }
+
 /// Error type for [`VolumeDescriptor::parse_boot_record`](super::VolumeDescriptor::parse_boot_record)
 #[derive(Debug, thiserror::Error)]
 pub enum ParseBootRecordError {
@@ -49,6 +50,10 @@ pub enum ParsePrimaryError {
 	/// Unable to parse volume id
 	#[error("Unable to parse volume id")]
 	VolumeId(#[source] string::InvalidCharError),
+
+	/// Unable to parse the root dir entry
+	#[error("Unable to parse the root dir entry")]
+	RootDirEntry(#[source] dir_record::FromBytesError),
 
 	/// Unable to parse volume set id
 	#[error("Unable to parse volume set id")]

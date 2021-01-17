@@ -9,13 +9,13 @@ pub use error::{FromBytesError, ParseBootRecordError, ParsePrimaryError};
 pub use type_code::TypeCode;
 
 // Imports
-use super::{date_time::DecDateTime, StrArrA, StrArrD};
+use super::{date_time::DecDateTime, dir_record::DirRecord, StrArrA, StrArrD};
 use byteorder::{ByteOrder, LittleEndian};
 use dcb_bytes::Bytes;
 use dcb_util::array_split;
 
 /// A volume descriptor
-#[derive(PartialEq, Eq, Clone, Copy, Debug)]
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub enum VolumeDescriptor {
 	/// Boot record
 	BootRecord {
@@ -56,7 +56,7 @@ pub enum VolumeDescriptor {
 		path_table_opt_location: u32,
 
 		/// Root directory entry
-		root_dir_entry: [u8; 0x22],
+		root_dir_entry: DirRecord,
 
 		/// Volume set identifier
 		volume_set_id: StrArrD<0x80>,
@@ -91,6 +91,21 @@ pub enum VolumeDescriptor {
 		/// Volume effective date time
 		volume_effective_date_time: DecDateTime,
 	},
+
+	/// Set terminator
+	SetTerminator,
+}
+
+impl VolumeDescriptor {
+	/// Returns the type code for this descriptor
+	#[must_use]
+	pub const fn type_code(&self) -> TypeCode {
+		match self {
+			Self::BootRecord { .. } => TypeCode::BootRecord,
+			Self::Primary { .. } => TypeCode::Primary,
+			Self::SetTerminator => TypeCode::SetTerminator,
+		}
+	}
 }
 
 impl VolumeDescriptor {
@@ -138,10 +153,10 @@ impl VolumeDescriptor {
 			logical_block_size_msb       : [0x2 ],
 			path_table_size_lsb          : [0x4 ],
 			path_table_size_msb          : [0x4 ],
-			path_table_location_lsb      : [0x4 ],
-			path_table_opt_location_lsb  : [0x4 ],
-			path_table_location_msb      : [0x4 ],
-			path_table_opt_location_msb  : [0x4 ],
+			path_table_lsb_location      : [0x4 ],
+			path_table_lsb_opt_location  : [0x4 ],
+			path_table_msb_location      : [0x4 ],
+			path_table_msb_opt_location  : [0x4 ],
 			root_dir_entry               : [0x22],
 			volume_set_id                : [0x80],
 			publisher_id                 : [0x80],
@@ -167,9 +182,9 @@ impl VolumeDescriptor {
 			volume_sequence_number:        LittleEndian::read_u16(bytes.volume_sequence_number_lsb),
 			logical_block_size:            LittleEndian::read_u16(bytes.logical_block_size_lsb),
 			path_table_size:               LittleEndian::read_u32(bytes.path_table_size_lsb),
-			path_table_location:           LittleEndian::read_u32(bytes.path_table_location_lsb),
-			path_table_opt_location:       LittleEndian::read_u32(bytes.path_table_opt_location_lsb),
-			root_dir_entry:                *bytes.root_dir_entry,
+			path_table_location:           LittleEndian::read_u32(bytes.path_table_lsb_location),
+			path_table_opt_location:       LittleEndian::read_u32(bytes.path_table_lsb_opt_location),
+			root_dir_entry:                DirRecord::from_bytes(bytes.root_dir_entry).map_err(ParsePrimaryError::RootDirEntry)?,
 			volume_set_id:                 StrArrD::from_bytes(bytes.volume_set_id).map_err(ParsePrimaryError::VolumeSetId)?,
 			publisher_id:                  StrArrA::from_bytes(bytes.publisher_id).map_err(ParsePrimaryError::PublisherId)?,
 			data_preparer_id:              StrArrA::from_bytes(bytes.data_preparer_id).map_err(ParsePrimaryError::DataPreparerId)?,
@@ -219,9 +234,8 @@ impl Bytes for VolumeDescriptor {
 		match type_code {
 			TypeCode::BootRecord => Self::parse_boot_record(bytes.descriptor).map_err(FromBytesError::ParseBootRecord),
 			TypeCode::Primary => Self::parse_primary(bytes.descriptor).map_err(FromBytesError::ParsePrimary),
-			TypeCode::Supplementary | TypeCode::VolumePartition | TypeCode::SetTerminator | TypeCode::Reserved(_) => {
-				Err(FromBytesError::TypeCode(type_code))
-			},
+			TypeCode::SetTerminator => Ok(Self::SetTerminator),
+			TypeCode::Supplementary | TypeCode::VolumePartition | TypeCode::Reserved(_) => Err(FromBytesError::TypeCode(type_code)),
 		}
 	}
 

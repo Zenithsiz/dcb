@@ -1,7 +1,7 @@
 //! Errors
 
 // Imports
-use super::volume_descriptor;
+use super::volume_descriptor::{self, TypeCode};
 use crate::game_file::SectorError;
 
 /// Error type for [`Filesystem::new`](super::Filesystem::new)
@@ -14,4 +14,8 @@ pub enum NewError {
 	/// Unable to parse primary volume
 	#[error("Unable to parse primary volume")]
 	ParsePrimaryVolume(#[source] volume_descriptor::FromBytesError),
+
+	/// First volume was not the primary volume
+	#[error("First volume was not the primary volume, was {_0:?}")]
+	FirstVolumeNotPrimary(TypeCode),
 }

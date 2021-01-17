@@ -14,7 +14,9 @@
 	unsafe_block_in_unsafe_fn,
 	never_type,
 	unwrap_infallible,
-	min_const_generics
+	min_const_generics,
+	array_methods,
+	slice_strip
 )]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]

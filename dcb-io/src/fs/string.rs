@@ -1,91 +1,74 @@
 //! Filesystem strings
 
 /// Modules
+pub mod arr;
 pub mod error;
+pub mod owned;
+pub mod slice;
 
 // Exports
-pub use error::InvalidCharError;
+pub use arr::StrArrAlphabet;
+pub use error::{InvalidCharError, ValidateFileAlphabetError};
+pub use owned::StringAlphabet;
+pub use slice::StrAlphabet;
 
-// Imports
-use std::{fmt, marker::PhantomData};
 
-/// An alphabet
+/// An alphabet for a string
 pub trait Alphabet {
-	/// The alphabet
-	fn alphabet() -> &'static [u8];
+	/// Error type
+	type Error;
+
+	/// Returns if `bytes` are valid for this alphabet
+	fn validate(bytes: &[u8]) -> Result<(), Self::Error>;
 }
 
-/// A alphabetic specific string
-#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
-pub struct StrArrAlphabet<A: Alphabet, const N: usize>([u8; N], PhantomData<A>);
 
-impl<A: Alphabet, const N: usize> StrArrAlphabet<A, N> {
-	/// Parses a string from bytes
-	pub fn from_bytes(bytes: &[u8; N]) -> Result<Self, InvalidCharError> {
+/// Implements the [`Alphabet`] trait from an alphabet
+pub trait ImplFromAlphabet {
+	/// The alphabet
+	fn alphabet() -> &'static [u8];
+
+	/// String terminator
+	fn terminator() -> u8;
+}
+
+impl<A: ImplFromAlphabet> Alphabet for A {
+	type Error = InvalidCharError;
+
+	fn validate(bytes: &[u8]) -> Result<(), Self::Error> {
 		// If any are invalid, return Err
-		let alphabet = A::alphabet();
 		for (pos, &byte) in bytes.iter().enumerate() {
-			// If we found a space, as long as everything after this position is also a space, it's a valid string
-			if byte == b' ' {
-				match bytes[pos..].iter().all(|&b| b == b' ') {
-					true => break,
-					false => return Err(InvalidCharError { byte, pos }),
-				};
+			// If we found the terminator, terminate
+			// TODO: Maybe make sure everything after the `;` is valid too
+			if byte == Self::terminator() {
+				break;
 			}
 
-			if !alphabet.contains(&byte) {
+			// Else make sure it contains this byte
+			if !Self::alphabet().contains(&byte) {
 				return Err(InvalidCharError { byte, pos });
 			}
 		}
 
-		Ok(Self(*bytes, PhantomData))
-	}
-
-	/// Returns the bytes from this string
-	#[must_use]
-	pub fn as_bytes(&self) -> &[u8; N] {
-		&self.0
+		Ok(())
 	}
 }
-
-impl<A: Alphabet, const N: usize> fmt::Debug for StrArrAlphabet<A, N> {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-		// Try to get self as a string to debug it
-		// TODO: Not allocate here
-		let s = String::from_utf8_lossy(self.as_bytes());
-
-		// Then trim any spaces we might have
-		let s = s.trim();
-
-		write!(f, "{s:?}")
-	}
-}
-
-impl<A: Alphabet, const N: usize> fmt::Display for StrArrAlphabet<A, N> {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-		// Try to get self as a string to debug it
-		// TODO: Not allocate here
-		let s = String::from_utf8_lossy(self.as_bytes());
-
-		// Then trim any spaces we might have
-		let s = s.trim();
-
-		write!(f, "{s}")
-	}
-}
-
 
 /// A-type alphabet
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
 pub struct AlphabetA;
 
-impl Alphabet for AlphabetA {
+impl ImplFromAlphabet for AlphabetA {
 	fn alphabet() -> &'static [u8] {
 		&[
 			b'A', b'B', b'C', b'D', b'E', b'F', b'G', b'H', b'I', b'J', b'K', b'L', b'M', b'N', b'O', b'P', b'Q', b'R', b'S', b'T', b'U', b'V', b'W',
-			b'X', b'Y', b'Z', b'0', b'1', b'2', b'3', b'4', b'5', b'6', b'7', b'8', b'9', b'_', b' ', b'!', b'"', b'%', b'&', b'\'', b'(', b')',
-			b'*', b'+', b',', b'-', b'.', b'/', b':', b';', b'<', b'=', b'>', b'?',
+			b'X', b'Y', b'Z', b'0', b'1', b'2', b'3', b'4', b'5', b'6', b'7', b'8', b'9', b'_', b'!', b'"', b'%', b'&', b'\'', b'(', b')', b'*',
+			b'+', b',', b'-', b'.', b'/', b':', b';', b'<', b'=', b'>', b'?',
 		]
+	}
+
+	fn terminator() -> u8 {
+		b' '
 	}
 }
 
@@ -93,17 +76,66 @@ impl Alphabet for AlphabetA {
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
 pub struct AlphabetD;
 
-impl Alphabet for AlphabetD {
+impl ImplFromAlphabet for AlphabetD {
 	fn alphabet() -> &'static [u8] {
 		&[
 			b'A', b'B', b'C', b'D', b'E', b'F', b'G', b'H', b'I', b'J', b'K', b'L', b'M', b'N', b'O', b'P', b'Q', b'R', b'S', b'T', b'U', b'V', b'W',
 			b'X', b'Y', b'Z', b'0', b'1', b'2', b'3', b'4', b'5', b'6', b'7', b'8', b'9', b'_',
 		]
 	}
+
+	fn terminator() -> u8 {
+		b' '
+	}
 }
 
-/// A-type string
+/// File alphabet
+#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
+pub struct FileAlphabet;
+
+impl Alphabet for FileAlphabet {
+	type Error = ValidateFileAlphabetError;
+
+	fn validate(bytes: &[u8]) -> Result<(), Self::Error> {
+		// Separate into `<name>.<extension>;<version>`
+		let dot_idx = bytes.iter().position(|&b| b == b'.').ok_or(ValidateFileAlphabetError::MissingExtension)?;
+		let version_idx = bytes.iter().position(|&b| b == b';').ok_or(ValidateFileAlphabetError::MissingVersion)?;
+		let (name, bytes) = bytes.split_at(dot_idx);
+		let (extension, version) = bytes.split_at(version_idx);
+
+		// Validate all separately
+		AlphabetD::validate(name).map_err(ValidateFileAlphabetError::InvalidNameChar)?;
+		AlphabetD::validate(extension).map_err(ValidateFileAlphabetError::InvalidExtensionChar)?;
+		match version {
+			[b'0'..=b'9'] => Ok(()),
+			_ => Err(ValidateFileAlphabetError::InvalidVersion),
+		}
+	}
+}
+
+/// A-type string array
 pub type StrArrA<const N: usize> = StrArrAlphabet<AlphabetA, N>;
 
-/// D-type string
+/// A-type string
+pub type StringA = StringAlphabet<AlphabetA>;
+
+/// A-type string slice
+pub type StrA = StrAlphabet<AlphabetA>;
+
+/// D-type string array
 pub type StrArrD<const N: usize> = StrArrAlphabet<AlphabetD, N>;
+
+/// D-type string
+pub type StringD = StringAlphabet<AlphabetD>;
+
+/// D-type string slice
+pub type StrD = StrAlphabet<AlphabetD>;
+
+/// File string array
+pub type FileStrArr<const N: usize> = StrArrAlphabet<FileAlphabet, N>;
+
+/// File string
+pub type FileString = StringAlphabet<FileAlphabet>;
+
+/// File string slice
+pub type FileStr = StrAlphabet<FileAlphabet>;

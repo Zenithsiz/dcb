@@ -42,7 +42,7 @@ impl<R: Read + Seek> GameFile<R> {
 		self.reader.seek(SeekFrom::Start(Self::SECTOR_SIZE * n)).map_err(SectorError::Seek)?;
 
 		// Read it
-		let mut bytes = [0u8; <<Sector as Bytes>::ByteArray as dcb_bytes::ByteArray>::SIZE];
+		let mut bytes = [0; 2352];
 		self.reader.read_exact(&mut bytes).map_err(SectorError::Read)?;
 
 		// And parse it
