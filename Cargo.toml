@@ -8,4 +8,5 @@ members = [
 	"dcb-bytes",
 	"dcb-bytes-derive",
 	"dcb-tools",
+	"dcb-iso9660",
 ]
