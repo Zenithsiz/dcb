@@ -65,19 +65,22 @@
 #![allow(clippy::panic_in_result_fn)]
 
 // Modules
-mod cli;
+//mod cli;
 #[path = "../logger.rs"]
 mod logger;
 
 // Imports
+/*
 use anyhow::Context;
 use dcb::{card::Table as CardTable, deck::Table as DeckTable};
 use dcb_io::GameFile;
+*/
 
-fn main() -> Result<(), anyhow::Error> {
+fn main() {
 	// Initialize the logger
 	logger::init();
 
+	/*
 	// Get all data from cli
 	let cli::CliData { game_file_path, input_dir } = cli::CliData::new();
 
@@ -100,6 +103,5 @@ fn main() -> Result<(), anyhow::Error> {
 	// And write everything
 	cards_table.serialize(&mut game_file).context("Unable to serialize cards table")?;
 	decks_table.serialize(&mut game_file).context("Unable to serialize decks table")?;
-
-	Ok(())
+	*/
 }

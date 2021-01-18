@@ -39,7 +39,7 @@ impl Table {
 
 impl Table {
 	/// Deserializes the deck table from `file`.
-	pub fn deserialize<R>(_file: &mut GameFile<R>) -> Result<Self, DeserializeError>
+	pub fn deserialize<R>(_file: &mut GameFile) -> Result<Self, DeserializeError>
 	where
 		R: Read + Write + Seek,
 	{
@@ -91,7 +91,7 @@ impl Table {
 	}
 
 	/// Serializes the deck table to `file`
-	pub fn serialize<R>(&self, _file: &mut GameFile<R>) -> Result<(), SerializeError>
+	pub fn serialize<R>(&self, _file: &mut GameFile) -> Result<(), SerializeError>
 	where
 		R: Read + Write + Seek,
 	{

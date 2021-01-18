@@ -11,7 +11,7 @@ type BoxedLogger = Box<dyn SharedLogger>;
 pub fn init() {
 	// All loggers to try and initialize
 	let loggers = [
-		Some(TermLogger::new(LevelFilter::Warn, Config::default(), TerminalMode::Stderr)).map(|logger| BoxedLogger::from(logger)),
+		Some(TermLogger::new(LevelFilter::Info, Config::default(), TerminalMode::Stderr)).map(|logger| BoxedLogger::from(logger)),
 		std::fs::File::create("latest.log")
 			.ok()
 			.map(|file| WriteLogger::new(LevelFilter::Debug, Config::default(), file))

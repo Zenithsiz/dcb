@@ -11,7 +11,6 @@ pub use header::Header;
 // Imports
 use crate::card::{self, property::CardType, Digimon, Digivolve, Item};
 use dcb_io::GameFile;
-use std::io::{Read, Seek, Write};
 
 /// Table storing all cards.
 #[derive(PartialEq, Eq, Clone, Debug)]
@@ -59,7 +58,7 @@ impl Table {
 
 impl Table {
 	/// Deserializes the card table from a game file
-	pub fn deserialize<R: Read + Write + Seek>(_file: &mut GameFile<R>) -> Result<Self, DeserializeError> {
+	pub fn deserialize(_file: &mut GameFile) -> Result<Self, DeserializeError> {
 		todo!();
 		/*
 		// Seek to the table
@@ -162,7 +161,7 @@ impl Table {
 	}
 
 	/// Serializes this card table to `file`.
-	pub fn serialize<R: Read + Write + Seek>(&self, _file: &mut GameFile<R>) -> Result<(), SerializeError> {
+	pub fn serialize(&self, _file: &mut GameFile) -> Result<(), SerializeError> {
 		let _ = self;
 		todo!()
 		/*

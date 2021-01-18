@@ -8,11 +8,12 @@ mod test;
 mod visitor;
 
 // Exports
+pub use ascii::AsciiChar;
 pub use error::{FromBytesError, FromUtf8Error, NotAsciiError, TooLongError};
-pub use slice::SliceIndex;
+pub use slice::SliceIndex; // Export for users
 
 // Imports
-use ascii::{AsciiChar, AsciiStr};
+use ascii::AsciiStr;
 use std::{cmp::Ordering, convert::TryFrom, fmt, hash::Hash, mem::MaybeUninit};
 use visitor::DeserializerVisitor;
 
@@ -74,6 +75,15 @@ impl<const N: usize> AsciiStrArr<N> {
 	#[must_use]
 	pub const fn is_empty(&self) -> bool {
 		self.len() == 0
+	}
+
+	/// Trims the end of the string from 'c'
+	pub fn trim_end(&mut self, ch: AsciiChar) {
+		while !self.is_empty() && self.as_ascii().last() == Some(ch) {
+			// SAFETY: `len > 0`, and we don't have to run
+			//         any destructor for [`AsciiChar`].
+			unsafe { self.set_len(self.len - 1) }
+		}
 	}
 }
 

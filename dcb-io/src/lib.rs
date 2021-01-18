@@ -14,7 +14,9 @@
 	unwrap_infallible,
 	min_const_generics,
 	array_methods,
-	slice_strip
+	slice_strip,
+	array_chunks,
+	iter_map_while,
 )]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]

@@ -15,7 +15,14 @@
 //! - Deck table
 
 // Features
-#![feature(box_syntax, backtrace, panic_info_message, unsafe_block_in_unsafe_fn, array_value_iter)]
+#![feature(
+	box_syntax,
+	backtrace,
+	panic_info_message,
+	unsafe_block_in_unsafe_fn,
+	array_value_iter,
+	format_args_capture
+)]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]
 // Instead of `unwrap`, we must use `expect` and provide a reason
@@ -72,9 +79,14 @@ mod cli;
 mod logger;
 
 // Imports
+use std::{io, path::PathBuf};
+
 use anyhow::Context;
-//use dcb_io::GameFile;
-use dcb_iso9660::{fs::Entry, CdRom, Filesystem};
+use dcb_io::{
+	game_file::fs::{dir::DirEntry, Dir},
+	GameFile,
+};
+use dcb_iso9660::CdRom;
 
 
 #[allow(clippy::print_stdout, clippy::use_debug)]
@@ -83,47 +95,66 @@ fn main() -> Result<(), anyhow::Error> {
 	logger::init();
 
 	// Get all data from cli
-	let cli::CliData { game_file_path, .. } = cli::CliData::new();
+	let cli::CliData { game_file_path, output_dir } = cli::CliData::new();
 
 	// Open the game file
 	let input_file = std::fs::File::open(&game_file_path).context("Unable to open input file")?;
 	let mut cdrom = CdRom::new(input_file);
-	let filesystem: Filesystem = Filesystem::new(&mut cdrom).context("Unable to read filesystem")?;
+	let game_file = GameFile::new(&mut cdrom).context("Unable to read filesystem")?;
 
-	// Get all entries and search for `a_drv`.
-	let entries = filesystem
-		.root_dir()
-		.read_entries(&mut cdrom)
-		.context("Unable to read all entries in root")?;
-	let a_drv = Entry::search_entries(&entries, "A.DRV;1").context("Unable to get `A.DRV`")?;
+	println!("A.DRV:");
+	write_dir(game_file.a_drv.root(), &output_dir.join("A.DRV")).context("Unable to write `A.DRV`")?;
+	println!("B.DRV:");
+	write_dir(game_file.b_drv.root(), &output_dir.join("B.DRV")).context("Unable to write `B.DRV`")?;
+	println!("C.DRV:");
+	write_dir(game_file.c_drv.root(), &output_dir.join("C.DRV")).context("Unable to write `C.DRV`")?;
+	println!("E.DRV:");
+	write_dir(game_file.e_drv.root(), &output_dir.join("E.DRV")).context("Unable to write `E.DRV`")?;
+	println!("F.DRV:");
+	write_dir(game_file.f_drv.root(), &output_dir.join("F.DRV")).context("Unable to write `F.DRV`")?;
+	println!("G.DRV:");
+	write_dir(game_file.g_drv.root(), &output_dir.join("G.DRV")).context("Unable to write `G.DRV`")?;
+	println!("P.DRV:");
+	write_dir(game_file.p_drv.root(), &output_dir.join("P.DRV")).context("Unable to write `P.DRV`")?;
 
-	let contents = a_drv.read(&mut cdrom).context("Unable to read `A.DRV`")?;
+	Ok(())
+}
 
-	println!("{:?}", a_drv);
-	println!("{:?}", contents.len());
+/// Prints a directory tree
+#[allow(clippy::create_dir)] // We only want to create a single level
+fn write_dir(dir: &Dir, path: &PathBuf) -> Result<(), anyhow::Error> {
+	// Create path
+	match std::fs::create_dir(&path) {
+		// If it already exists, ignore
+		Ok(_) => (),
+		Err(err) if err.kind() == io::ErrorKind::AlreadyExists => (),
+		Err(err) => return Err(err).with_context(|| format!("Unable to create directory {}", path.display())),
+	};
 
+	for entry in dir.entries() {
+		match entry {
+			DirEntry::File {
+				name, extension, contents, ..
+			} => {
+				let path = path.join(format!("{}.{}", name, extension));
+				log::info!("Writing file {}", path.display());
+				std::fs::write(&path, contents).with_context(|| format!("Unable to write file {}", path.display()))?;
+			},
+			DirEntry::Dir { name, dir, .. } => {
+				let path = path.join(name.as_str());
 
-	/*
-	// Read the file system
-	let filesystem = Filesystem::new(&mut game_file).context("Unable to read filesystem")?;
+				match std::fs::create_dir(&path) {
+					// If it already exists, ignore
+					Ok(_) => (),
+					Err(err) if err.kind() == io::ErrorKind::AlreadyExists => (),
+					Err(err) => return Err(err).with_context(|| format!("Unable to create directory {}", path.display())),
+				};
 
-	println!("{:#?}", filesystem);
-	*/
-
-	/*
-	// Get the cards table
-	let cards_table = CardTable::deserialize(&mut game_file).context("Unable to deserialize cards table from game file")?;
-	let cards_table_yaml = serde_yaml::to_string(&cards_table).context("Unable to serialize cards table to yaml")?;
-	log::info!("Extracted {} cards", cards_table.card_count());
-
-	// Get the decks table
-	let decks_table = DeckTable::deserialize(&mut game_file).context("Unable to deserialize decks table from game file")?;
-	let decks_table_yaml = serde_yaml::to_string(&decks_table).context("Unable to serialize decks table to yaml")?;
-
-	// And output everything to the files
-	std::fs::write(&output_dir.join("cards.yaml"), cards_table_yaml).context("Unable to write cards table to file")?;
-	std::fs::write(&output_dir.join("decks.yaml"), decks_table_yaml).context("Unable to write decks table to file")?;
-	*/
+				log::info!("Creating directory {}", path.display());
+				write_dir(dir, &path).with_context(|| format!("Unable to write directory {}", path.display()))?;
+			},
+		}
+	}
 
 	Ok(())
 }

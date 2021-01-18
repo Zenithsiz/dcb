@@ -89,6 +89,7 @@ use dcb_exe::{
 	Exe, Pos,
 };
 use dcb_io::GameFile;
+use dcb_iso9660::CdRom;
 
 fn main() -> Result<(), anyhow::Error> {
 	// Initialize our logger.
@@ -99,7 +100,8 @@ fn main() -> Result<(), anyhow::Error> {
 
 	// Open the game file
 	let input_file = std::fs::File::open(&cli.game_file_path).context("Unable to open input file")?;
-	let mut game_file = GameFile::new(input_file);
+	let mut cdrom = CdRom::new(input_file);
+	let mut game_file = GameFile::new(&mut cdrom).context("Unable to read game file")?;
 
 	// Read the executable
 	log::debug!("Deserializing executable");
