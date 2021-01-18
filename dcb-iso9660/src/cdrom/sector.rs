@@ -1,4 +1,12 @@
-//! A game file sector
+//! A CD-ROM/XA Sector
+//!
+//! Each sector consists of `0x930` bytes, with a `0x18` byte header,
+//! a `0x800` byte data section and a `0x118` footer for error checking
+//! and correction.
+//!
+//! Currently, while the header is mostly parsed, the error correction checking
+//! is not done, neither on reading nor writing. Due to this, it may not be suitable
+//! to use the output for an actual CD-ROM sector.
 
 // Modules
 pub mod address;
@@ -16,7 +24,9 @@ pub use subheader::SectorSubHeader;
 use dcb_bytes::Bytes;
 use dcb_util::{array_split, array_split_mut};
 
-/// A game file sector, `0x930` bytes.
+/// A CD-ROM/XA Sector
+///
+/// See the module-level documentation for more details.
 pub struct Sector {
 	/// Header
 	pub header: SectorHeader,

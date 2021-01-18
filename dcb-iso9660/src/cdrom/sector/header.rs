@@ -11,7 +11,7 @@ use super::{SectorAddress, SectorSubHeader};
 use dcb_bytes::Bytes;
 use dcb_util::{array_split, array_split_mut};
 
-/// The game file's sector header
+/// The sector header
 pub struct SectorHeader {
 	/// Sector address
 	pub address: SectorAddress,

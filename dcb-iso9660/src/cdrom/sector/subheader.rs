@@ -5,7 +5,7 @@ use byteorder::{ByteOrder, LittleEndian};
 use dcb_bytes::Bytes;
 use dcb_util::{array_split, array_split_mut};
 
-/// The game file's sector sub-header
+/// The sector sub-header
 pub struct SectorSubHeader {
 	/// File
 	pub file: u16,

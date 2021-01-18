@@ -4,16 +4,16 @@
 use dcb_bytes::Bytes;
 use dcb_util::{array_split, array_split_mut};
 
-/// The game file's sector address
+/// Sector address
 pub struct SectorAddress {
 	/// Minutes
-	min: u8,
+	pub min: u8,
 
 	/// Seconds
-	sec: u8,
+	pub sec: u8,
 
 	/// Block
-	block: u8,
+	pub block: u8,
 }
 
 impl Bytes for SectorAddress {

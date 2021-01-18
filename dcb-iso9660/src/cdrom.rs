@@ -13,32 +13,32 @@ pub use error::SectorError;
 pub use sector::Sector;
 
 // Imports
-use std::io::{Read, Seek};
+use dcb_bytes::Bytes;
+use std::io::{Read, Seek, SeekFrom};
 
 /// A CD-ROM/XA Mode 2 Form 1 wrapper
-pub struct CdRomReader<R> {
+pub struct CdRom<R> {
 	/// Underlying reader
-	_reader: R,
+	reader: R,
 }
 
 // Constants
-impl<R> CdRomReader<R> {
+impl<R> CdRom<R> {
 	/// Sector size
 	pub const SECTOR_SIZE: u64 = 2352;
 }
 
 // Constructors
-impl<R> CdRomReader<R> {
+impl<R> CdRom<R> {
 	/// Creates a new CD-ROM reader
 	#[must_use]
 	pub const fn new(reader: R) -> Self {
-		Self { _reader: reader }
+		Self { reader }
 	}
 }
 
 // Read
-impl<R: Read + Seek> CdRomReader<R> {
-	/*
+impl<R: Read + Seek> CdRom<R> {
 	/// Reads the `n`th sector
 	pub fn sector(&mut self, n: u64) -> Result<Sector, SectorError> {
 		// Seek to the sector.
@@ -52,5 +52,4 @@ impl<R: Read + Seek> CdRomReader<R> {
 		let sector = Sector::from_bytes(&bytes).map_err(SectorError::Parse)?;
 		Ok(sector)
 	}
-	*/
 }

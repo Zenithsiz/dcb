@@ -3,7 +3,7 @@
 // Imports
 use super::sector;
 
-/// Error type for [`GameFile::sector`](super::GameFile::sector)
+/// Error type for [`CdRom::sector`](super::CdRom::sector)
 #[derive(Debug, thiserror::Error)]
 pub enum SectorError {
 	/// Unable to seek to sector
