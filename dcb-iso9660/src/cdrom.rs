@@ -5,12 +5,12 @@
 //! the ISO 9660 filesystem.
 
 // Modules
-//pub mod error;
-//pub mod sector;
+pub mod error;
+pub mod sector;
 
 // Exports
-//pub use error::SectorError;
-//pub use sector::Sector;
+pub use error::SectorError;
+pub use sector::Sector;
 
 // Imports
 use std::io::{Read, Seek};
