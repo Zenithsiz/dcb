@@ -1,7 +1,7 @@
 //! `dcb` is a library for interacting with the game file of `Digimon Digital Card Battle`.
 //!
 //! # Modules
-//! `dcb` is split across 2 main modules, [`io`] and [`game`].
+//! `dcb` is split across 2 main modules, `io` and `game`.
 //!
 //! ## Io
 //! The Io module is responsible for interacting with the game file. In the future it may be responsible

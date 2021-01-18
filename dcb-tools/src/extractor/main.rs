@@ -97,7 +97,10 @@ fn main() -> Result<(), anyhow::Error> {
 		.context("Unable to read all entries in root")?;
 	let a_drv = Entry::search_entries(&entries, "A.DRV;1").context("Unable to get `A.DRV`")?;
 
+	let contents = a_drv.read(&mut cdrom).context("Unable to read `A.DRV`")?;
+
 	println!("{:?}", a_drv);
+	println!("{:?}", contents.len());
 
 
 	/*

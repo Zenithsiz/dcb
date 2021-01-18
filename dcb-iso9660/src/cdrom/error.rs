@@ -3,7 +3,7 @@
 // Imports
 use super::sector;
 
-/// Error type for [`CdRom::sector`](super::CdRom::sector)
+/// Error type for [`CdRom::read_sector`](super::CdRom::read_sector)
 #[derive(Debug, thiserror::Error)]
 pub enum ReadSectorError {
 	/// Unable to seek to sector

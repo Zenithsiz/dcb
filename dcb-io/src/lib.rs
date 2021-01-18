@@ -1,9 +1,7 @@
-//! `dcb` Input / Output.
+//! `dcb` io
 //!
-//! The Io crate takes care of interacting with the game file itself, such
-//! as ensuring that only the data sections in the game file are written to.
-//! As well as making conversions between coordinates in data to real file
-//! coordinates. (For more details, visit the [`address`] module)
+//! This crate is responsible for interactions with the game file itself,
+//! including the custom filesystem used by the game with the `.DRV` files.
 
 // Features
 #![feature(
