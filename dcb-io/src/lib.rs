@@ -73,9 +73,7 @@
 #![allow(clippy::wildcard_enum_match_arm)]
 
 // Modules
-pub mod fs;
 pub mod game_file;
 
 // Exports
-pub use fs::Filesystem;
 pub use game_file::GameFile;

@@ -5,7 +5,14 @@
 //! file image format.
 
 // Features
-#![feature(never_type, stmt_expr_attributes, unwrap_infallible)]
+#![feature(
+	never_type,
+	stmt_expr_attributes,
+	unwrap_infallible,
+	format_args_capture,
+	min_const_generics,
+	array_methods
+)]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]
 // We'll disable the ones we don't need
@@ -27,7 +34,8 @@
 	clippy::expect_used,
 	clippy::panic_in_result_fn,
 	clippy::unwrap_in_result,
-	clippy::indexing_slicing
+	clippy::indexing_slicing,
+	clippy::todo
 )]
 // We prefer tail calls
 #![allow(clippy::implicit_return)]
@@ -54,3 +62,8 @@
 
 // Modules
 pub mod cdrom;
+pub mod fs;
+
+// Exports
+pub use cdrom::CdRom;
+pub use fs::Filesystem;

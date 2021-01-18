@@ -4,14 +4,13 @@
 pub mod error;
 
 // Exports
-use std::{cmp::Ordering, fmt};
-
 pub use error::FromBytesError;
 
 // Imports
 use super::StrArrD;
 use dcb_bytes::Bytes;
 use dcb_util::array_split;
+use std::{cmp::Ordering, fmt};
 
 /// Decimal date time
 #[derive(PartialEq, Eq, Clone, Copy)]

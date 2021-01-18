@@ -74,7 +74,7 @@ mod logger;
 // Imports
 use anyhow::Context;
 //use dcb::{card::Table as CardTable, deck::Table as DeckTable};
-use dcb_io::{Filesystem, GameFile};
+use dcb_io::GameFile;
 
 #[allow(clippy::print_stdout, clippy::use_debug)]
 fn main() -> Result<(), anyhow::Error> {
@@ -86,12 +86,14 @@ fn main() -> Result<(), anyhow::Error> {
 
 	// Open the game file
 	let input_file = std::fs::File::open(&game_file_path).context("Unable to open input file")?;
-	let mut game_file = GameFile::new(input_file);
+	let _game_file = GameFile::new(input_file);
 
+	/*
 	// Read the file system
 	let filesystem = Filesystem::new(&mut game_file).context("Unable to read filesystem")?;
 
 	println!("{:#?}", filesystem);
+	*/
 
 	/*
 	// Get the cards table

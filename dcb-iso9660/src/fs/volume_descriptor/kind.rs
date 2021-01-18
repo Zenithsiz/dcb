@@ -1,11 +1,11 @@
-//! Type codes
+//! Descriptor kinds
 
 // Imports
 use dcb_bytes::Bytes;
 
-/// A type code
+/// A volume descriptor kind
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
-pub enum TypeCode {
+pub enum DescriptorKind {
 	/// Boot record
 	BootRecord,
 
@@ -25,13 +25,13 @@ pub enum TypeCode {
 	Reserved(u8),
 }
 
-impl Bytes for TypeCode {
+impl Bytes for DescriptorKind {
 	type ByteArray = u8;
 	type FromError = !;
 	type ToError = !;
 
 	fn from_bytes(byte: &Self::ByteArray) -> Result<Self, Self::FromError> {
-		let type_code = match byte {
+		let kind = match byte {
 			0 => Self::BootRecord,
 			1 => Self::Primary,
 			2 => Self::Supplementary,
@@ -40,7 +40,7 @@ impl Bytes for TypeCode {
 			&byte => Self::Reserved(byte),
 		};
 
-		Ok(type_code)
+		Ok(kind)
 	}
 
 	fn to_bytes(&self, byte: &mut Self::ByteArray) -> Result<(), Self::ToError> {
