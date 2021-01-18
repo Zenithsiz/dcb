@@ -1,21 +1,25 @@
 //! Errors
 
 // Imports
-use super::volume_descriptor::{self, DescriptorKind};
-use crate::cdrom::SectorError;
+use super::volume_descriptor::{self};
+use crate::cdrom::ReadSectorError;
 
 /// Error type for [`Filesystem::new`](super::Filesystem::new)
 #[derive(Debug, thiserror::Error)]
 pub enum NewError {
-	/// Unable to read primary volume sector
-	#[error("Unable to read primary volume sector")]
-	ReadPrimaryVolumeSector(#[source] SectorError),
+	/// Missing primary volume
+	#[error("No primary volume found before set terminator")]
+	MissingPrimaryVolumeBeforeSetTerminator,
 
-	/// Unable to parse primary volume
-	#[error("Unable to parse primary volume")]
-	ParsePrimaryVolume(#[source] volume_descriptor::FromBytesError),
+	/// Eof before set terminator
+	#[error("Found eof before set terminator")]
+	EofBeforeSetTerminator,
 
-	/// First volume was not the primary volume
-	#[error("First volume was not the primary volume, was {_0:?}")]
-	FirstVolumeNotPrimary(DescriptorKind),
+	/// Invalid sector before set terminator
+	#[error("Invalid sector before set terminator")]
+	InvalidSectorBeforeSetTerminator(#[source] ReadSectorError),
+
+	/// Invalid volume descriptor
+	#[error("Invalid volume descriptor")]
+	InvalidVolumeDescriptor(#[source] volume_descriptor::FromBytesError),
 }

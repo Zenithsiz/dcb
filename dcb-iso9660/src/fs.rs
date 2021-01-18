@@ -16,6 +16,7 @@ pub use string::{StrArrA, StrArrD};
 pub use volume_descriptor::VolumeDescriptor;
 
 // Imports
+use self::volume_descriptor::PrimaryVolumeDescriptor;
 use crate::CdRom;
 use dcb_bytes::Bytes;
 use std::io;
@@ -23,29 +24,30 @@ use std::io;
 /// The filesystem
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub struct Filesystem {
-	/// Root directory
-	root_dir_entry: DirRecord,
+	/// Primary volume descriptor
+	primary_volume_descriptor: PrimaryVolumeDescriptor,
 }
 
 impl Filesystem {
 	/// Reads the filesystem from a game file
 	pub fn new<R: io::Read + io::Seek>(file: &mut CdRom<R>) -> Result<Self, NewError> {
-		// Read the primary volume descriptor from sector `0x10`
+		// Start reading volume descriptors from sector `0x10` until we hit the primary one
 		// Note: First `32 kiB` (= 16 sectors) are reserved for arbitrary data.
-		let sector = file.sector(0x10).map_err(NewError::ReadPrimaryVolumeSector)?;
-		let _primary_volume_descriptor = VolumeDescriptor::from_bytes(&sector.data).map_err(NewError::ParsePrimaryVolume)?;
-
-		todo!();
-
-		/*
-		// Try to get the root directory entry
-		let root_dir_entry = match primary_volume_descriptor {
-			VolumeDescriptor::Primary { root_dir_entry, .. } => root_dir_entry,
-			_ => return Err(NewError::FirstVolumeNotPrimary(primary_volume_descriptor.type_code())),
+		let mut sectors = file.read_sectors_range(0x10..);
+		let primary_volume_descriptor = loop {
+			match sectors.next() {
+				Some(Ok(sector)) => match VolumeDescriptor::from_bytes(&sector.data) {
+					Ok(VolumeDescriptor::Primary(primary)) => break primary,
+					Ok(VolumeDescriptor::SetTerminator) => return Err(NewError::MissingPrimaryVolumeBeforeSetTerminator),
+					Ok(volume_descriptor) => log::debug!("Skipping {:?} volume descriptor before primary", volume_descriptor.kind()),
+					Err(err) => return Err(NewError::InvalidVolumeDescriptor(err)),
+				},
+				Some(Err(err)) => return Err(NewError::InvalidSectorBeforeSetTerminator(err)),
+				None => return Err(NewError::EofBeforeSetTerminator),
+			}
 		};
 
-		Ok(Self { root_dir_entry })
-		*/
+		Ok(Self { primary_volume_descriptor })
 	}
 
 	/// Prints a tree of all files
