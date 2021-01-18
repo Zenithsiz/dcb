@@ -3,40 +3,16 @@
 // Imports
 use super::{card, header, CardType};
 
-/// Error type for [`Table::deserialize`]
+/// Error type for [`Table::deserialize`](super::Table::deserialize)
 #[derive(Debug, thiserror::Error)]
 pub enum DeserializeError {
-	/// Unable to seek game file
-	#[error("Unable to seek game file to card table")]
-	Seek(#[source] std::io::Error),
-
 	/// Unable to read table header
 	#[error("Unable to read table header")]
 	ReadHeader(#[source] std::io::Error),
 
 	/// Unable to parse table header
 	#[error("Unable to parse table header")]
-	Header(#[source] header::FromBytesError),
-
-	/// There were too many cards
-	#[error(
-		"Too many cards in table ({digimon_cards} digimon, {item_cards} item, {digivolve_cards} digivolve, {} / {} bytes max)",
-		  digimon_cards * (0x3 + CardType::Digimon  .byte_size() + 0x1) +
-		     item_cards * (0x3 + CardType::Item     .byte_size() + 0x1) +
-		digivolve_cards * (0x3 + CardType::Digivolve.byte_size() + 0x1),
-		0
-		//Table::MAX_BYTE_SIZE
-	)]
-	TooManyCards {
-		/// Number of digimon cards
-		digimon_cards: usize,
-
-		/// Number of item cards
-		item_cards: usize,
-
-		/// Number of digivolve cards
-		digivolve_cards: usize,
-	},
+	ParseHeader(#[source] header::FromBytesError),
 
 	/// Unable to read card header
 	#[error("Unable to read card header for card id {}", id)]
@@ -76,7 +52,7 @@ pub enum DeserializeError {
 
 	/// Unable to deserialize a digimon card
 	#[error("Unable to deserialize digimon card with id {}", id)]
-	DigimonCard {
+	ParseDigimonCard {
 		/// Id of card
 		id: usize,
 
@@ -87,7 +63,7 @@ pub enum DeserializeError {
 
 	/// Unable to deserialize an item card
 	#[error("Unable to deserialize item card with id {}", id)]
-	ItemCard {
+	ParseItemCard {
 		/// Id of card
 		id: usize,
 
@@ -98,7 +74,7 @@ pub enum DeserializeError {
 
 	/// Unable to deserialize a digivolve card
 	#[error("Unable to deserialize digivolve card with id {}", id)]
-	DigivolveCard {
+	ParseDigivolveCard {
 		/// Id of card
 		id: usize,
 
@@ -119,32 +95,20 @@ pub enum DeserializeError {
 	},
 }
 
-/// Error type for [`Table::serialize`]
+/// Error type for [`Table::serialize`](super::Table::serialize)
 #[derive(Debug, thiserror::Error)]
 pub enum SerializeError {
-	/// There were too many cards
-	#[error(
-		"Too many cards in table ({digimon_cards} digimon, {item_cards} item, {digivolve_cards} digivolve, {} / {} bytes max)",
-		  digimon_cards * (0x3 + CardType::Digimon  .byte_size() + 0x1) +
-		     item_cards * (0x3 + CardType::Item     .byte_size() + 0x1) +
-		digivolve_cards * (0x3 + CardType::Digivolve.byte_size() + 0x1),
-		0
-		//Table::MAX_BYTE_SIZE
-	)]
-	TooManyCards {
-		/// Number of digimon cards
-		digimon_cards: usize,
+	/// Number of digimons must fit within a `u16`
+	#[error("Number of digimons must fit within a `u16` (was {_0})")]
+	TooManyDigimon(usize),
 
-		/// Number of item cards
-		item_cards: usize,
+	/// Number of items must fit within a `u8`
+	#[error("Number of items must fit within a `u8` (was {_0})")]
+	TooManyItems(usize),
 
-		/// Number of digivolve cards
-		digivolve_cards: usize,
-	},
-
-	/// Unable to seek game file
-	#[error("Unable to seek game file to card table")]
-	Seek(#[source] std::io::Error),
+	/// Number of digivolves must fit within a `u8`
+	#[error("Number of digivolves must fit within a `u8` (was {_0})")]
+	TooManyDigivolves(usize),
 
 	/// Unable to write table header
 	#[error("Unable to write table header")]
