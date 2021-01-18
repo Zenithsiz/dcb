@@ -11,12 +11,12 @@ pub mod string;
 pub mod volume_descriptor;
 
 // Exports
+pub use dir_record::DirRecord;
 pub use error::NewError;
 pub use string::{StrArrA, StrArrD};
 pub use volume_descriptor::VolumeDescriptor;
 
 // Imports
-use self::volume_descriptor::TypeCode;
 use crate::GameFile;
 use dcb_bytes::Bytes;
 use std::io;
@@ -24,8 +24,8 @@ use std::io;
 /// The filesystem
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub struct Filesystem {
-	/// Primary volume descriptor
-	primary_volume_descriptor: VolumeDescriptor,
+	/// Root directory
+	root_dir_entry: DirRecord,
 }
 
 impl Filesystem {
@@ -35,10 +35,14 @@ impl Filesystem {
 		// Note: First `32 kiB` (= 16 sectors) are reserved for arbitrary data.
 		let sector = file.sector(0x10).map_err(NewError::ReadPrimaryVolumeSector)?;
 		let primary_volume_descriptor = VolumeDescriptor::from_bytes(&sector.data).map_err(NewError::ParsePrimaryVolume)?;
-		if primary_volume_descriptor.type_code() != TypeCode::Primary {
-			return Err(NewError::FirstVolumeNotPrimary(primary_volume_descriptor.type_code()));
-		}
 
-		Ok(Self { primary_volume_descriptor })
+		// Try to get the root directory entry
+		let root_dir_entry = match primary_volume_descriptor {
+			VolumeDescriptor::Primary { root_dir_entry, .. } => root_dir_entry,
+			_ => return Err(NewError::FirstVolumeNotPrimary(primary_volume_descriptor.type_code())),
+		};
+
+
+		Ok(Self { root_dir_entry })
 	}
 }
