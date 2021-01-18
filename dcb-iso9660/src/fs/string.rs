@@ -103,10 +103,19 @@ impl Alphabet for FileAlphabet {
 		}
 
 		// Separate into `<name>.<extension>;<version>`
-		let dot_idx = bytes.iter().position(|&b| b == b'.').ok_or(ValidateFileAlphabetError::MissingExtension)?;
-		let version_idx = bytes.iter().position(|&b| b == b';').ok_or(ValidateFileAlphabetError::MissingVersion)?;
-		let (name, bytes) = bytes.split_at(dot_idx);
-		let (extension, version) = bytes.split_at(version_idx);
+		let (name, extension, version) = {
+			// Separate into `<name>.<rest>` and ignore the `.` in `<rest>`
+			let dot_idx = bytes.iter().position(|&b| b == b'.').ok_or(ValidateFileAlphabetError::MissingExtension)?;
+			let (name, rest) = bytes.split_at(dot_idx);
+			let rest = &rest[1..];
+
+			// Then split at `<extension>;<version>` and ignore the `;`
+			let version_idx = rest.iter().position(|&b| b == b';').ok_or(ValidateFileAlphabetError::MissingVersion)?;
+			let (extension, version) = rest.split_at(version_idx);
+			let version = &version[1..];
+
+			(name, extension, version)
+		};
 
 		// Validate all separately
 		AlphabetD::validate(name).map_err(ValidateFileAlphabetError::InvalidNameChar)?;

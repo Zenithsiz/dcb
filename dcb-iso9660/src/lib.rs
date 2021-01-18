@@ -11,7 +11,8 @@
 	unwrap_infallible,
 	format_args_capture,
 	min_const_generics,
-	array_methods
+	array_methods,
+	array_value_iter
 )]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]

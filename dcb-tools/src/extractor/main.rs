@@ -73,8 +73,9 @@ mod logger;
 
 // Imports
 use anyhow::Context;
-//use dcb::{card::Table as CardTable, deck::Table as DeckTable};
-use dcb_io::GameFile;
+//use dcb_io::GameFile;
+use dcb_iso9660::{fs::Entry, CdRom, Filesystem};
+
 
 #[allow(clippy::print_stdout, clippy::use_debug)]
 fn main() -> Result<(), anyhow::Error> {
@@ -86,7 +87,18 @@ fn main() -> Result<(), anyhow::Error> {
 
 	// Open the game file
 	let input_file = std::fs::File::open(&game_file_path).context("Unable to open input file")?;
-	let _game_file = GameFile::new(input_file);
+	let mut cdrom = CdRom::new(input_file);
+	let filesystem: Filesystem = Filesystem::new(&mut cdrom).context("Unable to read filesystem")?;
+
+	// Get all entries and search for `a_drv`.
+	let entries = filesystem
+		.root_dir()
+		.read_entries(&mut cdrom)
+		.context("Unable to read all entries in root")?;
+	let a_drv = Entry::search_entries(&entries, "A.DRV;1").context("Unable to get `A.DRV`")?;
+
+	println!("{:?}", a_drv);
+
 
 	/*
 	// Read the file system

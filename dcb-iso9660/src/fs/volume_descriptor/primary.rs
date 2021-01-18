@@ -7,7 +7,7 @@ pub mod error;
 pub use error::FromBytesError;
 
 // Imports
-use super::super::{date_time::DecDateTime, dir_record::DirRecord, StrArrA, StrArrD};
+use super::super::{date_time::DecDateTime, entry::Entry, StrArrA, StrArrD};
 use byteorder::{ByteOrder, LittleEndian};
 use dcb_bytes::Bytes;
 use dcb_util::array_split;
@@ -40,7 +40,7 @@ pub struct PrimaryVolumeDescriptor {
 	pub path_table_opt_location: u32,
 
 	/// Root directory entry
-	pub root_dir_entry: DirRecord,
+	pub root_dir_entry: Entry,
 
 	/// Volume set identifier
 	pub volume_set_id: StrArrD<0x80>,
@@ -129,7 +129,7 @@ impl Bytes for PrimaryVolumeDescriptor {
 			path_table_size:               LittleEndian::read_u32(bytes.path_table_size_lsb),
 			path_table_location:           LittleEndian::read_u32(bytes.path_table_lsb_location),
 			path_table_opt_location:       LittleEndian::read_u32(bytes.path_table_lsb_opt_location),
-			root_dir_entry:                DirRecord::from_bytes(bytes.root_dir_entry).map_err(FromBytesError::RootDirEntry)?,
+			root_dir_entry:                Entry::from_bytes(bytes.root_dir_entry).map_err(FromBytesError::RootDirEntry)?,
 			volume_set_id:                 StrArrD::from_bytes(bytes.volume_set_id).map_err(FromBytesError::VolumeSetId)?,
 			publisher_id:                  StrArrA::from_bytes(bytes.publisher_id).map_err(FromBytesError::PublisherId)?,
 			data_preparer_id:              StrArrA::from_bytes(bytes.data_preparer_id).map_err(FromBytesError::DataPreparerId)?,

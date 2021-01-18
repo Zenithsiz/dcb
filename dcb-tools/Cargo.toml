@@ -20,6 +20,7 @@ path = "src/decompiler/main.rs"
 # Dcb
 dcb = { path = "../dcb" }
 dcb-io = { path = "../dcb-io" }
+dcb-iso9660 = { path = "../dcb-iso9660" }
 dcb-exe = { path = "../dcb-exe" }
 dcb-util = { path = "../dcb-util" }
 

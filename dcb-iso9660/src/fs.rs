@@ -4,13 +4,13 @@
 
 // Modules
 pub mod date_time;
-pub mod dir_record;
+pub mod entry;
 pub mod error;
 pub mod string;
 pub mod volume_descriptor;
 
 // Exports
-pub use dir_record::DirRecord;
+pub use entry::Entry;
 pub use error::NewError;
 pub use string::{StrArrA, StrArrD};
 pub use volume_descriptor::VolumeDescriptor;
@@ -48,6 +48,12 @@ impl Filesystem {
 		};
 
 		Ok(Self { primary_volume_descriptor })
+	}
+
+	/// Returns the root directory
+	#[must_use]
+	pub const fn root_dir(&self) -> &Entry {
+		&self.primary_volume_descriptor.root_dir_entry
 	}
 
 	/// Prints a tree of all files

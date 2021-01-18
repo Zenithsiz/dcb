@@ -1,7 +1,7 @@
 //! Errors
 
 // Imports
-use crate::fs::{date_time, dir_record, string};
+use crate::fs::{date_time, entry, string};
 
 /// Error type for [`Bytes::from_bytes`](dcb_bytes::Bytes::from_bytes)
 #[derive(Debug, thiserror::Error)]
@@ -16,7 +16,7 @@ pub enum FromBytesError {
 
 	/// Unable to parse the root dir entry
 	#[error("Unable to parse the root dir entry")]
-	RootDirEntry(#[source] dir_record::FromBytesError),
+	RootDirEntry(#[source] entry::FromBytesError),
 
 	/// Unable to parse volume set id
 	#[error("Unable to parse volume set id")]
