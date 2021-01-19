@@ -82,10 +82,7 @@ mod logger;
 use std::{io, path::PathBuf};
 
 use anyhow::Context;
-use dcb_io::{
-	game_file::fs::{dir::DirEntry, Dir},
-	GameFile,
-};
+use dcb_io::game_file::fs::{dir::DirEntry, Dir};
 use dcb_iso9660::CdRom;
 
 
@@ -95,11 +92,23 @@ fn main() -> Result<(), anyhow::Error> {
 	logger::init();
 
 	// Get all data from cli
-	let cli::CliData { game_file_path, output_dir } = cli::CliData::new();
+	let cli::CliData { game_file_path, .. } = cli::CliData::new();
 
 	// Open the game file
 	let input_file = std::fs::File::open(&game_file_path).context("Unable to open input file")?;
 	let mut cdrom = CdRom::new(input_file);
+
+	for sector in cdrom.read_sectors_range(..) {
+		match sector {
+			Ok(_) => break,
+			Err(err) => log::info!(
+				"Failed to parse sector:\n{}",
+				dcb_util::DisplayWrapper::new(|f| dcb_util::fmt_err(&err, f))
+			),
+		}
+	}
+
+	/*
 	let game_file = GameFile::new(&mut cdrom).context("Unable to read filesystem")?;
 
 	println!("A.DRV:");
@@ -116,13 +125,14 @@ fn main() -> Result<(), anyhow::Error> {
 	write_dir(game_file.g_drv.root(), &output_dir.join("G.DRV")).context("Unable to write `G.DRV`")?;
 	println!("P.DRV:");
 	write_dir(game_file.p_drv.root(), &output_dir.join("P.DRV")).context("Unable to write `P.DRV`")?;
+	*/
 
 	Ok(())
 }
 
 /// Prints a directory tree
 #[allow(clippy::create_dir)] // We only want to create a single level
-fn write_dir(dir: &Dir, path: &PathBuf) -> Result<(), anyhow::Error> {
+fn _write_dir(dir: &Dir, path: &PathBuf) -> Result<(), anyhow::Error> {
 	// Create path
 	match std::fs::create_dir(&path) {
 		// If it already exists, ignore
@@ -151,7 +161,7 @@ fn write_dir(dir: &Dir, path: &PathBuf) -> Result<(), anyhow::Error> {
 				};
 
 				log::info!("Creating directory {}", path.display());
-				write_dir(dir, &path).with_context(|| format!("Unable to write directory {}", path.display()))?;
+				_write_dir(dir, &path).with_context(|| format!("Unable to write directory {}", path.display()))?;
 			},
 		}
 	}

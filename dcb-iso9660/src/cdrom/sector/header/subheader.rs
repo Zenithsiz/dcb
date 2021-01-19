@@ -6,7 +6,7 @@ use dcb_bytes::Bytes;
 use dcb_util::{array_split, array_split_mut};
 
 /// The sector sub-header
-pub struct SectorSubHeader {
+pub struct SubHeader {
 	/// File
 	pub file: u16,
 
@@ -20,13 +20,12 @@ pub struct SectorSubHeader {
 	pub data_type: u16,
 }
 
-impl Bytes for SectorSubHeader {
+impl Bytes for SubHeader {
 	type ByteArray = [u8; 0x8];
 	type FromError = !;
 	type ToError = !;
 
 	fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError> {
-		// Split bytes
 		let bytes = array_split!(bytes,
 			file     : [0x2],
 			channel  : [0x2],
@@ -43,7 +42,6 @@ impl Bytes for SectorSubHeader {
 	}
 
 	fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError> {
-		// Split bytes
 		let bytes = array_split_mut!(bytes,
 			file     : [0x2],
 			channel  : [0x2],

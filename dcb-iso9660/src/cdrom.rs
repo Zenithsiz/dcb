@@ -1,8 +1,4 @@
-//! CD-ROM/XA Implementation
-//!
-//! This module contains the implementation and abstraction
-//! of the CD-ROM/XA Mode 2 Form 1 image file format used by
-//! the ISO 9660 filesystem.
+#![doc(include = "cdrom.md")]
 
 // Modules
 pub mod error;

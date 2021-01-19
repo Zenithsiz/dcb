@@ -12,7 +12,8 @@
 	format_args_capture,
 	min_const_generics,
 	array_methods,
-	array_value_iter
+	array_value_iter,
+	external_doc
 )]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]

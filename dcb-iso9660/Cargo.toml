@@ -17,6 +17,7 @@ log = "0.4"
 # Util
 byteorder = "1.3"
 bitflags = "1.2.1"
+crc = "1.8.1"
 
 # Derives
 thiserror = "1.0"

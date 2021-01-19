@@ -1,37 +1,39 @@
 //! Sector header
 
 // Modules
+pub mod address;
 pub mod error;
+pub mod subheader;
 
 // Exports
+pub use address::Address;
 pub use error::FromBytesError;
+pub use subheader::SubHeader;
 
 // Imports
-use super::{SectorAddress, SectorSubHeader};
 use dcb_bytes::Bytes;
 use dcb_util::{array_split, array_split_mut};
 
 /// The sector header
-pub struct SectorHeader {
+pub struct Header {
 	/// Sector address
-	pub address: SectorAddress,
+	pub address: Address,
 
 	/// Subheader
-	pub subheader: SectorSubHeader,
+	pub subheader: SubHeader,
 }
 
-impl SectorHeader {
+impl Header {
 	/// Sync's value
 	pub const SYNC: [u8; 12] = [0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00];
 }
 
-impl Bytes for SectorHeader {
+impl Bytes for Header {
 	type ByteArray = [u8; 0x18];
 	type FromError = FromBytesError;
 	type ToError = !;
 
 	fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError> {
-		// Split bytes
 		let bytes = array_split!(bytes,
 			sync     : [0xc],
 			address  : [0x3],
@@ -50,14 +52,13 @@ impl Bytes for SectorHeader {
 		}
 
 		// Read the address and subheader
-		let address = SectorAddress::from_bytes(bytes.address).into_ok();
-		let subheader = SectorSubHeader::from_bytes(bytes.subheader).into_ok();
+		let address = Address::from_bytes(bytes.address).into_ok();
+		let subheader = SubHeader::from_bytes(bytes.subheader).into_ok();
 
 		Ok(Self { address, subheader })
 	}
 
 	fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError> {
-		// Split bytes
 		let bytes = array_split_mut!(bytes,
 			sync     : [0xc],
 			address  : [0x3],

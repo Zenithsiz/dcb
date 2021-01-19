@@ -5,7 +5,7 @@ use dcb_bytes::Bytes;
 use dcb_util::{array_split, array_split_mut};
 
 /// Sector address
-pub struct SectorAddress {
+pub struct Address {
 	/// Minutes
 	pub min: u8,
 
@@ -16,13 +16,12 @@ pub struct SectorAddress {
 	pub block: u8,
 }
 
-impl Bytes for SectorAddress {
+impl Bytes for Address {
 	type ByteArray = [u8; 0x3];
 	type FromError = !;
 	type ToError = !;
 
 	fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError> {
-		// Split bytes
 		let bytes = array_split!(bytes,
 			min  : 0x1,
 			sec  : 0x1,
@@ -37,7 +36,6 @@ impl Bytes for SectorAddress {
 	}
 
 	fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError> {
-		// Split bytes
 		let bytes = array_split_mut!(bytes,
 			min  : 0x1,
 			sec  : 0x1,
