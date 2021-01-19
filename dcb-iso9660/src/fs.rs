@@ -1,6 +1,4 @@
-//! ISO 9660 filesystem.
-//!
-//! This module implements the ISO 9660 filesystem.
+#![doc(include = "fs.md")]
 
 // Modules
 pub mod date_time;
@@ -24,12 +22,14 @@ use std::io;
 /// The filesystem
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub struct Filesystem {
+	// TODO: Only read the root directory and necessary information
+	//       to reconstruct the filesystem.
 	/// Primary volume descriptor
 	primary_volume_descriptor: PrimaryVolumeDescriptor,
 }
 
 impl Filesystem {
-	/// Reads the filesystem from a game file
+	/// Reads the filesystem from the cd rom.
 	pub fn new<R: io::Read + io::Seek>(file: &mut CdRom<R>) -> Result<Self, NewError> {
 		// Start reading volume descriptors from sector `0x10` until we hit the primary one
 		// Note: First `32 kiB` (= 16 sectors) are reserved for arbitrary data.
@@ -50,15 +50,9 @@ impl Filesystem {
 		Ok(Self { primary_volume_descriptor })
 	}
 
-	/// Returns the root directory
+	/// Returns the root directory entry
 	#[must_use]
 	pub const fn root_dir(&self) -> &Entry {
 		&self.primary_volume_descriptor.root_dir_entry
-	}
-
-	/// Prints a tree of all files
-	pub fn fmt_tree<R: io::Read + io::Seek>(&self, _cdrom: &mut CdRom<R>) {
-		let _ = self;
-		todo!();
 	}
 }
