@@ -8,24 +8,36 @@ pub use error::DeserializeError;
 
 // Imports
 use super::{header::Kind, Header};
-use crate::tim::TimFile;
-use dcb_util::{null_ascii_string::NullAsciiString, AsciiStrArr};
-use std::convert::TryInto;
 
 /// A `.PAK` entry
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub enum PakEntry {
+	/// Unknown 0
+	Unknown0(Vec<u8>),
+
+	/// Unknown 1
+	Unknown1(Vec<u8>),
+
+	/// Game script, `MSCD`
+	GameScript(Vec<u8>),
+
 	/// File header
-	FileHeader {
-		/// File name
-		name: AsciiStrArr<0xb>,
-	},
+	FileHeader(Vec<u8>),
 
-	/// Tim file
-	TimFile(TimFile, Vec<u8>),
+	/// File sub-header
+	FileSubHeader(Vec<u8>),
 
-	/// Other
-	Other(Kind),
+	/// File contents
+	FileContents(Vec<u8>),
+
+	/// Audio `SEQ`
+	AudioSeq(Vec<u8>),
+
+	/// Audio `VH`
+	AudioVh(Vec<u8>),
+
+	/// Audio `VB`
+	AudioVb(Vec<u8>),
 }
 
 impl PakEntry {
@@ -33,23 +45,15 @@ impl PakEntry {
 	pub fn deserialize(header: Header, data: Vec<u8>) -> Result<Self, DeserializeError> {
 		let kind = header.file_kind;
 		let entry = match kind {
-			Kind::FileHeader => {
-				let name_bytes: &[u8; 0xc] = data
-					.get(..0xc)
-					.and_then(|bytes| bytes.try_into().ok())
-					.ok_or(DeserializeError::MissingName)?;
-				let name = name_bytes.read_string().map_err(DeserializeError::ParseName)?;
-
-				Self::FileHeader { name }
-			},
-			Kind::FileContents => {
-				// Try to read it as a tim
-				match TimFile::deserialize(std::io::Cursor::new(&data)) {
-					Ok(tim) => Self::TimFile(tim, data),
-					Err(_) => Self::Other(kind),
-				}
-			},
-			_ => Self::Other(kind),
+			Kind::Unknown0 => Self::Unknown0(data),
+			Kind::Unknown1 => Self::Unknown1(data),
+			Kind::GameScript => Self::GameScript(data),
+			Kind::FileHeader => Self::FileHeader(data),
+			Kind::FileSubHeader => Self::FileSubHeader(data),
+			Kind::FileContents => Self::FileContents(data),
+			Kind::AudioSeq => Self::AudioSeq(data),
+			Kind::AudioVh => Self::AudioVh(data),
+			Kind::AudioVb => Self::AudioVb(data),
 		};
 
 		Ok(entry)

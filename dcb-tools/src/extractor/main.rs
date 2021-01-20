@@ -82,7 +82,8 @@ mod logger;
 use anyhow::Context;
 use dcb_io::{
 	drv::{dir::DirEntry, Dir},
-	pak::PakEntry,
+	pak::{self, PakEntry},
+	tim::TimFile,
 	GameFile, PakFile,
 };
 use dcb_iso9660::CdRom;
@@ -138,19 +139,25 @@ fn write_dir(dir: &Dir, path: &PathBuf) -> Result<(), anyhow::Error> {
 
 					log::info!("Creating directory {}", path.display());
 					self::try_create_folder(&path)?;
-					for (idx, contents) in pak_file
-						.entries
-						.iter()
-						.filter_map(|entry| match entry {
-							PakEntry::TimFile(_file, contents) => Some(contents),
-							_ => None,
-						})
-						.enumerate()
-					{
-						let path = path.join(format!("{idx}.tim"));
+					for (idx, entry) in pak_file.entries.iter().enumerate() {
+						let (extension, data) = match &entry {
+							PakEntry::Unknown0(data) => ("un0", data),
+							PakEntry::Unknown1(data) => ("un1", data),
+							PakEntry::GameScript(data) => ("mscd", data),
+							PakEntry::FileHeader(data) => ("header", data),
+							PakEntry::FileSubHeader(data) => ("subheader", data),
+							PakEntry::FileContents(data) => match TimFile::deserialize(std::io::Cursor::new(&contents)) {
+								Ok(_) => ("tim", data),
+								Err(_) => ("bin", data),
+							},
+							PakEntry::AudioSeq(data) => ("seq", data),
+							PakEntry::AudioVh(data) => ("vh", data),
+							PakEntry::AudioVb(data) => ("vb", data),
+						};
+						let path = path.join(format!("{idx}.{extension}"));
 						log::info!("Writing file {}", path.display());
 
-						std::fs::write(&path, contents).with_context(|| format!("Unable to write file {}", path.display()))?;
+						std::fs::write(&path, data).with_context(|| format!("Unable to write file {}", path.display()))?;
 					}
 				}
 				// Else just write it.
