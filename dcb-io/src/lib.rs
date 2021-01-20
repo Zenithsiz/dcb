@@ -16,7 +16,7 @@
 	array_methods,
 	slice_strip,
 	array_chunks,
-	iter_map_while,
+	iter_map_while
 )]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]
@@ -73,7 +73,11 @@
 #![allow(clippy::wildcard_enum_match_arm)]
 
 // Modules
+pub mod drv;
 pub mod game_file;
+pub mod pak;
 
 // Exports
+pub use drv::DrvFs;
 pub use game_file::GameFile;
+pub use pak::PakFile;

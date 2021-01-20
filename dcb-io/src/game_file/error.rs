@@ -1,7 +1,7 @@
 //! Errors
 
 // Imports
-use super::fs;
+use crate::drv;
 
 /// Error for [`Bytes::new`](super::Bytes::new)
 #[derive(Debug, thiserror::Error)]
@@ -24,7 +24,7 @@ pub enum NewError {
 
 	/// Unable to read parse filesystem
 	#[error("Unable to read filesystem file 'A.DRV'")]
-	ParseFilesystemA(#[source] fs::FromBytesError),
+	ParseFilesystemA(#[source] drv::FromBytesError),
 
 	/// Unable to find filesystem file
 	#[error("Unable to find Iso9660 filesystem file 'B.DRV'")]
@@ -36,7 +36,7 @@ pub enum NewError {
 
 	/// Unable to read parse filesystem
 	#[error("Unable to read filesystem file 'B.DRV'")]
-	ParseFilesystemB(#[source] fs::FromBytesError),
+	ParseFilesystemB(#[source] drv::FromBytesError),
 
 	/// Unable to find filesystem file
 	#[error("Unable to find Iso9660 filesystem file 'C.DRV'")]
@@ -48,7 +48,7 @@ pub enum NewError {
 
 	/// Unable to read parse filesystem
 	#[error("Unable to read filesystem file 'C.DRV'")]
-	ParseFilesystemC(#[source] fs::FromBytesError),
+	ParseFilesystemC(#[source] drv::FromBytesError),
 
 	/// Unable to find filesystem file
 	#[error("Unable to find Iso9660 filesystem file 'E.DRV'")]
@@ -60,7 +60,7 @@ pub enum NewError {
 
 	/// Unable to read parse filesystem
 	#[error("Unable to read filesystem file 'E.DRV'")]
-	ParseFilesystemE(#[source] fs::FromBytesError),
+	ParseFilesystemE(#[source] drv::FromBytesError),
 
 	/// Unable to find filesystem file
 	#[error("Unable to find Iso9660 filesystem file 'F.DRV'")]
@@ -72,7 +72,7 @@ pub enum NewError {
 
 	/// Unable to read parse filesystem
 	#[error("Unable to read filesystem file 'F.DRV'")]
-	ParseFilesystemF(#[source] fs::FromBytesError),
+	ParseFilesystemF(#[source] drv::FromBytesError),
 
 	/// Unable to find filesystem file
 	#[error("Unable to find Iso9660 filesystem file 'G.DRV'")]
@@ -84,7 +84,7 @@ pub enum NewError {
 
 	/// Unable to read parse filesystem
 	#[error("Unable to read filesystem file 'G.DRV'")]
-	ParseFilesystemG(#[source] fs::FromBytesError),
+	ParseFilesystemG(#[source] drv::FromBytesError),
 
 	/// Unable to find filesystem file
 	#[error("Unable to find Iso9660 filesystem file 'P.DRV'")]
@@ -96,5 +96,5 @@ pub enum NewError {
 
 	/// Unable to read parse filesystem
 	#[error("Unable to read filesystem file 'G.DRV'")]
-	ParseFilesystemP(#[source] fs::FromBytesError),
+	ParseFilesystemP(#[source] drv::FromBytesError),
 }
