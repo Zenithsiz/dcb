@@ -1,7 +1,7 @@
 //! Errors
 
 // Imports
-use super::header;
+use super::{entry, header};
 use std::io;
 
 /// Error for [`PakFile::deserialize`](super::PakFile::deserialize)
@@ -18,4 +18,8 @@ pub enum DeserializeError {
 	/// Unable to read data
 	#[error("Unable to read data")]
 	ReadData(#[source] io::Error),
+
+	/// Unable to parse entry
+	#[error("Unable to parse entry")]
+	ParseEntry(#[source] entry::DeserializeError),
 }

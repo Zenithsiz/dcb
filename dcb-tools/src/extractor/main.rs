@@ -82,15 +82,13 @@ mod logger;
 use anyhow::Context;
 use dcb_io::{
 	drv::{dir::DirEntry, Dir},
-	pak,
-	tim::TimFile,
+	pak::PakEntry,
 	GameFile, PakFile,
 };
 use dcb_iso9660::CdRom;
 use std::path::PathBuf;
 
 
-#[allow(clippy::print_stdout, clippy::use_debug)]
 fn main() -> Result<(), anyhow::Error> {
 	// Initialize the logger and set the panic handler
 	logger::init();
@@ -103,36 +101,28 @@ fn main() -> Result<(), anyhow::Error> {
 	let mut cdrom = CdRom::new(input_file);
 	let game_file = GameFile::new(&mut cdrom).context("Unable to read filesystem")?;
 
-	println!("A.DRV:");
-	write_dir(game_file.a_drv.root(), &output_dir.join("A.DRV")).context("Unable to write `A.DRV`")?;
-	println!("B.DRV:");
-	write_dir(game_file.b_drv.root(), &output_dir.join("B.DRV")).context("Unable to write `B.DRV`")?;
-	println!("C.DRV:");
-	write_dir(game_file.c_drv.root(), &output_dir.join("C.DRV")).context("Unable to write `C.DRV`")?;
-	println!("E.DRV:");
-	write_dir(game_file.e_drv.root(), &output_dir.join("E.DRV")).context("Unable to write `E.DRV`")?;
-	println!("F.DRV:");
-	write_dir(game_file.f_drv.root(), &output_dir.join("F.DRV")).context("Unable to write `F.DRV`")?;
-	println!("G.DRV:");
-	write_dir(game_file.g_drv.root(), &output_dir.join("G.DRV")).context("Unable to write `G.DRV`")?;
-	println!("P.DRV:");
-	write_dir(game_file.p_drv.root(), &output_dir.join("P.DRV")).context("Unable to write `P.DRV`")?;
+	log::info!("A.DRV:");
+	self::write_dir(game_file.a_drv.root(), &output_dir.join("A.DRV")).context("Unable to write `A.DRV`")?;
+	log::info!("B.DRV:");
+	self::write_dir(game_file.b_drv.root(), &output_dir.join("B.DRV")).context("Unable to write `B.DRV`")?;
+	log::info!("C.DRV:");
+	self::write_dir(game_file.c_drv.root(), &output_dir.join("C.DRV")).context("Unable to write `C.DRV`")?;
+	log::info!("E.DRV:");
+	self::write_dir(game_file.e_drv.root(), &output_dir.join("E.DRV")).context("Unable to write `E.DRV`")?;
+	log::info!("F.DRV:");
+	self::write_dir(game_file.f_drv.root(), &output_dir.join("F.DRV")).context("Unable to write `F.DRV`")?;
+	log::info!("G.DRV:");
+	self::write_dir(game_file.g_drv.root(), &output_dir.join("G.DRV")).context("Unable to write `G.DRV`")?;
+	log::info!("P.DRV:");
+	self::write_dir(game_file.p_drv.root(), &output_dir.join("P.DRV")).context("Unable to write `P.DRV`")?;
 
 	Ok(())
 }
 
 /// Prints a directory tree
-#[allow(clippy::create_dir)] // We only want to create a single level
 fn write_dir(dir: &Dir, path: &PathBuf) -> Result<(), anyhow::Error> {
 	// Create path
-	/*
-	match std::fs::create_dir(&path) {
-		// If it already exists, ignore
-		Ok(_) => (),
-		Err(err) if err.kind() == io::ErrorKind::AlreadyExists => (),
-		Err(err) => return Err(err).with_context(|| format!("Unable to create directory {}", path.display())),
-	};
-	*/
+	self::try_create_folder(path)?;
 
 	for entry in dir.entries() {
 		match entry {
@@ -140,44 +130,55 @@ fn write_dir(dir: &Dir, path: &PathBuf) -> Result<(), anyhow::Error> {
 				name, extension, contents, ..
 			} => {
 				let path = path.join(format!("{}.{}", name, extension));
-				log::info!("Writing file {}", path.display());
 
+				// If it's a `.PAK`, unpack it
 				if extension.as_str() == "PAK" {
-					let pak_file =
+					let pak_file: PakFile =
 						PakFile::deserialize(std::io::Cursor::new(contents)).with_context(|| format!("Unable to parse file {}", path.display()))?;
-					for (header, file) in pak_file.files {
-						log::info!("Header: {:?}", header);
 
-						/*
-						if header.file_kind == pak::header::Kind::FileContents {
-							match TimFile::deserialize(std::io::Cursor::new(&file)) {
-								Ok(tim) => log::info!("Tim: {:?}", tim),
-								Err(err) => log::info!("Was not tim: {}", dcb_util::DisplayWrapper::new(|f| dcb_util::fmt_err(&err, f))),
-							}
-						}
-						*/
+					log::info!("Creating directory {}", path.display());
+					self::try_create_folder(&path)?;
+					for (idx, contents) in pak_file
+						.entries
+						.iter()
+						.filter_map(|entry| match entry {
+							PakEntry::TimFile(_file, contents) => Some(contents),
+							_ => None,
+						})
+						.enumerate()
+					{
+						let path = path.join(format!("{idx}.tim"));
+						log::info!("Writing file {}", path.display());
+
+						std::fs::write(&path, contents).with_context(|| format!("Unable to write file {}", path.display()))?;
 					}
 				}
-
-				//std::fs::write(&path, contents).with_context(|| format!("Unable to write file {}", path.display()))?;
+				// Else just write it.
+				else {
+					log::info!("Writing file {}", path.display());
+					std::fs::write(&path, contents).with_context(|| format!("Unable to write file {}", path.display()))?;
+				}
 			},
 			DirEntry::Dir { name, dir, .. } => {
 				let path = path.join(name.as_str());
-
-				/*
-				match std::fs::create_dir(&path) {
-					// If it already exists, ignore
-					Ok(_) => (),
-					Err(err) if err.kind() == io::ErrorKind::AlreadyExists => (),
-					Err(err) => return Err(err).with_context(|| format!("Unable to create directory {}", path.display())),
-				};
-				*/
-
 				log::info!("Creating directory {}", path.display());
+
+				self::try_create_folder(&path)?;
 				write_dir(dir, &path).with_context(|| format!("Unable to write directory {}", path.display()))?;
 			},
 		}
 	}
 
 	Ok(())
+}
+
+/// Attempts to create a folder. Returns `Ok` if it already exists.
+#[allow(clippy::create_dir)] // We only want to create a single level
+fn try_create_folder(path: impl AsRef<std::path::Path>) -> Result<(), anyhow::Error> {
+	match std::fs::create_dir(&path) {
+		// If it already exists, ignore
+		Ok(_) => Ok(()),
+		Err(err) if err.kind() == std::io::ErrorKind::AlreadyExists => Ok(()),
+		Err(err) => Err(err).with_context(|| format!("Unable to create directory {}", path.as_ref().display())),
+	}
 }

@@ -1,10 +1,12 @@
 //! `.PAK` file parser
 
 // Modules
+pub mod entry;
 pub mod error;
 pub mod header;
 
 // Exports
+pub use entry::PakEntry;
 pub use error::DeserializeError;
 pub use header::Header;
 
@@ -15,8 +17,8 @@ use std::{convert::TryFrom, io};
 /// A `.PAK` file
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub struct PakFile {
-	/// All files and their header
-	pub files: Vec<(Header, Vec<u8>)>,
+	/// All entries
+	pub entries: Vec<PakEntry>,
 }
 
 impl PakFile {
@@ -24,7 +26,7 @@ impl PakFile {
 	#[allow(clippy::similar_names)] // Reader and header are different enough.
 	pub fn deserialize<R: io::Read>(mut reader: R) -> Result<Self, DeserializeError> {
 		// Keep reading headers until we find the final header.
-		let mut files = vec![];
+		let mut entries = vec![];
 		loop {
 			// Read the header
 			// Note: We do a two-part read so we can quit early if we find `0xffff`
@@ -45,10 +47,12 @@ impl PakFile {
 			let mut data = vec![0; size];
 			reader.read_exact(&mut data).map_err(DeserializeError::ReadData)?;
 
-			files.push((header, data));
+			// Get the entry
+			let entry = PakEntry::deserialize(header, data).map_err(DeserializeError::ParseEntry)?;
+			entries.push(entry);
 		}
 
 
-		Ok(Self { files })
+		Ok(Self { entries })
 	}
 }
