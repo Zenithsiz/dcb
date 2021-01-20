@@ -76,6 +76,7 @@
 pub mod drv;
 pub mod game_file;
 pub mod pak;
+pub mod tim;
 
 // Exports
 pub use drv::DrvFs;

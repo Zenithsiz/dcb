@@ -79,11 +79,15 @@ mod cli;
 mod logger;
 
 // Imports
-use std::{io, path::PathBuf};
-
 use anyhow::Context;
-use dcb_io::game_file::fs::{dir::DirEntry, Dir};
+use dcb_io::{
+	drv::{dir::DirEntry, Dir},
+	pak,
+	tim::TimFile,
+	GameFile, PakFile,
+};
 use dcb_iso9660::CdRom;
+use std::path::PathBuf;
 
 
 #[allow(clippy::print_stdout, clippy::use_debug)]
@@ -92,23 +96,11 @@ fn main() -> Result<(), anyhow::Error> {
 	logger::init();
 
 	// Get all data from cli
-	let cli::CliData { game_file_path, .. } = cli::CliData::new();
+	let cli::CliData { game_file_path, output_dir } = cli::CliData::new();
 
 	// Open the game file
 	let input_file = std::fs::File::open(&game_file_path).context("Unable to open input file")?;
 	let mut cdrom = CdRom::new(input_file);
-
-	for sector in cdrom.read_sectors_range(..) {
-		match sector {
-			Ok(_) => break,
-			Err(err) => log::info!(
-				"Failed to parse sector:\n{}",
-				dcb_util::DisplayWrapper::new(|f| dcb_util::fmt_err(&err, f))
-			),
-		}
-	}
-
-	/*
 	let game_file = GameFile::new(&mut cdrom).context("Unable to read filesystem")?;
 
 	println!("A.DRV:");
@@ -125,21 +117,22 @@ fn main() -> Result<(), anyhow::Error> {
 	write_dir(game_file.g_drv.root(), &output_dir.join("G.DRV")).context("Unable to write `G.DRV`")?;
 	println!("P.DRV:");
 	write_dir(game_file.p_drv.root(), &output_dir.join("P.DRV")).context("Unable to write `P.DRV`")?;
-	*/
 
 	Ok(())
 }
 
 /// Prints a directory tree
 #[allow(clippy::create_dir)] // We only want to create a single level
-fn _write_dir(dir: &Dir, path: &PathBuf) -> Result<(), anyhow::Error> {
+fn write_dir(dir: &Dir, path: &PathBuf) -> Result<(), anyhow::Error> {
 	// Create path
+	/*
 	match std::fs::create_dir(&path) {
 		// If it already exists, ignore
 		Ok(_) => (),
 		Err(err) if err.kind() == io::ErrorKind::AlreadyExists => (),
 		Err(err) => return Err(err).with_context(|| format!("Unable to create directory {}", path.display())),
 	};
+	*/
 
 	for entry in dir.entries() {
 		match entry {
@@ -148,20 +141,40 @@ fn _write_dir(dir: &Dir, path: &PathBuf) -> Result<(), anyhow::Error> {
 			} => {
 				let path = path.join(format!("{}.{}", name, extension));
 				log::info!("Writing file {}", path.display());
-				std::fs::write(&path, contents).with_context(|| format!("Unable to write file {}", path.display()))?;
+
+				if extension.as_str() == "PAK" {
+					let pak_file =
+						PakFile::deserialize(std::io::Cursor::new(contents)).with_context(|| format!("Unable to parse file {}", path.display()))?;
+					for (header, file) in pak_file.files {
+						log::info!("Header: {:?}", header);
+
+						/*
+						if header.file_kind == pak::header::Kind::FileContents {
+							match TimFile::deserialize(std::io::Cursor::new(&file)) {
+								Ok(tim) => log::info!("Tim: {:?}", tim),
+								Err(err) => log::info!("Was not tim: {}", dcb_util::DisplayWrapper::new(|f| dcb_util::fmt_err(&err, f))),
+							}
+						}
+						*/
+					}
+				}
+
+				//std::fs::write(&path, contents).with_context(|| format!("Unable to write file {}", path.display()))?;
 			},
 			DirEntry::Dir { name, dir, .. } => {
 				let path = path.join(name.as_str());
 
+				/*
 				match std::fs::create_dir(&path) {
 					// If it already exists, ignore
 					Ok(_) => (),
 					Err(err) if err.kind() == io::ErrorKind::AlreadyExists => (),
 					Err(err) => return Err(err).with_context(|| format!("Unable to create directory {}", path.display())),
 				};
+				*/
 
 				log::info!("Creating directory {}", path.display());
-				_write_dir(dir, &path).with_context(|| format!("Unable to write directory {}", path.display()))?;
+				write_dir(dir, &path).with_context(|| format!("Unable to write directory {}", path.display()))?;
 			},
 		}
 	}

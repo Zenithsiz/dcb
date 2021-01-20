@@ -41,13 +41,15 @@ impl Bytes for Sector {
 		);
 
 		let header = Header::from_bytes(bytes.header).map_err(FromBytesError::Header)?;
-		let edc = Edc::from_bytes(bytes.edc).into_ok();
 
+		/*
+		let edc = Edc::from_bytes(bytes.edc).into_ok();
 		let mut raw_subheader = [0u8; 0x8];
 		header.subheader.to_bytes(&mut raw_subheader).into_ok();
 		if !edc.is_valid(&raw_subheader, bytes.data) {
 			log::warn!("Found invalid data, attempting correction");
 		}
+		*/
 
 
 		Ok(Self { header, data: *bytes.data })

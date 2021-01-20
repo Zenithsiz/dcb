@@ -1,7 +1,7 @@
 //! Errors
 
 // Imports
-use crate::game_file::fs::dir;
+use crate::drv::dir;
 use std::ops::{Range, RangeFrom};
 
 /// Error for [`Bytes::from_bytes`](super::Bytes::from_bytes)
