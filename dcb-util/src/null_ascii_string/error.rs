@@ -1,6 +1,6 @@
 //! Errors
 
-/// Error type for [`read`](super::read)
+/// Error type for [`NullAsciiString::read_string`](super::NullAsciiString::read_string)
 #[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
 pub enum ReadError {
 	/// No null was found in the string

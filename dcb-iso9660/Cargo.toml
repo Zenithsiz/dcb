@@ -1,0 +1,24 @@
+[package]
+name = "dcb-iso9660"
+version = "0.1.0"
+authors = ["Filipe Rodrigues <filipejacintorodrigues1@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+
+
+# Dcb
+dcb-util = { path = "../dcb-util" }
+dcb-bytes = { path = "../dcb-bytes" }
+dcb-cdrom-xa = { path = "../dcb-cdrom-xa" }
+
+# Log
+log = "0.4.13"
+
+# Util
+byteorder = "1.4.2"
+bitflags = "1.2.1"
+
+# Derives
+thiserror = "1.0.23"
+ref-cast = "1.0.6"

@@ -26,7 +26,8 @@ pub enum DeserializeError {
 	#[error(
 		"Too many decks in table ({decks_count} decks, {} / {} bytes max)",
 		decks_count * std::mem::size_of::<<Deck as Bytes>::ByteArray>(),
-		Table::MAX_BYTE_SIZE
+		0,
+		//Table::MAX_BYTE_SIZE
 	)]
 	TooManyDecks {
 		/// Number of decks
@@ -67,7 +68,8 @@ pub enum SerializeError {
 	#[error(
 		"Too many decks in table ({decks_count} decks, {} / {} bytes max)",
 		decks_count * std::mem::size_of::<<Deck as Bytes>::ByteArray>(),
-		Table::MAX_BYTE_SIZE
+		0,
+		//Table::MAX_BYTE_SIZE
 	)]
 	TooManyDecks {
 		/// Number of decks

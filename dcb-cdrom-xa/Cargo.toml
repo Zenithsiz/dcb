@@ -1,0 +1,21 @@
+[package]
+name = "dcb-cdrom-xa"
+version = "0.1.0"
+authors = ["Filipe Rodrigues <filipejacintorodrigues1@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+
+# Dcb
+dcb-util = { path = "../dcb-util" }
+dcb-bytes = { path = "../dcb-bytes" }
+
+# Log
+log = "0.4.13"
+
+# Util
+byteorder = "1.4.2"
+crc = "1.8.1"
+
+# Derives
+thiserror = "1.0.23"

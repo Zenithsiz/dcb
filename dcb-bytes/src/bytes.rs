@@ -9,7 +9,7 @@ where
 	Self: Sized,
 {
 	/// The type of array required by this structure
-	type ByteArray: ByteArray;
+	type ByteArray: ?Sized + ByteArray;
 
 	/// The error type used for the operation
 	type FromError: Error;
@@ -25,15 +25,10 @@ where
 }
 
 /// A trait for restricting `Bytes::ByteArray`
-pub trait ByteArray {
-	/// Size of this array
-	const SIZE: usize;
-}
+pub trait ByteArray {}
 
-impl<const N: usize> ByteArray for [u8; N] {
-	const SIZE: usize = N;
-}
+impl<const N: usize> ByteArray for [u8; N] {}
 
-impl ByteArray for u8 {
-	const SIZE: usize = 1;
-}
+impl ByteArray for [u8] {}
+
+impl ByteArray for u8 {}

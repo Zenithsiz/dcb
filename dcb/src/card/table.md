@@ -1,20 +1,18 @@
 The table of all digimon in the game
 
 # Details
-The card table begins at address [0x216d000](Table::START_ADDRESS) of the game file,
-containing a header with the number of each card, and then a contiguous array of card entries.
+The card table contains a small header detailing how many of each cards exist, following by a contiguous
+array of card entries.
 
 # Table Layout
-The digimon table has a max size of [0x14950](Table::MAX_BYTE_SIZE), but does not
-necessary use all of this space, but it does follow this layout:
 
 | Offset | Size     | Type                              | Name         | Details                                                |
 | ------ | -------- | --------------------------------- | ------------ | ------------------------------------------------------ |
-| 0x0    | 0x8      | u32                               | Header       | The [table header](TableHeader)                        |
+| 0x0    | 0x8      | u32                               | Header       | The [table header](Header)                             |
 | 0x8    | variable | [`CardEntry`](#card-entry-layout) | Card Entries | A contiguous array of [Card Entry](#card-entry-layout) |
 
 # Card Entry Layout
-Each card entry consists of a header of the card
+Each card entry consists of a header of the card, the card itself and a null terminator.
 
 | Offset | Size     | Type           | Name            | Details                                      |
 | ------ | -------- | -------------- | --------------- | -------------------------------------------- |

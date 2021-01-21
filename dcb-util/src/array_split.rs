@@ -1,5 +1,9 @@
 //! Array splitters
 
+// Export `arrayref` to use in macros
+#[doc(hidden)]
+pub use ::arrayref;
+
 /// Splits an array into various members
 #[macro_export]
 macro_rules! array_split {
@@ -21,6 +25,7 @@ macro_rules! array_split {
 				$( &'a [T; $arr_size], )?
 				$( &'a T, #[cfg(invalid)] __field: [u8; $val_size], )?
 			)*
+			__phantom: ::std::marker::PhantomData<&'a T>,
 		}
 
 		// Get everything from `array_refs`
@@ -33,7 +38,7 @@ macro_rules! array_split {
 			$(
 				$name
 			),*
-		) = ::arrayref::array_refs!(
+		) = $crate::array_split::arrayref::array_refs!(
 			$arr,
 			$(
 				$( $arr_size )?
@@ -48,6 +53,7 @@ macro_rules! array_split {
 				$( : &( $name[$val_size - $val_size] ) )?
 				,
 			)*
+			__phantom: ::std::marker::PhantomData,
 		}
 	}}
 }
@@ -66,12 +72,6 @@ macro_rules! array_split_mut {
 
 		),* $(,)?
 	) => {{
-		#![allow(
-			clippy::used_underscore_binding,
-			clippy::ptr_offset_with_cast,
-			clippy::indexing_slicing,
-		)]
-
 		// Struct holding all fields
 		struct Fields<'a, T> {
 			$(
@@ -82,14 +82,20 @@ macro_rules! array_split_mut {
 				//       The `__field` serves to identify when this part should be written.
 				$( &'a mut T, #[cfg(invalid)] __field: [u8; $val_size], )?
 			)*
+			__phantom: ::std::marker::PhantomData<&'a mut T>,
 		}
 
-		// Get everything from `array_refs`
+		// Get everything from `mut_array_refs`
+		#[allow(
+			clippy::used_underscore_binding,
+			clippy::ptr_offset_with_cast,
+			clippy::indexing_slicing,
+		)]
 		let (
 			$(
 				$name
 			),*
-		) = ::arrayref::mut_array_refs!(
+		) = $crate::array_split::arrayref::mut_array_refs!(
 			$arr,
 			$(
 				$( $arr_size )?
@@ -105,6 +111,7 @@ macro_rules! array_split_mut {
 				$( : &mut ( $name[$val_size - $val_size] ) )?
 				,
 			)*
+			__phantom: ::std::marker::PhantomData,
 		}
 	}}
 }

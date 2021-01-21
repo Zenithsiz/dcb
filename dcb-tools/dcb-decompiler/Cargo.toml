@@ -1,0 +1,38 @@
+[package]
+name = "dcb-decompiler"
+version = "0.1.0"
+authors = ["Filipe Rodrigues <filipejacintorodrigues1@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+# Dcb
+dcb = { path = "../../dcb" }
+dcb-io = { path = "../../dcb-io" }
+dcb-iso9660 = { path = "../../dcb-iso9660" }
+dcb-cdrom-xa = { path = "../../dcb-cdrom-xa" }
+dcb-exe = { path = "../../dcb-exe" }
+dcb-util = { path = "../../dcb-util" }
+
+# Text
+ascii = "1.0"
+
+# Helpers
+int-conv = "0.1"
+byteorder = "1.3"
+
+# Cmd
+clap = "2.33"
+
+# Logging
+log = "0.4"
+simplelog = "0.8"
+
+# Error handling
+anyhow = "1.0"
+
+# Derives
+derive_more = "0.99"
+
+# Serde
+serde = "1.0"
+serde_yaml = "0.8"

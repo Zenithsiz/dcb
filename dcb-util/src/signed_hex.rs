@@ -23,8 +23,9 @@ where
 }
 
 /// Macro to help implement [`SignedHex`]
-macro impl_signed_hex($($T:ty => $TBigger:ty),* $(,)?) {
-	$(
+macro_rules! impl_signed_hex {
+	($($T:ty => $TBigger:ty),* $(,)?) => {
+		$(
 		impl fmt::Display for SignedHex<$T> {
 			fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 				let sign = match (self.0 < 0, f.sign_plus()) {
@@ -44,6 +45,7 @@ macro impl_signed_hex($($T:ty => $TBigger:ty),* $(,)?) {
 			}
 		}
 	)*
+}
 }
 
 impl_signed_hex! {

@@ -1,9 +1,7 @@
-//! `dcb` Input / Output.
+//! `dcb` io
 //!
-//! The Io crate takes care of interacting with the game file itself, such
-//! as ensuring that only the data sections in the game file are written to.
-//! As well as making conversions between coordinates in data to real file
-//! coordinates. (For more details, visit the [`address`] module)
+//! This crate is responsible for interactions with the game file itself,
+//! including the custom filesystem used by the game with the `.DRV` files.
 
 // Features
 #![feature(
@@ -11,7 +9,14 @@
 	seek_convenience,
 	format_args_capture,
 	exclusive_range_pattern,
-	unsafe_block_in_unsafe_fn
+	unsafe_block_in_unsafe_fn,
+	never_type,
+	unwrap_infallible,
+	min_const_generics,
+	array_methods,
+	slice_strip,
+	array_chunks,
+	iter_map_while
 )]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]
@@ -68,9 +73,12 @@
 #![allow(clippy::wildcard_enum_match_arm)]
 
 // Modules
-pub mod address;
+pub mod drv;
 pub mod game_file;
+pub mod pak;
+pub mod tim;
 
 // Exports
-pub use address::{Data, Real};
+pub use drv::DrvFs;
 pub use game_file::GameFile;
+pub use pak::PakFile;
