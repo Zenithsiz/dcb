@@ -1,9 +1,11 @@
 //! A `.PAK` entry
 
 // Modules
+pub mod animation2d;
 pub mod error;
 
 // Exports
+pub use animation2d::Animation2d;
 pub use error::DeserializeError;
 
 // Imports
@@ -21,8 +23,8 @@ pub enum PakEntry {
 	/// Game script, `MSCD`
 	GameScript(Vec<u8>),
 
-	/// File header
-	FileHeader(Vec<u8>),
+	/// 2D Animation
+	Animation2d(Animation2d),
 
 	/// File sub-header
 	FileSubHeader(Vec<u8>),
@@ -48,7 +50,7 @@ impl PakEntry {
 			Kind::Unknown0 => Self::Unknown0(data),
 			Kind::Unknown1 => Self::Unknown1(data),
 			Kind::GameScript => Self::GameScript(data),
-			Kind::FileHeader => Self::FileHeader(data),
+			Kind::Animation2D => Self::Animation2d(Animation2d::deserialize(std::io::Cursor::new(data)).map_err(DeserializeError::ParseAnimation2D)?),
 			Kind::FileSubHeader => Self::FileSubHeader(data),
 			Kind::FileContents => Self::FileContents(data),
 			Kind::AudioSeq => Self::AudioSeq(data),

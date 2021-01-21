@@ -16,8 +16,8 @@ pub enum Kind {
 	/// Game script, `MSCD`
 	GameScript,
 
-	/// File header
-	FileHeader,
+	/// Animation2D
+	Animation2D,
 
 	/// File sub-header
 	FileSubHeader,
@@ -51,7 +51,7 @@ impl Bytes for Kind {
 			0 => Self::Unknown0,
 			1 => Self::Unknown1,
 			2 => Self::GameScript,
-			3 => Self::FileHeader,
+			3 => Self::Animation2D,
 			4 => Self::FileSubHeader,
 			5 => Self::FileContents,
 			6 => Self::AudioSeq,
@@ -68,7 +68,7 @@ impl Bytes for Kind {
 			Self::Unknown0 => 0,
 			Self::Unknown1 => 1,
 			Self::GameScript => 2,
-			Self::FileHeader => 3,
+			Self::Animation2D => 3,
 			Self::FileSubHeader => 4,
 			Self::FileContents => 5,
 			Self::AudioSeq => 6,

@@ -1,16 +1,12 @@
 //! Errors
 
 // Imports
-use dcb_util::null_ascii_string;
+use super::animation2d;
 
 /// Error for [`PakEntry::deserialize`](super::PakEntry::deserialize)
 #[derive(Debug, thiserror::Error)]
 pub enum DeserializeError {
-	/// Missing name
-	#[error("Missing name")]
-	MissingName,
-
-	/// Unable to parse name
-	#[error("Unable to parse name")]
-	ParseName(#[source] null_ascii_string::ReadError),
+	/// Unable to parse 2d animation
+	#[error("Unable to parse 2d animation")]
+	ParseAnimation2D(#[source] animation2d::DeserializeError),
 }

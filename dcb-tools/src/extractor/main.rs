@@ -82,8 +82,10 @@ mod logger;
 use anyhow::Context;
 use dcb_io::{
 	drv::{dir::DirEntry, Dir},
-	pak::{self, PakEntry},
-	tim::TimFile,
+	pak::{
+		entry::{animation2d::Frame, Animation2d},
+		PakEntry,
+	},
 	GameFile, PakFile,
 };
 use dcb_iso9660::CdRom;
@@ -122,8 +124,7 @@ fn main() -> Result<(), anyhow::Error> {
 
 /// Prints a directory tree
 fn write_dir(dir: &Dir, path: &PathBuf) -> Result<(), anyhow::Error> {
-	// Create path
-	self::try_create_folder(path)?;
+	//write_dir_with_depth(dir, path, 1)
 
 	for entry in dir.entries() {
 		match entry {
@@ -137,41 +138,126 @@ fn write_dir(dir: &Dir, path: &PathBuf) -> Result<(), anyhow::Error> {
 					let pak_file: PakFile =
 						PakFile::deserialize(std::io::Cursor::new(contents)).with_context(|| format!("Unable to parse file {}", path.display()))?;
 
-					log::info!("Creating directory {}", path.display());
-					self::try_create_folder(&path)?;
 					for (idx, entry) in pak_file.entries.iter().enumerate() {
-						let (extension, data) = match &entry {
-							PakEntry::Unknown0(data) => ("un0", data),
-							PakEntry::Unknown1(data) => ("un1", data),
-							PakEntry::GameScript(data) => ("mscd", data),
-							PakEntry::FileHeader(data) => ("header", data),
-							PakEntry::FileSubHeader(data) => ("subheader", data),
-							PakEntry::FileContents(data) => match TimFile::deserialize(std::io::Cursor::new(&contents)) {
-								Ok(_) => ("tim", data),
-								Err(_) => ("bin", data),
-							},
-							PakEntry::AudioSeq(data) => ("seq", data),
-							PakEntry::AudioVh(data) => ("vh", data),
-							PakEntry::AudioVb(data) => ("vb", data),
+						if let PakEntry::Animation2d(animation2d) = &entry {
+							let Animation2d {
+								file_name,
+								unknown0,
+								unknown1,
+								unknown2,
+								unknown3,
+								unknown4,
+								unknown5,
+								unknown6,
+								frames,
+							} = animation2d;
+							#[rustfmt::skip]
+							println!(
+								"{file_name}[{idx}]\t{unknown0:#x}\t{unknown1:#x}\t{unknown2:#x}\t{unknown3:#x}\t{unknown4:#x}\t{unknown5:#x}\t{unknown6:#x}\t"
+							);
+							for frame in frames {
+								let Frame {
+									unknown0,
+									x0,
+									x1,
+									y0,
+									y1,
+									width,
+									height,
+									unknown1,
+									duration,
+									unknown2,
+									unknown3,
+								} = frame;
+								#[rustfmt::skip]
+								eprint!(
+									"{file_name}[{idx}]\t{unknown0:#x}\t{x0:#x}\t{x1:#x}\t{y0:#x}\t{y1:#x}\t{width:#x}\t{height:#x}\t{unknown1:#x}\t{duration:#x}\t{unknown2:#x}"
+								);
+								let digits = [
+									(unknown3 & 0xF000) >> 0xc,
+									(unknown3 & 0x0F00) >> 0x8,
+									(unknown3 & 0x00F0) >> 0x4,
+									(unknown3 & 0x000F) >> 0x0,
+								];
+								for digit in &digits {
+									eprint!("\t{digit:#x}");
+								}
+								eprintln!();
+							}
+							//log::info!("{}[{}]: {:?}", path.display(), idx, animation2d);
 						};
-						let path = path.join(format!("{idx}.{extension}"));
-						log::info!("Writing file {}", path.display());
-
-						std::fs::write(&path, data).with_context(|| format!("Unable to write file {}", path.display()))?;
 					}
+				}
+			},
+			DirEntry::Dir { name, dir, .. } => {
+				let path = path.join(name.as_str());
+				self::write_dir(dir, &path).with_context(|| format!("Unable to write directory {}", path.display()))?;
+			},
+		}
+	}
+
+	Ok(())
+}
+
+/// Prints a directory tree
+fn _write_dir_with_depth(dir: &Dir, path: &PathBuf, depth: usize) -> Result<(), anyhow::Error> {
+	// Create path
+	self::_try_create_folder(path)?;
+
+	let tabs = "\t".repeat(depth);
+	for entry in dir.entries() {
+		match entry {
+			DirEntry::File {
+				name, extension, contents, ..
+			} => {
+				let path = path.join(format!("{}.{}", name, extension));
+
+				// If it's a `.PAK`, unpack it
+				if extension.as_str() == "PAK" {
+					let _pak_file: PakFile =
+						PakFile::deserialize(std::io::Cursor::new(contents)).with_context(|| format!("Unable to parse file {}", path.display()))?;
+
+					log::info!("{}Creating directory {}", tabs, path.display());
+					self::_try_create_folder(&path)?;
+				/*
+				for (idx, entry) in pak_file.entries.iter().enumerate() {
+					let (extension, data) = match &entry {
+						PakEntry::Unknown0(data) => ("UN0", data),
+						PakEntry::Unknown1(data) => ("UN1", data),
+						PakEntry::GameScript(data) => ("MSD", data),
+						PakEntry::Animation2D(_data) => ("A2D", todo!()),
+						PakEntry::FileSubHeader(data) => ("SHD", data),
+						PakEntry::FileContents(data) => (
+							match TimFile::deserialize(std::io::Cursor::new(&data)) {
+								Ok(_) => "TIM",
+								Err(_) if data.starts_with(b"Tp") => "TIS",
+								Err(_) => "BIN",
+							},
+							data,
+						),
+						PakEntry::AudioSeq(data) => ("SEQ", data),
+						PakEntry::AudioVh(data) => ("VH", data),
+						PakEntry::AudioVb(data) => ("VB", data),
+					};
+					let path = path.join(format!("{idx}.{extension}"));
+					log::info!("{}\tWriting file {}", tabs, path.display());
+
+					std::fs::write(&path, data).with_context(|| format!("Unable to write file {}", path.display()))?;
+				}
+				*/
 				}
 				// Else just write it.
 				else {
-					log::info!("Writing file {}", path.display());
+					log::info!("{}Writing file {}", tabs, path.display());
 					std::fs::write(&path, contents).with_context(|| format!("Unable to write file {}", path.display()))?;
 				}
 			},
 			DirEntry::Dir { name, dir, .. } => {
 				let path = path.join(name.as_str());
-				log::info!("Creating directory {}", path.display());
+				log::info!("{}Creating directory {}", tabs, path.display());
 
-				self::try_create_folder(&path)?;
-				write_dir(dir, &path).with_context(|| format!("Unable to write directory {}", path.display()))?;
+				self::_try_create_folder(&path)?;
+				self::_write_dir_with_depth(dir, &path, depth + 1).with_context(|| format!("Unable to write directory {}", path.display()))?;
 			},
 		}
 	}
@@ -181,7 +267,7 @@ fn write_dir(dir: &Dir, path: &PathBuf) -> Result<(), anyhow::Error> {
 
 /// Attempts to create a folder. Returns `Ok` if it already exists.
 #[allow(clippy::create_dir)] // We only want to create a single level
-fn try_create_folder(path: impl AsRef<std::path::Path>) -> Result<(), anyhow::Error> {
+fn _try_create_folder(path: impl AsRef<std::path::Path>) -> Result<(), anyhow::Error> {
 	match std::fs::create_dir(&path) {
 		// If it already exists, ignore
 		Ok(_) => Ok(()),
