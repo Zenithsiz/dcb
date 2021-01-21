@@ -2,11 +2,15 @@
 
 // Imports
 use super::volume_descriptor::{self};
-use dcb_cdrom_xa::ReadSectorError;
+use dcb_cdrom_xa::{ReadSectorError, SeekSectorError};
 
 /// Error type for [`Filesystem::new`](super::Filesystem::new)
 #[derive(Debug, thiserror::Error)]
 pub enum NewError {
+	/// Unable to seek to volume descriptor set
+	#[error("Unable to seek to volume descriptor set")]
+	SeekVolumeDescriptorSet(#[source] SeekSectorError),
+
 	/// Missing primary volume
 	#[error("No primary volume found before set terminator")]
 	MissingPrimaryVolumeBeforeSetTerminator,

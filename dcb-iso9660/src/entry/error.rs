@@ -2,7 +2,7 @@
 
 // Imports
 use crate::string;
-use dcb_cdrom_xa::ReadSectorError;
+use dcb_cdrom_xa::{ReadNthSectorError, ReadSectorError, SeekSectorError};
 
 /// Error type for [`Bytes::from_bytes`](dcb_bytes::Bytes::from_bytes)
 #[derive(Debug, thiserror::Error)]
@@ -32,6 +32,10 @@ pub enum FromBytesError {
 /// Error type for [`Entry::read`](super::Entry::read)
 #[derive(Debug, thiserror::Error)]
 pub enum ReadError {
+	/// Unable to seek to sector
+	#[error("Unable to seek to sector")]
+	SeekSector(#[source] SeekSectorError),
+
 	/// Not a file
 	#[error("Not a file")]
 	NotAFile,
@@ -50,7 +54,7 @@ pub enum ReadEntriesError {
 
 	/// Unable to read sector
 	#[error("Unable to read sector")]
-	ReadSector(#[source] ReadSectorError),
+	ReadSector(#[source] ReadNthSectorError),
 
 	/// Unable to parse an entry
 	#[error("Unable to parse an entry")]

@@ -1,6 +1,6 @@
 # CD-ROM/XA Implementation
 
-This module implements the `CD-ROM/XA Mode 2 Form 1` specification
+This crate implements the `CD-ROM/XA Mode 2 Form 1` specification
 within the [`CdRom`] struct, which takes an arbitrary reader and
 allows access to all of it's sectors.
 

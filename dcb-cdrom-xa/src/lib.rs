@@ -63,16 +63,13 @@ pub mod iter;
 pub mod sector;
 
 // Exports
-pub use error::ReadSectorError;
+pub use error::{ReadNthSectorError, ReadSectorError, SeekSectorError};
 pub use iter::SectorsRangeIter;
 pub use sector::Sector;
 
 // Imports
 use dcb_bytes::Bytes;
-use std::{
-	io::{Read, Seek, SeekFrom},
-	ops::RangeBounds,
-};
+use std::io::{Read, Seek, SeekFrom};
 
 /// A CD-ROM/XA Mode 2 Form 1 wrapper
 pub struct CdRom<R> {
@@ -96,23 +93,40 @@ impl<R> CdRom<R> {
 }
 
 // Read
-impl<R: Read + Seek> CdRom<R> {
-	/// Reads the `n`th sector
-	pub fn read_sector(&mut self, n: u64) -> Result<Sector, ReadSectorError> {
-		// Seek to the sector.
-		self.reader.seek(SeekFrom::Start(Self::SECTOR_SIZE * n)).map_err(ReadSectorError::Seek)?;
-
+impl<R: Read> CdRom<R> {
+	/// Reads the next sector
+	pub fn read_sector(&mut self) -> Result<Sector, ReadSectorError> {
 		// Read it
 		let mut bytes = [0; 2352];
 		self.reader.read_exact(&mut bytes).map_err(ReadSectorError::Read)?;
 
 		// And parse it
-		let sector = Sector::from_bytes(&bytes).map_err(ReadSectorError::Parse)?;
-		Ok(sector)
+		Sector::from_bytes(&bytes).map_err(ReadSectorError::Parse)
 	}
 
-	/// Returns an iterator over a range of sectors
-	pub fn read_sectors_range(&mut self, range: impl RangeBounds<u64>) -> SectorsRangeIter<R> {
-		SectorsRangeIter::new(self, range)
+	/// Returns an iterator over the next sectors
+	pub fn read_sectors(&mut self) -> SectorsRangeIter<R> {
+		SectorsRangeIter::new(self)
+	}
+}
+
+// Seek
+impl<R: Read + Seek> CdRom<R> {
+	/// Seeks to the `n`th sector
+	pub fn seek_sector(&mut self, n: u64) -> Result<(), SeekSectorError> {
+		// Seek to the sector.
+		match self.reader.seek(SeekFrom::Start(Self::SECTOR_SIZE * n)) {
+			Ok(_) => Ok(()),
+			Err(err) => Err(SeekSectorError { sector: n, err }),
+		}
+	}
+
+	/// Reads the `n`th sector
+	pub fn read_nth_sector(&mut self, n: u64) -> Result<Sector, ReadNthSectorError> {
+		// Seek to the sector.
+		self.seek_sector(n).map_err(ReadNthSectorError::Seek)?;
+
+		// Then read it.
+		self.read_sector().map_err(ReadNthSectorError::ReadNext)
 	}
 }

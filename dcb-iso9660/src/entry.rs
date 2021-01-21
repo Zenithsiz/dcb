@@ -7,12 +7,15 @@ pub mod error;
 pub use error::{FromBytesError, ReadEntriesError, ReadError};
 
 // Imports
-use dcb_cdrom_xa::CdRom;
 use super::string::FileString;
 use byteorder::{ByteOrder, LittleEndian};
 use dcb_bytes::Bytes;
+use dcb_cdrom_xa::CdRom;
 use dcb_util::array_split;
-use std::{convert::TryInto, io};
+use std::{
+	convert::{TryFrom, TryInto},
+	io,
+};
 
 /// An entry
 #[derive(PartialEq, Eq, Clone, Debug)]
@@ -71,13 +74,15 @@ impl Entry {
 		}
 
 		let start = u64::from(self.location);
-		let end = start + u64::from(self.size) / 2048;
+		let sectors_len = usize::try_from(self.size / 2048).expect("File sector length didn't fit into a `usize`");
 		let remaining = self.size % 2048;
 
 		// Read all full sectors
 		// TODO: Avoid double allocation here
+		cdrom.seek_sector(start).map_err(ReadError::SeekSector)?;
 		let mut bytes: Vec<u8> = cdrom
-			.read_sectors_range(start..end)
+			.read_sectors()
+			.take(sectors_len)
 			.map(|res| res.map(|sector| sector.data).map(std::array::IntoIter::new))
 			.collect::<Result<Vec<_>, _>>()
 			.map_err(ReadError::ReadSector)?
@@ -87,7 +92,7 @@ impl Entry {
 
 		// Then read the remaining sector
 		if remaining != 0 {
-			let last_sector = cdrom.read_sector(end).map_err(ReadError::ReadSector)?;
+			let last_sector = cdrom.read_sector().map_err(ReadError::ReadSector)?;
 			#[allow(clippy::as_conversions)] // `remaining < 2048`
 			bytes.extend(&last_sector.data[..remaining as usize]);
 		}
@@ -108,7 +113,7 @@ impl Entry {
 		}
 
 		// Read the sector
-		let sector = cdrom.read_sector(u64::from(self.location)).map_err(ReadEntriesError::ReadSector)?;
+		let sector = cdrom.read_nth_sector(u64::from(self.location)).map_err(ReadEntriesError::ReadSector)?;
 
 		// Then keep parsing until we hit our size
 		let mut dirs = vec![];
