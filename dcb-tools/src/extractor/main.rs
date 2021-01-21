@@ -123,6 +123,7 @@ fn main() -> Result<(), anyhow::Error> {
 }
 
 /// Prints a directory tree
+#[allow(clippy::print_stdout, clippy::print_stderr)]
 fn write_dir(dir: &Dir, path: &PathBuf) -> Result<(), anyhow::Error> {
 	//write_dir_with_depth(dir, path, 1)
 
