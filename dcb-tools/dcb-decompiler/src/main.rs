@@ -73,7 +73,6 @@
 
 // Modules
 mod cli;
-#[path = "../logger.rs"]
 mod logger;
 
 // Imports

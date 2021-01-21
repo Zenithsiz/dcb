@@ -2,27 +2,22 @@
 
 // Modules
 pub mod error;
-pub mod slice;
-#[cfg(test)]
-mod test;
 mod visitor;
 
 // Exports
 pub use ascii::AsciiChar;
 pub use error::{FromBytesError, FromUtf8Error, NotAsciiError, TooLongError};
-pub use slice::SliceIndex; // Export for users
 
 // Imports
 use ascii::AsciiStr;
-use std::{cmp::Ordering, convert::TryFrom, fmt, hash::Hash, mem::MaybeUninit};
+use std::{cmp::Ordering, convert::TryFrom, fmt, hash::Hash, ops, slice::SliceIndex};
 use visitor::DeserializerVisitor;
 
 /// An ascii string backed by an array
 #[derive(Clone, Copy)]
 pub struct AsciiStrArr<const N: usize> {
 	/// Characters
-	// Invariant: First `len` elements are initialized.
-	chars: [MaybeUninit<AsciiChar>; N],
+	chars: [AsciiChar; N],
 
 	/// Size
 	// Invariant: `self.len <= N`
@@ -33,9 +28,9 @@ pub struct AsciiStrArr<const N: usize> {
 impl<const N: usize> AsciiStrArr<N> {
 	/// Creates a new empty string
 	#[must_use]
-	pub fn new() -> Self {
+	pub const fn new() -> Self {
 		Self {
-			chars: MaybeUninit::uninit_array(),
+			chars: [AsciiChar::Null; N],
 			len:   0,
 		}
 	}
@@ -49,9 +44,6 @@ impl<const N: usize> AsciiStrArr<N> {
 	/// Returns the length of this string
 	#[must_use]
 	pub const fn len(&self) -> usize {
-		// Guarantee to the compiler len's invariant
-		// SAFETY: We guarantee this through a field invariant.
-		unsafe { std::intrinsics::assume(self.len <= N) };
 		self.len
 	}
 
@@ -61,28 +53,16 @@ impl<const N: usize> AsciiStrArr<N> {
 		Self::CAPACITY
 	}
 
-	/// Sets this string's length
-	///
-	/// # Safety
-	/// - All elements `0..new_len` must be initialized.
-	/// - `new_len` must be less or equal to `N`.
-	pub const unsafe fn set_len(&mut self, new_len: usize) {
-		debug_assert!(new_len <= N);
-		self.len = new_len;
-	}
-
 	/// Returns if this string is empty
 	#[must_use]
 	pub const fn is_empty(&self) -> bool {
 		self.len() == 0
 	}
 
-	/// Trims the end of the string from 'c'
+	/// Trims the end of the string from 'ch'
 	pub fn trim_end(&mut self, ch: AsciiChar) {
 		while !self.is_empty() && self.as_ascii().last() == Some(ch) {
-			// SAFETY: `len > 0`, and we don't have to run
-			//         any destructor for [`AsciiChar`].
-			unsafe { self.set_len(self.len - 1) }
+			self.len -= 1;
 		}
 	}
 }
@@ -93,12 +73,8 @@ impl<const N: usize> AsciiStrArr<N> {
 	#[must_use]
 	pub fn as_ascii(&self) -> &AsciiStr {
 		// Get all the initialized elements
-		// SAFETY: `self.len <= N`
-		let chars = unsafe { self.chars.get_unchecked(..self.len()) };
-
-		// Then get a reference to them
-		// SAFETY: The first `self.len` elements are initialized
-		let chars = unsafe { MaybeUninit::slice_assume_init_ref(chars) };
+		// Note: `self.len <= N`, so this cannot panic.
+		let chars = self.chars.get(..self.len).expect("Length was larger than `N`");
 
 		<&AsciiStr>::from(chars)
 	}
@@ -107,13 +83,8 @@ impl<const N: usize> AsciiStrArr<N> {
 	#[must_use]
 	pub fn as_ascii_mut(&mut self) -> &mut AsciiStr {
 		// Get all the initialized elements
-		// SAFETY: `self.len <= N`
-		let len = self.len();
-		let chars = unsafe { self.chars.get_unchecked_mut(..len) };
-
-		// Then get a mutable reference to them
-		// SAFETY: The first `self.len` elements are initialized
-		let chars = unsafe { MaybeUninit::slice_assume_init_mut(chars) };
+		// Note: `self.len <= N`, so this cannot panic.
+		let chars = self.chars.get_mut(..self.len).expect("Length was larger than `N`");
 
 		<&mut AsciiStr>::from(chars)
 	}
@@ -141,34 +112,6 @@ impl<const N: usize> AsciiStrArr<N> {
 	pub fn as_str(&self) -> &str {
 		self.as_ascii().as_str()
 	}
-
-	/// Returns a pointer to the initialized elements
-	///
-	/// # Safety
-	/// The returned pointer is only valid for `self.len()` elements
-	/// The returned pointer is invalidated if `self` is moved.
-	#[must_use]
-	pub fn as_ptr(&self) -> *const AsciiChar {
-		self.as_ascii().as_ptr()
-	}
-
-	/// Returns a mutable pointer to the initialized elements
-	///
-	/// # Safety
-	/// The returned pointer is only valid for `self.len()` elements
-	/// The returned pointer is invalidated if `self` is moved.
-	#[must_use]
-	pub fn as_ptr_mut(&mut self) -> *mut AsciiChar {
-		self.as_ascii_mut().as_mut_ptr()
-	}
-
-	/// Exposes the underlying buffer this string contains
-	///
-	/// # Safety
-	/// All elements `0..self.len()` must remain initialized.
-	pub const unsafe fn buffer_mut(&mut self) -> &mut [MaybeUninit<AsciiChar>; N] {
-		&mut self.chars
-	}
 }
 
 /// Conversions from other strings
@@ -183,12 +126,11 @@ impl<const N: usize> AsciiStrArr<N> {
 		}
 
 		// Else create an uninitialized array and copy over the initialized characters
-		let mut chars: [MaybeUninit<AsciiChar>; N] = MaybeUninit::uninit_array();
+		let mut chars = [AsciiChar::Null; N];
 		for (uninit, &ascii) in chars.iter_mut().zip(ascii) {
-			*uninit = MaybeUninit::new(ascii);
+			*uninit = ascii;
 		}
 
-		// SAFETY: We initialized `ascii.len()` characters from `ascii`.
 		Ok(Self { chars, len: ascii.len() })
 	}
 
@@ -211,36 +153,14 @@ impl<const N: usize> AsciiStrArr<N> {
 impl<const N: usize> AsciiStrArr<N> {
 	/// Slices this string, if in bounds
 	#[must_use]
-	pub fn get<I: SliceIndex>(&self, idx: I) -> Option<&I::Output> {
-		idx.get(self)
+	pub fn get<I: SliceIndex<[AsciiChar]>>(&self, idx: I) -> Option<&I::Output> {
+		idx.get(&self.chars)
 	}
 
 	/// Slices this string mutably, if in bounds
 	#[must_use]
-	pub fn get_mut<I: SliceIndex>(&mut self, idx: I) -> Option<&mut I::Output> {
-		idx.get_mut(self)
-	}
-
-	/// Slices the string without checking bounds
-	///
-	/// # Safety
-	/// Calling this method with an out-of-bounds index is undefined-behavior even if the resulting
-	/// reference is not used
-	#[must_use]
-	pub unsafe fn get_unchecked<I: SliceIndex>(&self, idx: I) -> &I::Output {
-		// SAFETY: Index is guaranteed to be in bounds by the caller
-		unsafe { idx.get_unchecked(self) }
-	}
-
-	/// Slices the string mutably without checking bounds
-	///
-	/// # Safety
-	/// Calling this method with an out-of-bounds index is undefined-behavior even if the resulting
-	/// reference is not used
-	#[must_use]
-	pub unsafe fn get_unchecked_mut<I: SliceIndex>(&mut self, idx: I) -> &mut I::Output {
-		// SAFETY: Index is guaranteed to be in bounds by the caller
-		unsafe { idx.get_unchecked_mut(self) }
+	pub fn get_mut<I: SliceIndex<[AsciiChar]>>(&mut self, idx: I) -> Option<&mut I::Output> {
+		idx.get_mut(&mut self.chars)
 	}
 }
 
@@ -315,6 +235,27 @@ impl<const N: usize> Default for AsciiStrArr<N> {
 	}
 }
 
+impl<I, const N: usize> ops::Index<I> for AsciiStrArr<N>
+where
+	I: SliceIndex<[AsciiChar]>,
+{
+	type Output = <I as SliceIndex<[AsciiChar]>>::Output;
+
+	fn index(&self, idx: I) -> &Self::Output {
+		self.get(idx).expect("Invalid index access")
+	}
+}
+
+impl<I, const N: usize> ops::IndexMut<I> for AsciiStrArr<N>
+where
+	I: SliceIndex<[AsciiChar]>,
+{
+	fn index_mut(&mut self, idx: I) -> &mut Self::Output {
+		self.get_mut(idx).expect("Invalid index access")
+	}
+}
+
+
 impl<const N: usize> fmt::Debug for AsciiStrArr<N> {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 		AsciiStr::fmt(self.as_ascii(), f)
@@ -356,9 +297,6 @@ impl<const N: usize> From<&[AsciiChar; N]> for AsciiStrArr<N> {
 // TODO: Generalize this to `impl<const N: usize, const M: usize> From<[AsciiChar; M]> for AsciiStrArr<N> where M <= N`
 impl<const N: usize> From<[AsciiChar; N]> for AsciiStrArr<N> {
 	fn from(chars: [AsciiChar; N]) -> Self {
-		let chars = chars.map(MaybeUninit::new);
-
-		// SAFETY: All characters up to `N` are initialized.
 		Self { chars, len: N }
 	}
 }
@@ -368,14 +306,12 @@ impl<const N: usize> TryFrom<&[u8; N]> for AsciiStrArr<N> {
 	type Error = NotAsciiError;
 
 	fn try_from(byte_str: &[u8; N]) -> Result<Self, Self::Error> {
-		let mut chars = MaybeUninit::uninit_array();
+		let mut chars = [AsciiChar::Null; N];
 
 		for (pos, (&byte, ascii)) in byte_str.iter().zip(&mut chars).enumerate() {
-			*ascii = AsciiChar::from_ascii(byte).map(MaybeUninit::new).map_err(|_err| NotAsciiError { pos })?;
+			*ascii = AsciiChar::from_ascii(byte).map_err(|_err| NotAsciiError { pos })?;
 		}
 
-		// SAFETY: We initialize `chars` from `byte_str`, which is
-		//         initialized up to `len` bytes.
 		Ok(Self { chars, len: byte_str.len() })
 	}
 }

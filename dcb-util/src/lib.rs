@@ -1,99 +1,61 @@
 //! Dcb utilities
-
 // Features
-#![feature(
-	seek_convenience,
-	never_type,
-	bool_to_option,
-	decl_macro,
-	stmt_expr_attributes,
-	unwrap_infallible,
-	external_doc,
-	format_args_capture,
-	const_fn,
-	const_panic,
-	min_const_generics,
-	exclusive_range_pattern,
-	unsafe_block_in_unsafe_fn,
-	maybe_uninit_uninit_array,
-	maybe_uninit_slice,
-	array_map,
-	const_mut_refs,
-	core_intrinsics,
-	const_assume,
-	bindings_after_at,
-	array_value_iter,
-	or_patterns,
-	once_cell,
-	box_syntax,
-	str_split_once,
-	try_trait
-)]
+#![feature(min_const_generics, slice_index_methods, format_args_capture)]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]
-// Instead of `unwrap`, we must use `expect` and provide a reason
-#![forbid(clippy::unwrap_used)]
-// We must use `unsafe` in unsafe `fn`s and specify if the guarantee is
-// made by the caller or by us.
-#![forbid(unsafe_op_in_unsafe_fn)]
 // We'll disable the ones we don't need
 #![allow(clippy::blanket_clippy_restriction_lints)]
-// Necessary items may be inlined using `LTO`, so we don't need to mark them as inline
+// No unsafe allowed in this crate
+#![forbid(unsafe_code)]
+// Must use `expect` instead of `unwrap`
+#![forbid(clippy::unwrap_used)]
+// We don't need to mark every public function `inline`
 #![allow(clippy::missing_inline_in_public_items)]
-// We prefer tail returns where possible, as they help with code readability in most cases.
+// We prefer literals to be copy-paste-able rather than readable
+#![allow(clippy::unreadable_literal)]
+// We prefer suffixes to be glued to the literal
+#![allow(clippy::unseparated_literal_suffix)]
+// We're fine with panicking when entering an unexpected state
+#![allow(
+	clippy::panic,
+	clippy::unreachable,
+	clippy::expect_used,
+	clippy::panic_in_result_fn,
+	clippy::unwrap_in_result,
+	clippy::indexing_slicing,
+	clippy::todo
+)]
+// We prefer tail calls
 #![allow(clippy::implicit_return)]
-// We're fine with shadowing, as long as the variable is used for the same purpose.
-// Hence why `clippy::shadow_unrelated` isn't allowed.
-#![allow(clippy::shadow_reuse, clippy::shadow_same)]
-// We panic when we know it won't happen, or if it does happen, then a panic is the best option
-#![allow(clippy::panic, clippy::expect_used, clippy::unreachable, clippy::todo)]
-// We use `expect` even in functions that return a `Result` / `Option` if there is a logic error
-#![allow(clippy::unwrap_in_result)]
-// We find it more important to be able to copy paste literals such as `0xabcd1234` than
-// being able to read them, which does not provide many benefits
-#![allow(clippy::unreadable_literal, clippy::unseparated_literal_suffix)]
-// We separate implementations per their functionality usually, such as constructors, getters, setters, and others.
+// We use multiple implementations to separate logic
 #![allow(clippy::multiple_inherent_impl)]
-// Many operations we need to repeat, and to keep symmetry
-#![allow(clippy::identity_op)]
-// We only introduce items before their first usage, which sometimes is half-way through the code.
-// We make sure that we only use the item after introduced, however.
-#![allow(clippy::items_after_statements)]
-// Useful for when they either change a lot with new variants / data,
-// or for symmetry purposes
-#![allow(clippy::match_same_arms)]
-// In this library we have very grain-level error types, each function
-// will have it's own error type ideally, so any errors are explicit
-// by the type, without needing a section for them
+// We use granular error types, usually one for each function, which document the
+// errors that might happen, as opposed to documenting them in the function
 #![allow(clippy::missing_errors_doc)]
-// Although we generally try to avoid this, this can happen due to our module organization.
-// In the future, this lint should be removed globally and only enabled for modules which
-// actually require the use of it.
-#![allow(clippy::module_inception, clippy::module_name_repetitions)]
-// We use integer arithmetic and operations with the correct intent
+// Due to our module organization, we end up with data types inheriting their module's name
+#![allow(clippy::module_name_repetitions)]
+// We need arithmetic for this crate
 #![allow(clippy::integer_arithmetic, clippy::integer_division)]
-// We prefer using match ergonomic where possible
+// We want to benefit from match ergonomics where possible
 #![allow(clippy::pattern_type_mismatch)]
-// Sometimes the blocks make it easier to invert their order
-#![allow(clippy::if_not_else)]
-// This lint triggers when using `assert`s and `todo`s, which is unsuitable for this project
-#![allow(clippy::panic_in_result_fn)]
-// A `match Option / Result / Bool` can sometimes look cleaner than a `if let / else`
-#![allow(clippy::single_match_else, clippy::match_bool)]
-// We're usually fine with missing future variants
-#![allow(clippy::wildcard_enum_match_arm)]
-
+// We only use wildcards when we only care about certain variants
+#![allow(clippy::wildcard_enum_match_arm, clippy::match_wildcard_for_single_variants)]
+// We're fine with shadowing, as long as it's related
+#![allow(clippy::shadow_reuse, clippy::shadow_same)]
+// Matching on booleans can look better than `if / else`
+#![allow(clippy::match_bool)]
+// If the `else` isn't needed, we don't put it
+#![allow(clippy::else_if_without_else)]
 
 // Modules
 pub mod array_split;
 pub mod ascii_str_arr;
-pub mod null_ascii_string;
-#[macro_use]
-pub mod impl_bytes;
 pub mod discarding_sorted_merge_iter;
 pub mod display_wrapper;
+pub mod impl_bytes;
 pub mod next_from_bytes;
-pub mod peekable_iter;
+pub mod null_ascii_string;
+//pub mod peekable_iter;
 pub mod signed_hex;
 
 // Exports
@@ -102,7 +64,8 @@ pub use ascii_str_arr::AsciiStrArr;
 pub use discarding_sorted_merge_iter::DiscardingSortedMergeIter;
 pub use display_wrapper::DisplayWrapper;
 pub use next_from_bytes::NextFromBytes;
-pub use peekable_iter::PeekableIter;
+pub use null_ascii_string::NullAsciiString;
+//pub use peekable_iter::PeekableIter;
 pub use signed_hex::SignedHex;
 
 // Imports
@@ -114,7 +77,7 @@ use std::fmt;
 #[allow(clippy::as_conversions)] // We check every operation
 #[allow(clippy::panic)] // Rust panics on failed arithmetic operations by default
 #[must_use]
-pub const fn abs_diff(a: u64, b: u64) -> i64 {
+pub fn abs_diff(a: u64, b: u64) -> i64 {
 	let diff = if a > b { a - b } else { b - a };
 
 	if diff > i64::MAX as u64 {
@@ -136,7 +99,7 @@ pub const fn abs_diff(a: u64, b: u64) -> i64 {
 #[allow(clippy::panic)] // Rust panics on failed arithmetic operations by default
 #[allow(clippy::cast_sign_loss)] // We've verify it's positive
 #[must_use]
-pub const fn signed_offset(a: u64, b: i64) -> u64 {
+pub fn signed_offset(a: u64, b: i64) -> u64 {
 	// If `b` is positive, check for overflows. Else check for underflows
 	if b > 0 {
 		// Note: Cast is safe, as a positive `i64` fits into a `u64`.

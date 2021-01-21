@@ -75,11 +75,11 @@
 
 // Modules
 mod cli;
-#[path = "../logger.rs"]
 mod logger;
 
 // Imports
 use anyhow::Context;
+use dcb_cdrom_xa::CdRom;
 use dcb_io::{
 	drv::{dir::DirEntry, Dir},
 	pak::{
@@ -88,7 +88,6 @@ use dcb_io::{
 	},
 	GameFile, PakFile,
 };
-use dcb_cdrom_xa::CdRom;
 use std::path::PathBuf;
 
 
