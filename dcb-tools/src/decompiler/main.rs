@@ -80,6 +80,7 @@ mod logger;
 use std::fmt;
 
 use anyhow::Context;
+use dcb_cdrom_xa::CdRom;
 use dcb_exe::{
 	exe::{
 		inst::{basic, pseudo, Directive, Inst, InstFmt, InstTarget, InstTargetFmt},
@@ -89,7 +90,6 @@ use dcb_exe::{
 	Exe, Pos,
 };
 use dcb_io::GameFile;
-use dcb_iso9660::CdRom;
 
 fn main() -> Result<(), anyhow::Error> {
 	// Initialize our logger.

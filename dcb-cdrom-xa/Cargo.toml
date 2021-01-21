@@ -1,5 +1,5 @@
 [package]
-name = "dcb-iso9660"
+name = "dcb-cdrom-xa"
 version = "0.1.0"
 authors = ["Filipe Rodrigues <filipejacintorodrigues1@gmail.com>"]
 edition = "2018"
@@ -10,7 +10,6 @@ edition = "2018"
 # Dcb
 dcb-util = { path = "../dcb-util" }
 dcb-bytes = { path = "../dcb-bytes" }
-dcb-cdrom-xa = { path = "../dcb-cdrom-xa" }
 
 # Log
 log = "0.4"

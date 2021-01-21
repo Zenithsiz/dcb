@@ -1,7 +1,8 @@
 //! Errors
 
 // Imports
-use crate::{cdrom::ReadSectorError, fs::string};
+use crate::string;
+use dcb_cdrom_xa::ReadSectorError;
 
 /// Error type for [`Bytes::from_bytes`](dcb_bytes::Bytes::from_bytes)
 #[derive(Debug, thiserror::Error)]

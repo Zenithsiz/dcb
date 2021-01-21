@@ -1,7 +1,7 @@
 //! Errors
 
 // Imports
-use crate::fs::string;
+use crate::string;
 
 /// Error type for [`Bytes::from_bytes`](dcb_bytes::Bytes::from_bytes)
 #[derive(Debug, thiserror::Error)]

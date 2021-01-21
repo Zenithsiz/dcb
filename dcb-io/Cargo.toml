@@ -10,6 +10,7 @@ edition = "2018"
 dcb-bytes = { path = "../dcb-bytes" }
 dcb-util = { path = "../dcb-util" }
 dcb-iso9660 = { path = "../dcb-iso9660" }
+dcb-cdrom-xa = { path = "../dcb-cdrom-xa" }
 
 # Log
 log = "0.4"

@@ -88,7 +88,7 @@ use dcb_io::{
 	},
 	GameFile, PakFile,
 };
-use dcb_iso9660::CdRom;
+use dcb_cdrom_xa::CdRom;
 use std::path::PathBuf;
 
 

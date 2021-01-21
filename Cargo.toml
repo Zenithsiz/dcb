@@ -9,4 +9,5 @@ members = [
 	"dcb-bytes-derive",
 	"dcb-tools",
 	"dcb-iso9660",
+	"dcb-cdrom-xa",
 ]

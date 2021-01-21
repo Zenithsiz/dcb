@@ -7,8 +7,7 @@ pub mod error;
 pub use error::{FromBytesError, ReadEntriesError, ReadError};
 
 // Imports
-use crate::CdRom;
-
+use dcb_cdrom_xa::CdRom;
 use super::string::FileString;
 use byteorder::{ByteOrder, LittleEndian};
 use dcb_bytes::Bytes;
