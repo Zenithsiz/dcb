@@ -1,6 +1,6 @@
 # ISO 9960 Implementation
 
-This module implements the `ISO-9660` (ECMA-119) filesystem specification
+This crate implements the `ISO-9660` (ECMA-119) filesystem specification
 within the [`Filesystem`] struct, which takes in a [`CdRom`](dcb_cdrom_xa::CdRom).
 
 # Layout
