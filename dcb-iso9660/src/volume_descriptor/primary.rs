@@ -129,7 +129,8 @@ impl Bytes for PrimaryVolumeDescriptor {
 			path_table_size:               LittleEndian::read_u32(bytes.path_table_size_lsb),
 			path_table_location:           LittleEndian::read_u32(bytes.path_table_lsb_location),
 			path_table_opt_location:       LittleEndian::read_u32(bytes.path_table_lsb_opt_location),
-			root_dir_entry:                DirEntry::from_reader(std::io::Cursor::new(bytes.root_dir_entry)).map_err(FromBytesError::RootDirEntry)?,
+			root_dir_entry:                DirEntry::from_reader(&mut std::io::Cursor::new(bytes.root_dir_entry))
+				.map_err(FromBytesError::RootDirEntry)?,
 			volume_set_id:                 StrArrD::from_bytes(bytes.volume_set_id).map_err(FromBytesError::VolumeSetId)?,
 			publisher_id:                  StrArrA::from_bytes(bytes.publisher_id).map_err(FromBytesError::PublisherId)?,
 			data_preparer_id:              StrArrA::from_bytes(bytes.data_preparer_id).map_err(FromBytesError::DataPreparerId)?,

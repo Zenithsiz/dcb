@@ -50,7 +50,7 @@ impl TimFile {
 
 impl TimFile {
 	/// Deserializes the clut
-	pub fn deserialize<R: io::Read + io::Seek>(mut reader: R) -> Result<Self, DeserializeError> {
+	pub fn deserialize<R: io::Read + io::Seek>(reader: &mut R) -> Result<Self, DeserializeError> {
 		// Read the whole header
 		let mut header_bytes = [0u8; Self::HEADER_SIZE];
 		reader.read_exact(&mut header_bytes).map_err(DeserializeError::ReadHeader)?;
@@ -83,7 +83,7 @@ impl TimFile {
 
 		// If there's a color table, read it
 		let clut = match color_lookup_table_present {
-			true => Some(Clut::deserialize(&mut reader).map_err(DeserializeError::Clut)?),
+			true => Some(Clut::deserialize(reader).map_err(DeserializeError::Clut)?),
 			false => None,
 		};
 

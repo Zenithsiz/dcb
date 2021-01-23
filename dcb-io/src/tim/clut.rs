@@ -38,7 +38,7 @@ impl Clut {
 
 impl Clut {
 	/// Deserializes the clut
-	pub fn deserialize<R: io::Read>(mut reader: R) -> Result<Self, DeserializeError> {
+	pub fn deserialize<R: io::Read>(reader: &mut R) -> Result<Self, DeserializeError> {
 		// Read the whole header
 		let mut header_bytes = [0u8; Self::HEADER_SIZE];
 		reader.read_exact(&mut header_bytes).map_err(DeserializeError::ReadHeader)?;

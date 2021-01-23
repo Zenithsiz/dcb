@@ -11,4 +11,5 @@ members = [
 	"dcb-cdrom-xa",
 	"dcb-tools/dcb-extractor",
 	"dcb-tools/dcb-decompiler",
+	"dcb-tools/drv-extractor",
 ]

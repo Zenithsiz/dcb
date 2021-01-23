@@ -1,6 +1,0 @@
-Tables found:
-
-Deck: 0x21a6800 (30KD)
-Card: 0x216d000 (0ACD)
-????: 0x2886800 (MSCD)
-????: 0x23E8000 (.TIS)

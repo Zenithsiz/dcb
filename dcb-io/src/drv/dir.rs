@@ -21,7 +21,7 @@ pub struct Dir {
 
 impl Dir {
 	/// Parses a directory from a reader
-	pub fn from_reader<R: io::Read>(mut reader: R) -> Result<Self, DeserializeError> {
+	pub fn from_reader<R: io::Read>(reader: &mut R) -> Result<Self, DeserializeError> {
 		let entries = std::iter::from_fn(move || {
 			// Read the bytes
 			let mut entry_bytes = [0; 0x20];

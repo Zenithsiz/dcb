@@ -1,9 +1,0 @@
-Inode entry (0x20 bytes)
-
-Pos  | Size | Desc
-0x00 | 0x1  | Inode type `0x80` for directory, `0x1` for file and `0x0` for empty.
-0x01 | 0x3  | File extension (Files only)
-0x04 | 0x4  | Inode Sector
-0x08 | 0x4  | Size in bytes (Files only)
-0x0c | 0x4  | File date (seconds since epoch)
-0x10 | 0x10 | Inode name.

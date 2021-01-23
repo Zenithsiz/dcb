@@ -48,7 +48,7 @@ impl Table {
 impl Table {
 	/// Deserializes the card table from it's file
 	#[allow(clippy::similar_names)] // Reader and Header are different.
-	pub fn deserialize<R: io::Read>(mut reader: R) -> Result<Self, DeserializeError> {
+	pub fn deserialize<R: io::Read>(reader: &mut R) -> Result<Self, DeserializeError> {
 		// Read header
 		let mut header_bytes = <Header as Bytes>::ByteArray::default();
 		reader.read_exact(&mut header_bytes).map_err(DeserializeError::ReadHeader)?;

@@ -103,7 +103,7 @@ impl DirEntry {
 
 impl DirEntry {
 	/// Reads a directory entry from a reader
-	pub fn from_reader<R: io::Read>(mut reader: R) -> Result<Self, FromReaderError> {
+	pub fn from_reader<R: io::Read>(reader: &mut R) -> Result<Self, FromReaderError> {
 		// Get the header
 		let mut header_bytes = [0; 0x21];
 		reader.read_exact(&mut header_bytes).map_err(FromReaderError::ReadHeader)?;

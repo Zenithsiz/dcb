@@ -22,7 +22,7 @@ pub struct DrvFs {
 
 impl DrvFs {
 	/// Reads a filesystem from a reader
-	pub fn from_reader<R: io::Read>(reader: R) -> Result<Self, FromBytesError> {
+	pub fn from_reader<R: io::Read>(reader: &mut R) -> Result<Self, FromBytesError> {
 		// Read the root directory
 		let root = Dir::from_reader(reader).map_err(FromBytesError::RootDir)?;
 
