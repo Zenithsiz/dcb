@@ -2,52 +2,49 @@
 
 // Imports
 use crate::string;
-use dcb_cdrom_xa::{ReadNthSectorError, ReadSectorError, SeekSectorError};
+use dcb_cdrom_xa::{ReadNthSectorError, SeekSectorError};
+use std::io;
 
 /// Error type for [`Bytes::from_bytes`](dcb_bytes::Bytes::from_bytes)
 #[derive(Debug, thiserror::Error)]
-pub enum FromBytesError {
-	/// Record size too small
-	#[error("Record size was too small for actual size")]
-	RecordSizeTooSmall,
+pub enum FromReaderError {
+	/// Unable to read header
+	#[error("Unable to read header")]
+	ReadHeader(#[source] io::Error),
 
-	/// Buffer was too small for header
-	#[error("Buffer was too small for header")]
-	TooSmallHeader,
+	/// Record size too small
+	#[error("Record size `{_0}` was too small for actual size")]
+	RecordSizeTooSmall(u8),
 
 	/// Invalid entry flags
 	#[error("Invalid entry flags")]
 	InvalidFlags,
 
-	/// Buffer was too small for name
-	#[error("Buffer was too small for name (expected {_0} for name)")]
-	TooSmallName(u8),
+	/// Unable to read header
+	#[error("Unable to read header")]
+	ReadName(#[source] io::Error),
 
-	/// Unable to read name
-	#[error("Unable to read name")]
-	Name(#[source] string::ValidateFileAlphabetError),
+	/// Unable to parse name
+	#[error("Unable to parse name")]
+	ParseName(#[source] string::ValidateFileAlphabetError),
 }
 
 
 /// Error type for [`Entry::read`](super::Entry::read)
 #[derive(Debug, thiserror::Error)]
-pub enum ReadError {
-	/// Unable to seek to sector
-	#[error("Unable to seek to sector")]
-	SeekSector(#[source] SeekSectorError),
-
+pub enum ReadFileError {
 	/// Not a file
 	#[error("Not a file")]
 	NotAFile,
 
-	/// Unable to read sector
-	#[error("Unable to read sector")]
-	ReadSector(#[source] ReadSectorError),
+	/// Unable to seek to sector
+	#[error("Unable to seek to sector")]
+	SeekSector(#[source] SeekSectorError),
 }
 
 /// Error type for [`Entry::read_entries`](super::Entry::read_entries)
 #[derive(Debug, thiserror::Error)]
-pub enum ReadEntriesError {
+pub enum ReadDirError {
 	/// Not a directory
 	#[error("Not a directory")]
 	NotADirectory,
@@ -58,5 +55,5 @@ pub enum ReadEntriesError {
 
 	/// Unable to parse an entry
 	#[error("Unable to parse an entry")]
-	ParseEntry(#[source] self::FromBytesError),
+	ParseEntry(#[source] self::FromReaderError),
 }

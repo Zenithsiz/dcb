@@ -5,6 +5,7 @@ use dcb_bytes::Bytes;
 use dcb_util::{array_split, array_split_mut};
 
 /// Sector address
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub struct Address {
 	/// Minutes
 	pub min: u8,

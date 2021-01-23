@@ -59,13 +59,15 @@
 
 // Modules
 pub mod date_time;
+pub mod dir;
 pub mod entry;
 pub mod error;
 pub mod string;
 pub mod volume_descriptor;
 
 // Exports
-pub use entry::Entry;
+pub use dir::Dir;
+pub use entry::DirEntry;
 pub use error::NewError;
 pub use string::{StrArrA, StrArrD};
 pub use volume_descriptor::VolumeDescriptor;
@@ -110,7 +112,7 @@ impl Filesystem {
 
 	/// Returns the root directory entry
 	#[must_use]
-	pub const fn root_dir(&self) -> &Entry {
+	pub const fn root_dir(&self) -> &DirEntry {
 		&self.primary_volume_descriptor.root_dir_entry
 	}
 }

@@ -72,6 +72,7 @@ use dcb_bytes::Bytes;
 use std::io::{Read, Seek, SeekFrom};
 
 /// A CD-ROM/XA Mode 2 Form 1 wrapper
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub struct CdRom<R> {
 	/// Underlying reader
 	reader: R,

@@ -16,7 +16,7 @@ pub enum FromBytesError {
 
 	/// Unable to parse the root dir entry
 	#[error("Unable to parse the root dir entry")]
-	RootDirEntry(#[source] entry::FromBytesError),
+	RootDirEntry(#[source] entry::FromReaderError),
 
 	/// Unable to parse volume set id
 	#[error("Unable to parse volume set id")]

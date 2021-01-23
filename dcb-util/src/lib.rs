@@ -94,26 +94,20 @@ pub fn abs_diff(a: u64, b: u64) -> i64 {
 
 /// Adds a `i64` to a `u64`, performing `a + b`.
 ///
-/// This function panics if the result would overflow or underflow
+/// If smaller than `0`, returns 0, if larger than `u64::MAX`, return `u64::MAX`
 #[allow(clippy::as_conversions)] // We check every operation
-#[allow(clippy::panic)] // Rust panics on failed arithmetic operations by default
-#[allow(clippy::cast_sign_loss)] // We've verify it's positive
+#[allow(clippy::cast_sign_loss)] // We've verify it's positive / negative
 #[must_use]
-pub fn signed_offset(a: u64, b: i64) -> u64 {
+pub const fn saturating_signed_offset(a: u64, b: i64) -> u64 {
 	// If `b` is positive, check for overflows. Else check for underflows
 	if b > 0 {
-		// Note: Cast is safe, as a positive `i64` fits into a `u64`.
-		match a.checked_add(b as u64) {
-			Some(res) => res,
-			None => panic!("Overflow evaluating `u64 + i64`"),
-		}
+		a.saturating_add(b as u64)
 	} else {
-		// Note: On `i64::MIN`, `-b` would overflow
-		if b == i64::MIN || a < (-b) as u64 {
-			panic!("Underflow evaluating `u64 + i64`");
-		} else {
-			a - ((-b) as u64)
-		}
+		let neg_b = match b.checked_neg() {
+			Some(neg_b) => neg_b as u64,
+			None => i64::MAX as u64 + 1,
+		};
+		a.saturating_sub(neg_b)
 	}
 }
 

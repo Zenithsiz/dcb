@@ -43,15 +43,15 @@ impl GameFile {
 	/// Creates a new game file from the cd reader
 	pub fn new<R: io::Read + io::Seek>(cdrom: &mut CdRom<R>) -> Result<Self, NewError> {
 		// Read the filesystem
-		let filesystem = dcb_iso9660::Filesystem::new(cdrom).map_err(NewError::NewIso9660FileSystem)?;
+		let _filesystem = dcb_iso9660::Filesystem::new(cdrom).map_err(NewError::NewIso9660FileSystem)?;
 
+		/*
 		// Read all the files we care about
 		let _entries = filesystem
 			.root_dir()
 			.read_entries(cdrom)
 			.map_err(NewError::Iso9660FilesystemRootReadEntries)?;
 
-		/*
 		let _a_drv_entry = dcb_iso9660::Entry::search_entries(&entries, "A.DRV;1").ok_or(NewError::Iso9660FilesystemFindFileA)?;
 		let _b_drv_entry = dcb_iso9660::Entry::search_entries(&entries, "B.DRV;1").ok_or(NewError::Iso9660FilesystemFindFileB)?;
 		let _c_drv_entry = dcb_iso9660::Entry::search_entries(&entries, "C.DRV;1").ok_or(NewError::Iso9660FilesystemFindFileC)?;

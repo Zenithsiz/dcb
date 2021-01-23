@@ -19,6 +19,7 @@ use dcb_util::{array_split, array_split_mut};
 /// A CD-ROM/XA Sector
 ///
 /// See the module-level documentation for more details.
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub struct Sector {
 	/// Header
 	pub header: Header,

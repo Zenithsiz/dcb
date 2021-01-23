@@ -12,7 +12,7 @@ pub enum NewError {
 
 	/// Unable to read filesystem root
 	#[error("Unable to read Iso9660 filesystem root")]
-	Iso9660FilesystemRootReadEntries(#[source] dcb_iso9660::entry::ReadEntriesError),
+	Iso9660FilesystemRootReadEntries(#[source] dcb_iso9660::entry::ReadDirError),
 
 	/// Unable to find filesystem file
 	#[error("Unable to find Iso9660 filesystem file 'A.DRV'")]
@@ -20,7 +20,7 @@ pub enum NewError {
 
 	/// Unable to read filesystem file
 	#[error("Unable to read Iso9660 filesystem file 'A.DRV'")]
-	Iso9660FilesystemReadFileA(#[source] dcb_iso9660::entry::ReadError),
+	Iso9660FilesystemReadFileA(#[source] dcb_iso9660::entry::ReadFileError),
 
 	/// Unable to read parse filesystem
 	#[error("Unable to read filesystem file 'A.DRV'")]
@@ -32,7 +32,7 @@ pub enum NewError {
 
 	/// Unable to read filesystem file
 	#[error("Unable to read Iso9660 filesystem file 'B.DRV'")]
-	Iso9660FilesystemReadFileB(#[source] dcb_iso9660::entry::ReadError),
+	Iso9660FilesystemReadFileB(#[source] dcb_iso9660::entry::ReadFileError),
 
 	/// Unable to read parse filesystem
 	#[error("Unable to read filesystem file 'B.DRV'")]
@@ -44,7 +44,7 @@ pub enum NewError {
 
 	/// Unable to read filesystem file
 	#[error("Unable to read Iso9660 filesystem file 'C.DRV'")]
-	Iso9660FilesystemReadFileC(#[source] dcb_iso9660::entry::ReadError),
+	Iso9660FilesystemReadFileC(#[source] dcb_iso9660::entry::ReadFileError),
 
 	/// Unable to read parse filesystem
 	#[error("Unable to read filesystem file 'C.DRV'")]
@@ -56,7 +56,7 @@ pub enum NewError {
 
 	/// Unable to read filesystem file
 	#[error("Unable to read Iso9660 filesystem file 'E.DRV'")]
-	Iso9660FilesystemReadFileE(#[source] dcb_iso9660::entry::ReadError),
+	Iso9660FilesystemReadFileE(#[source] dcb_iso9660::entry::ReadFileError),
 
 	/// Unable to read parse filesystem
 	#[error("Unable to read filesystem file 'E.DRV'")]
@@ -68,7 +68,7 @@ pub enum NewError {
 
 	/// Unable to read filesystem file
 	#[error("Unable to read Iso9660 filesystem file 'F.DRV'")]
-	Iso9660FilesystemReadFileF(#[source] dcb_iso9660::entry::ReadError),
+	Iso9660FilesystemReadFileF(#[source] dcb_iso9660::entry::ReadFileError),
 
 	/// Unable to read parse filesystem
 	#[error("Unable to read filesystem file 'F.DRV'")]
@@ -80,7 +80,7 @@ pub enum NewError {
 
 	/// Unable to read filesystem file
 	#[error("Unable to read Iso9660 filesystem file 'G.DRV'")]
-	Iso9660FilesystemReadFileG(#[source] dcb_iso9660::entry::ReadError),
+	Iso9660FilesystemReadFileG(#[source] dcb_iso9660::entry::ReadFileError),
 
 	/// Unable to read parse filesystem
 	#[error("Unable to read filesystem file 'G.DRV'")]
@@ -92,7 +92,7 @@ pub enum NewError {
 
 	/// Unable to read filesystem file
 	#[error("Unable to read Iso9660 filesystem file 'P.DRV'")]
-	Iso9660FilesystemReadFileP(#[source] dcb_iso9660::entry::ReadError),
+	Iso9660FilesystemReadFileP(#[source] dcb_iso9660::entry::ReadFileError),
 
 	/// Unable to read parse filesystem
 	#[error("Unable to read filesystem file 'G.DRV'")]

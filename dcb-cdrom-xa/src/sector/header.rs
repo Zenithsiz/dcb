@@ -15,6 +15,7 @@ use dcb_bytes::Bytes;
 use dcb_util::{array_split, array_split_mut};
 
 /// The sector header
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub struct Header {
 	/// Sector address
 	pub address: Address,

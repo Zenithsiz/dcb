@@ -2,39 +2,38 @@
 
 // Modules
 pub mod error;
+pub mod file;
 
 // Exports
-pub use error::{FromBytesError, ReadEntriesError, ReadError};
+pub use error::{FromReaderError, ReadDirError, ReadFileError};
+pub use file::FileReader;
 
 // Imports
 use super::string::FileString;
+use crate::Dir;
 use byteorder::{ByteOrder, LittleEndian};
-use dcb_bytes::Bytes;
 use dcb_cdrom_xa::CdRom;
 use dcb_util::array_split;
-use std::{
-	convert::{TryFrom, TryInto},
-	io,
-};
+use std::{convert::TryFrom, io};
 
-/// An entry
+/// A directory entry.
 #[derive(PartialEq, Eq, Clone, Debug)]
-pub struct Entry {
+pub struct DirEntry {
 	/// Entry's name
-	name: FileString,
+	pub name: FileString,
 
 	/// Entry's location
-	location: u32,
+	pub sector_pos: u32,
 
 	/// Entry's size
-	size: u32,
+	pub size: u32,
 
 	/// Entry flags
-	flags: Flags,
+	pub flags: Flags,
 }
 
 bitflags::bitflags! {
-	struct Flags: u8 {
+	pub struct Flags: u8 {
 		const HIDDEN     = 0b0000_0001;
 		const DIR        = 0b0000_0010;
 		const ASSOCIATED = 0b0000_0100;
@@ -44,7 +43,7 @@ bitflags::bitflags! {
 	}
 }
 
-impl Entry {
+impl DirEntry {
 	/// Returns if this entry is a directory
 	#[must_use]
 	pub const fn is_dir(&self) -> bool {
@@ -57,106 +56,59 @@ impl Entry {
 		!self.is_dir()
 	}
 
-	/// Finds an entry in a list of entries
-	// TODO: DEPRECATE
-	#[must_use]
-	pub fn search_entries<'a>(entries: &'a [Self], name: &str) -> Option<&'a Self> {
-		for entry in entries {
-			// TODO: Avoid allocation
-			if entry.name.to_string() == name {
-				return Some(entry);
-			}
-		}
-
-		None
-	}
-
-	/// Reads this file
-	pub fn read<R: io::Read + io::Seek>(&self, cdrom: &mut CdRom<R>) -> Result<Vec<u8>, ReadError> {
+	/// Reads a file from this entry
+	pub fn read_file<'a, R: io::Read + io::Seek>(&self, cdrom: &'a mut CdRom<R>) -> Result<FileReader<'a, R>, ReadFileError> {
 		// If this isn't a file, return Err
 		if !self.is_file() {
-			return Err(ReadError::NotAFile);
+			return Err(ReadFileError::NotAFile);
 		}
 
-		let start = u64::from(self.location);
-		let sectors_len = usize::try_from(self.size / 2048).expect("File sector length didn't fit into a `usize`");
-		let remaining = self.size % 2048;
+		// Seek the cdrom to the correct place
+		let sector_pos = u64::from(self.sector_pos);
+		cdrom.seek_sector(sector_pos).map_err(ReadFileError::SeekSector)?;
 
-		// Read all full sectors
-		// TODO: Avoid double allocation here
-		cdrom.seek_sector(start).map_err(ReadError::SeekSector)?;
-		let mut bytes: Vec<u8> = cdrom
-			.read_sectors()
-			.take(sectors_len)
-			.map(|res| res.map(|sector| sector.data).map(std::array::IntoIter::new))
-			.collect::<Result<Vec<_>, _>>()
-			.map_err(ReadError::ReadSector)?
-			.into_iter()
-			.flatten()
-			.collect();
-
-		// Then read the remaining sector
-		if remaining != 0 {
-			let last_sector = cdrom.read_sector().map_err(ReadError::ReadSector)?;
-			#[allow(clippy::as_conversions)] // `remaining < 2048`
-			bytes.extend(&last_sector.data[..remaining as usize]);
-		}
-
-		Ok(bytes)
+		// And crate the file reader
+		let size = u64::from(self.size);
+		Ok(FileReader::new(cdrom, sector_pos, size))
 	}
 
-	/// Reads all entries in this entry, if a directory
-	pub fn read_entries<R: io::Read + io::Seek>(&self, cdrom: &mut CdRom<R>) -> Result<Vec<Self>, ReadEntriesError> {
+	/// Reads a directory from this entry.
+	pub fn read_dir<R: io::Read + io::Seek>(&self, cdrom: &mut CdRom<R>) -> Result<Dir, ReadDirError> {
 		// If this isn't a directory, return Err
 		if !self.is_dir() {
-			return Err(ReadEntriesError::NotADirectory);
+			return Err(ReadDirError::NotADirectory);
 		}
 
 		// We don't currently support directories larger than a sector
-		if self.size > 2048 {
+		let size = usize::try_from(self.size).expect("Directory size didn't fit into a `usize`");
+		if size > 2048 {
 			todo!("Directory sizes larger than a sector are not supported yet.");
 		}
 
 		// Read the sector
-		let sector = cdrom.read_nth_sector(u64::from(self.location)).map_err(ReadEntriesError::ReadSector)?;
+		let sector = cdrom.read_nth_sector(u64::from(self.sector_pos)).map_err(ReadDirError::ReadSector)?;
 
-		// Then keep parsing until we hit our size
-		let mut dirs = vec![];
-		let mut cur_pos = 0;
-		#[allow(clippy::as_conversions)] // We checked `size <= 2048`
-		while cur_pos < (self.size as usize) {
-			// Get the bytes for this entry
-			let bytes = &sector.data[cur_pos..];
+		// Then keep parsing until we run out.
+		let mut bytes = std::io::Cursor::new(&sector.data[..size]);
+		let dirs = std::iter::from_fn(move || match Self::from_reader(&mut bytes) {
+			// Note: If it fails due to the record size being 0, return None
+			Err(FromReaderError::RecordSizeTooSmall(0)) => None,
+			res => Some(res.map_err(ReadDirError::ParseEntry)),
+		})
+		.collect::<Result<Vec<_>, _>>()?;
 
-			// Get the entry's length, if it's 0, break
-			let dir_size = usize::from(bytes[0]);
-			if dir_size == 0 {
-				break;
-			}
-
-			// Read the entry then skip it's length
-			let dir = Self::from_bytes(bytes).map_err(ReadEntriesError::ParseEntry)?;
-			dirs.push(dir);
-			cur_pos += dir_size;
-		}
-
-		Ok(dirs)
+		Ok(Dir::new(dirs))
 	}
 }
 
-impl Bytes for Entry {
-	type ByteArray = [u8];
-	type FromError = FromBytesError;
-	type ToError = !;
-
-	fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError> {
+impl DirEntry {
+	/// Reads a directory entry from a reader
+	pub fn from_reader<R: io::Read>(mut reader: R) -> Result<Self, FromReaderError> {
 		// Get the header
-		let header_bytes: &[u8; 0x21] = match bytes.get(..0x21).and_then(|bytes| bytes.try_into().ok()) {
-			Some(header_bytes) => header_bytes,
-			None => return Err(FromBytesError::TooSmallHeader),
-		};
+		let mut header_bytes = [0; 0x21];
+		reader.read_exact(&mut header_bytes).map_err(FromReaderError::ReadHeader)?;
 
-		let header_bytes = array_split!(header_bytes,
+		let header_bytes = array_split!(&header_bytes,
 			record_size                  :  0x1,
 			extended_attribute_record_len:  0x1,
 			extent_location_lsb          : [0x4],
@@ -174,7 +126,7 @@ impl Bytes for Entry {
 
 		// If the record size isn't at least `0x21` + `name_len`, return Err
 		if *header_bytes.record_size < 0x21 + header_bytes.name_len {
-			return Err(FromBytesError::RecordSizeTooSmall);
+			return Err(FromReaderError::RecordSizeTooSmall(*header_bytes.record_size));
 		}
 
 		// If this is interleaved, we don't support it yet
@@ -183,20 +135,16 @@ impl Bytes for Entry {
 		}
 
 		// Then read the name
-		let name = bytes
-			.get(0x21..0x21 + usize::from(*header_bytes.name_len))
-			.ok_or(FromBytesError::TooSmallName(*header_bytes.name_len))?;
-		let name = FileString::from_bytes(name).map_err(FromBytesError::Name)?;
+		// TODO: Avoid double allocation by having `FileString` consume `name_bytes`
+		let mut name_bytes = vec![0; usize::from(*header_bytes.name_len)];
+		reader.read_exact(&mut name_bytes).map_err(FromReaderError::ReadName)?;
+		let name = FileString::from_bytes(&name_bytes).map_err(FromReaderError::ParseName)?;
 
 		Ok(Self {
 			name,
-			location: LittleEndian::read_u32(header_bytes.extent_location_lsb),
+			sector_pos: LittleEndian::read_u32(header_bytes.extent_location_lsb),
 			size: LittleEndian::read_u32(header_bytes.extent_size_lsb),
-			flags: Flags::from_bits(*header_bytes.file_flags).ok_or(FromBytesError::InvalidFlags)?,
+			flags: Flags::from_bits(*header_bytes.file_flags).ok_or(FromReaderError::InvalidFlags)?,
 		})
-	}
-
-	fn to_bytes(&self, _bytes: &mut Self::ByteArray) -> Result<(), Self::ToError> {
-		todo!()
 	}
 }
