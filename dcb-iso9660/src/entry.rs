@@ -35,8 +35,12 @@ pub struct Entry {
 
 bitflags::bitflags! {
 	struct Flags: u8 {
-		const HIDDEN = 0b0000_0001;
-		const DIR    = 0b0000_0010;
+		const HIDDEN     = 0b0000_0001;
+		const DIR        = 0b0000_0010;
+		const ASSOCIATED = 0b0000_0100;
+		const RECORD     = 0b0000_1000;
+		const PROTECTED  = 0b0001_0000;
+		const FINAL      = 0b1000_0000;
 	}
 }
 
@@ -54,6 +58,7 @@ impl Entry {
 	}
 
 	/// Finds an entry in a list of entries
+	// TODO: DEPRECATE
 	#[must_use]
 	pub fn search_entries<'a>(entries: &'a [Self], name: &str) -> Option<&'a Self> {
 		for entry in entries {
