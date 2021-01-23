@@ -32,16 +32,16 @@ pub enum DirEntryKind {
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub struct DirEntry {
 	/// Entry name
-	name: AsciiStrArr<0x10>,
+	pub name: AsciiStrArr<0x10>,
 
 	/// Entry date
-	date: NaiveDateTime,
+	pub date: NaiveDateTime,
 
 	/// Sector position
-	sector_pos: u32,
+	pub sector_pos: u32,
 
 	/// Entry kind
-	kind: DirEntryKind,
+	pub kind: DirEntryKind,
 }
 
 impl Bytes for DirEntry {

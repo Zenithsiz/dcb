@@ -80,18 +80,17 @@ mod logger;
 // Imports
 use anyhow::Context;
 use dcb_cdrom_xa::CdRom;
-use dcb_io::GameFile;
-/*
 use dcb_io::{
-	drv::{dir::DirEntry, Dir},
-	pak::{
-		entry::{animation2d::Frame, Animation2d},
-		PakEntry,
+	drv::{
+		dir::{entry::DirEntryKind, DirEntry},
+		Dir,
 	},
-	GameFile, PakFile,
+	DrvFs, GameFile,
 };
-use std::path::PathBuf;
-*/
+use std::{
+	io::{self, SeekFrom},
+	path::Path,
+};
 
 
 fn main() -> Result<(), anyhow::Error> {
@@ -99,171 +98,75 @@ fn main() -> Result<(), anyhow::Error> {
 	logger::init();
 
 	// Get all data from cli
-	let cli::CliData { game_file_path, .. } = cli::CliData::new();
+	let cli::CliData { game_file_path, output_dir } = cli::CliData::new();
 
 	// Open the game file
 	let input_file = std::fs::File::open(&game_file_path).context("Unable to open input file")?;
 	let mut cdrom = CdRom::new(input_file);
-	let _game_file = GameFile::new(&mut cdrom).context("Unable to read filesystem")?;
+	let mut game_file = GameFile::new(&mut cdrom).context("Unable to read filesystem")?;
 
-	/*
+
 	log::info!("A.DRV:");
-	self::write_dir(game_file.a_drv.root(), &output_dir.join("A.DRV")).context("Unable to write `A.DRV`")?;
+	self::print_drv_fs(&mut game_file, "A.DRV;1", &output_dir.join("A.DRV")).context("Unable to print `A.DRV`")?;
 	log::info!("B.DRV:");
-	self::write_dir(game_file.b_drv.root(), &output_dir.join("B.DRV")).context("Unable to write `B.DRV`")?;
+	self::print_drv_fs(&mut game_file, "B.DRV;1", &output_dir.join("B.DRV")).context("Unable to print `B.DRV`")?;
 	log::info!("C.DRV:");
-	self::write_dir(game_file.c_drv.root(), &output_dir.join("C.DRV")).context("Unable to write `C.DRV`")?;
+	self::print_drv_fs(&mut game_file, "C.DRV;1", &output_dir.join("C.DRV")).context("Unable to print `C.DRV`")?;
 	log::info!("E.DRV:");
-	self::write_dir(game_file.e_drv.root(), &output_dir.join("E.DRV")).context("Unable to write `E.DRV`")?;
+	self::print_drv_fs(&mut game_file, "E.DRV;1", &output_dir.join("E.DRV")).context("Unable to print `E.DRV`")?;
 	log::info!("F.DRV:");
-	self::write_dir(game_file.f_drv.root(), &output_dir.join("F.DRV")).context("Unable to write `F.DRV`")?;
+	self::print_drv_fs(&mut game_file, "F.DRV;1", &output_dir.join("F.DRV")).context("Unable to print `F.DRV`")?;
 	log::info!("G.DRV:");
-	self::write_dir(game_file.g_drv.root(), &output_dir.join("G.DRV")).context("Unable to write `G.DRV`")?;
+	self::print_drv_fs(&mut game_file, "G.DRV;1", &output_dir.join("G.DRV")).context("Unable to print `G.DRV`")?;
 	log::info!("P.DRV:");
-	self::write_dir(game_file.p_drv.root(), &output_dir.join("P.DRV")).context("Unable to write `P.DRV`")?;
-	*/
+	self::print_drv_fs(&mut game_file, "P.DRV;1", &output_dir.join("P.DRV")).context("Unable to print `P.DRV`")?;
 
 	Ok(())
 }
 
-/*
-/// Prints a directory tree
-#[allow(clippy::print_stdout, clippy::print_stderr)]
-fn write_dir(dir: &Dir, path: &PathBuf) -> Result<(), anyhow::Error> {
-	//write_dir_with_depth(dir, path, 1)
-
-	for entry in dir.entries() {
-		match entry {
-			DirEntry::File {
-				name, extension, contents, ..
-			} => {
-				let path = path.join(format!("{}.{}", name, extension));
-
-				// If it's a `.PAK`, unpack it
-				if extension.as_str() == "PAK" {
-					let pak_file: PakFile =
-						PakFile::deserialize(std::io::Cursor::new(contents)).with_context(|| format!("Unable to parse file {}", path.display()))?;
-
-					for (idx, entry) in pak_file.entries.iter().enumerate() {
-						if let PakEntry::Animation2d(animation2d) = &entry {
-							let Animation2d {
-								file_name,
-								unknown0,
-								unknown1,
-								unknown2,
-								unknown3,
-								unknown4,
-								unknown5,
-								unknown6,
-								frames,
-							} = animation2d;
-							#[rustfmt::skip]
-							println!(
-								"{file_name}[{idx}]\t{unknown0:#x}\t{unknown1:#x}\t{unknown2:#x}\t{unknown3:#x}\t{unknown4:#x}\t{unknown5:#x}\t{unknown6:#x}\t"
-							);
-							for frame in frames {
-								let Frame {
-									unknown0,
-									x0,
-									x1,
-									y0,
-									y1,
-									width,
-									height,
-									unknown1,
-									duration,
-									unknown2,
-									unknown3,
-								} = frame;
-								#[rustfmt::skip]
-								eprint!(
-									"{file_name}[{idx}]\t{unknown0:#x}\t{x0:#x}\t{x1:#x}\t{y0:#x}\t{y1:#x}\t{width:#x}\t{height:#x}\t{unknown1:#x}\t{duration:#x}\t{unknown2:#x}"
-								);
-								let digits = [
-									(unknown3 & 0xF000) >> 0xc,
-									(unknown3 & 0x0F00) >> 0x8,
-									(unknown3 & 0x00F0) >> 0x4,
-									(unknown3 & 0x000F) >> 0x0,
-								];
-								for digit in &digits {
-									eprint!("\t{digit:#x}");
-								}
-								eprintln!();
-							}
-							//log::info!("{}[{}]: {:?}", path.display(), idx, animation2d);
-						};
-					}
-				}
-			},
-			DirEntry::Dir { name, dir, .. } => {
-				let path = path.join(name.as_str());
-				self::write_dir(dir, &path).with_context(|| format!("Unable to write directory {}", path.display()))?;
-			},
-		}
-	}
-
-	Ok(())
+/// Prints a drv filesystem
+fn print_drv_fs<R: io::Read + io::Seek>(game_file: &mut GameFile<R>, name: &str, output_dir: &Path) -> Result<(), anyhow::Error> {
+	let mut a_drv = game_file.read_drv(name).context("Unable to read file")?;
+	let a_drv_fs = DrvFs::from_reader(&mut a_drv).context("Unable to parse filesystem")?;
+	self::print_dir_tree(&mut a_drv, a_drv_fs.root(), output_dir).context("Unable to print")
 }
 
 /// Prints a directory tree
-fn _write_dir_with_depth(dir: &Dir, path: &PathBuf, depth: usize) -> Result<(), anyhow::Error> {
+fn print_dir_tree<R: io::Read + io::Seek>(drv_fs: &mut R, dir: &Dir, path: &Path) -> Result<(), anyhow::Error> {
+	print_dir_tree_with_depth(drv_fs, dir, path, 1)
+}
+
+/// Prints a directory tree
+fn print_dir_tree_with_depth<R: io::Read + io::Seek>(mut drv_fs: &mut R, dir: &Dir, path: &Path, depth: usize) -> Result<(), anyhow::Error> {
 	// Create path
-	self::_try_create_folder(path)?;
+	//self::_try_create_folder(path)?;
 
 	let tabs = "\t".repeat(depth);
-	for entry in dir.entries() {
-		match entry {
-			DirEntry::File {
-				name, extension, contents, ..
-			} => {
+	for DirEntry {
+		name,
+		date,
+		sector_pos,
+		kind,
+	} in dir.entries()
+	{
+		match kind {
+			DirEntryKind::File { extension, size } => {
 				let path = path.join(format!("{}.{}", name, extension));
 
-				// If it's a `.PAK`, unpack it
-				if extension.as_str() == "PAK" {
-					let _pak_file: PakFile =
-						PakFile::deserialize(std::io::Cursor::new(contents)).with_context(|| format!("Unable to parse file {}", path.display()))?;
-
-					log::info!("{}Creating directory {}", tabs, path.display());
-					self::_try_create_folder(&path)?;
-				/*
-				for (idx, entry) in pak_file.entries.iter().enumerate() {
-					let (extension, data) = match &entry {
-						PakEntry::Unknown0(data) => ("UN0", data),
-						PakEntry::Unknown1(data) => ("UN1", data),
-						PakEntry::GameScript(data) => ("MSD", data),
-						PakEntry::Animation2D(_data) => ("A2D", todo!()),
-						PakEntry::FileSubHeader(data) => ("SHD", data),
-						PakEntry::FileContents(data) => (
-							match TimFile::deserialize(std::io::Cursor::new(&data)) {
-								Ok(_) => "TIM",
-								Err(_) if data.starts_with(b"Tp") => "TIS",
-								Err(_) => "BIN",
-							},
-							data,
-						),
-						PakEntry::AudioSeq(data) => ("SEQ", data),
-						PakEntry::AudioVh(data) => ("VH", data),
-						PakEntry::AudioVb(data) => ("VB", data),
-					};
-					let path = path.join(format!("{idx}.{extension}"));
-					log::info!("{}\tWriting file {}", tabs, path.display());
-
-					std::fs::write(&path, data).with_context(|| format!("Unable to write file {}", path.display()))?;
-				}
-				*/
-				}
-				// Else just write it.
-				else {
-					log::info!("{}Writing file {}", tabs, path.display());
-					std::fs::write(&path, contents).with_context(|| format!("Unable to write file {}", path.display()))?;
-				}
+				log::info!("{}{}{} ({} bytes)", date, tabs, path.display(), size);
+				//std::fs::write(&path, contents).with_context(|| format!("Unable to write file {}", path.display()))?;
 			},
-			DirEntry::Dir { name, dir, .. } => {
+			DirEntryKind::Dir => {
 				let path = path.join(name.as_str());
-				log::info!("{}Creating directory {}", tabs, path.display());
+				log::info!("{}{}{}", date, tabs, path.display());
 
-				self::_try_create_folder(&path)?;
-				self::_write_dir_with_depth(dir, &path, depth + 1).with_context(|| format!("Unable to write directory {}", path.display()))?;
+				//self::_try_create_folder(&path)?;
+				drv_fs
+					.seek(SeekFrom::Start(u64::from(*sector_pos) * 2048))
+					.with_context(|| format!("Unable to seek to directory {}", path.display()))?;
+				let dir = Dir::from_reader(&mut drv_fs).with_context(|| format!("Unable to parse directory {}", path.display()))?;
+				self::print_dir_tree_with_depth(drv_fs, &dir, &path, depth + 1)
+					.with_context(|| format!("Unable to write directory {}", path.display()))?;
 			},
 		}
 	}
@@ -281,4 +184,3 @@ fn _try_create_folder(path: impl AsRef<std::path::Path>) -> Result<(), anyhow::E
 		Err(err) => Err(err).with_context(|| format!("Unable to create directory {}", path.as_ref().display())),
 	}
 }
-*/

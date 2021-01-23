@@ -111,9 +111,10 @@ impl<'a, R: io::Seek> io::Seek for FileReader<'a, R> {
 			io::SeekFrom::Current(pos) => dcb_util::saturating_signed_offset(self.cur_pos, pos).clamp(0, self.size),
 		};
 
-		// If we don't end up in the same sector, flush our sector
+		// If we don't end up in the same sector, flush our sector and seek to the next sector
 		if next_pos / 2048 != self.cur_pos / 2048 {
 			self.cached = None;
+			self.cdrom.seek_sector(self.sector_pos + next_pos / 2048).map_err(|err| err.err)?;
 		}
 
 		// And set our position

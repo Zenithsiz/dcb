@@ -21,7 +21,7 @@ pub use pos::Pos;
 
 // Imports
 use dcb_io::GameFile;
-use std::ops::Range;
+use std::{io, ops::Range};
 
 /// The game executable
 #[derive(Clone, Debug)]
@@ -97,7 +97,7 @@ impl Exe {
 
 impl Exe {
 	/// Deserializes the executable from a game file
-	pub fn deserialize(_file: &mut GameFile) -> Result<Self, DeserializeError> {
+	pub fn deserialize<R: io::Read + io::Seek>(_file: &mut GameFile<R>) -> Result<Self, DeserializeError> {
 		// Read the `SYSTEM.CNF` file
 		//let _system_cnf = file.file("SYSTEM.CNF");
 

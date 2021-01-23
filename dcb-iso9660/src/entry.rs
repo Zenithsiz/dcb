@@ -140,6 +140,10 @@ impl DirEntry {
 		reader.read_exact(&mut name_bytes).map_err(FromReaderError::ReadName)?;
 		let name = FileString::from_bytes(&name_bytes).map_err(FromReaderError::ParseName)?;
 
+		// Then skip the remaining bytes
+		let mut remaining = vec![0; usize::from(header_bytes.record_size - 0x21 - header_bytes.name_len)];
+		reader.read_exact(&mut remaining).map_err(FromReaderError::ReadRemaining)?;
+
 		Ok(Self {
 			name,
 			sector_pos: LittleEndian::read_u32(header_bytes.extent_location_lsb),

@@ -5,102 +5,56 @@
 // Modules
 pub mod error;
 
+use dcb_iso9660::entry::FileReader;
 // Exports
-pub use error::NewError;
+pub use error::{NewError, ReadFileError};
 
 // Imports
-use crate::DrvFs;
 use dcb_cdrom_xa::CdRom;
 use std::io;
 
 /// Game file reader.
-#[derive(PartialEq, Eq, Clone, Debug)]
-pub struct GameFile {
-	/// A.DRV filesystem
-	pub a_drv: DrvFs,
+#[derive(PartialEq, Eq, Debug)]
+pub struct GameFile<'a, R> {
+	/// CD-Rom
+	cdrom: &'a mut CdRom<R>,
 
-	/// B.DRV filesystem
-	pub b_drv: DrvFs,
-
-	/// C.DRV filesystem
-	pub c_drv: DrvFs,
-
-	/// E.DRV filesystem
-	pub e_drv: DrvFs,
-
-	/// F.DRV filesystem
-	pub f_drv: DrvFs,
-
-	/// G.DRV filesystem
-	pub g_drv: DrvFs,
-
-	/// P.DRV filesystem
-	pub p_drv: DrvFs,
+	/// Iso9660 filesystem
+	filesystem: dcb_iso9660::Filesystem,
 }
 
 // Constructors
-impl GameFile {
+impl<'a, R: io::Read + io::Seek> GameFile<'a, R> {
 	/// Creates a new game file from the cd reader
-	pub fn new<R: io::Read + io::Seek>(cdrom: &mut CdRom<R>) -> Result<Self, NewError> {
+	pub fn new(cdrom: &'a mut CdRom<R>) -> Result<Self, NewError> {
 		// Read the filesystem
-		let _filesystem = dcb_iso9660::Filesystem::new(cdrom).map_err(NewError::NewIso9660FileSystem)?;
+		let filesystem = dcb_iso9660::Filesystem::new(cdrom).map_err(NewError::ParseFilesystem)?;
 
-		/*
-		// Read all the files we care about
-		let _entries = filesystem
-			.root_dir()
-			.read_entries(cdrom)
-			.map_err(NewError::Iso9660FilesystemRootReadEntries)?;
+		Ok(Self { cdrom, filesystem })
+	}
+}
 
-		let _a_drv_entry = dcb_iso9660::Entry::search_entries(&entries, "A.DRV;1").ok_or(NewError::Iso9660FilesystemFindFileA)?;
-		let _b_drv_entry = dcb_iso9660::Entry::search_entries(&entries, "B.DRV;1").ok_or(NewError::Iso9660FilesystemFindFileB)?;
-		let _c_drv_entry = dcb_iso9660::Entry::search_entries(&entries, "C.DRV;1").ok_or(NewError::Iso9660FilesystemFindFileC)?;
-		let _e_drv_entry = dcb_iso9660::Entry::search_entries(&entries, "E.DRV;1").ok_or(NewError::Iso9660FilesystemFindFileE)?;
-		let _f_drv_entry = dcb_iso9660::Entry::search_entries(&entries, "F.DRV;1").ok_or(NewError::Iso9660FilesystemFindFileF)?;
-		let _g_drv_entry = dcb_iso9660::Entry::search_entries(&entries, "G.DRV;1").ok_or(NewError::Iso9660FilesystemFindFileG)?;
-		let _p_drv_entry = dcb_iso9660::Entry::search_entries(&entries, "P.DRV;1").ok_or(NewError::Iso9660FilesystemFindFileP)?;
-		*/
+impl<'a, R> GameFile<'a, R> {
+	/// Returns the cdrom associated with this game file
+	pub fn cdrom(&mut self) -> &mut CdRom<R> {
+		self.cdrom
+	}
+}
 
-		todo!();
 
-		/*
+impl<'a, R: io::Read + io::Seek> GameFile<'a, R> {
+	/// Reads a game file
+	pub fn read_drv<'b>(&'b mut self, name: &str) -> Result<FileReader<'b, R>, ReadFileError>
+	where
+		'a: 'b,
+	{
+		// Read the root directory
+		let root_dir = self.filesystem.root_dir().read_dir(self.cdrom).map_err(ReadFileError::ReadRoot)?;
 
-		let a_drv_bytes = a_drv_entry.read(cdrom).map_err(NewError::Iso9660FilesystemReadFileA)?;
-		let a_drv = DrvFs::from_bytes(&a_drv_bytes).map_err(NewError::ParseFilesystemA)?;
+		// Get the file
+		let entry = root_dir.find(name).ok_or(ReadFileError::FindFile)?;
 
-		let b_drv_entry = dcb_iso9660::Entry::search_entries(&entries, "B.DRV;1").ok_or(NewError::Iso9660FilesystemFindFileB)?;
-		let b_drv_bytes = b_drv_entry.read(cdrom).map_err(NewError::Iso9660FilesystemReadFileB)?;
-		let b_drv = DrvFs::from_bytes(&b_drv_bytes).map_err(NewError::ParseFilesystemB)?;
-
-		let c_drv_entry = dcb_iso9660::Entry::search_entries(&entries, "C.DRV;1").ok_or(NewError::Iso9660FilesystemFindFileC)?;
-		let c_drv_bytes = c_drv_entry.read(cdrom).map_err(NewError::Iso9660FilesystemReadFileC)?;
-		let c_drv = DrvFs::from_bytes(&c_drv_bytes).map_err(NewError::ParseFilesystemC)?;
-
-		let e_drv_entry = dcb_iso9660::Entry::search_entries(&entries, "E.DRV;1").ok_or(NewError::Iso9660FilesystemFindFileE)?;
-		let e_drv_bytes = e_drv_entry.read(cdrom).map_err(NewError::Iso9660FilesystemReadFileE)?;
-		let e_drv = DrvFs::from_bytes(&e_drv_bytes).map_err(NewError::ParseFilesystemE)?;
-
-		let f_drv_entry = dcb_iso9660::Entry::search_entries(&entries, "F.DRV;1").ok_or(NewError::Iso9660FilesystemFindFileF)?;
-		let f_drv_bytes = f_drv_entry.read(cdrom).map_err(NewError::Iso9660FilesystemReadFileF)?;
-		let f_drv = DrvFs::from_bytes(&f_drv_bytes).map_err(NewError::ParseFilesystemF)?;
-
-		let g_drv_entry = dcb_iso9660::Entry::search_entries(&entries, "G.DRV;1").ok_or(NewError::Iso9660FilesystemFindFileG)?;
-		let g_drv_bytes = g_drv_entry.read(cdrom).map_err(NewError::Iso9660FilesystemReadFileG)?;
-		let g_drv = DrvFs::from_bytes(&g_drv_bytes).map_err(NewError::ParseFilesystemG)?;
-
-		let p_drv_entry = dcb_iso9660::Entry::search_entries(&entries, "P.DRV;1").ok_or(NewError::Iso9660FilesystemFindFileP)?;
-		let p_drv_bytes = p_drv_entry.read(cdrom).map_err(NewError::Iso9660FilesystemReadFileP)?;
-		let p_drv = DrvFs::from_bytes(&p_drv_bytes).map_err(NewError::ParseFilesystemP)?;
-
-		Ok(Self {
-			a_drv,
-			b_drv,
-			c_drv,
-			e_drv,
-			f_drv,
-			g_drv,
-			p_drv,
-		})
-		*/
+		// And read it
+		entry.read_file(self.cdrom).map_err(ReadFileError::ReadFile)
 	}
 }

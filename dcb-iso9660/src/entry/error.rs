@@ -23,6 +23,10 @@ pub enum FromReaderError {
 	/// Unable to read header
 	#[error("Unable to read header")]
 	ReadName(#[source] io::Error),
+	
+	/// Unable to read remaining
+	#[error("Unable to read remaining")]
+	ReadRemaining(#[source] io::Error),
 
 	/// Unable to parse name
 	#[error("Unable to parse name")]

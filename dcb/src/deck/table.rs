@@ -10,7 +10,7 @@ pub use error::{DeserializeError, SerializeError};
 use crate::Deck;
 use dcb_bytes::Bytes;
 use dcb_io::GameFile;
-use std::io::{Read, Seek, Write};
+use std::io;
 
 /// The decks table, where all decks are stored
 #[derive(PartialEq, Eq, Clone, Debug)]
@@ -39,10 +39,7 @@ impl Table {
 
 impl Table {
 	/// Deserializes the deck table from `file`.
-	pub fn deserialize<R>(_file: &mut GameFile) -> Result<Self, DeserializeError>
-	where
-		R: Read + Write + Seek,
-	{
+	pub fn deserialize<R: io::Read>(_file: &mut GameFile<R>) -> Result<Self, DeserializeError> {
 		todo!();
 		/*
 		// Seek to the beginning of the deck table
@@ -91,10 +88,7 @@ impl Table {
 	}
 
 	/// Serializes the deck table to `file`
-	pub fn serialize<R>(&self, _file: &mut GameFile) -> Result<(), SerializeError>
-	where
-		R: Read + Write + Seek,
-	{
+	pub fn serialize<R: io::Write>(&self, _file: &mut GameFile<R>) -> Result<(), SerializeError> {
 		let _ = self;
 		todo!();
 		/*

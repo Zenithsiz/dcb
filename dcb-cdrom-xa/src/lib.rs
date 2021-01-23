@@ -112,7 +112,7 @@ impl<R: Read> CdRom<R> {
 }
 
 // Seek
-impl<R: Read + Seek> CdRom<R> {
+impl<R: Seek> CdRom<R> {
 	/// Seeks to the `n`th sector
 	pub fn seek_sector(&mut self, n: u64) -> Result<(), SeekSectorError> {
 		// Seek to the sector.
@@ -121,7 +121,10 @@ impl<R: Read + Seek> CdRom<R> {
 			Err(err) => Err(SeekSectorError { sector: n, err }),
 		}
 	}
+}
 
+// Seek + Read
+impl<R: Read + Seek> CdRom<R> {
 	/// Reads the `n`th sector
 	pub fn read_nth_sector(&mut self, n: u64) -> Result<Sector, ReadNthSectorError> {
 		// Seek to the sector.
