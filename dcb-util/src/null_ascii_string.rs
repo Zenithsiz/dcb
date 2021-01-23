@@ -46,7 +46,7 @@ macro_rules! impl_null_ascii_string {
 					// Note: No need to override the remaining bytes
 					// Note: `len < N`, so this cannot panic.
 					let len = input.len();
-					self[..$N].copy_from_slice(input.as_bytes());
+					self[..len].copy_from_slice(input.as_bytes());
 					self[len] = 0;
 				}
 			}

@@ -1,31 +1,4 @@
 //! `dcb` is a library for interacting with the game file of `Digimon Digital Card Battle`.
-//!
-//! # Modules
-//! `dcb` is split across 2 main modules, `io` and `game`.
-//!
-//! ## Io
-//! The Io module is responsible for interacting with the game file. In the future it may be responsible
-//! for also interacting with the game extracted database, once work on that is complete.
-//!
-//! ## Game
-//! The game module is responsible for representing in-game structures such as cards, sprites, text, and
-//! others. The trait has various interfaces to be able to deserialize these structures from both the game
-//! file, database or even other sources, depending on the structure.
-//!
-//! # Example
-//!
-//! The following is an example of how to use the `dcb` library.
-//! This example extracts the card table and prints it to screen
-//!
-//! ```no_run
-//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
-//! #   use std::fs::File;
-//! let mut game_file = dcb_io::GameFile::from_reader( File::open("Digimon Digital Card Battle.bin")? )?;
-//! let card_table = dcb::CardTable::deserialize(&mut game_file)?;
-//! println!("Card table: {:?}", card_table);
-//! #   Ok(())
-//! # }
-//! ```
 
 // Features
 #![feature(
