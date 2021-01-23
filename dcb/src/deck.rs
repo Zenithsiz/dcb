@@ -81,6 +81,7 @@ pub struct MaybeArmorEvo(Option<ArmorEvo>);
 pub struct MaybeMusic(Option<Music>);
 
 // Modules
+#[allow(clippy::module_inception)] // TODO: Fix
 pub mod deck;
 pub mod table;
 

@@ -23,7 +23,6 @@ pub struct PakFile {
 
 impl PakFile {
 	/// Deserializes a `.PAK` file from a reader
-	#[allow(clippy::similar_names)] // Reader and header are different enough.
 	pub fn from_reader<R: io::Read + io::Seek>(reader: &mut R) -> Result<Self, FromReaderError> {
 		// Keep reading headers until we find the final header.
 		let mut entries = vec![];

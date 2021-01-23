@@ -45,7 +45,6 @@ pub enum PakEntry {
 
 impl PakEntry {
 	/// Deserializes a `.PAK` file entry from a reader
-	#[allow(clippy::similar_names)] // Reader and header are different enough.
 	pub fn from_reader<R: io::Read>(reader: &mut R, header: Header) -> Result<Self, FromReaderError> {
 		let kind = header.file_kind;
 		let entry = match kind {

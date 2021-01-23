@@ -127,7 +127,7 @@ impl Bytes for Digimon {
 
 			speciality: Speciality::from_bytes(&((bytes.speciality_level & 0xF0) >> 4)).map_err(FromBytesError::Speciality)?,
 
-			level: Level::from_bytes(&((bytes.speciality_level & 0x0F) >> 0)).map_err(FromBytesError::Level)?,
+			level: Level::from_bytes(&(bytes.speciality_level & 0x0F)).map_err(FromBytesError::Level)?,
 
 			dp_cost: *bytes.dp_cost,
 			dp_give: *bytes.dp_give,
