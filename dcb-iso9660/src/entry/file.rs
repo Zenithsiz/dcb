@@ -91,6 +91,7 @@ impl<'a, R: io::Read> io::Read for FileReader<'a, R> {
 		// Note: This also covers the case in which we have just enough bytes to
 		//       fill it.
 		buf[..remaining_sector_bytes].copy_from_slice(&sector.data[pos_in_sector..]);
+		self.cur_pos += u64::try_from(remaining_sector_bytes).expect("Unable to get remaining sector bytes as `u64`");
 		self.cached = None;
 		Ok(remaining_sector_bytes)
 	}

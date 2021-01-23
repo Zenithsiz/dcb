@@ -85,7 +85,9 @@ use dcb_io::{
 		dir::{entry::DirEntryKind, DirEntry},
 		Dir,
 	},
-	DrvFs, GameFile,
+	pak::PakEntry,
+	tim::TimFile,
+	DrvFs, GameFile, PakFile,
 };
 use std::{
 	io::{self, SeekFrom},
@@ -153,8 +155,46 @@ fn print_dir_tree_with_depth<R: io::Read + io::Seek>(mut drv_fs: &mut R, dir: &D
 			DirEntryKind::File { extension, size } => {
 				let path = path.join(format!("{}.{}", name, extension));
 
-				log::info!("{}{}{} ({} bytes)", date, tabs, path.display(), size);
-				//std::fs::write(&path, contents).with_context(|| format!("Unable to write file {}", path.display()))?;
+				// If it's a `.PAK`, unpack it
+				if extension.as_str() == "PAK" {
+					drv_fs
+						.seek(SeekFrom::Start(u64::from(*sector_pos) * 2048))
+						.with_context(|| format!("Unable to seek to pak file {}", path.display()))?;
+					let pak_file: PakFile =
+						PakFile::deserialize(&mut drv_fs).with_context(|| format!("Unable to parse pak file {}", path.display()))?;
+
+					log::info!("{}{}{} ({} bytes)", date, tabs, path.display(), size);
+					//self::_try_create_folder(&path)?;
+
+					let tabs = "\t".repeat(depth + 1);
+					for (idx, entry) in pak_file.entries.iter().enumerate() {
+						let extension = match &entry {
+							PakEntry::Unknown0(_) => "UN0",
+							PakEntry::Unknown1(_) => "UN1",
+							PakEntry::GameScript(_) => "MSD",
+							PakEntry::Animation2d(_) => "A2D",
+							PakEntry::FileSubHeader(_) => "SHD",
+							PakEntry::FileContents(data) => match TimFile::deserialize(std::io::Cursor::new(&data)) {
+								Ok(_) => "TIM",
+								Err(_) if data.starts_with(b"Tp") => "TIS",
+								Err(_) => "BIN",
+							},
+							PakEntry::AudioSeq(_) => "SEQ",
+							PakEntry::AudioVh(_) => "VH",
+							PakEntry::AudioVb(_) => "VB",
+						};
+						let path = path.join(format!("{idx}.{extension}"));
+						log::info!("{}{}{}", date, tabs, path.display());
+						//log::info!("{}\tWriting file {}", tabs, path.display());
+
+						//std::fs::write(&path, data).with_context(|| format!("Unable to write file {}", path.display()))?;
+					}
+				}
+				// Else just write it.
+				else {
+					log::info!("{}{}{} ({} bytes)", date, tabs, path.display(), size);
+					//std::fs::write(&path, contents).with_context(|| format!("Unable to write file {}", path.display()))?;
+				}
 			},
 			DirEntryKind::Dir => {
 				let path = path.join(name.as_str());
