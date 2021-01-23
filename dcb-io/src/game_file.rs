@@ -46,12 +46,25 @@ impl GameFile {
 		let filesystem = dcb_iso9660::Filesystem::new(cdrom).map_err(NewError::NewIso9660FileSystem)?;
 
 		// Read all the files we care about
-		let entries = filesystem
+		let _entries = filesystem
 			.root_dir()
 			.read_entries(cdrom)
 			.map_err(NewError::Iso9660FilesystemRootReadEntries)?;
 
-		let a_drv_entry = dcb_iso9660::Entry::search_entries(&entries, "A.DRV;1").ok_or(NewError::Iso9660FilesystemFindFileA)?;
+		/*
+		let _a_drv_entry = dcb_iso9660::Entry::search_entries(&entries, "A.DRV;1").ok_or(NewError::Iso9660FilesystemFindFileA)?;
+		let _b_drv_entry = dcb_iso9660::Entry::search_entries(&entries, "B.DRV;1").ok_or(NewError::Iso9660FilesystemFindFileB)?;
+		let _c_drv_entry = dcb_iso9660::Entry::search_entries(&entries, "C.DRV;1").ok_or(NewError::Iso9660FilesystemFindFileC)?;
+		let _e_drv_entry = dcb_iso9660::Entry::search_entries(&entries, "E.DRV;1").ok_or(NewError::Iso9660FilesystemFindFileE)?;
+		let _f_drv_entry = dcb_iso9660::Entry::search_entries(&entries, "F.DRV;1").ok_or(NewError::Iso9660FilesystemFindFileF)?;
+		let _g_drv_entry = dcb_iso9660::Entry::search_entries(&entries, "G.DRV;1").ok_or(NewError::Iso9660FilesystemFindFileG)?;
+		let _p_drv_entry = dcb_iso9660::Entry::search_entries(&entries, "P.DRV;1").ok_or(NewError::Iso9660FilesystemFindFileP)?;
+		*/
+
+		todo!();
+
+		/*
+
 		let a_drv_bytes = a_drv_entry.read(cdrom).map_err(NewError::Iso9660FilesystemReadFileA)?;
 		let a_drv = DrvFs::from_bytes(&a_drv_bytes).map_err(NewError::ParseFilesystemA)?;
 
@@ -88,5 +101,6 @@ impl GameFile {
 			g_drv,
 			p_drv,
 		})
+		*/
 	}
 }

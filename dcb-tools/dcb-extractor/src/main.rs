@@ -80,6 +80,8 @@ mod logger;
 // Imports
 use anyhow::Context;
 use dcb_cdrom_xa::CdRom;
+use dcb_io::GameFile;
+/*
 use dcb_io::{
 	drv::{dir::DirEntry, Dir},
 	pak::{
@@ -89,6 +91,7 @@ use dcb_io::{
 	GameFile, PakFile,
 };
 use std::path::PathBuf;
+*/
 
 
 fn main() -> Result<(), anyhow::Error> {
@@ -96,13 +99,14 @@ fn main() -> Result<(), anyhow::Error> {
 	logger::init();
 
 	// Get all data from cli
-	let cli::CliData { game_file_path, output_dir } = cli::CliData::new();
+	let cli::CliData { game_file_path, .. } = cli::CliData::new();
 
 	// Open the game file
 	let input_file = std::fs::File::open(&game_file_path).context("Unable to open input file")?;
 	let mut cdrom = CdRom::new(input_file);
-	let game_file = GameFile::new(&mut cdrom).context("Unable to read filesystem")?;
+	let _game_file = GameFile::new(&mut cdrom).context("Unable to read filesystem")?;
 
+	/*
 	log::info!("A.DRV:");
 	self::write_dir(game_file.a_drv.root(), &output_dir.join("A.DRV")).context("Unable to write `A.DRV`")?;
 	log::info!("B.DRV:");
@@ -117,10 +121,12 @@ fn main() -> Result<(), anyhow::Error> {
 	self::write_dir(game_file.g_drv.root(), &output_dir.join("G.DRV")).context("Unable to write `G.DRV`")?;
 	log::info!("P.DRV:");
 	self::write_dir(game_file.p_drv.root(), &output_dir.join("P.DRV")).context("Unable to write `P.DRV`")?;
+	*/
 
 	Ok(())
 }
 
+/*
 /// Prints a directory tree
 #[allow(clippy::print_stdout, clippy::print_stderr)]
 fn write_dir(dir: &Dir, path: &PathBuf) -> Result<(), anyhow::Error> {
@@ -275,3 +281,4 @@ fn _try_create_folder(path: impl AsRef<std::path::Path>) -> Result<(), anyhow::E
 		Err(err) => Err(err).with_context(|| format!("Unable to create directory {}", path.as_ref().display())),
 	}
 }
+*/

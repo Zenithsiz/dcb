@@ -1,4 +1,4 @@
-//! The `.DRV` filesystem
+#![doc(include = "drv.md")]
 
 // Modules
 pub mod dir;
@@ -6,9 +6,12 @@ pub mod error;
 pub mod file;
 
 // Exports
-pub use dir::Dir;
+pub use dir::{Dir, DirEntry};
 pub use error::FromBytesError;
 pub use file::File;
+
+// Imports
+use std::io;
 
 /// The filesystem
 #[derive(PartialEq, Eq, Clone, Debug)]
@@ -18,12 +21,10 @@ pub struct DrvFs {
 }
 
 impl DrvFs {
-	/// Parses a filesystem from bytes
-	// TODO: Generalize for any reader.
-	pub fn from_bytes(bytes: &[u8]) -> Result<Self, FromBytesError> {
+	/// Reads a filesystem from a reader
+	pub fn from_reader<R: io::Read>(reader: R) -> Result<Self, FromBytesError> {
 		// Read the root directory
-		// TODO: Read a directory header instead and then have the header read the actual directory
-		let root = Dir::from_bytes(bytes, bytes).map_err(FromBytesError::RootDir)?;
+		let root = Dir::from_reader(reader).map_err(FromBytesError::RootDir)?;
 
 		Ok(Self { root })
 	}

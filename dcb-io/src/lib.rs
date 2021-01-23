@@ -16,7 +16,8 @@
 	array_methods,
 	slice_strip,
 	array_chunks,
-	iter_map_while
+	iter_map_while,
+	external_doc
 )]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]

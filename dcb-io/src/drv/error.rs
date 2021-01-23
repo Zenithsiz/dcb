@@ -8,5 +8,5 @@ use super::dir;
 pub enum FromBytesError {
 	/// Unable to read root directory
 	#[error("Unable to read root directory")]
-	RootDir(#[source] dir::FromBytesError),
+	RootDir(#[source] dir::DeserializeError),
 }

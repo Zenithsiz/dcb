@@ -6,7 +6,11 @@ pub mod error;
 
 // Exports
 pub use entry::DirEntry;
-pub use error::FromBytesError;
+pub use error::DeserializeError;
+
+// Imports
+use dcb_bytes::Bytes;
+use std::io;
 
 /// Directory
 #[derive(PartialEq, Eq, Clone, Debug)]
@@ -16,19 +20,22 @@ pub struct Dir {
 }
 
 impl Dir {
-	/// Parses a directory from bytes
-	pub fn from_bytes(dir_bytes: &[u8], file_bytes: &[u8]) -> Result<Self, FromBytesError> {
-		// Keep reading bytes until we get an entry kind of 0
-		// TODO: Maybe error if `bytes` finishes before we find a `0`.
-		let entries = dir_bytes
-			.array_chunks::<0x20>()
-			.map(|entry_bytes| DirEntry::from_bytes(entry_bytes, file_bytes))
-			.map_while(|res| match res {
+	/// Parses a directory from a reader
+	pub fn from_reader<R: io::Read>(mut reader: R) -> Result<Self, DeserializeError> {
+		let entries = std::iter::from_fn(move || {
+			// Read the bytes
+			let mut entry_bytes = [0; 0x20];
+			if let Err(err) = reader.read_exact(&mut entry_bytes) {
+				return Some(Err(DeserializeError::ReadEntry(err)));
+			}
+
+			// And parse it
+			match DirEntry::from_bytes(&entry_bytes) {
 				Err(entry::FromBytesError::InvalidKind(0)) => None,
-				res => Some(res),
-			})
-			.collect::<Result<_, _>>()
-			.map_err(FromBytesError::ReadEntry)?;
+				res => Some(res.map_err(DeserializeError::ParseEntry)),
+			}
+		})
+		.collect::<Result<Vec<_>, _>>()?;
 
 		Ok(Self { entries })
 	}
