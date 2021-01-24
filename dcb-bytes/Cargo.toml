@@ -6,3 +6,6 @@ edition = "2018"
 
 [dependencies]
 
+# Bytes
+byteorder = "1.4.2"
+arrayref = "0.3.6"

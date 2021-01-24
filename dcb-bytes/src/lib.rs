@@ -1,57 +1,60 @@
-//! Bytes conversions for game types.
+//! Byte conversions
 
 // Features
-#![feature(unsafe_block_in_unsafe_fn, min_const_generics)]
+#![feature(min_const_generics, never_type)]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]
-// Instead of `unwrap`, we must use `expect` and provide a reason
-#![forbid(clippy::unwrap_used)]
-// We must use `unsafe` in unsafe `fn`s and specify if the guarantee is
-// made by the caller or by us.
-#![forbid(unsafe_op_in_unsafe_fn)]
 // We'll disable the ones we don't need
 #![allow(clippy::blanket_clippy_restriction_lints)]
-// Necessary items may be inlined using `LTO`, so we don't need to mark them as inline
+// No unsafe allowed in this crate
+#![forbid(unsafe_code)]
+// Must use `expect` instead of `unwrap`
+#![forbid(clippy::unwrap_used)]
+// We don't need to mark every public function `inline`
 #![allow(clippy::missing_inline_in_public_items)]
-// We prefer tail returns where possible, as they help with code readability in most cases.
+// We prefer literals to be copy-paste-able rather than readable
+#![allow(clippy::unreadable_literal)]
+// We prefer suffixes to be glued to the literal
+#![allow(clippy::unseparated_literal_suffix)]
+// We're fine with panicking when entering an unexpected state
+#![allow(
+	clippy::panic,
+	clippy::unreachable,
+	clippy::expect_used,
+	clippy::panic_in_result_fn,
+	clippy::unwrap_in_result,
+	clippy::indexing_slicing,
+	clippy::todo
+)]
+// We prefer tail calls
 #![allow(clippy::implicit_return)]
-// We're fine with shadowing, as long as the variable is used for the same purpose.
-// Hence why `clippy::shadow_unrelated` isn't allowed.
-#![allow(clippy::shadow_reuse, clippy::shadow_same)]
-// We panic when we know it won't happen, or if it does happen, then a panic is the best option
-#![allow(clippy::panic, clippy::expect_used, clippy::unreachable, clippy::todo)]
-// We use `expect` even in functions that return a `Result` / `Option` if there is a logic error
-#![allow(clippy::unwrap_in_result)]
-// We find it more important to be able to copy paste literals such as `0xabcd1234` than
-// being able to read them, which does not provide many benefits
-#![allow(clippy::unreadable_literal, clippy::unseparated_literal_suffix)]
-// We separate implementations per their functionality usually, such as constructors, getters, setters, and others.
+// We use multiple implementations to separate logic
 #![allow(clippy::multiple_inherent_impl)]
-// Many operations we need to repeat, and to keep symmetry
-#![allow(clippy::identity_op)]
-// We only introduce items before their first usage, which sometimes is half-way through the code.
-// We make sure that we only use the item after introduced, however.
-#![allow(clippy::items_after_statements)]
-// Useful for when they either change a lot with new variants / data,
-// or for symmetry purposes
-#![allow(clippy::match_same_arms)]
-// In this library we have very grain-level error types, each function
-// will have it's own error type ideally, so any errors are explicit
-// by the type, without needing a section for them
+// We use granular error types, usually one for each function, which document the
+// errors that might happen, as opposed to documenting them in the function
 #![allow(clippy::missing_errors_doc)]
-// Although we generally try to avoid this, this can happen due to our module organization.
-// In the future, this lint should be removed globally and only enabled for modules which
-// actually require the use of it.
-#![allow(clippy::module_inception, clippy::module_name_repetitions)]
-// We use integer arithmetic and operations with the correct intent
+// Due to our module organization, we end up with data types inheriting their module's name
+#![allow(clippy::module_name_repetitions)]
+// We need arithmetic for this crate
 #![allow(clippy::integer_arithmetic, clippy::integer_division)]
-// We prefer using match ergonomic where possible
+// We want to benefit from match ergonomics where possible
 #![allow(clippy::pattern_type_mismatch)]
-// Sometimes the blocks make it easier to invert their order
-#![allow(clippy::if_not_else)]
+// We only use wildcards when we only care about certain variants
+#![allow(clippy::wildcard_enum_match_arm, clippy::match_wildcard_for_single_variants)]
+// We're fine with shadowing, as long as it's related
+#![allow(clippy::shadow_reuse, clippy::shadow_same)]
+// Matching on booleans can look better than `if / else`
+#![allow(clippy::match_bool)]
+// If the `else` isn't needed, we don't put it
+#![allow(clippy::else_if_without_else)]
 
 // Modules
+pub mod byteorder_ext;
 pub mod bytes;
+pub mod derive;
 
 // Exports
+pub use byteorder_ext::ByteOrderExt;
 pub use bytes::{ByteArray, Bytes};
+#[doc(hidden)]
+pub use ::{arrayref, byteorder};

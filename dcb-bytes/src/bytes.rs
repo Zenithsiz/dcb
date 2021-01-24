@@ -1,9 +1,9 @@
-//! Interface for converting various structures to and from bytes
+//! `Bytes` trait.
 
 // Imports
 use std::error::Error;
 
-/// Conversions to and from bytes for the game file
+/// Conversion from and to bytes
 pub trait Bytes
 where
 	Self: Sized,
@@ -25,10 +25,15 @@ where
 }
 
 /// A trait for restricting `Bytes::ByteArray`
-pub trait ByteArray {}
+pub trait ByteArray {
+	/// Array size
+	const SIZE: usize;
+}
 
-impl<const N: usize> ByteArray for [u8; N] {}
+impl<const N: usize> ByteArray for [u8; N] {
+	const SIZE: usize = N;
+}
 
-impl ByteArray for [u8] {}
-
-impl ByteArray for u8 {}
+impl ByteArray for u8 {
+	const SIZE: usize = 1;
+}
