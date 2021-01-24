@@ -8,5 +8,5 @@ use super::dir;
 pub enum FromReaderError {
 	/// Unable to read root directory
 	#[error("Unable to read root directory")]
-	RootDir(#[source] dir::FromReaderError),
+	RootDir(#[source] dir::ReadEntryError),
 }

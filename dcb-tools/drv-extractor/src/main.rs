@@ -34,40 +34,42 @@ fn extract_file(input_file: &Path, output_dir: &Path) -> Result<(), anyhow::Erro
 	// Open the file and parse a `drv` filesystem from it.
 	let mut input_file = std::fs::File::open(input_file).context("Unable to open input file")?;
 
-	let drv_fs = DrvFsReader::from_reader(&mut input_file).context("Unable to parse filesystem")?;
-	self::extract_tree(&mut input_file, drv_fs.root(), output_dir).context("Unable to extract files from root")
+	// Create output directory if it doesn't exist
+	self::try_create_folder(output_dir)?;
+
+	// Then extract the tree
+	self::extract_tree(&mut input_file, &DrvFsReader::root(), output_dir).context("Unable to extract files from root")
 }
 
 /// Extracts a `.drv` file from a reader and starting directory
 fn extract_tree<R: io::Read + io::Seek>(reader: &mut R, dir: &DirReader, path: &Path) -> Result<(), anyhow::Error> {
-	// Create path if it doesn't exist
-	self::try_create_folder(path)?;
-
 	// Then for each entry create it
-	for entry in dir.entries() {
+	let entries: Vec<_> = dir
+		.entries(reader)
+		.with_context(|| format!("Unable to get directory entries of {}", path.display()))?
+		.collect();
+	for entry in entries {
+		// If we can't read it, return Err
+		let entry = entry.with_context(|| format!("Unable to read directory entry of {}", path.display()))?;
+
 		// Get the filename and new path
-		let name = match &entry.kind {
-			DirEntryKind::File { extension, .. } => format!("{}.{}", entry.name, extension),
-			DirEntryKind::Dir => entry.name.to_string(),
+		let name = match entry.kind() {
+			DirEntryKind::File(file) => format!("{}.{}", entry.name(), file.extension()),
+			DirEntryKind::Dir(_) => entry.name().to_string(),
 		};
 		let path = path.join(name);
 
 		// Create the date
 		// Note: `.DRV` only supports second precision.
-		let time = filetime::FileTime::from_unix_time(entry.date.timestamp(), 0);
-
-		// Seek to the entry's data
-		entry
-			.seek_to(reader)
-			.with_context(|| format!("Unable to seek to directory entry {}", path.display()))?;
+		let time = filetime::FileTime::from_unix_time(entry.date().timestamp(), 0);
 
 		// Then check what we need to do with it
-		match entry.kind {
-			DirEntryKind::File { size, .. } => {
-				log::info!("{} ({} bytes)", path.display(), size);
+		match entry.kind() {
+			DirEntryKind::File(file) => {
+				log::info!("{} ({} bytes)", path.display(), file.size());
 
 				// Limit the input file to it's size
-				let mut reader = <&mut R as io::Read>::take(reader, u64::from(size));
+				let mut reader = file.reader(reader).with_context(|| format!("Unable to read file {}", path.display()))?;
 
 				// Then create the output file and copy.
 				let mut output_file = std::fs::File::create(&path).with_context(|| format!("Unable to create file {}", path.display()))?;
@@ -77,18 +79,15 @@ fn extract_tree<R: io::Read + io::Seek>(reader: &mut R, dir: &DirReader, path: &
 				filetime::set_file_handle_times(&output_file, None, Some(time))
 					.with_context(|| format!("Unable to write date for file {}", path.display()))?;
 			},
-			DirEntryKind::Dir => {
-				// Read the directory
-				let dir = DirReader::from_reader(reader).with_context(|| format!("Unable to parse directory {}", path.display()))?;
-
-				log::info!("{} ({} entries)", path.display(), dir.entries().len());
+			DirEntryKind::Dir(dir) => {
+				log::info!("{}", path.display());
 
 				// Create the directory and set it's modification date
 				self::try_create_folder(&path)?;
 				filetime::set_file_mtime(&path, time).with_context(|| format!("Unable to write date for directory {}", path.display()))?;
 
 				// Then recurse over it
-				self::extract_tree(reader, &dir, &path).with_context(|| format!("Unable to extract directory {}", path.display()))?;
+				self::extract_tree(reader, dir, &path).with_context(|| format!("Unable to extract directory {}", path.display()))?;
 			},
 		}
 	}

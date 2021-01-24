@@ -4,9 +4,17 @@
 use super::entry;
 use std::io;
 
-/// Error for [`Dir::from_reader`](super::Dir::from_reader)
+/// Error for [`Dir::entries`](super::Dir::entries)
 #[derive(Debug, thiserror::Error)]
-pub enum FromReaderError {
+pub enum EntriesError {
+	/// Unable to seek to directory
+	#[error("Unable to seek to directory")]
+	Seek(#[source] io::Error),
+}
+
+/// Error for [`Dir::entries`](super::Dir::entries)
+#[derive(Debug, thiserror::Error)]
+pub enum ReadEntryError {
 	/// Unable to read entry bytes
 	#[error("Unable to read entry bytes")]
 	ReadEntry(#[source] io::Error),
