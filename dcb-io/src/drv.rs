@@ -6,7 +6,7 @@ pub mod error;
 pub mod file;
 
 // Exports
-pub use dir::{DirReader, ReadDirEntry};
+pub use dir::{DirEntry, DirReader};
 pub use error::FromReaderError;
 pub use file::File;
 

@@ -10,8 +10,11 @@ pub use error::FromBytesError;
 use byteorder::{ByteOrder, LittleEndian};
 use chrono::NaiveDateTime;
 use dcb_bytes::Bytes;
-use dcb_util::{array_split, ascii_str_arr::AsciiChar, AsciiStrArr};
-use std::io::{self, Seek, SeekFrom};
+use dcb_util::{array_split, array_split_mut, ascii_str_arr::AsciiChar, AsciiStrArr};
+use std::{
+	convert::TryFrom,
+	io::{self, Seek, SeekFrom},
+};
 
 /// A directory entry kind
 #[derive(PartialEq, Eq, Clone, Debug)]
@@ -29,9 +32,9 @@ pub enum DirEntryKind {
 	Dir,
 }
 
-/// A read directory entry
+/// A directory entry
 #[derive(PartialEq, Eq, Clone, Debug)]
-pub struct ReadDirEntry {
+pub struct DirEntry {
 	/// Entry name
 	pub name: AsciiStrArr<0x10>,
 
@@ -45,14 +48,14 @@ pub struct ReadDirEntry {
 	pub kind: DirEntryKind,
 }
 
-impl ReadDirEntry {
+impl DirEntry {
 	/// Seeks to this entry's data on a reader
 	pub fn seek_to<R: Seek>(&self, reader: &mut R) -> Result<u64, io::Error> {
 		reader.seek(SeekFrom::Start(u64::from(self.sector_pos) * 2048))
 	}
 }
 
-impl Bytes for ReadDirEntry {
+impl Bytes for DirEntry {
 	type ByteArray = [u8; 0x20];
 	type FromError = FromBytesError;
 	type ToError = !;
@@ -104,7 +107,47 @@ impl Bytes for ReadDirEntry {
 		})
 	}
 
-	fn to_bytes(&self, _bytes: &mut Self::ByteArray) -> Result<(), Self::ToError> {
-		todo!()
+	fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError> {
+		let bytes = array_split_mut!(bytes,
+			kind      :  0x1,
+			extension : [0x3],
+			sector_pos: [0x4],
+			size      : [0x4],
+			data      : [0x4],
+			name      : [0x10],
+		);
+
+		match &self.kind {
+			DirEntryKind::File { extension, size } => {
+				*bytes.kind = 0x1;
+				let extension = extension.as_bytes();
+				bytes.extension[..extension.len()].copy_from_slice(extension);
+				bytes.extension[extension.len()..].fill(0);
+				LittleEndian::write_u32(bytes.size, *size);
+			},
+			DirEntryKind::Dir => {
+				*bytes.kind = 0x80;
+			},
+		};
+
+		// Then set the name and other common metadata
+		let name = self.name.as_bytes();
+		bytes.name[..name.len()].copy_from_slice(name);
+		bytes.name[name.len()..].fill(0);
+
+		// TODO: Support dates after by either returning error or saturating.
+		LittleEndian::write_u32(bytes.sector_pos, self.sector_pos);
+		let secs = self.date.timestamp();
+		let secs = match u32::try_from(secs) {
+			Ok(secs) => secs,
+			Err(_) => match secs {
+				secs if secs < 0 => 0,
+				secs if secs > i64::from(u32::MAX) => u32::MAX,
+				_ => unreachable!(),
+			},
+		};
+		LittleEndian::write_u32(bytes.data, secs);
+
+		Ok(())
 	}
 }

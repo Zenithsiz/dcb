@@ -5,7 +5,7 @@ pub mod entry;
 pub mod error;
 
 // Exports
-pub use entry::ReadDirEntry;
+pub use entry::DirEntry;
 pub use error::FromReaderError;
 
 // Imports
@@ -16,7 +16,7 @@ use std::io;
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub struct DirReader {
 	/// All directory entries
-	entries: Vec<ReadDirEntry>,
+	entries: Vec<DirEntry>,
 }
 
 impl DirReader {
@@ -30,7 +30,7 @@ impl DirReader {
 			}
 
 			// And parse it
-			match ReadDirEntry::from_bytes(&entry_bytes) {
+			match DirEntry::from_bytes(&entry_bytes) {
 				Err(entry::FromBytesError::InvalidKind(0)) => None,
 				res => Some(res.map_err(FromReaderError::ParseEntry)),
 			}
@@ -42,7 +42,7 @@ impl DirReader {
 
 	/// Returns all the entries in this directory
 	#[must_use]
-	pub fn entries(&self) -> &[ReadDirEntry] {
+	pub fn entries(&self) -> &[DirEntry] {
 		&self.entries
 	}
 }
