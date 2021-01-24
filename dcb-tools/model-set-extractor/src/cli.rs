@@ -18,10 +18,10 @@ impl CliData {
 	/// Constructs all of the cli data given and returns it
 	pub fn new() -> Self {
 		// Get all matches from cli
-		let matches = ClapApp::new("Pak Extractor")
+		let matches = ClapApp::new("Model set Extractor")
 			.version("0.0")
 			.author("Filipe [...] <[...]@gmail.com>")
-			.about("Extracts the filesystem in a `.pak` filesystem")
+			.about("Extracts a model set")
 			.arg(
 				ClapArg::with_name("INPUT_FILE")
 					.help("Sets the input file to use")

@@ -4,7 +4,7 @@
 use dcb_util::null_ascii_string;
 use std::io;
 
-/// Error for [`Animation2D::deserialize`](super::Animation2D::deserialize)
+/// Error for [`Animation2d::deserialize`](super::Animation2d::deserialize)
 #[derive(Debug, thiserror::Error)]
 pub enum DeserializeError {
 	/// Unable to read header

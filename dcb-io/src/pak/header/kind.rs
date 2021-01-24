@@ -7,8 +7,8 @@ use dcb_bytes::Bytes;
 /// Kind
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum Kind {
-	/// Unknown 0
-	Unknown0,
+	/// 3D model set.
+	Model3DSet,
 
 	/// Unknown 1
 	Unknown1,
@@ -48,7 +48,7 @@ impl Bytes for Kind {
 	fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError> {
 		let raw = LittleEndian::read_u16(bytes);
 		let kind = match raw {
-			0 => Self::Unknown0,
+			0 => Self::Model3DSet,
 			1 => Self::Unknown1,
 			2 => Self::GameScript,
 			3 => Self::Animation2D,
@@ -65,7 +65,7 @@ impl Bytes for Kind {
 
 	fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError> {
 		let raw = match self {
-			Self::Unknown0 => 0,
+			Self::Model3DSet => 0,
 			Self::Unknown1 => 1,
 			Self::GameScript => 2,
 			Self::Animation2D => 3,

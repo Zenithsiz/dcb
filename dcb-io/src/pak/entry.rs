@@ -2,9 +2,11 @@
 
 // Modules
 pub mod animation2d;
+pub mod model3d_set;
 
 // Exports
 pub use animation2d::Animation2d;
+pub use model3d_set::Model3dSet;
 
 // Imports
 use super::Header;

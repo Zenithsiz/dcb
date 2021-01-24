@@ -1,4 +1,4 @@
-//! `.Pak` extractor
+//! Model set extractor
 
 // Features
 #![feature(array_value_iter)]
@@ -9,7 +9,7 @@ mod logger;
 
 // Imports
 use anyhow::Context;
-use dcb_io::{pak, PakFile};
+use dcb_io::pak::entry::Model3dSet;
 use std::{
 	io::{Read, Seek, SeekFrom},
 	path::Path,
@@ -23,46 +23,31 @@ fn main() -> Result<(), anyhow::Error> {
 	// Get all data from cli
 	let cli::CliData { input_file, output_dir } = cli::CliData::new();
 
-	// Try to extract the filesystem
-	self::extract_file(&input_file, &output_dir).context("Unable to extract `pak` file")?;
+	// Try to extract the file
+	self::extract_file(&input_file, &output_dir).context("Unable to extract model set file")?;
 
 	Ok(())
 }
 
-/// Extracts a `.pak` file to `output_dir`.
+/// Extracts a model set to `output_dir`.
 fn extract_file(input_file: &Path, output_dir: &Path) -> Result<(), anyhow::Error> {
-	// Open the file and parse a `pak` filesystem from it.
+	// Open the file and parse the model set from it.
 	let mut input_file = std::fs::File::open(input_file).context("Unable to open input file")?;
 
-	let pak_fs = PakFile::from_reader(&mut input_file).context("Unable to parse file")?;
+	let model_set = Model3dSet::from_reader(&mut input_file).context("Unable to parse file")?;
 
 	self::try_create_folder(output_dir)?;
-	for entry in pak_fs.entries() {
+	for (idx, (pos, size, ..)) in model_set.models.iter().enumerate() {
 		// Get the filename
-		let filename = entry.header().id;
+		let path = output_dir.join(format!("{}.TMD", idx));
 
-		// Get the extension
-		let extension = match entry.header().kind {
-			pak::header::Kind::Model3DSet => "M3D",
-			pak::header::Kind::Unknown1 => "UN1",
-			pak::header::Kind::GameScript => "MSD",
-			pak::header::Kind::Animation2D => "A2D",
-			pak::header::Kind::Unknown2 => "UN2",
-			pak::header::Kind::FileContents => "BIN",
-			pak::header::Kind::AudioSeq => "SEQ",
-			pak::header::Kind::AudioVh => "VH",
-			pak::header::Kind::AudioVb => "VB",
-		};
-
-		let path = output_dir.join(format!("{}.{}", filename, extension));
-
-		log::info!("{} ({} bytes)", path.display(), entry.header().size);
+		log::info!("{} ({} bytes)", path.display(), size);
 
 		// Seek the file and read it's size at most
 		input_file
-			.seek(SeekFrom::Start(entry.pos()))
+			.seek(SeekFrom::Start(*pos))
 			.with_context(|| format!("Unable to seek to file {}", path.display()))?;
-		let mut input_file = input_file.by_ref().take(u64::from(entry.header().size));
+		let mut input_file = input_file.by_ref().take(*size);
 
 		// Then create the output file and copy.
 		if path.exists() {
