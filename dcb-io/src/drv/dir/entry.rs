@@ -11,6 +11,7 @@ use byteorder::{ByteOrder, LittleEndian};
 use chrono::NaiveDateTime;
 use dcb_bytes::Bytes;
 use dcb_util::{array_split, ascii_str_arr::AsciiChar, AsciiStrArr};
+use std::io::{self, Seek, SeekFrom};
 
 /// A directory entry kind
 #[derive(PartialEq, Eq, Clone, Debug)]
@@ -44,6 +45,13 @@ pub struct DirEntry {
 	pub kind: DirEntryKind,
 }
 
+impl DirEntry {
+	/// Seeks to this entry's data on a reader
+	pub fn seek_to<R: Seek>(&self, reader: &mut R) -> Result<u64, io::Error> {
+		reader.seek(SeekFrom::Start(u64::from(self.sector_pos) * 2048))
+	}
+}
+
 impl Bytes for DirEntry {
 	type ByteArray = [u8; 0x20];
 	type FromError = FromBytesError;
@@ -73,6 +81,7 @@ impl Bytes for DirEntry {
 		};
 
 		// Special case some files which cause problems and return early, as if we encountered the final entry.
+		// TODO: Generalize this somehow
 		#[allow(clippy::single_match)] // We'll add more matches in the future
 		match bytes.name {
 			[0x83, 0x52, 0x83, 0x53, 0x81, 0x5B, 0x20, 0x81, 0x60, 0x20, 0x43, 0x41, 0x52, 0x44, 0x32, 0x00] => {

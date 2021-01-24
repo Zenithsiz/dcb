@@ -13,10 +13,7 @@ use dcb_io::{
 	drv::{dir::entry::DirEntryKind, Dir},
 	DrvFs,
 };
-use std::{
-	io::{self, SeekFrom},
-	path::Path,
-};
+use std::{io, path::Path};
 
 
 fn main() -> Result<(), anyhow::Error> {
@@ -42,43 +39,56 @@ fn extract_file(input_file: &Path, output_dir: &Path) -> Result<(), anyhow::Erro
 }
 
 /// Extracts a `.drv` file from a reader and starting directory
-fn extract_tree<R: io::Read + io::Seek>(drv_fs: &mut R, dir: &Dir, path: &Path) -> Result<(), anyhow::Error> {
+fn extract_tree<R: io::Read + io::Seek>(reader: &mut R, dir: &Dir, path: &Path) -> Result<(), anyhow::Error> {
 	// Create path if it doesn't exist
 	self::try_create_folder(path)?;
 
 	// Then for each entry create it
 	for entry in dir.entries() {
-		match entry.kind {
-			DirEntryKind::File { extension, size } => {
-				let path = path.join(format!("{}.{}", entry.name, extension));
+		// Get the filename and new path
+		let name = match &entry.kind {
+			DirEntryKind::File { extension, .. } => format!("{}.{}", entry.name, extension),
+			DirEntryKind::Dir => entry.name.to_string(),
+		};
+		let path = path.join(name);
 
+		// Create the date
+		// Note: `.DRV` only supports second precision.
+		let time = filetime::FileTime::from_unix_time(entry.date.timestamp(), 0);
+
+		// Seek to the entry's data
+		entry
+			.seek_to(reader)
+			.with_context(|| format!("Unable to seek to directory entry {}", path.display()))?;
+
+		// Then check what we need to do with it
+		match entry.kind {
+			DirEntryKind::File { size, .. } => {
 				log::info!("{} ({} bytes)", path.display(), size);
 
-				// Seek the file and read it's size at most
-				drv_fs
-					.seek(SeekFrom::Start(u64::from(entry.sector_pos) * 2048))
-					.with_context(|| format!("Unable to seek to file {}", path.display()))?;
-				let mut input_file = <&mut R as io::Read>::take(drv_fs, u64::from(size));
+				// Limit the input file to it's size
+				let mut reader = <&mut R as io::Read>::take(reader, u64::from(size));
 
 				// Then create the output file and copy.
 				let mut output_file = std::fs::File::create(&path).with_context(|| format!("Unable to create file {}", path.display()))?;
-				std::io::copy(&mut input_file, &mut output_file).with_context(|| format!("Unable to write file {}", path.display()))?;
+				std::io::copy(&mut reader, &mut output_file).with_context(|| format!("Unable to write file {}", path.display()))?;
+
+				// And set the file's modification time
+				filetime::set_file_handle_times(&output_file, None, Some(time))
+					.with_context(|| format!("Unable to write date for file {}", path.display()))?;
 			},
 			DirEntryKind::Dir => {
-				let path = path.join(entry.name.as_str());
-				log::info!("{}", path.display());
+				// Read the directory
+				let dir = Dir::from_reader(reader).with_context(|| format!("Unable to parse directory {}", path.display()))?;
 
-				// Create the directory
+				log::info!("{} ({} entries)", path.display(), dir.entries().len());
+
+				// Create the directory and set it's modification date
 				self::try_create_folder(&path)?;
+				filetime::set_file_mtime(&path, time).with_context(|| format!("Unable to write date for directory {}", path.display()))?;
 
-				// Seek and read the directory on the input file
-				drv_fs
-					.seek(SeekFrom::Start(u64::from(entry.sector_pos) * 2048))
-					.with_context(|| format!("Unable to seek to directory {}", path.display()))?;
-				let dir = Dir::from_reader(drv_fs).with_context(|| format!("Unable to parse directory {}", path.display()))?;
-
-				// Then recurse
-				self::extract_tree(drv_fs, &dir, &path).with_context(|| format!("Unable to write directory {}", path.display()))?;
+				// Then recurse over it
+				self::extract_tree(reader, &dir, &path).with_context(|| format!("Unable to extract directory {}", path.display()))?;
 			},
 		}
 	}

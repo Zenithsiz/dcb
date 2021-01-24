@@ -46,10 +46,13 @@ impl CliData {
 			.map(Path::to_path_buf)
 			.expect("Unable to get required argument `INPUT_FILE`");
 
-		// Try to get the output, else just use `.`
+		// Try to get the output, else try the filename without extension if it has one, else use `.`
 		let output_dir = match matches.value_of("OUTPUT") {
 			Some(output) => PathBuf::from(output),
-			None => Path::new(".").to_path_buf(),
+			None => match input_file.extension() {
+				Some(_) => input_file.with_extension(""),
+				None => Path::new(".").to_path_buf(),
+			},
 		};
 
 		// Return the data
