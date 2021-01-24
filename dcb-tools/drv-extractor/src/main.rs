@@ -10,8 +10,8 @@ mod logger;
 // Imports
 use anyhow::Context;
 use dcb_io::{
-	drv::{dir::entry::DirEntryKind, Dir},
-	DrvFs,
+	drv::{dir::entry::DirEntryKind, DirReader},
+	DrvFsReader,
 };
 use std::{io, path::Path};
 
@@ -34,12 +34,12 @@ fn extract_file(input_file: &Path, output_dir: &Path) -> Result<(), anyhow::Erro
 	// Open the file and parse a `drv` filesystem from it.
 	let mut input_file = std::fs::File::open(input_file).context("Unable to open input file")?;
 
-	let drv_fs = DrvFs::from_reader(&mut input_file).context("Unable to parse filesystem")?;
+	let drv_fs = DrvFsReader::from_reader(&mut input_file).context("Unable to parse filesystem")?;
 	self::extract_tree(&mut input_file, drv_fs.root(), output_dir).context("Unable to extract files from root")
 }
 
 /// Extracts a `.drv` file from a reader and starting directory
-fn extract_tree<R: io::Read + io::Seek>(reader: &mut R, dir: &Dir, path: &Path) -> Result<(), anyhow::Error> {
+fn extract_tree<R: io::Read + io::Seek>(reader: &mut R, dir: &DirReader, path: &Path) -> Result<(), anyhow::Error> {
 	// Create path if it doesn't exist
 	self::try_create_folder(path)?;
 
@@ -79,7 +79,7 @@ fn extract_tree<R: io::Read + io::Seek>(reader: &mut R, dir: &Dir, path: &Path) 
 			},
 			DirEntryKind::Dir => {
 				// Read the directory
-				let dir = Dir::from_reader(reader).with_context(|| format!("Unable to parse directory {}", path.display()))?;
+				let dir = DirReader::from_reader(reader).with_context(|| format!("Unable to parse directory {}", path.display()))?;
 
 				log::info!("{} ({} entries)", path.display(), dir.entries().len());
 

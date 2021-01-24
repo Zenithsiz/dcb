@@ -29,9 +29,9 @@ pub enum DirEntryKind {
 	Dir,
 }
 
-/// A directory entry
+/// A read directory entry
 #[derive(PartialEq, Eq, Clone, Debug)]
-pub struct DirEntry {
+pub struct ReadDirEntry {
 	/// Entry name
 	pub name: AsciiStrArr<0x10>,
 
@@ -45,14 +45,14 @@ pub struct DirEntry {
 	pub kind: DirEntryKind,
 }
 
-impl DirEntry {
+impl ReadDirEntry {
 	/// Seeks to this entry's data on a reader
 	pub fn seek_to<R: Seek>(&self, reader: &mut R) -> Result<u64, io::Error> {
 		reader.seek(SeekFrom::Start(u64::from(self.sector_pos) * 2048))
 	}
 }
 
-impl Bytes for DirEntry {
+impl Bytes for ReadDirEntry {
 	type ByteArray = [u8; 0x20];
 	type FromError = FromBytesError;
 	type ToError = !;

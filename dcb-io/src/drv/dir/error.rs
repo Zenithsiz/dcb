@@ -6,7 +6,7 @@ use std::io;
 
 /// Error for [`Dir::from_reader`](super::Dir::from_reader)
 #[derive(Debug, thiserror::Error)]
-pub enum DeserializeError {
+pub enum FromReaderError {
 	/// Unable to read entry bytes
 	#[error("Unable to read entry bytes")]
 	ReadEntry(#[source] io::Error),

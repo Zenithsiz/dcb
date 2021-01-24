@@ -6,32 +6,32 @@ pub mod error;
 pub mod file;
 
 // Exports
-pub use dir::{Dir, DirEntry};
-pub use error::FromBytesError;
+pub use dir::{DirReader, ReadDirEntry};
+pub use error::FromReaderError;
 pub use file::File;
 
 // Imports
 use std::io;
 
-/// The filesystem
+/// Filesystem reader
 #[derive(PartialEq, Eq, Clone, Debug)]
-pub struct DrvFs {
+pub struct DrvFsReader {
 	/// Root directory
-	root: Dir,
+	root: DirReader,
 }
 
-impl DrvFs {
+impl DrvFsReader {
 	/// Reads a filesystem from a reader
-	pub fn from_reader<R: io::Read>(reader: &mut R) -> Result<Self, FromBytesError> {
+	pub fn from_reader<R: io::Read>(reader: &mut R) -> Result<Self, FromReaderError> {
 		// Read the root directory
-		let root = Dir::from_reader(reader).map_err(FromBytesError::RootDir)?;
+		let root = DirReader::from_reader(reader).map_err(FromReaderError::RootDir)?;
 
 		Ok(Self { root })
 	}
 
 	/// Returns the root directory of this filesystem
 	#[must_use]
-	pub const fn root(&self) -> &Dir {
+	pub const fn root(&self) -> &DirReader {
 		&self.root
 	}
 }
