@@ -6,19 +6,17 @@ pub mod error;
 // Exports
 pub use error::FromBytesError;
 
-use crate::drv::FileReader;
-
 // Imports
-use super::DirReader;
+use super::{DirReader, DirWriter};
+use crate::drv::{FileReader, FileWriter};
 use byteorder::{ByteOrder, LittleEndian};
 use chrono::NaiveDateTime;
-use dcb_bytes::Bytes;
 use dcb_util::{array_split, array_split_mut, ascii_str_arr::AsciiChar, AsciiStrArr};
-use std::convert::TryFrom;
+use std::{convert::TryFrom, io};
 
 /// A directory entry kind
 #[derive(PartialEq, Eq, Clone, Debug)]
-pub enum DirEntryKind {
+pub enum DirEntryReaderKind {
 	/// A file
 	File(FileReader),
 
@@ -26,9 +24,9 @@ pub enum DirEntryKind {
 	Dir(DirReader),
 }
 
-/// A directory entry
+/// A directory entry reader
 #[derive(PartialEq, Eq, Clone, Debug)]
-pub struct DirEntry {
+pub struct DirEntryReader {
 	/// Entry name
 	name: AsciiStrArr<0x10>,
 
@@ -36,35 +34,12 @@ pub struct DirEntry {
 	date: NaiveDateTime,
 
 	/// Entry kind
-	kind: DirEntryKind,
+	kind: DirEntryReaderKind,
 }
 
-impl DirEntry {
-    /// Returns this entry's name
-	#[must_use]
-	pub const fn name(&self) -> &AsciiStrArr<0x10> {
-		&self.name
-	}
-
-	/// Returns this entry's date
-	#[must_use]
-	pub const fn date(&self) -> NaiveDateTime {
-		self.date
-	}
-
-	/// Returns this entry's kind
-	#[must_use]
-	pub const fn kind(&self) -> &DirEntryKind {
-		&self.kind
-	}
-}
-
-impl Bytes for DirEntry {
-	type ByteArray = [u8; 0x20];
-	type FromError = FromBytesError;
-	type ToError = !;
-
-	fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError> {
+impl DirEntryReader {
+	/// Reads a directory entry reader from bytes
+	pub fn from_bytes(bytes: &[u8; 0x20]) -> Result<Self, FromBytesError> {
 		let bytes = array_split!(bytes,
 			kind      :  0x1,
 			extension : [0x3],
@@ -83,9 +58,9 @@ impl Bytes for DirEntry {
 				extension.trim_end(AsciiChar::Null);
 				let size = LittleEndian::read_u32(bytes.size);
 
-				DirEntryKind::File(FileReader::new(extension, sector_pos, size))
+				DirEntryReaderKind::File(FileReader::new(extension, sector_pos, size))
 			},
-			0x80 => DirEntryKind::Dir(DirReader::new(sector_pos)),
+			0x80 => DirEntryReaderKind::Dir(DirReader::new(sector_pos)),
 			&kind => return Err(FromBytesError::InvalidKind(kind)),
 		};
 
@@ -107,7 +82,74 @@ impl Bytes for DirEntry {
 		Ok(Self { name, date, kind })
 	}
 
-	fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError> {
+	/// Returns this entry's name
+	#[must_use]
+	pub const fn name(&self) -> &AsciiStrArr<0x10> {
+		&self.name
+	}
+
+	/// Returns this entry's date
+	#[must_use]
+	pub const fn date(&self) -> NaiveDateTime {
+		self.date
+	}
+
+	/// Returns this entry's kind
+	#[must_use]
+	pub const fn kind(&self) -> &DirEntryReaderKind {
+		&self.kind
+	}
+}
+
+/// A directory entry kind
+#[derive(PartialEq, Eq, Clone, Debug)]
+pub enum DirEntryWriterKind<R: io::Read, I: ExactSizeIterator<Item = Result<DirEntryWriter<R, I>, io::Error>>> {
+	/// A file
+	File(FileWriter<R>),
+
+	/// Directory
+	Dir(DirWriter<R, I>),
+}
+
+/// A directory entry reader
+#[derive(PartialEq, Eq, Clone, Debug)]
+pub struct DirEntryWriter<R: io::Read, I: ExactSizeIterator<Item = Result<DirEntryWriter<R, I>, io::Error>>> {
+	/// Entry name
+	name: AsciiStrArr<0x10>,
+
+	/// Entry date
+	date: NaiveDateTime,
+
+	/// Entry kind
+	kind: DirEntryWriterKind<R, I>,
+}
+
+impl<R: io::Read, I: ExactSizeIterator<Item = Result<DirEntryWriter<R, I>, io::Error>>> DirEntryWriter<R, I> {
+	/// Creates a new entry writer from it's name, date and kind
+	pub fn new(name: AsciiStrArr<0x10>, date: NaiveDateTime, kind: DirEntryWriterKind<R, I>) -> Self {
+		Self { name, date, kind }
+	}
+
+	/// Returns this entry's size
+	pub fn size(&self) -> u32 {
+		match &self.kind {
+			DirEntryWriterKind::File(file) => file.size(),
+			DirEntryWriterKind::Dir(dir) => dir.entries_len() * 0x20,
+		}
+	}
+
+	/// Returns this entry's kind
+	pub fn kind(&self) -> &DirEntryWriterKind<R, I> {
+		&self.kind
+	}
+
+	/// Returns this entry's kind
+	pub fn into_kind(self) -> DirEntryWriterKind<R, I> {
+		self.kind
+	}
+
+	/// Writes this entry to bytes
+	pub fn to_bytes(&self, bytes: &mut [u8; 0x20], sector_pos: u32) {
 		let bytes = array_split_mut!(bytes,
 			kind      :  0x1,
 			extension : [0x3],
@@ -118,27 +160,27 @@ impl Bytes for DirEntry {
 		);
 
 		match &self.kind {
-			DirEntryKind::File(file) => {
+			DirEntryWriterKind::File(file) => {
 				*bytes.kind = 0x1;
 
 				let extension = file.extension().as_bytes();
 				bytes.extension[..extension.len()].copy_from_slice(extension);
 				bytes.extension[extension.len()..].fill(0);
 
-				LittleEndian::write_u32(bytes.sector_pos, file.sector_pos());
 				LittleEndian::write_u32(bytes.size, file.size());
 			},
-			DirEntryKind::Dir(dir) => {
+			DirEntryWriterKind::Dir(_) => {
 				*bytes.kind = 0x80;
-
-				LittleEndian::write_u32(bytes.sector_pos, dir.sector_pos());
 			},
 		};
 
-		// Then set the name and other common metadata
+		// Then set the name
 		let name = self.name.as_bytes();
 		bytes.name[..name.len()].copy_from_slice(name);
 		bytes.name[name.len()..].fill(0);
+
+		// And the sector
+		LittleEndian::write_u32(bytes.sector_pos, sector_pos);
 
 		// Write the date by saturating it if it's too large or small.
 		let secs = self.date.timestamp();
@@ -151,7 +193,5 @@ impl Bytes for DirEntry {
 			},
 		};
 		LittleEndian::write_u32(bytes.data, secs);
-
-		Ok(())
 	}
 }

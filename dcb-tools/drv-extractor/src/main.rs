@@ -10,7 +10,7 @@ mod logger;
 // Imports
 use anyhow::Context;
 use dcb_io::{
-	drv::{dir::entry::DirEntryKind, DirReader},
+	drv::{dir::entry::DirEntryReaderKind, DirReader},
 	DrvFsReader,
 };
 use std::{io, path::Path};
@@ -45,7 +45,7 @@ fn extract_file(input_file: &Path, output_dir: &Path) -> Result<(), anyhow::Erro
 fn extract_tree<R: io::Read + io::Seek>(reader: &mut R, dir: &DirReader, path: &Path) -> Result<(), anyhow::Error> {
 	// Then for each entry create it
 	let entries: Vec<_> = dir
-		.entries(reader)
+		.read_entries(reader)
 		.with_context(|| format!("Unable to get directory entries of {}", path.display()))?
 		.collect();
 	for entry in entries {
@@ -54,8 +54,8 @@ fn extract_tree<R: io::Read + io::Seek>(reader: &mut R, dir: &DirReader, path: &
 
 		// Get the filename and new path
 		let name = match entry.kind() {
-			DirEntryKind::File(file) => format!("{}.{}", entry.name(), file.extension()),
-			DirEntryKind::Dir(_) => entry.name().to_string(),
+			DirEntryReaderKind::File(file) => format!("{}.{}", entry.name(), file.extension()),
+			DirEntryReaderKind::Dir(_) => entry.name().to_string(),
 		};
 		let path = path.join(name);
 
@@ -65,7 +65,7 @@ fn extract_tree<R: io::Read + io::Seek>(reader: &mut R, dir: &DirReader, path: &
 
 		// Then check what we need to do with it
 		match entry.kind() {
-			DirEntryKind::File(file) => {
+			DirEntryReaderKind::File(file) => {
 				log::info!("{} ({} bytes)", path.display(), file.size());
 
 				// Limit the input file to it's size
@@ -79,7 +79,7 @@ fn extract_tree<R: io::Read + io::Seek>(reader: &mut R, dir: &DirReader, path: &
 				filetime::set_file_handle_times(&output_file, None, Some(time))
 					.with_context(|| format!("Unable to write date for file {}", path.display()))?;
 			},
-			DirEntryKind::Dir(dir) => {
+			DirEntryReaderKind::Dir(dir) => {
 				log::info!("{}", path.display());
 
 				// Create the directory and set it's modification date

@@ -10,3 +10,11 @@ pub enum FromReaderError {
 	#[error("Unable to read root directory")]
 	RootDir(#[source] dir::ReadEntryError),
 }
+
+/// Error for [`DrvFsWriter::to_writer`](super::DrvFsWriter::to_writer)
+#[derive(Debug, thiserror::Error)]
+pub enum ToWriterError {
+	/// Unable to write root directory
+	#[error("Unable to write root directory")]
+	RootDir(#[source] dir::WriteEntriesError),
+}
