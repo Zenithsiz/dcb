@@ -18,14 +18,16 @@ use std::io;
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub struct PakFile {
 	/// All entries
-	pub entries: Vec<PakEntry>,
+	entries: Vec<PakEntry>,
 }
 
 impl PakFile {
 	/// Deserializes a `.PAK` file from a reader
 	pub fn from_reader<R: io::Read + io::Seek>(reader: &mut R) -> Result<Self, FromReaderError> {
 		// Keep reading headers until we find the final header.
+		// TODO: Rewrite with scan + collect
 		let mut entries = vec![];
+		let mut cur_pos = 0;
 		loop {
 			// Read the header
 			// Note: We do a two-part read so we can quit early if we find `0xffff`
@@ -40,20 +42,24 @@ impl PakFile {
 			// Then read the rest and parse the header
 			reader.read_exact(&mut header_bytes[0x4..]).map_err(FromReaderError::ReadHeader)?;
 			let header = Header::from_bytes(&header_bytes).map_err(FromReaderError::ParseHeader)?;
-
+			cur_pos += 8;
 
 			// Parse the entry
-			let start_pos = reader.stream_position().map_err(FromReaderError::GetStreamPos)?;
-			let entry = PakEntry::from_reader(reader, header).map_err(FromReaderError::ParseEntry)?;
+			let entry = PakEntry::new(header, cur_pos);
 			entries.push(entry);
 
-			// Make sure we seek to the end of the pak entry.
-			reader
-				.seek(io::SeekFrom::Start(start_pos + u64::from(header.size)))
-				.map_err(FromReaderError::SetStreamPos)?;
+			// Then update our position and seek past
+			let size = u64::from(header.size);
+			cur_pos += size;
+			reader.seek(io::SeekFrom::Start(cur_pos)).map_err(FromReaderError::SeekPastEntry)?;
 		}
 
-
 		Ok(Self { entries })
+	}
+
+	/// Returns all entries from this file
+	#[must_use]
+	pub fn entries(&self) -> &[PakEntry] {
+		&self.entries
 	}
 }

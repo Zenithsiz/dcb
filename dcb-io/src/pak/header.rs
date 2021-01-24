@@ -14,11 +14,11 @@ use dcb_util::{array_split, array_split_mut};
 /// Header
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub struct Header {
-	/// file kind
-	pub file_kind: Kind,
+	/// Kind
+	pub kind: Kind,
 
-	/// File id
-	pub file_id: u16,
+	/// Id
+	pub id: u16,
 
 	/// Size of first file
 	pub size: u32,
@@ -45,8 +45,8 @@ impl Bytes for Header {
 		);
 
 		Ok(Self {
-			file_kind: Kind::from_bytes(bytes.file_kind).map_err(FromBytesError::Kind)?,
-			file_id:   LittleEndian::read_u16(bytes.file_id),
+			kind: Kind::from_bytes(bytes.file_kind).map_err(FromBytesError::Kind)?,
+			id:   LittleEndian::read_u16(bytes.file_id),
 			size:      LittleEndian::read_u32(bytes.size),
 		})
 	}
@@ -58,8 +58,8 @@ impl Bytes for Header {
 			size     : [0x4],
 		);
 
-		self.file_kind.to_bytes(bytes.file_kind).into_ok();
-		LittleEndian::write_u16(bytes.file_id, self.file_id);
+		self.kind.to_bytes(bytes.file_kind).into_ok();
+		LittleEndian::write_u16(bytes.file_id, self.id);
 		LittleEndian::write_u32(bytes.size, self.size);
 
 		Ok(())

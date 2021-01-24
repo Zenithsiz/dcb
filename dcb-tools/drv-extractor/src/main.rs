@@ -57,7 +57,7 @@ fn extract_tree<R: io::Read + io::Seek>(drv_fs: &mut R, dir: &Dir, path: &Path) 
 				// Seek the file and read it's size at most
 				drv_fs
 					.seek(SeekFrom::Start(u64::from(entry.sector_pos) * 2048))
-					.with_context(|| format!("Unable to seek to directory {}", path.display()))?;
+					.with_context(|| format!("Unable to seek to file {}", path.display()))?;
 				let mut input_file = <&mut R as io::Read>::take(drv_fs, u64::from(size));
 
 				// Then create the output file and copy.

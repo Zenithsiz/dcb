@@ -80,142 +80,19 @@ mod logger;
 // Imports
 use anyhow::Context;
 use dcb_cdrom_xa::CdRom;
-use dcb_io::{
-	drv::{
-		dir::{entry::DirEntryKind, DirEntry},
-		Dir,
-	},
-	pak::PakEntry,
-	DrvFs, GameFile, PakFile,
-};
-use std::{
-	io::{self, SeekFrom},
-	path::Path,
-};
-
+use dcb_io::GameFile;
 
 fn main() -> Result<(), anyhow::Error> {
 	// Initialize the logger and set the panic handler
 	logger::init();
 
 	// Get all data from cli
-	let cli::CliData { game_file_path, output_dir } = cli::CliData::new();
+	let cli::CliData { game_file_path, .. } = cli::CliData::new();
 
 	// Open the game file
 	let input_file = std::fs::File::open(&game_file_path).context("Unable to open input file")?;
 	let mut cdrom = CdRom::new(input_file);
-	let mut game_file = GameFile::new(&mut cdrom).context("Unable to read filesystem")?;
-
-
-	log::info!("A.DRV:");
-	self::print_drv_fs(&mut game_file, "A.DRV;1", &output_dir.join("A.DRV")).context("Unable to print `A.DRV`")?;
-	log::info!("B.DRV:");
-	self::print_drv_fs(&mut game_file, "B.DRV;1", &output_dir.join("B.DRV")).context("Unable to print `B.DRV`")?;
-	log::info!("C.DRV:");
-	self::print_drv_fs(&mut game_file, "C.DRV;1", &output_dir.join("C.DRV")).context("Unable to print `C.DRV`")?;
-	log::info!("E.DRV:");
-	self::print_drv_fs(&mut game_file, "E.DRV;1", &output_dir.join("E.DRV")).context("Unable to print `E.DRV`")?;
-	log::info!("F.DRV:");
-	self::print_drv_fs(&mut game_file, "F.DRV;1", &output_dir.join("F.DRV")).context("Unable to print `F.DRV`")?;
-	log::info!("G.DRV:");
-	self::print_drv_fs(&mut game_file, "G.DRV;1", &output_dir.join("G.DRV")).context("Unable to print `G.DRV`")?;
-	log::info!("P.DRV:");
-	self::print_drv_fs(&mut game_file, "P.DRV;1", &output_dir.join("P.DRV")).context("Unable to print `P.DRV`")?;
+	let _game_file = GameFile::new(&mut cdrom).context("Unable to read filesystem")?;
 
 	Ok(())
-}
-
-/// Prints a drv filesystem
-fn print_drv_fs<R: io::Read + io::Seek>(game_file: &mut GameFile<R>, name: &str, output_dir: &Path) -> Result<(), anyhow::Error> {
-	let mut a_drv = game_file.read_drv(name).context("Unable to read file")?;
-	let a_drv_fs = DrvFs::from_reader(&mut a_drv).context("Unable to parse filesystem")?;
-	self::print_dir_tree(&mut a_drv, a_drv_fs.root(), output_dir).context("Unable to print")
-}
-
-/// Prints a directory tree
-fn print_dir_tree<R: io::Read + io::Seek>(drv_fs: &mut R, dir: &Dir, path: &Path) -> Result<(), anyhow::Error> {
-	print_dir_tree_with_depth(drv_fs, dir, path, 1)
-}
-
-/// Prints a directory tree
-fn print_dir_tree_with_depth<R: io::Read + io::Seek>(mut drv_fs: &mut R, dir: &Dir, path: &Path, depth: usize) -> Result<(), anyhow::Error> {
-	// Create path
-	//self::_try_create_folder(path)?;
-
-	let tabs = "\t".repeat(depth);
-	for DirEntry {
-		name,
-		date,
-		sector_pos,
-		kind,
-	} in dir.entries()
-	{
-		match kind {
-			DirEntryKind::File { extension, size } => {
-				let path = path.join(format!("{}.{}", name, extension));
-
-				// If it's a `.PAK`, unpack it
-				if extension.as_str() == "PAK" {
-					drv_fs
-						.seek(SeekFrom::Start(u64::from(*sector_pos) * 2048))
-						.with_context(|| format!("Unable to seek to pak file {}", path.display()))?;
-					let pak_file: PakFile =
-						PakFile::from_reader(&mut drv_fs).with_context(|| format!("Unable to parse pak file {}", path.display()))?;
-
-					log::info!("{}{}{} ({} bytes)", date, tabs, path.display(), size);
-					//self::_try_create_folder(&path)?;
-
-					let tabs = "\t".repeat(depth + 1);
-					for (idx, entry) in pak_file.entries.iter().enumerate() {
-						let extension = match &entry {
-							PakEntry::Unknown0 => "UN0",
-							PakEntry::Unknown1 => "UN1",
-							PakEntry::GameScript => "MSD",
-							PakEntry::Animation2d(_) => "A2D",
-							PakEntry::FileSubHeader => "SHD",
-							PakEntry::FileContents => "BIN",
-							PakEntry::AudioSeq => "SEQ",
-							PakEntry::AudioVh => "VH",
-							PakEntry::AudioVb => "VB",
-						};
-						let path = path.join(format!("{idx}.{extension}"));
-						log::info!("{}{}{}", date, tabs, path.display());
-						//log::info!("{}\tWriting file {}", tabs, path.display());
-
-						//std::fs::write(&path, data).with_context(|| format!("Unable to write file {}", path.display()))?;
-					}
-				}
-				// Else just write it.
-				else {
-					log::info!("{}{}{} ({} bytes)", date, tabs, path.display(), size);
-					//std::fs::write(&path, contents).with_context(|| format!("Unable to write file {}", path.display()))?;
-				}
-			},
-			DirEntryKind::Dir => {
-				let path = path.join(name.as_str());
-				log::info!("{}{}{}", date, tabs, path.display());
-
-				//self::_try_create_folder(&path)?;
-				drv_fs
-					.seek(SeekFrom::Start(u64::from(*sector_pos) * 2048))
-					.with_context(|| format!("Unable to seek to directory {}", path.display()))?;
-				let dir = Dir::from_reader(&mut drv_fs).with_context(|| format!("Unable to parse directory {}", path.display()))?;
-				self::print_dir_tree_with_depth(drv_fs, &dir, &path, depth + 1)
-					.with_context(|| format!("Unable to write directory {}", path.display()))?;
-			},
-		}
-	}
-
-	Ok(())
-}
-
-/// Attempts to create a folder. Returns `Ok` if it already exists.
-#[allow(clippy::create_dir)] // We only want to create a single level
-fn _try_create_folder(path: impl AsRef<std::path::Path>) -> Result<(), anyhow::Error> {
-	match std::fs::create_dir(&path) {
-		// If it already exists, ignore
-		Ok(_) => Ok(()),
-		Err(err) if err.kind() == std::io::ErrorKind::AlreadyExists => Ok(()),
-		Err(err) => Err(err).with_context(|| format!("Unable to create directory {}", path.as_ref().display())),
-	}
 }

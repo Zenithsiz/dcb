@@ -1,7 +1,7 @@
 //! Errors
 
 // Imports
-use super::{entry, header};
+use super::header;
 use std::io;
 
 /// Error for [`PakFile::deserialize`](super::PakFile::deserialize)
@@ -15,15 +15,7 @@ pub enum FromReaderError {
 	#[error("Unable to parse header")]
 	ParseHeader(#[source] header::FromBytesError),
 
-	/// Unable to get stream position
-	#[error("Unable to get stream position")]
-	GetStreamPos(#[source] io::Error),
-
-	/// Unable to parse entry
-	#[error("Unable to parse entry")]
-	ParseEntry(#[source] entry::FromReaderError),
-
-	/// Unable to set stream position
-	#[error("Unable to set stream position")]
-	SetStreamPos(#[source] io::Error),
+	/// Unable to seek past data
+	#[error("Unable to seek past entry")]
+	SeekPastEntry(#[source] io::Error),
 }

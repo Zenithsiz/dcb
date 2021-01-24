@@ -20,7 +20,7 @@ pub enum Kind {
 	Animation2D,
 
 	/// File sub-header
-	FileSubHeader,
+	Unknown2,
 
 	/// File contents
 	FileContents,
@@ -52,7 +52,7 @@ impl Bytes for Kind {
 			1 => Self::Unknown1,
 			2 => Self::GameScript,
 			3 => Self::Animation2D,
-			4 => Self::FileSubHeader,
+			4 => Self::Unknown2,
 			5 => Self::FileContents,
 			6 => Self::AudioSeq,
 			7 => Self::AudioVh,
@@ -69,7 +69,7 @@ impl Bytes for Kind {
 			Self::Unknown1 => 1,
 			Self::GameScript => 2,
 			Self::Animation2D => 3,
-			Self::FileSubHeader => 4,
+			Self::Unknown2 => 4,
 			Self::FileContents => 5,
 			Self::AudioSeq => 6,
 			Self::AudioVh => 7,
