@@ -7,12 +7,12 @@ pub mod error;
 pub use error::FromBytesError;
 
 // Imports
-use super::{DirReader, DirWriter};
+use super::{DirReader, DirWriter, DirWriterList};
 use crate::drv::{FileReader, FileWriter};
 use byteorder::{ByteOrder, LittleEndian};
 use chrono::NaiveDateTime;
 use dcb_util::{array_split, array_split_mut, ascii_str_arr::AsciiChar, AsciiStrArr};
-use std::{convert::TryFrom, io};
+use std::convert::TryFrom;
 
 /// A directory entry kind
 #[derive(PartialEq, Eq, Clone, Debug)]
@@ -102,18 +102,18 @@ impl DirEntryReader {
 }
 
 /// A directory entry kind
-#[derive(PartialEq, Eq, Clone, Debug)]
-pub enum DirEntryWriterKind<R: io::Read, I: ExactSizeIterator<Item = Result<DirEntryWriter<R, I>, io::Error>>> {
+#[derive(Debug)]
+pub enum DirEntryWriterKind<L: DirWriterList> {
 	/// A file
-	File(FileWriter<R>),
+	File(FileWriter<L::FileReader>),
 
 	/// Directory
-	Dir(DirWriter<R, I>),
+	Dir(DirWriter<L>),
 }
 
 /// A directory entry reader
-#[derive(PartialEq, Eq, Clone, Debug)]
-pub struct DirEntryWriter<R: io::Read, I: ExactSizeIterator<Item = Result<DirEntryWriter<R, I>, io::Error>>> {
+#[derive(Debug)]
+pub struct DirEntryWriter<L: DirWriterList> {
 	/// Entry name
 	name: AsciiStrArr<0x10>,
 
@@ -121,12 +121,12 @@ pub struct DirEntryWriter<R: io::Read, I: ExactSizeIterator<Item = Result<DirEnt
 	date: NaiveDateTime,
 
 	/// Entry kind
-	kind: DirEntryWriterKind<R, I>,
+	kind: DirEntryWriterKind<L>,
 }
 
-impl<R: io::Read, I: ExactSizeIterator<Item = Result<DirEntryWriter<R, I>, io::Error>>> DirEntryWriter<R, I> {
+impl<L: DirWriterList> DirEntryWriter<L> {
 	/// Creates a new entry writer from it's name, date and kind
-	pub fn new(name: AsciiStrArr<0x10>, date: NaiveDateTime, kind: DirEntryWriterKind<R, I>) -> Self {
+	pub fn new(name: AsciiStrArr<0x10>, date: NaiveDateTime, kind: DirEntryWriterKind<L>) -> Self {
 		Self { name, date, kind }
 	}
 
@@ -134,17 +134,17 @@ impl<R: io::Read, I: ExactSizeIterator<Item = Result<DirEntryWriter<R, I>, io::E
 	pub fn size(&self) -> u32 {
 		match &self.kind {
 			DirEntryWriterKind::File(file) => file.size(),
-			DirEntryWriterKind::Dir(dir) => dir.entries_len() * 0x20,
+			DirEntryWriterKind::Dir(dir) => dir.size(),
 		}
 	}
 
 	/// Returns this entry's kind
-	pub fn kind(&self) -> &DirEntryWriterKind<R, I> {
+	pub fn kind(&self) -> &DirEntryWriterKind<L> {
 		&self.kind
 	}
 
 	/// Returns this entry's kind
-	pub fn into_kind(self) -> DirEntryWriterKind<R, I> {
+	pub fn into_kind(self) -> DirEntryWriterKind<L> {
 		self.kind
 	}
 
@@ -171,6 +171,8 @@ impl<R: io::Read, I: ExactSizeIterator<Item = Result<DirEntryWriter<R, I>, io::E
 			},
 			DirEntryWriterKind::Dir(_) => {
 				*bytes.kind = 0x80;
+
+				LittleEndian::write_u32(bytes.size, 0);
 			},
 		};
 

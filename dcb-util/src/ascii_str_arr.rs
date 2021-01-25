@@ -340,6 +340,15 @@ impl<const N: usize> TryFrom<&str> for AsciiStrArr<N> {
 	}
 }
 
+impl<const N: usize> TryFrom<&std::ffi::OsStr> for AsciiStrArr<N> {
+	type Error = FromBytesError<N>;
+
+	fn try_from(s: &std::ffi::OsStr) -> Result<Self, Self::Error> {
+		// TODO: Not allocate here, although `OsStr` doesn't provide a `as_bytes` impl, so we can't do much
+		Self::from_bytes(s.to_string_lossy().as_bytes())
+	}
+}
+
 impl<const N: usize> std::str::FromStr for AsciiStrArr<N> {
 	type Err = FromUtf8Error<N>;
 

@@ -13,8 +13,8 @@ pub enum FromReaderError {
 
 /// Error for [`DrvFsWriter::to_writer`](super::DrvFsWriter::to_writer)
 #[derive(Debug, thiserror::Error)]
-pub enum ToWriterError {
+pub enum ToWriterError<E: std::error::Error + 'static> {
 	/// Unable to write root directory
 	#[error("Unable to write root directory")]
-	RootDir(#[source] dir::WriteEntriesError),
+	RootDir(#[source] dir::WriteEntriesError<E>),
 }

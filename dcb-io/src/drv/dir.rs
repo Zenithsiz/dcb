@@ -68,72 +68,106 @@ impl DirReader {
 	}
 }
 
-/// Directory writer
-#[derive(PartialEq, Eq, Clone, Copy, Debug)]
-pub struct DirWriter<R: io::Read, I: ExactSizeIterator<Item = Result<DirEntryWriter<R, I>, io::Error>>> {
-	/// Iterator over all entries
-	entries: I,
+/// Directory list
+pub trait DirWriterList: Sized + std::fmt::Debug {
+	/// Reader used for the files in this directory
+	type FileReader: std::fmt::Debug + io::Read;
+
+	/// Directory lister
+	type DirList: DirWriterList;
+
+	/// Error type for each entry
+	type Error: std::error::Error + 'static;
+
+	/// Iterator
+	type Iter: Iterator<Item = Result<DirEntryWriter<Self>, Self::Error>>;
+
+	/// Converts this list into an iterator
+	fn into_iter(self) -> Self::Iter;
 }
 
-impl<R: io::Read, I: ExactSizeIterator<Item = Result<DirEntryWriter<R, I>, io::Error>>> DirWriter<R, I> {
+/// Directory writer
+#[derive(PartialEq, Eq, Clone, Copy, Debug)]
+pub struct DirWriter<L: DirWriterList> {
+	/// Writer list
+	entries: L,
+
+	/// Number of entries
+	entries_len: u32,
+}
+
+impl<L: DirWriterList> DirWriter<L> {
 	/// Creates a new directory writer.
-	pub fn new(entries: I) -> Self {
-		Self { entries }
+	pub fn new(entries: L, entries_len: u32) -> Self {
+		Self { entries, entries_len }
 	}
 
 	/// Returns the number of entries
 	pub fn entries_len(&self) -> u32 {
-		u32::try_from(self.entries.len()).expect("Too many entries")
+		self.entries_len
+	}
+
+	/// Returns this directory's size
+	pub fn size(&self) -> u32 {
+		// Note: `+1` for the terminator
+		(self.entries_len() + 1) * 0x20
 	}
 
 	/// Writes all entries into a writer
-	pub fn write_entries<W: io::Write + io::Seek>(self, writer: &mut W) -> Result<(), WriteEntriesError> {
+	///
+	/// Returns the number of sectors written by this directory
+	pub fn write_entries<W: io::Write + io::Seek>(self, writer: &mut W) -> Result<u32, WriteEntriesError<L::Error>> {
 		// Get the sector we're currently on
-		let sector_pos = writer.stream_position().map_err(WriteEntriesError::GetPos)? / 2048;
-		let sector_pos = u32::try_from(sector_pos).expect("`.DRV` file is too big");
-
-		// Get the starting sector pos for each entry
-		// Note: We start right after this directory
-		let start_sector_pos = sector_pos + (self.entries_len() * 0x20 + 2047) / 2048;
-
-		// Get all the entries with their sector positions
-		let entries = self
-			.entries
-			.scan(start_sector_pos, |cur_sector_pos, res| match res {
-				Ok(entry) => {
-					let sector_pos = *cur_sector_pos;
-					*cur_sector_pos += (entry.size() + 2047) / 2048;
-					Some(Ok((entry, sector_pos)))
-				},
-				Err(err) => Some(Err(err)),
-			})
-			.collect::<Result<Vec<_>, _>>()
-			.map_err(WriteEntriesError::GetEntry)?;
-
-		// Write each entry in the directory
-		for (entry, sector_pos) in &entries {
-			// Write the bytes
-			let mut entry_bytes = [0; 0x20];
-			entry.to_bytes(&mut entry_bytes, *sector_pos);
-
-			// And write them
-			writer.write_all(&entry_bytes).map_err(WriteEntriesError::WriteEntryInDir)?;
+		let start_pos = writer.stream_position().map_err(WriteEntriesError::GetPos)?;
+		if start_pos % 2048 != 0 {
+			return Err(WriteEntriesError::WriterAtSectorStart);
 		}
+		let start_sector_pos = u32::try_from(start_pos / 2048).map_err(|_err| WriteEntriesError::WriterSectorPastMax)?;
 
-		// Then write each entry
-		for (entry, sector_pos) in entries {
+		// Get the starting sector position for the first entry.
+		// Note: We start right after this directory
+		// Note: `+2047` is to pad this directory to the next sector, if not empty.
+		let mut cur_sector_pos = start_sector_pos + (self.size() + 2047) / 2048;
+
+		// Our directory to write after writing all entries
+		let mut dir_bytes = vec![];
+
+		// For each entry, write it and add it to our directory bytes
+		for entry in self.entries.into_iter() {
+			// Get the entry
+			let entry = entry.map_err(WriteEntriesError::GetEntry)?;
+
+			// Write the entry on our directory
+			let mut entry_bytes = [0; 0x20];
+			entry.to_bytes(&mut entry_bytes, cur_sector_pos);
+			dir_bytes.extend_from_slice(&entry_bytes);
+
 			// Seek to the entry
 			writer
-				.seek(SeekFrom::Start(u64::from(sector_pos) * 2048))
+				.seek(SeekFrom::Start(u64::from(cur_sector_pos) * 2048))
 				.map_err(WriteEntriesError::SeekToEntry)?;
 
-			// Write the entry
-			match entry.into_kind() {
-				DirEntryWriterKind::File(file) => file.into_writer(writer).map_err(WriteEntriesError::WriteFile)?,
+			// Write the entry on the file
+			let sector_size = match entry.into_kind() {
+				DirEntryWriterKind::File(file) => {
+					let size = file.size();
+					file.write(writer).map_err(WriteEntriesError::WriteFile)?;
+					(size + 2047) / 2048
+				},
 				DirEntryWriterKind::Dir(dir) => dir.write_entries(writer).map_err(|err| WriteEntriesError::WriteDir(Box::new(err)))?,
-			}
+			};
+
+			// Update our sector pos
+			cur_sector_pos += sector_size;
 		}
 
-		Ok(())
+		// Then write our directory
+		writer
+			.seek(SeekFrom::Start(u64::from(start_sector_pos) * 2048))
+			.map_err(WriteEntriesError::SeekToEntries)?;
+
+		writer.write_all(&dir_bytes).map_err(WriteEntriesError::WriteEntries)?;
+
+		Ok(cur_sector_pos - start_sector_pos)
 	}
 }

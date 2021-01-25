@@ -90,8 +90,8 @@ impl<R: io::Read> FileWriter<R> {
 	}
 
 	/// Writes this file to a writer
-	pub fn into_writer<W: io::Write>(mut self, writer: &mut W) -> Result<(), io::Error> {
-		let written = std::io::copy(&mut self.reader, writer)?;
+	pub fn write<W: io::Write>(self, writer: &mut W) -> Result<(), io::Error> {
+		let written = std::io::copy(&mut self.reader.take(u64::from(self.size)), writer)?;
 		assert_eq!(written, u64::from(self.size));
 		Ok(())
 	}

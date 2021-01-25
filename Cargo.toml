@@ -12,6 +12,7 @@ members = [
 	"dcb-tools/dcb-extractor",
 	"dcb-tools/dcb-decompiler",
 	"dcb-tools/drv-extractor",
+	"dcb-tools/drv-packer",
 	"dcb-tools/pak-extractor",
 	"dcb-tools/model-set-extractor",
 ]

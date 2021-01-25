@@ -6,7 +6,7 @@ pub mod error;
 pub mod file;
 
 // Exports
-pub use dir::{DirEntryReader, DirEntryWriter, DirReader, DirWriter};
+pub use dir::{DirEntryReader, DirEntryWriter, DirReader, DirWriter, DirWriterList};
 pub use error::{FromReaderError, ToWriterError};
 pub use file::{FileReader, FileWriter};
 
@@ -30,11 +30,11 @@ pub struct DrvFsWriter;
 
 impl DrvFsWriter {
 	/// Creates a `.DRV` filesystem
-	pub fn write_fs<W: io::Write + io::Seek, R: io::Read, I: ExactSizeIterator<Item = Result<DirEntryWriter<R, I>, io::Error>>>(
-		writer: &mut W, root_entries: I,
-	) -> Result<(), ToWriterError> {
+	pub fn write_fs<W: io::Write + io::Seek, L: DirWriterList>(
+		writer: &mut W, root_entries: L, root_entries_len: u32,
+	) -> Result<(), ToWriterError<L::Error>> {
 		// Get the root and write it
-		let root = DirWriter::new(root_entries);
+		let root = DirWriter::new(root_entries, root_entries_len);
 		root.write_entries(writer).map_err(ToWriterError::RootDir)?;
 
 		Ok(())

@@ -26,18 +26,22 @@ pub enum ReadEntryError {
 
 /// Error for [`DirWriter::to_writer`](super::DirWriter::to_writer)
 #[derive(Debug, thiserror::Error)]
-pub enum WriteEntriesError {
+pub enum WriteEntriesError<E: std::error::Error + 'static> {
 	/// Unable to get position
 	#[error("Unable to get position")]
 	GetPos(#[source] io::Error),
 
+	/// Writer was not at sector star
+	#[error("Writer was not at sector start")]
+	WriterAtSectorStart,
+
+	/// Writer current sector was past max
+	#[error("Writer current sector was past `u32::MAX`")]
+	WriterSectorPastMax,
+
 	/// Unable to get entry
 	#[error("Unable to get entry")]
-	GetEntry(#[source] io::Error),
-
-	/// Unable to write entry in directory
-	#[error("Unable to write entry in directory")]
-	WriteEntryInDir(#[source] io::Error),
+	GetEntry(#[source] E),
 
 	/// Unable to seek to entry
 	#[error("Unable to seek to entry")]
@@ -50,4 +54,12 @@ pub enum WriteEntriesError {
 	/// Unable to write directory
 	#[error("Unable to write directory")]
 	WriteDir(#[source] Box<Self>),
+
+	/// Unable to seek to entries
+	#[error("Unable to seek to entries")]
+	SeekToEntries(#[source] io::Error),
+	
+	/// Unable to write all entries
+	#[error("Unable to write entries")]
+	WriteEntries(#[source] io::Error),
 }
