@@ -1,4 +1,4 @@
-//! Directory entry
+#![doc(include = "entry.md")]
 
 // Modules
 pub mod error;
@@ -39,7 +39,7 @@ pub struct DirEntryReader {
 
 impl DirEntryReader {
 	/// Reads a directory entry reader from bytes
-	pub fn from_bytes(bytes: &[u8; 0x20]) -> Result<Self, FromBytesError> {
+	pub fn from_bytes(bytes: &[u8; 0x20]) -> Result<Option<Self>, FromBytesError> {
 		let bytes = array_split!(bytes,
 			kind      :  0x1,
 			extension : [0x3],
@@ -53,6 +53,7 @@ impl DirEntryReader {
 
 		// Check kind
 		let kind = match bytes.kind {
+			0x0 => return Ok(None),
 			0x1 => {
 				let mut extension = AsciiStrArr::from_bytes(bytes.extension).map_err(FromBytesError::Extension)?;
 				extension.trim_end(AsciiChar::Null);
@@ -79,7 +80,7 @@ impl DirEntryReader {
 		name.trim_end(AsciiChar::Null);
 		let date = NaiveDateTime::from_timestamp(i64::from(LittleEndian::read_u32(bytes.data)), 0);
 
-		Ok(Self { name, date, kind })
+		Ok(Some(Self { name, date, kind }))
 	}
 
 	/// Returns this entry's name

@@ -1,4 +1,4 @@
-//! Directory
+#![doc(include = "dir.md")]
 
 // Modules
 pub mod entry;
@@ -58,10 +58,7 @@ impl DirReader {
 			}
 
 			// And parse it
-			match DirEntryReader::from_bytes(&entry_bytes) {
-				Err(entry::FromBytesError::InvalidKind(0)) => None,
-				res => Some(res.map_err(ReadEntryError::ParseEntry)),
-			}
+			DirEntryReader::from_bytes(&entry_bytes).map_err(ReadEntryError::ParseEntry).transpose()
 		});
 
 		Ok(iter)

@@ -2,7 +2,11 @@
 
 # Layout
 
-The `.DRV` filesystem begins with the root directory.
-From there all other directories and files are situated, always sector (2048) aligned.
+The `.DRV` filesystem splits the file into sectors of `0x800` bytes, dedicating each one
+to either a file or directory.
+Both files and directories may only begin at the start of each sector, but may span various
+sectors.
 
-See the [`dir`] documentation for more information on the directory structure.
+The filesystem proper begins with a directory sector, called the 'root' directory.
+
+See the [`dir`] documentation for more information on how each directory works.
