@@ -19,18 +19,14 @@ impl CliData {
 	pub fn new() -> Self {
 		// Get all matches from cli
 		let matches = ClapApp::new("Drv Packer")
-			.version("0.0")
+			.version("0.1")
 			.author("Filipe [...] <[...]@gmail.com>")
-			.about("Packs a folder into a `.drv` filesystem")
-			.arg(
-				ClapArg::with_name("INPUT_DIR")
-					.help("Sets the input directory to use")
-					.required(true)
-					.index(1),
-			)
+			.about("Packs a folder into a `.drv` file")
+			.arg(ClapArg::with_name("INPUT_DIR").help("The input directory to use").required(true).index(1))
 			.arg(
 				ClapArg::with_name("OUTPUT")
-					.help("Sets the output file to use")
+					.help("The file to output to")
+					.long_help("The file to output to. If not specified, a file with the directory's name appended by `.drv` will be used")
 					.short("o")
 					.long("output")
 					.takes_value(true)
@@ -44,15 +40,15 @@ impl CliData {
 			.value_of("INPUT_DIR")
 			.map(Path::new)
 			.map(Path::to_path_buf)
-			.expect("Unable to get required argument `INPUT_FILE`");
+			.expect("Unable to get required argument `INPUT_DIR`");
 
 		// Try to get the output, else use the input filename + `.drv`
 		let output_file = match matches.value_of("OUTPUT") {
 			Some(output) => PathBuf::from(output),
 			None => {
 				let extension = match input_dir.extension() {
-					Some(extension) => format!("{}.DRV", extension.to_string_lossy()),
-					None => "DRV".to_string(),
+					Some(extension) => format!("{}.drv", extension.to_string_lossy()),
+					None => "drv".to_string(),
 				};
 
 				input_dir.with_extension(extension)

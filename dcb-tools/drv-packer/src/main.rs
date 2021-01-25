@@ -6,7 +6,6 @@
 // Modules
 mod cli;
 mod dir_lister;
-mod logger;
 
 // Imports
 use anyhow::Context;
@@ -16,7 +15,8 @@ use std::{fs, path::Path};
 
 fn main() -> Result<(), anyhow::Error> {
 	// Initialize the logger
-	logger::init();
+	simplelog::TermLogger::init(log::LevelFilter::Info, simplelog::Config::default(), simplelog::TerminalMode::Stderr)
+		.expect("Unable to initialize logger");
 
 	// Get all data from cli
 	let cli::CliData { input_dir, output_file } = cli::CliData::new();
