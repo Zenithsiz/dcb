@@ -52,7 +52,7 @@ impl CliData {
 			None => {
 				let extension = match input_dir.extension() {
 					Some(extension) => format!("{}.DRV", extension.to_string_lossy()),
-					None => ".DRV".to_string(),
+					None => "DRV".to_string(),
 				};
 
 				input_dir.with_extension(extension)
