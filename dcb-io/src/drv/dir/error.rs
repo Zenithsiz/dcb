@@ -21,7 +21,7 @@ pub enum ReadEntryError {
 
 	/// Unable to parse entry
 	#[error("Unable to parse entry")]
-	ParseEntry(#[source] entry::FromBytesError),
+	ParseEntry(#[source] entry::reader::FromBytesError),
 }
 
 /// Error for [`DirWriter::to_writer`](super::DirWriter::to_writer)
@@ -58,7 +58,7 @@ pub enum WriteEntriesError<E: std::error::Error + 'static> {
 	/// Unable to seek to entries
 	#[error("Unable to seek to entries")]
 	SeekToEntries(#[source] io::Error),
-	
+
 	/// Unable to write all entries
 	#[error("Unable to write entries")]
 	WriteEntries(#[source] io::Error),

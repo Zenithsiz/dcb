@@ -3,7 +3,7 @@
 // Imports
 use dcb_util::ascii_str_arr;
 
-/// Error for [`Bytes::from_bytes`](super::Bytes::from_bytes)
+/// Error for [`DirEntryReader::from_bytes`](super::DirEntryReader::from_bytes)
 #[derive(Debug, thiserror::Error)]
 pub enum FromBytesError {
 	/// Invalid kind
