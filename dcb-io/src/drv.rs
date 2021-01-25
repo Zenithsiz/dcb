@@ -7,7 +7,7 @@ pub mod file;
 
 // Exports
 pub use dir::{DirEntryReader, DirEntryWriter, DirReader, DirWriter, DirWriterLister};
-pub use error::{FromReaderError, ToWriterError};
+pub use error::WriteFsError;
 pub use file::{FileReader, FileWriter};
 
 // Imports
@@ -32,10 +32,10 @@ impl DrvFsWriter {
 	/// Creates a `.DRV` filesystem
 	pub fn write_fs<W: io::Write + io::Seek, L: DirWriterLister>(
 		writer: &mut W, root_entries: L, root_entries_len: u32,
-	) -> Result<(), ToWriterError<L::Error>> {
+	) -> Result<(), WriteFsError<L::Error>> {
 		// Get the root and write it
 		let root = DirWriter::new(root_entries, root_entries_len);
-		root.write_entries(writer).map_err(ToWriterError::RootDir)?;
+		root.write_entries(writer).map_err(WriteFsError::RootDir)?;
 
 		Ok(())
 	}
