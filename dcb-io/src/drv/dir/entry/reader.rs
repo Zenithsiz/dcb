@@ -13,7 +13,7 @@ use byteorder::{ByteOrder, LittleEndian};
 use chrono::NaiveDateTime;
 use dcb_util::{array_split, ascii_str_arr::AsciiChar, AsciiStrArr};
 
-/// A directory entry kind
+/// A directory entry reader kind
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub enum DirEntryReaderKind {
 	/// A file

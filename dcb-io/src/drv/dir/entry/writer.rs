@@ -7,7 +7,7 @@ use chrono::NaiveDateTime;
 use dcb_util::{array_split_mut, AsciiStrArr};
 use std::convert::TryFrom;
 
-/// A directory entry kind
+/// A directory entry writer kind
 #[derive(Debug)]
 pub enum DirEntryWriterKind<L: DirWriterList> {
 	/// A file
@@ -17,7 +17,7 @@ pub enum DirEntryWriterKind<L: DirWriterList> {
 	Dir(DirWriter<L>),
 }
 
-/// A directory entry reader
+/// A directory entry writer
 #[derive(Debug)]
 pub struct DirEntryWriter<L: DirWriterList> {
 	/// Entry name
@@ -37,6 +37,9 @@ impl<L: DirWriterList> DirEntryWriter<L> {
 	}
 
 	/// Returns this entry's size
+	///
+	/// For directories this simply returns the directory size itself,
+	/// _not_ the sum of the sizes of it's entries.
 	pub fn size(&self) -> u32 {
 		match &self.kind {
 			DirEntryWriterKind::File(file) => file.size(),
@@ -54,7 +57,7 @@ impl<L: DirWriterList> DirEntryWriter<L> {
 		self.kind
 	}
 
-	/// Writes this entry to bytes
+	/// Writes this entry to bytes given it's sector position.
 	pub fn to_bytes(&self, bytes: &mut [u8; 0x20], sector_pos: u32) {
 		let bytes = array_split_mut!(bytes,
 			kind      :  0x1,
@@ -77,6 +80,8 @@ impl<L: DirWriterList> DirEntryWriter<L> {
 			},
 			DirEntryWriterKind::Dir(_) => {
 				*bytes.kind = 0x80;
+
+				bytes.extension.fill(0);
 
 				LittleEndian::write_u32(bytes.size, 0);
 			},
