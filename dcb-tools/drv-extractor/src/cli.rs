@@ -19,18 +19,17 @@ impl CliData {
 	pub fn new() -> Self {
 		// Get all matches from cli
 		let matches = ClapApp::new("Drv Extractor")
-			.version("0.0")
+			.version("0.1")
 			.author("Filipe [...] <[...]@gmail.com>")
-			.about("Extracts the filesystem in a `.drv` filesystem")
-			.arg(
-				ClapArg::with_name("INPUT_FILE")
-					.help("Sets the input file to use")
-					.required(true)
-					.index(1),
-			)
+			.about("Extracts `.drv` files")
+			.arg(ClapArg::with_name("INPUT_FILE").help("The input file to use").required(true).index(1))
 			.arg(
 				ClapArg::with_name("OUTPUT")
-					.help("Sets the output directory to use")
+					.help("The directory to output to")
+					.long_help(
+						"The directory to output to. If not specified, the parent of the input file is used. If it doesn't exist, the current \
+						 directory is used",
+					)
 					.short("d")
 					.long("output-dir")
 					.takes_value(true)

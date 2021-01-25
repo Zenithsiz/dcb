@@ -6,6 +6,7 @@ edition = "2018"
 
 [dependencies]
 # Dcb
+dcb-util = { path = "../../dcb-util" }
 dcb-io = { path = "../../dcb-io" }
 
 # Util
