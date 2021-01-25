@@ -1,7 +1,7 @@
 //! Directory entry writer
 
 // Imports
-use crate::drv::{DirWriter, DirWriterList, FileWriter};
+use crate::drv::{DirWriter, DirWriterLister, FileWriter};
 use byteorder::{ByteOrder, LittleEndian};
 use chrono::NaiveDateTime;
 use dcb_util::{array_split_mut, AsciiStrArr};
@@ -9,7 +9,7 @@ use std::convert::TryFrom;
 
 /// A directory entry writer kind
 #[derive(Debug)]
-pub enum DirEntryWriterKind<L: DirWriterList> {
+pub enum DirEntryWriterKind<L: DirWriterLister> {
 	/// A file
 	File(FileWriter<L::FileReader>),
 
@@ -19,7 +19,7 @@ pub enum DirEntryWriterKind<L: DirWriterList> {
 
 /// A directory entry writer
 #[derive(Debug)]
-pub struct DirEntryWriter<L: DirWriterList> {
+pub struct DirEntryWriter<L: DirWriterLister> {
 	/// Entry name
 	name: AsciiStrArr<0x10>,
 
@@ -30,7 +30,7 @@ pub struct DirEntryWriter<L: DirWriterList> {
 	kind: DirEntryWriterKind<L>,
 }
 
-impl<L: DirWriterList> DirEntryWriter<L> {
+impl<L: DirWriterLister> DirEntryWriter<L> {
 	/// Creates a new entry writer from it's name, date and kind
 	pub fn new(name: AsciiStrArr<0x10>, date: NaiveDateTime, kind: DirEntryWriterKind<L>) -> Self {
 		Self { name, date, kind }

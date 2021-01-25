@@ -9,7 +9,7 @@ mod logger;
 
 // Imports
 use anyhow::Context;
-use dcb_io::drv::{dir::entry::DirEntryWriterKind, DirEntryWriter, DirWriter, DirWriterList, DrvFsWriter, FileWriter};
+use dcb_io::drv::{dir::entry::DirEntryWriterKind, DirEntryWriter, DirWriter, DirWriterLister, DrvFsWriter, FileWriter};
 use std::{
 	convert::{TryFrom, TryInto},
 	fs,
@@ -38,18 +38,18 @@ fn pack_filesystem(input_dir: &Path, output_file: &Path) -> Result<(), anyhow::E
 	let mut output_file = fs::File::create(output_file).context("Unable to create output file")?;
 
 	// Create the filesystem writer
-	let (root_entries, root_entries_len) = DirList::new(input_dir).context("Unable to read root directory")?;
+	let (root_entries, root_entries_len) = DirLister::new(input_dir).context("Unable to read root directory")?;
 	DrvFsWriter::write_fs(&mut output_file, root_entries, root_entries_len).context("Unable to write filesystem")
 }
 
 /// Directory list
 #[derive(Debug)]
-struct DirList {
+struct DirLister {
 	/// Directory read
 	dir: fs::ReadDir,
 }
 
-impl DirList {
+impl DirLister {
 	/// Creates a new iterator from a path
 	fn new(path: &Path) -> Result<(Self, u32), DirListNewError> {
 		// Get the length
@@ -133,19 +133,14 @@ enum NextError {
 	OpenDir(#[source] DirListNewError),
 }
 
-impl DirWriterList for DirList {
+impl DirWriterLister for DirLister {
 	type DirList = Self;
 	type Error = NextError;
 	type FileReader = std::fs::File;
-	type Iter = Self;
-
-	fn into_iter(self) -> Self::Iter {
-		self
-	}
 }
 
-impl Iterator for DirList {
-	type Item = Result<DirEntryWriter<<Self as DirWriterList>::DirList>, <Self as DirWriterList>::Error>;
+impl Iterator for DirLister {
+	type Item = Result<DirEntryWriter<<Self as DirWriterLister>::DirList>, <Self as DirWriterLister>::Error>;
 
 	fn next(&mut self) -> Option<Self::Item> {
 		// Get the next entry
