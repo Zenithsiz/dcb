@@ -26,6 +26,9 @@ where
 
 	/// Error type for each entry
 	type Error: std::error::Error + 'static;
+
+	/// Returns the number of entries in this lister
+	fn entries_len(&self) -> u32;
 }
 
 /// Directory writer
@@ -33,20 +36,17 @@ where
 pub struct DirWriter<L: DirWriterLister> {
 	/// Writer list
 	entries: L,
-
-	/// Number of entries
-	entries_len: u32,
 }
 
 impl<L: DirWriterLister> DirWriter<L> {
 	/// Creates a new directory writer
-	pub fn new(entries: L, entries_len: u32) -> Self {
-		Self { entries, entries_len }
+	pub fn new(entries: L) -> Self {
+		Self { entries }
 	}
 
 	/// Returns the number of entries
 	pub fn entries_len(&self) -> u32 {
-		self.entries_len
+		self.entries.entries_len()
 	}
 
 	/// Returns this directory's size
