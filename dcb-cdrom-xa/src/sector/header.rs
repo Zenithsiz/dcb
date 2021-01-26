@@ -7,7 +7,7 @@ pub mod subheader;
 
 // Exports
 pub use address::Address;
-pub use error::FromBytesError;
+pub use error::{FromBytesError, ToBytesError};
 pub use subheader::SubHeader;
 
 // Imports
@@ -21,6 +21,7 @@ pub struct Header {
 	pub address: Address,
 
 	/// Subheader
+	// Note: Repeated twice
 	pub subheader: SubHeader,
 }
 
@@ -32,7 +33,7 @@ impl Header {
 impl Bytes for Header {
 	type ByteArray = [u8; 0x18];
 	type FromError = FromBytesError;
-	type ToError = !;
+	type ToError = ToBytesError;
 
 	fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError> {
 		let bytes = array_split!(bytes,
@@ -44,16 +45,16 @@ impl Bytes for Header {
 
 		// Check if the sync is correct
 		if bytes.sync != &Self::SYNC {
-			return Err(FromBytesError::Sync(*bytes.sync));
+			return Err(FromBytesError::WrongSync(*bytes.sync));
 		}
 
 		// If we aren't in mode 2, return
 		if *bytes.mode != 2 {
-			return Err(FromBytesError::Mode(*bytes.mode));
+			return Err(FromBytesError::InvalidMode(*bytes.mode));
 		}
 
 		// Read the address and subheader
-		let address = Address::from_bytes(bytes.address).into_ok();
+		let address = Address::from_bytes(bytes.address).map_err(FromBytesError::Address)?;
 		let subheader = SubHeader::from_bytes(bytes.subheader).into_ok();
 
 		Ok(Self { address, subheader })
@@ -68,7 +69,7 @@ impl Bytes for Header {
 		);
 
 		*bytes.sync = Self::SYNC;
-		self.address.to_bytes(bytes.address).into_ok();
+		self.address.to_bytes(bytes.address).map_err(ToBytesError::Address)?;
 		*bytes.mode = 2;
 		self.subheader.to_bytes(bytes.subheader).into_ok();
 

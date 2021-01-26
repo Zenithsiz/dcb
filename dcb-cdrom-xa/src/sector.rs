@@ -9,7 +9,7 @@ pub mod header;
 // Exports
 pub use ecc::Ecc;
 pub use edc::Edc;
-pub use error::FromBytesError;
+pub use error::{FromBytesError, ToBytesError};
 pub use header::Header;
 
 // Imports
@@ -31,7 +31,7 @@ pub struct Sector {
 impl Bytes for Sector {
 	type ByteArray = [u8; 0x930];
 	type FromError = FromBytesError;
-	type ToError = !;
+	type ToError = ToBytesError;
 
 	fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError> {
 		let bytes = array_split!(bytes,
@@ -64,7 +64,7 @@ impl Bytes for Sector {
 			ecc   : [0x114],
 		);
 
-		self.header.to_bytes(bytes.header).into_ok();
+		self.header.to_bytes(bytes.header).map_err(ToBytesError::Header)?;
 		*bytes.data = self.data;
 
 		Ok(())
