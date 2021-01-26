@@ -75,7 +75,7 @@ pub use volume_descriptor::VolumeDescriptor;
 // Imports
 use self::volume_descriptor::PrimaryVolumeDescriptor;
 use dcb_bytes::Bytes;
-use dcb_cdrom_xa::CdRom;
+use dcb_cdrom_xa::CdRomReader;
 use std::io;
 
 /// The filesystem
@@ -89,7 +89,7 @@ pub struct Filesystem {
 
 impl Filesystem {
 	/// Reads the filesystem from the cd rom.
-	pub fn new<R: io::Read + io::Seek>(cdrom: &mut CdRom<R>) -> Result<Self, NewError> {
+	pub fn new<R: io::Read + io::Seek>(cdrom: &mut CdRomReader<R>) -> Result<Self, NewError> {
 		// Start reading volume descriptors from sector `0x10` until we hit the primary one
 		// Note: First `32 kiB` (= 16 sectors) are reserved for arbitrary data.
 		cdrom.seek_sector(0x10).map_err(NewError::SeekVolumeDescriptorSet)?;

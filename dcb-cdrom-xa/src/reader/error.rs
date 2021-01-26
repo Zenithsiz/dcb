@@ -1,7 +1,7 @@
 //! Errors
 
 // Imports
-use super::sector;
+use crate::sector;
 
 /// Error type for [`CdRom::seek_sector`](super::CdRom::seek_sector)
 #[derive(Debug, thiserror::Error)]

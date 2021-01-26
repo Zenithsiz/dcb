@@ -1,14 +1,14 @@
 //! File reader
 
 // Imports
-use dcb_cdrom_xa::{CdRom, Sector};
+use dcb_cdrom_xa::{CdRomReader, Sector, reader::ReadSectorError};
 use std::{convert::TryFrom, io};
 
 /// A file reader
 #[derive(PartialEq, Eq, Debug)]
 pub struct FileReader<'a, R> {
 	/// Cd-rom reader
-	cdrom: &'a mut CdRom<R>,
+	cdrom: &'a mut CdRomReader<R>,
 
 	/// File sector
 	sector_pos: u64,
@@ -30,7 +30,7 @@ impl<'a, R> FileReader<'a, R> {
 	///
 	/// # Note
 	/// Expects `cdrom` to be seeked to the start of the file.
-	pub(super) fn new(cdrom: &'a mut CdRom<R>, sector_pos: u64, size: u64) -> Self {
+	pub(super) fn new(cdrom: &'a mut CdRomReader<R>, sector_pos: u64, size: u64) -> Self {
 		Self {
 			cdrom,
 			sector_pos,
@@ -57,8 +57,8 @@ impl<'a, R: io::Read> FileReader<'a, R> {
 
 		// Grab the next sector
 		let sector = self.cdrom.read_sector().map_err(|err| match err {
-			dcb_cdrom_xa::ReadSectorError::Read(err) => err,
-			dcb_cdrom_xa::ReadSectorError::Parse(err) => io::Error::new(io::ErrorKind::InvalidData, err),
+			ReadSectorError::Read(err) => err,
+			ReadSectorError::Parse(err) => io::Error::new(io::ErrorKind::InvalidData, err),
 		})?;
 
 		Ok(cached.get_or_insert(sector))

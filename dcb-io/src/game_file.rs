@@ -10,14 +10,14 @@ use dcb_iso9660::entry::FileReader;
 pub use error::{NewError, ReadFileError};
 
 // Imports
-use dcb_cdrom_xa::CdRom;
+use dcb_cdrom_xa::CdRomReader;
 use std::io;
 
 /// Game file reader.
 #[derive(PartialEq, Eq, Debug)]
 pub struct GameFile<'a, R> {
 	/// CD-Rom
-	cdrom: &'a mut CdRom<R>,
+	cdrom: &'a mut CdRomReader<R>,
 
 	/// Iso9660 filesystem
 	filesystem: dcb_iso9660::Filesystem,
@@ -26,7 +26,7 @@ pub struct GameFile<'a, R> {
 // Constructors
 impl<'a, R: io::Read + io::Seek> GameFile<'a, R> {
 	/// Creates a new game file from the cd reader
-	pub fn new(cdrom: &'a mut CdRom<R>) -> Result<Self, NewError> {
+	pub fn new(cdrom: &'a mut CdRomReader<R>) -> Result<Self, NewError> {
 		// Read the filesystem
 		let filesystem = dcb_iso9660::Filesystem::new(cdrom).map_err(NewError::ParseFilesystem)?;
 
@@ -36,7 +36,7 @@ impl<'a, R: io::Read + io::Seek> GameFile<'a, R> {
 
 impl<'a, R> GameFile<'a, R> {
 	/// Returns the cdrom associated with this game file
-	pub fn cdrom(&mut self) -> &mut CdRom<R> {
+	pub fn cdrom(&mut self) -> &mut CdRomReader<R> {
 		self.cdrom
 	}
 }

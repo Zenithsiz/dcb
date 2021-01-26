@@ -58,79 +58,9 @@
 
 
 // Modules
-pub mod error;
-pub mod iter;
+pub mod reader;
 pub mod sector;
 
 // Exports
-pub use error::{ReadNthSectorError, ReadSectorError, SeekSectorError};
-pub use iter::SectorsRangeIter;
+pub use reader::CdRomReader;
 pub use sector::Sector;
-
-// Imports
-use dcb_bytes::Bytes;
-use std::io::{Read, Seek, SeekFrom};
-
-/// A CD-ROM/XA Mode 2 Form 1 wrapper
-#[derive(PartialEq, Eq, Clone, Debug)]
-pub struct CdRom<R> {
-	/// Underlying reader
-	reader: R,
-}
-
-// Constants
-impl<R> CdRom<R> {
-	/// Sector size
-	pub const SECTOR_SIZE: u64 = 2352;
-}
-
-// Constructors
-impl<R> CdRom<R> {
-	/// Creates a new CD-ROM reader
-	#[must_use]
-	pub const fn new(reader: R) -> Self {
-		Self { reader }
-	}
-}
-
-// Read
-impl<R: Read> CdRom<R> {
-	/// Reads the next sector
-	pub fn read_sector(&mut self) -> Result<Sector, ReadSectorError> {
-		// Read it
-		let mut bytes = [0; 2352];
-		self.reader.read_exact(&mut bytes).map_err(ReadSectorError::Read)?;
-
-		// And parse it
-		Sector::from_bytes(&bytes).map_err(ReadSectorError::Parse)
-	}
-
-	/// Returns an iterator over the next sectors
-	pub fn read_sectors(&mut self) -> SectorsRangeIter<R> {
-		SectorsRangeIter::new(self)
-	}
-}
-
-// Seek
-impl<R: Seek> CdRom<R> {
-	/// Seeks to the `n`th sector
-	pub fn seek_sector(&mut self, n: u64) -> Result<(), SeekSectorError> {
-		// Seek to the sector.
-		match self.reader.seek(SeekFrom::Start(Self::SECTOR_SIZE * n)) {
-			Ok(_) => Ok(()),
-			Err(err) => Err(SeekSectorError { sector: n, err }),
-		}
-	}
-}
-
-// Seek + Read
-impl<R: Read + Seek> CdRom<R> {
-	/// Reads the `n`th sector
-	pub fn read_nth_sector(&mut self, n: u64) -> Result<Sector, ReadNthSectorError> {
-		// Seek to the sector.
-		self.seek_sector(n).map_err(ReadNthSectorError::Seek)?;
-
-		// Then read it.
-		self.read_sector().map_err(ReadNthSectorError::ReadNext)
-	}
-}

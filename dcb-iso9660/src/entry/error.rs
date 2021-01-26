@@ -2,7 +2,7 @@
 
 // Imports
 use crate::string;
-use dcb_cdrom_xa::{ReadNthSectorError, SeekSectorError};
+use dcb_cdrom_xa::reader::{ReadNthSectorError, SeekSectorError};
 use std::io;
 
 /// Error type for [`Bytes::from_bytes`](dcb_bytes::Bytes::from_bytes)
@@ -23,7 +23,7 @@ pub enum FromReaderError {
 	/// Unable to read header
 	#[error("Unable to read header")]
 	ReadName(#[source] io::Error),
-	
+
 	/// Unable to read remaining
 	#[error("Unable to read remaining")]
 	ReadRemaining(#[source] io::Error),

@@ -79,7 +79,7 @@ mod logger;
 use std::fmt;
 
 use anyhow::Context;
-use dcb_cdrom_xa::CdRom;
+use dcb_cdrom_xa::CdRomReader;
 use dcb_exe::{
 	exe::{
 		inst::{basic, pseudo, Directive, Inst, InstFmt, InstTarget, InstTargetFmt},
@@ -99,7 +99,7 @@ fn main() -> Result<(), anyhow::Error> {
 
 	// Open the game file
 	let input_file = std::fs::File::open(&cli.game_file_path).context("Unable to open input file")?;
-	let mut cdrom = CdRom::new(input_file);
+	let mut cdrom = CdRomReader::new(input_file);
 	let mut game_file = GameFile::new(&mut cdrom).context("Unable to read game file")?;
 
 	// Read the executable

@@ -12,7 +12,7 @@ pub use file::FileReader;
 use super::string::FileString;
 use crate::Dir;
 use byteorder::{ByteOrder, LittleEndian};
-use dcb_cdrom_xa::CdRom;
+use dcb_cdrom_xa::CdRomReader;
 use dcb_util::array_split;
 use std::{convert::TryFrom, io};
 
@@ -57,7 +57,7 @@ impl DirEntry {
 	}
 
 	/// Reads a file from this entry
-	pub fn read_file<'a, R: io::Read + io::Seek>(&self, cdrom: &'a mut CdRom<R>) -> Result<FileReader<'a, R>, ReadFileError> {
+	pub fn read_file<'a, R: io::Read + io::Seek>(&self, cdrom: &'a mut CdRomReader<R>) -> Result<FileReader<'a, R>, ReadFileError> {
 		// If this isn't a file, return Err
 		if !self.is_file() {
 			return Err(ReadFileError::NotAFile);
@@ -73,7 +73,7 @@ impl DirEntry {
 	}
 
 	/// Reads a directory from this entry.
-	pub fn read_dir<R: io::Read + io::Seek>(&self, cdrom: &mut CdRom<R>) -> Result<Dir, ReadDirError> {
+	pub fn read_dir<R: io::Read + io::Seek>(&self, cdrom: &mut CdRomReader<R>) -> Result<Dir, ReadDirError> {
 		// If this isn't a directory, return Err
 		if !self.is_dir() {
 			return Err(ReadDirError::NotADirectory);

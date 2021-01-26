@@ -2,7 +2,7 @@
 
 // Imports
 use super::volume_descriptor::{self};
-use dcb_cdrom_xa::{ReadSectorError, SeekSectorError};
+use dcb_cdrom_xa::reader::{ReadSectorError, SeekSectorError};
 
 /// Error type for [`Filesystem::new`](super::Filesystem::new)
 #[derive(Debug, thiserror::Error)]
