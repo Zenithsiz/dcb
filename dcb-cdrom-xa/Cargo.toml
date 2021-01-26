@@ -12,6 +12,7 @@ dcb-bytes = { path = "../dcb-bytes" }
 
 # Log
 log = "0.4.13"
+bitflags = "1.2.1"
 
 # Util
 byteorder = "1.4.2"
