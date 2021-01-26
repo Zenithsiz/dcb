@@ -55,6 +55,20 @@ pub struct SubHeader {
 	pub coding_info: u8,
 }
 
+impl SubHeader {
+	/// Creates a new sub header
+	#[must_use]
+	#[allow(clippy::new_without_default)] // This'll take parameters once we actually work out what they should be
+	pub const fn new() -> Self {
+		Self {
+			file:        0,
+			channel:     0,
+			submode:     SubMode::empty(),
+			coding_info: 0,
+		}
+	}
+}
+
 
 #[allow(clippy::ptr_offset_with_cast)]
 impl Bytes for SubHeader {

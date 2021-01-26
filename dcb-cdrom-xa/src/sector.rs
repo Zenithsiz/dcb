@@ -15,6 +15,9 @@ pub use header::Header;
 // Imports
 use dcb_bytes::Bytes;
 use dcb_util::{array_split, array_split_mut};
+use header::Address;
+
+use self::header::SubHeader;
 
 /// A CD-ROM/XA Sector
 ///
@@ -27,6 +30,20 @@ pub struct Sector {
 	/// Data
 	pub data: [u8; 2048],
 }
+
+impl Sector {
+	/// Creates a new sector given it's sector position and ata
+	#[must_use]
+	pub fn new(data: [u8; 2048], sector_pos: usize) -> Option<Self> {
+		let header = Header {
+			address:   Address::from_sector_pos(sector_pos)?,
+			subheader: SubHeader::new(),
+		};
+
+		Some(Self { header, data })
+	}
+}
+
 
 impl Bytes for Sector {
 	type ByteArray = [u8; 0x930];

@@ -59,8 +59,10 @@
 
 // Modules
 pub mod reader;
+pub mod writer;
 pub mod sector;
 
 // Exports
 pub use reader::CdRomReader;
+pub use writer::CdRomWriter;
 pub use sector::Sector;

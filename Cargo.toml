@@ -15,4 +15,5 @@ members = [
 	"dcb-tools/drv-packer",
 	"dcb-tools/pak-extractor",
 	"dcb-tools/model-set-extractor",
+	"dcb-tools/cdrom-xa-packer",
 ]

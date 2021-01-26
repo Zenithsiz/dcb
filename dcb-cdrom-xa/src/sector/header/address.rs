@@ -8,7 +8,7 @@ pub use error::{FromBytesError, ToBytesError};
 
 // Imports
 use dcb_util::{array_split, array_split_mut, BcdU8};
-use std::ops::Range;
+use std::{convert::TryFrom, ops::Range};
 
 /// Sector address
 // TODO: All of these are BCD, read and write them them as such.
@@ -29,6 +29,19 @@ impl Address {
 	pub const BLOCK_RANGE: Range<u8> = 0..75;
 	/// Seconds range
 	pub const SECS_RANGE: Range<u8> = 0..60;
+
+	/// Creates a new sector given a position
+	///
+	/// Starts the first sector at 2 seconds.
+	#[must_use]
+	pub fn from_sector_pos(sector_pos: usize) -> Option<Self> {
+		let block = u8::try_from(sector_pos % 75).expect("Must fit");
+		let total_secs = sector_pos / 75;
+		let sec = u8::try_from(total_secs % 60).expect("must fit");
+		let min = u8::try_from(total_secs / 60).ok()?;
+
+		Some(Self { min, sec, block })
+	}
 }
 
 #[allow(clippy::ptr_offset_with_cast)]
