@@ -2,34 +2,18 @@
 
 // Modules
 pub mod error;
+pub mod lister;
 
 // Exports
 pub use error::WriteEntriesError;
+pub use lister::DirWriterLister;
 
 // Imports
-use super::{entry::DirEntryWriterKind, DirEntryWriter};
+use super::entry::DirEntryWriterKind;
 use std::{
 	convert::TryFrom,
 	io::{self, SeekFrom},
 };
-
-/// Directory lister
-pub trait DirWriterLister: Sized + std::fmt::Debug
-where
-	Self: IntoIterator<Item = Result<DirEntryWriter<Self>, <Self as DirWriterLister>::Error>>,
-{
-	/// Reader used for the files in this directory
-	type FileReader: std::fmt::Debug + io::Read;
-
-	/// Directory lister for each directory in this directory
-	type DirList: DirWriterLister;
-
-	/// Error type for each entry
-	type Error: std::error::Error + 'static;
-
-	/// Returns the number of entries in this lister
-	fn entries_len(&self) -> u32;
-}
 
 /// Directory writer
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]

@@ -43,7 +43,6 @@ impl DirLister {
 }
 
 impl DirWriterLister for DirLister {
-	type DirList = Self;
 	type Error = NextError;
 	type FileReader = fs::File;
 
@@ -53,7 +52,7 @@ impl DirWriterLister for DirLister {
 }
 
 impl Iterator for DirLister {
-	type Item = Result<DirEntryWriter<<Self as DirWriterLister>::DirList>, <Self as DirWriterLister>::Error>;
+	type Item = Result<DirEntryWriter<Self>, <Self as DirWriterLister>::Error>;
 
 	fn next(&mut self) -> Option<Self::Item> {
 		// Get the next entry
