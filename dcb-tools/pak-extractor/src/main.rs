@@ -9,11 +9,8 @@ mod logger;
 
 // Imports
 use anyhow::Context;
-use dcb_io::{pak, PakFile};
-use std::{
-	io::{Read, Seek, SeekFrom},
-	path::Path,
-};
+use dcb_io::{pak, PakFileReader};
+use std::path::Path;
 
 
 fn main() -> Result<(), anyhow::Error> {
@@ -33,11 +30,13 @@ fn main() -> Result<(), anyhow::Error> {
 fn extract_file(input_file: &Path, output_dir: &Path) -> Result<(), anyhow::Error> {
 	// Open the file and parse a `pak` filesystem from it.
 	let mut input_file = std::fs::File::open(input_file).context("Unable to open input file")?;
+	let mut pak_fs = PakFileReader::new(&mut input_file);
 
-	let pak_fs = PakFile::from_reader(&mut input_file).context("Unable to parse file")?;
-
+	// Try to create the output directory
 	self::try_create_folder(output_dir)?;
-	for entry in pak_fs.entries() {
+
+	// Then read all entries
+	while let Some(entry) = pak_fs.next_entry().context("Unable to read entry")? {
 		// Get the filename
 		let filename = entry.header().id;
 
@@ -59,17 +58,14 @@ fn extract_file(input_file: &Path, output_dir: &Path) -> Result<(), anyhow::Erro
 		log::info!("{} ({} bytes)", path.display(), entry.header().size);
 
 		// Seek the file and read it's size at most
-		input_file
-			.seek(SeekFrom::Start(entry.pos()))
-			.with_context(|| format!("Unable to seek to file {}", path.display()))?;
-		let mut input_file = input_file.by_ref().take(u64::from(entry.header().size));
+		let mut contents = entry.contents();
 
 		// Then create the output file and copy.
 		if path.exists() {
 			log::warn!("Overriding file {}", path.display());
 		}
 		let mut output_file = std::fs::File::create(&path).with_context(|| format!("Unable to create file {}", path.display()))?;
-		std::io::copy(&mut input_file, &mut output_file).with_context(|| format!("Unable to write file {}", path.display()))?;
+		std::io::copy(&mut contents, &mut output_file).with_context(|| format!("Unable to write file {}", path.display()))?;
 	}
 
 	Ok(())

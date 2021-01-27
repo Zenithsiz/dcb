@@ -1,9 +1,11 @@
 //! Header
 
 // Modules
+pub mod error;
 pub mod kind;
 
 // Export
+pub use error::FromBytesError;
 pub use kind::Kind;
 
 // Imports
@@ -24,14 +26,6 @@ pub struct Header {
 	pub size: u32,
 }
 
-/// Error type for [`Bytes::from_bytes`]
-#[derive(Debug, thiserror::Error)]
-pub enum FromBytesError {
-	/// Unable to parse file kind
-	#[error("Unable to parse file kind")]
-	Kind(#[source] kind::FromBytesError),
-}
-
 impl Bytes for Header {
 	type ByteArray = [u8; 0x8];
 	type FromError = FromBytesError;
@@ -47,7 +41,7 @@ impl Bytes for Header {
 		Ok(Self {
 			kind: Kind::from_bytes(bytes.file_kind).map_err(FromBytesError::Kind)?,
 			id:   LittleEndian::read_u16(bytes.file_id),
-			size:      LittleEndian::read_u32(bytes.size),
+			size: LittleEndian::read_u32(bytes.size),
 		})
 	}
 

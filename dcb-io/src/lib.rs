@@ -76,4 +76,4 @@ pub mod tim;
 // Exports
 pub use drv::DrvFsReader;
 pub use game_file::GameFile;
-pub use pak::PakFile;
+pub use pak::PakFileReader;
