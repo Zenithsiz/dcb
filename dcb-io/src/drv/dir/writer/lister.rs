@@ -24,12 +24,12 @@ use std::io;
 /// directory tree as much.
 /// This is, of course, provided the implementor supplies directories
 /// before the files, else they will not be placed at the start.
-pub trait DirWriterLister: Sized + std::fmt::Debug
+pub trait DirWriterLister: Sized
 where
 	Self: IntoIterator<Item = Result<DirEntryWriter<Self>, <Self as DirWriterLister>::Error>>,
 {
 	/// Type used to read all files in this directory tree
-	type FileReader: std::fmt::Debug + io::Read;
+	type FileReader: io::Read;
 
 	/// Error type for each entry
 	type Error: std::error::Error + 'static;

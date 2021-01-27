@@ -5,10 +5,9 @@ use crate::drv::{DirWriter, DirWriterLister, FileWriter};
 use byteorder::{ByteOrder, LittleEndian};
 use chrono::NaiveDateTime;
 use dcb_util::{array_split_mut, AsciiStrArr};
-use std::convert::TryFrom;
+use std::{convert::TryFrom, fmt};
 
 /// A directory entry writer kind
-#[derive(Debug)]
 pub enum DirEntryWriterKind<L: DirWriterLister> {
 	/// A file
 	File(FileWriter<L::FileReader>),
@@ -17,8 +16,19 @@ pub enum DirEntryWriterKind<L: DirWriterLister> {
 	Dir(DirWriter<L>),
 }
 
+impl<L: DirWriterLister + fmt::Debug> fmt::Debug for DirEntryWriterKind<L>
+where
+	L::FileReader: std::fmt::Debug,
+{
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		match self {
+			Self::File(file) => f.debug_tuple("File").field(file).finish(),
+			Self::Dir(dir) => f.debug_tuple("Dir").field(dir).finish(),
+		}
+	}
+}
+
 /// A directory entry writer
-#[derive(Debug)]
 pub struct DirEntryWriter<L: DirWriterLister> {
 	/// Entry name
 	name: AsciiStrArr<0x10>,
@@ -28,6 +38,19 @@ pub struct DirEntryWriter<L: DirWriterLister> {
 
 	/// Entry kind
 	kind: DirEntryWriterKind<L>,
+}
+
+impl<L: DirWriterLister + fmt::Debug> fmt::Debug for DirEntryWriter<L>
+where
+	L::FileReader: std::fmt::Debug,
+{
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		f.debug_struct("DirEntryWriter")
+			.field("name", &self.name)
+			.field("date", &self.date)
+			.field("kind", &self.kind)
+			.finish()
+	}
 }
 
 impl<L: DirWriterLister> DirEntryWriter<L> {
