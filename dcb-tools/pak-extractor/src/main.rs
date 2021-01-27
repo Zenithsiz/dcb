@@ -5,7 +5,6 @@
 
 // Modules
 mod cli;
-mod logger;
 
 // Imports
 use anyhow::Context;
@@ -15,7 +14,8 @@ use std::path::Path;
 
 fn main() -> Result<(), anyhow::Error> {
 	// Initialize the logger
-	logger::init();
+	simplelog::TermLogger::init(log::LevelFilter::Info, simplelog::Config::default(), simplelog::TerminalMode::Stderr)
+		.expect("Unable to initialize logger");
 
 	// Get all data from cli
 	let cli::CliData { input_file, output_dir } = cli::CliData::new();
@@ -29,7 +29,8 @@ fn main() -> Result<(), anyhow::Error> {
 /// Extracts a `.pak` file to `output_dir`.
 fn extract_file(input_file: &Path, output_dir: &Path) -> Result<(), anyhow::Error> {
 	// Open the file and parse a `pak` filesystem from it.
-	let mut input_file = std::fs::File::open(input_file).context("Unable to open input file")?;
+	let input_file = std::fs::File::open(input_file).context("Unable to open input file")?;
+	let mut input_file = std::io::BufReader::new(input_file);
 	let mut pak_fs = PakFileReader::new(&mut input_file);
 
 	// Try to create the output directory

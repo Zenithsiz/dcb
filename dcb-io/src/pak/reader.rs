@@ -38,7 +38,8 @@ impl<R: io::Read + io::Seek> PakFileReader<R> {
 		// Try to read an entry
 		let entry = match PakEntry::from_reader(&mut self.reader).map_err(FromReaderError::ReadEntry)? {
 			Some(entry) => {
-				self.cur_pos += u64::from(entry.header().size);
+				// Note: `0x8` is the size of the header.
+				self.cur_pos += 0x8 + u64::from(entry.header().size);
 				Some(entry)
 			},
 			None => None,
