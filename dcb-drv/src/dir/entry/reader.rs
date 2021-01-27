@@ -8,7 +8,7 @@ pub use error::FromBytesError;
 
 
 // Imports
-use crate::drv::{DirReader, FileReader};
+use crate::{DirReader, FileReader};
 use byteorder::{ByteOrder, LittleEndian};
 use chrono::NaiveDateTime;
 use dcb_util::{array_split, ascii_str_arr::AsciiChar, AsciiStrArr};

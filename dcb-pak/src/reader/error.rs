@@ -1,7 +1,7 @@
 //! Errors
 
 // Imports
-use crate::pak::entry;
+use crate::entry;
 use std::io;
 
 /// Error for [`PakFile::deserialize`](super::PakFile::deserialize)

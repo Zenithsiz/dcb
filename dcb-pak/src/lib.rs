@@ -1,7 +1,4 @@
-//! `dcb` io
-//!
-//! This crate is responsible for interactions with the game file itself,
-//! including the custom filesystem used by the game with the `.DRV` files.
+//! `.PAK` files
 
 // Features
 #![feature(
@@ -68,8 +65,11 @@
 #![allow(clippy::similar_names)]
 
 // Modules
-pub mod game_file;
-pub mod tim;
+pub mod entry;
+pub mod header;
+pub mod reader;
 
 // Exports
-pub use game_file::GameFile;
+pub use entry::PakEntry;
+pub use header::Header;
+pub use reader::PakFileReader;

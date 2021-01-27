@@ -7,7 +7,7 @@ edition = "2018"
 [dependencies]
 # Dcb
 dcb-util = { path = "../../dcb-util" }
-dcb-io = { path = "../../dcb-io" }
+dcb-drv = { path = "../../dcb-drv" }
 
 # Util
 filetime = "0.2.14"

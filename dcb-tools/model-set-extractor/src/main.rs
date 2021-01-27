@@ -9,7 +9,7 @@ mod logger;
 
 // Imports
 use anyhow::Context;
-use dcb_io::pak::entry::Model3dSet;
+use dcb_pak::entry::Model3dSet;
 use std::{
 	io::{Read, Seek, SeekFrom},
 	path::Path,

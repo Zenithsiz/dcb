@@ -7,7 +7,7 @@ pub mod error;
 pub use error::{DirListNewError, NextError};
 
 // Imports
-use dcb_io::drv::{dir::entry::DirEntryWriterKind, DirEntryWriter, DirWriter, DirWriterLister, FileWriter};
+use dcb_drv::{dir::entry::DirEntryWriterKind, DirEntryWriter, DirWriter, DirWriterLister, FileWriter};
 use std::{
 	convert::{TryFrom, TryInto},
 	fs,

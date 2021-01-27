@@ -8,10 +8,7 @@ mod cli;
 
 // Imports
 use anyhow::Context;
-use dcb_io::{
-	drv::{dir::entry::DirEntryReaderKind, DirReader},
-	DrvFsReader,
-};
+use dcb_drv::{dir::entry::DirEntryReaderKind, DirReader, DrvFsReader};
 use std::{fs, io, path::Path};
 
 

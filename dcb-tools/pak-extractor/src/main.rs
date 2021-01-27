@@ -8,7 +8,7 @@ mod cli;
 
 // Imports
 use anyhow::Context;
-use dcb_io::{pak, PakFileReader};
+use dcb_pak::{PakFileReader, header};
 use std::path::Path;
 
 
@@ -43,15 +43,15 @@ fn extract_file(input_file: &Path, output_dir: &Path) -> Result<(), anyhow::Erro
 
 		// Get the extension
 		let extension = match entry.header().kind {
-			pak::header::Kind::Model3DSet => "M3D",
-			pak::header::Kind::Unknown1 => "UN1",
-			pak::header::Kind::GameScript => "MSD",
-			pak::header::Kind::Animation2D => "A2D",
-			pak::header::Kind::Unknown2 => "UN2",
-			pak::header::Kind::FileContents => "BIN",
-			pak::header::Kind::AudioSeq => "SEQ",
-			pak::header::Kind::AudioVh => "VH",
-			pak::header::Kind::AudioVb => "VB",
+			header::Kind::Model3DSet => "M3D",
+			header::Kind::Unknown1 => "UN1",
+			header::Kind::GameScript => "MSD",
+			header::Kind::Animation2D => "A2D",
+			header::Kind::Unknown2 => "UN2",
+			header::Kind::FileContents => "BIN",
+			header::Kind::AudioSeq => "SEQ",
+			header::Kind::AudioVh => "VH",
+			header::Kind::AudioVb => "VB",
 		};
 
 		let path = output_dir.join(format!("{}.{}", filename, extension));

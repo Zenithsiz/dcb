@@ -1,7 +1,7 @@
 //! Errors
 
 // Imports
-use crate::pak::header;
+use crate::header;
 use std::io;
 
 /// Error for [`PakEntry::from_reader`](super::PakEntry::from_reader)

@@ -1,7 +1,7 @@
 //! Directory writer lister
 
 // Imports
-use crate::drv::DirEntryWriter;
+use crate::DirEntryWriter;
 use std::io;
 
 /// Directory lister

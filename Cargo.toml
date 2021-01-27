@@ -9,6 +9,8 @@ members = [
 	"dcb-bytes-derive",
 	"dcb-iso9660",
 	"dcb-cdrom-xa",
+	"dcb-drv",
+	"dcb-pak",
 	"dcb-tools/dcb-extractor",
 	"dcb-tools/dcb-decompiler",
 	"dcb-tools/drv-extractor",

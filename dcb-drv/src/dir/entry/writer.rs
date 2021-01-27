@@ -1,7 +1,7 @@
 //! Directory entry writer
 
 // Imports
-use crate::drv::{DirWriter, DirWriterLister, FileWriter};
+use crate::{DirWriter, DirWriterLister, FileWriter};
 use byteorder::{ByteOrder, LittleEndian};
 use chrono::NaiveDateTime;
 use dcb_util::{array_split_mut, AsciiStrArr};

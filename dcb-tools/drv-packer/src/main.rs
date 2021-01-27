@@ -9,7 +9,7 @@ mod dir_lister;
 
 // Imports
 use anyhow::Context;
-use dcb_io::drv::DrvFsWriter;
+use dcb_drv::DrvFsWriter;
 use std::{fs, path::Path};
 
 

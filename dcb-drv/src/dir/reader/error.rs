@@ -1,8 +1,8 @@
 //! Errors
 
 // Imports
+use crate::dir::entry;
 use std::io;
-use crate::drv::dir::entry;
 
 /// Error for [`DirReader::read_entries`](super::DirReader::read_entries)
 #[derive(Debug, thiserror::Error)]
