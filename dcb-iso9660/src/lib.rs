@@ -8,7 +8,8 @@
 	min_const_generics,
 	array_methods,
 	array_value_iter,
-	external_doc
+	external_doc,
+	str_internals
 )]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]
