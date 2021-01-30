@@ -79,16 +79,14 @@ use dcb_bytes::Bytes;
 use dcb_cdrom_xa::CdRomReader;
 use std::io;
 
-/// The filesystem
+/// A filesystem reader
 #[derive(PartialEq, Eq, Clone, Debug)]
-pub struct Filesystem {
-	// TODO: Only read the root directory and necessary information
-	//       to reconstruct the filesystem.
+pub struct FilesystemReader {
 	/// Primary volume descriptor
 	primary_volume_descriptor: PrimaryVolumeDescriptor,
 }
 
-impl Filesystem {
+impl FilesystemReader {
 	/// Reads the filesystem from the cd rom.
 	pub fn new<R: io::Read + io::Seek>(cdrom: &mut CdRomReader<R>) -> Result<Self, NewError> {
 		// Start reading volume descriptors from sector `0x10` until we hit the primary one

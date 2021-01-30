@@ -20,7 +20,7 @@ pub struct GameFile<'a, R> {
 	cdrom: &'a mut CdRomReader<R>,
 
 	/// Iso9660 filesystem
-	filesystem: dcb_iso9660::Filesystem,
+	filesystem: dcb_iso9660::FilesystemReader,
 }
 
 // Constructors
@@ -28,7 +28,7 @@ impl<'a, R: io::Read + io::Seek> GameFile<'a, R> {
 	/// Creates a new game file from the cd reader
 	pub fn new(cdrom: &'a mut CdRomReader<R>) -> Result<Self, NewError> {
 		// Read the filesystem
-		let filesystem = dcb_iso9660::Filesystem::new(cdrom).map_err(NewError::ParseFilesystem)?;
+		let filesystem = dcb_iso9660::FilesystemReader::new(cdrom).map_err(NewError::ParseFilesystem)?;
 
 		Ok(Self { cdrom, filesystem })
 	}
