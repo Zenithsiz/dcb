@@ -6,15 +6,12 @@
 // Features
 #![feature(
 	stmt_expr_attributes,
-	seek_convenience,
 	format_args_capture,
 	exclusive_range_pattern,
 	unsafe_block_in_unsafe_fn,
 	never_type,
 	unwrap_infallible,
-	min_const_generics,
 	array_methods,
-	slice_strip,
 	array_chunks,
 	iter_map_while,
 	external_doc
@@ -64,8 +61,14 @@
 #![allow(clippy::match_bool)]
 // If the `else` isn't needed, we don't put it
 #![allow(clippy::else_if_without_else)]
+// We're fine with non-exhaustive structs / enums, we aren't committing to them yet.
+#![allow(clippy::exhaustive_structs, clippy::exhaustive_enums)]
+// There are too many false positives with these lints
+#![allow(clippy::use_self)]
 // `Header` and `Reader` are common names
 #![allow(clippy::similar_names)]
+// We only use `# Panics` where a panic might be caused by a mis-use of the user, not assertions
+#![allow(clippy::missing_panics_doc)]
 
 // Modules
 pub mod game_file;

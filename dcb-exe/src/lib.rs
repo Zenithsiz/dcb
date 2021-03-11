@@ -35,15 +35,14 @@
 // We prefer suffixes to be glued to the literal
 #![allow(clippy::unseparated_literal_suffix)]
 // We're fine with panicking when entering an unexpected state
-// TODO: Remove `clippy::todo` once everything is finished.
 #![allow(
 	clippy::panic,
 	clippy::unreachable,
 	clippy::expect_used,
-	clippy::todo,
 	clippy::panic_in_result_fn,
 	clippy::unwrap_in_result,
-	clippy::indexing_slicing
+	clippy::indexing_slicing,
+	clippy::todo
 )]
 // We prefer tail calls
 #![allow(clippy::implicit_return)]
@@ -66,6 +65,14 @@
 #![allow(clippy::match_bool)]
 // If the `else` isn't needed, we don't put it
 #![allow(clippy::else_if_without_else)]
+// We're fine with non-exhaustive structs / enums, we aren't committing to them yet.
+#![allow(clippy::exhaustive_structs, clippy::exhaustive_enums)]
+// There are too many false positives with these lints
+#![allow(clippy::use_self)]
+// `Header` and `Reader` are common names
+#![allow(clippy::similar_names)]
+// We only use `# Panics` where a panic might be caused by a mis-use of the user, not assertions
+#![allow(clippy::missing_panics_doc)]
 
 // Modules
 pub mod exe;

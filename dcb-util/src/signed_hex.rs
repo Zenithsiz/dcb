@@ -27,6 +27,7 @@ macro_rules! impl_signed_hex {
 	($($T:ty => $TBigger:ty),* $(,)?) => {
 		$(
 		impl fmt::Display for SignedHex<$T> {
+			#[allow(clippy::default_numeric_fallback)] // We want inference to take care of the `0` here
 			fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 				let sign = match (self.0 < 0, f.sign_plus()) {
 					(true, _) => "-",

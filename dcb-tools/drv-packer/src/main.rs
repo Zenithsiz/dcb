@@ -1,7 +1,7 @@
 //! `.DRV` packer
 
 // Features
-#![feature(array_value_iter, try_blocks, seek_convenience)]
+#![feature(try_blocks, seek_stream_len)]
 
 // Modules
 mod cli;

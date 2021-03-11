@@ -1,8 +1,5 @@
 //! Model set extractor
 
-// Features
-#![feature(array_value_iter)]
-
 // Modules
 mod cli;
 mod logger;

@@ -1,6 +1,6 @@
 //! Dcb utilities
 // Features
-#![feature(min_const_generics, slice_index_methods, format_args_capture)]
+#![feature(slice_index_methods, format_args_capture)]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]
 // We'll disable the ones we don't need
@@ -46,6 +46,14 @@
 #![allow(clippy::match_bool)]
 // If the `else` isn't needed, we don't put it
 #![allow(clippy::else_if_without_else)]
+// We're fine with non-exhaustive structs / enums, we aren't committing to them yet.
+#![allow(clippy::exhaustive_structs, clippy::exhaustive_enums)]
+// There are too many false positives with these lints
+#![allow(clippy::use_self)]
+// `Header` and `Reader` are common names
+#![allow(clippy::similar_names)]
+// We only use `# Panics` where a panic might be caused by a mis-use of the user, not assertions
+#![allow(clippy::missing_panics_doc)]
 
 // Modules
 pub mod array_split;
@@ -73,6 +81,7 @@ use std::fmt;
 
 /// Returns the absolute different between `a` and `b`, `a - b` as a `i64`.
 ///
+/// # Panics
 /// If the result would not fit into a `i64`, a panic occurs.
 #[allow(clippy::as_conversions)] // We check every operation
 #[allow(clippy::panic)] // Rust panics on failed arithmetic operations by default
@@ -134,7 +143,7 @@ impl BcdU8 {
 	#[must_use]
 	pub const fn to_u8(self) -> Option<u8> {
 		let lo = self.0 & 0xF;
-		let hi = self.0 & 0xF0 >> 4;
+		let hi = self.0 & 0xF0 >> 4u8;
 		match (lo, hi) {
 			(0..=9, 0..=9) => Some(lo + hi * 10),
 			_ => None,

@@ -136,7 +136,7 @@ impl Encodable for Inst {
 		let s = self.lhs.idx();
 		let t = self.rhs.idx();
 
-		Raw { f, t, d, s }
+		Raw { s, t, d, f }
 	}
 }
 

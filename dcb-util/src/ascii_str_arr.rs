@@ -225,7 +225,7 @@ impl<const N: usize> Ord for AsciiStrArr<N> {
 
 impl<const N: usize> Hash for AsciiStrArr<N> {
 	fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-		AsciiStr::hash(self.as_ascii(), state)
+		AsciiStr::hash(self.as_ascii(), state);
 	}
 }
 

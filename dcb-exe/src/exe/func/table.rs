@@ -151,19 +151,19 @@ impl FuncTable {
 
 		function_entries
 			.iter()
-			.zip(0..)
-			.map(|(&func_pos, idx)| {
+			.enumerate()
+			.map(|(idx, &func_pos)| {
 				// Try to get the end position from the returns
 				// Note: +8 for return + inst after.
 				let mut end_pos: Pos = returns.range(func_pos..).next().copied().unwrap_or(func_pos) + 8;
 
 				// If there's a function in between us and the return, use the last tailcall instead
-				if let Some(next_func_pos) = function_entries.range(func_pos + 4..end_pos).next() {
-					end_pos = tailcalls.range(..next_func_pos).next_back().copied().unwrap_or(func_pos) + 8;
+				if let Some(next_func_pos) = function_entries.range(func_pos + 4i32..end_pos).next() {
+					end_pos = tailcalls.range(..next_func_pos).next_back().copied().unwrap_or(func_pos) + 8i32;
 
 					// If we got a tailcall before this function, just end it 2 insts
 					if end_pos <= func_pos {
-						end_pos = func_pos + 8;
+						end_pos = func_pos + 8i32;
 					}
 				}
 

@@ -1,15 +1,6 @@
 #![doc(include = "lib.md")]
 // Features
-#![feature(
-	never_type,
-	stmt_expr_attributes,
-	unwrap_infallible,
-	format_args_capture,
-	min_const_generics,
-	array_methods,
-	array_value_iter,
-	external_doc
-)]
+#![feature(never_type, stmt_expr_attributes, unwrap_infallible, format_args_capture, array_methods, external_doc)]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]
 // We'll disable the ones we don't need
@@ -55,14 +46,22 @@
 #![allow(clippy::match_bool)]
 // If the `else` isn't needed, we don't put it
 #![allow(clippy::else_if_without_else)]
+// We're fine with non-exhaustive structs / enums, we aren't committing to them yet.
+#![allow(clippy::exhaustive_structs, clippy::exhaustive_enums)]
+// There are too many false positives with these lints
+#![allow(clippy::use_self)]
+// `Header` and `Reader` are common names
+#![allow(clippy::similar_names)]
+// We only use `# Panics` where a panic might be caused by a mis-use of the user, not assertions
+#![allow(clippy::missing_panics_doc)]
 
 
 // Modules
 pub mod reader;
-pub mod writer;
 pub mod sector;
+pub mod writer;
 
 // Exports
 pub use reader::CdRomReader;
-pub use writer::CdRomWriter;
 pub use sector::Sector;
+pub use writer::CdRomWriter;

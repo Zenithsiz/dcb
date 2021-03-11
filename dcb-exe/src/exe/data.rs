@@ -167,8 +167,8 @@ impl Data {
 				Inst::Directive(directive) if references.contains(&pos) => Some((pos, directive)),
 				_ => None,
 			})
-			.zip(0..)
-			.map(|((pos, directive), idx)| {
+			.enumerate()
+			.map(|(idx, (pos, directive))| {
 				match directive {
 					Directive::Ascii(string) => Self {
 						name: format!("string_{idx}"),

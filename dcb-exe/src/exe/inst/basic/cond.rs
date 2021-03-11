@@ -72,7 +72,7 @@ impl Inst {
 	/// Returns the target using an offset
 	#[must_use]
 	pub fn target_of(offset: i16, pos: Pos) -> Pos {
-		pos + 4 * (offset.sign_extended::<i32>() + 1)
+		pos + 4i32 * (offset.sign_extended::<i32>() + 1i32)
 	}
 }
 

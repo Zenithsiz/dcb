@@ -19,7 +19,7 @@ pub fn init() {
 	];
 
 	// Filter all logger that actually work and initialize them
-	if CombinedLogger::init(std::array::IntoIter::new(loggers).filter_map(std::convert::identity).collect()).is_err() {
+	if CombinedLogger::init(std::array::IntoIter::new(loggers).flatten().collect()).is_err() {
 		log::warn!("Logger was already initialized");
 	}
 }

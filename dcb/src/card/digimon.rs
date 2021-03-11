@@ -125,7 +125,7 @@ impl Bytes for Digimon {
 		Ok(Self {
 			name: NullAsciiString::read_string(bytes.name).map_err(FromBytesError::Name)?,
 
-			speciality: Speciality::from_bytes(&((bytes.speciality_level & 0xF0) >> 4)).map_err(FromBytesError::Speciality)?,
+			speciality: Speciality::from_bytes(&((bytes.speciality_level & 0xF0) >> 4u8)).map_err(FromBytesError::Speciality)?,
 
 			level: Level::from_bytes(&(bytes.speciality_level & 0x0F)).map_err(FromBytesError::Level)?,
 
@@ -216,7 +216,7 @@ impl Bytes for Digimon {
 			self.level.to_bytes(&mut level_byte)?;
 
 			// Merge them
-			*bytes.speciality_level = (speciality_byte << 4) | level_byte;
+			*bytes.speciality_level = (speciality_byte << 4u8) | level_byte;
 		}
 
 		// DP / +P

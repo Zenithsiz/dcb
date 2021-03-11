@@ -1,14 +1,11 @@
 //! `.Pak` extractor
 
-// Features
-#![feature(array_value_iter)]
-
 // Modules
 mod cli;
 
 // Imports
 use anyhow::Context;
-use dcb_pak::{PakFileReader, header};
+use dcb_pak::{header, PakFileReader};
 use std::path::Path;
 
 

@@ -1,8 +1,5 @@
 //! `.DRV` extractor
 
-// Features
-#![feature(array_value_iter)]
-
 // Modules
 mod cli;
 

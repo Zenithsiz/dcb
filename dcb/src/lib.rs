@@ -2,7 +2,6 @@
 
 // Features
 #![feature(
-	seek_convenience,
 	never_type,
 	bool_to_option,
 	decl_macro,
@@ -12,7 +11,6 @@
 	format_args_capture,
 	const_fn,
 	const_panic,
-	min_const_generics,
 	exclusive_range_pattern,
 	unsafe_block_in_unsafe_fn,
 	maybe_uninit_uninit_array,
@@ -22,11 +20,9 @@
 	core_intrinsics,
 	const_assume,
 	bindings_after_at,
-	array_value_iter,
 	or_patterns,
 	once_cell,
-	box_syntax,
-	str_split_once
+	box_syntax
 )]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]
@@ -73,8 +69,14 @@
 #![allow(clippy::match_bool)]
 // If the `else` isn't needed, we don't put it
 #![allow(clippy::else_if_without_else)]
+// We're fine with non-exhaustive structs / enums, we aren't committing to them yet.
+#![allow(clippy::exhaustive_structs, clippy::exhaustive_enums)]
+// There are too many false positives with these lints
+#![allow(clippy::use_self)]
 // `Header` and `Reader` are common names
 #![allow(clippy::similar_names)]
+// We only use `# Panics` where a panic might be caused by a mis-use of the user, not assertions
+#![allow(clippy::missing_panics_doc)]
 
 
 // Modules
