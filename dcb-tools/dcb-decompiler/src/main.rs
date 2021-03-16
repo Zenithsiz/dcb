@@ -4,7 +4,6 @@
 	box_syntax,
 	backtrace,
 	panic_info_message,
-	unsafe_block_in_unsafe_fn,
 	array_chunks,
 	format_args_capture,
 	or_patterns,

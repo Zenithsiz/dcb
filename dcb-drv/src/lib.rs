@@ -4,7 +4,6 @@
 	stmt_expr_attributes,
 	format_args_capture,
 	exclusive_range_pattern,
-	unsafe_block_in_unsafe_fn,
 	never_type,
 	unwrap_infallible,
 	array_methods,

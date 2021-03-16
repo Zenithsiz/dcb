@@ -15,7 +15,7 @@
 //! - Deck table
 
 // Features
-#![feature(box_syntax, backtrace, panic_info_message, unsafe_block_in_unsafe_fn, format_args_capture)]
+#![feature(box_syntax, backtrace, panic_info_message, format_args_capture)]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]
 // Instead of `unwrap`, we must use `expect` and provide a reason

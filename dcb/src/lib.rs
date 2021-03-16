@@ -12,7 +12,6 @@
 	const_fn,
 	const_panic,
 	exclusive_range_pattern,
-	unsafe_block_in_unsafe_fn,
 	maybe_uninit_uninit_array,
 	maybe_uninit_slice,
 	array_map,
