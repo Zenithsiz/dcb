@@ -11,6 +11,7 @@ dcb-drv = { path = "../../dcb-drv" }
 
 # Util
 filetime = "0.2.14"
+size_format = "1.0.2"
 
 # Cmd
 clap = "2.33.3"
