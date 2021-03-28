@@ -39,7 +39,7 @@ fn main() -> Result<(), anyhow::Error> {
 		let mut input_file = io::BufReader::new(input_file);
 
 		// Create output directory if it doesn't exist
-		self::try_create_folder(&output_dir)?;
+		dcb_util::try_create_folder(&output_dir).with_context(|| format!("Unable to create directory {}", output_dir.display()))?;
 
 		// Then extract the tree
 		if let Err(err) = self::extract_tree(&mut input_file, &DrvFsReader::root(), &output_dir, &cli_data) {
@@ -110,7 +110,7 @@ fn extract_tree<R: io::Read + io::Seek>(reader: &mut R, dir: &DirReader, path: &
 				}
 
 				// Create the directory and set it's modification date
-				self::try_create_folder(&path).with_context(|| format!("Unable to create directory {}", path.display()))?;
+				dcb_util::try_create_folder(&path).with_context(|| format!("Unable to create directory {}", path.display()))?;
 				if let Err(err) = filetime::set_file_mtime(&path, time) {
 					log::warn!(
 						"Unable to write date for directory {}: {}",
@@ -126,15 +126,4 @@ fn extract_tree<R: io::Read + io::Seek>(reader: &mut R, dir: &DirReader, path: &
 	}
 
 	Ok(())
-}
-
-/// Attempts to create a folder. Returns `Ok` if it already exists.
-#[allow(clippy::create_dir)] // We only want to create a single level
-fn try_create_folder(path: impl AsRef<std::path::Path>) -> Result<(), io::Error> {
-	match fs::create_dir(&path) {
-		// If we managed to create it, or it already exists, return `Ok`
-		Ok(_) => Ok(()),
-		Err(err) if err.kind() == io::ErrorKind::AlreadyExists => Ok(()),
-		Err(err) => Err(err),
-	}
 }

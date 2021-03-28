@@ -7,6 +7,7 @@ edition = "2018"
 [dependencies]
 # Dcb
 dcb-pak = { path = "../../dcb-pak" }
+dcb-util = { path = "../../dcb-util" }
 
 # Cmd
 clap = "2.33.3"

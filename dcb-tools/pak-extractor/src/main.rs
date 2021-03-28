@@ -31,7 +31,7 @@ fn extract_file(input_file: &Path, output_dir: &Path) -> Result<(), anyhow::Erro
 	let mut pak_fs = PakFileReader::new(&mut input_file);
 
 	// Try to create the output directory
-	self::try_create_folder(output_dir)?;
+	dcb_util::try_create_folder(output_dir).with_context(|| format!("Unable to create directory {}", output_dir.display()))?;
 
 	// Then read all entries
 	while let Some(entry) = pak_fs.next_entry().context("Unable to read entry")? {
@@ -67,15 +67,4 @@ fn extract_file(input_file: &Path, output_dir: &Path) -> Result<(), anyhow::Erro
 	}
 
 	Ok(())
-}
-
-/// Attempts to create a folder. Returns `Ok` if it already exists.
-#[allow(clippy::create_dir)] // We only want to create a single level
-fn try_create_folder(path: impl AsRef<std::path::Path>) -> Result<(), anyhow::Error> {
-	match std::fs::create_dir(&path) {
-		// If it already exists, ignore
-		Ok(_) => Ok(()),
-		Err(err) if err.kind() == std::io::ErrorKind::AlreadyExists => Ok(()),
-		Err(err) => Err(err).with_context(|| format!("Unable to create directory {}", path.as_ref().display())),
-	}
 }

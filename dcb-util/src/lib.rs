@@ -168,3 +168,14 @@ impl BcdU8 {
 		Some(Self(lo | (hi << 4)))
 	}
 }
+
+/// Attempts to create a folder. Returns `Ok` if it already exists.
+#[allow(clippy::create_dir)] // We only want to create a single level
+pub fn try_create_folder(path: impl AsRef<std::path::Path>) -> Result<(), std::io::Error> {
+	match std::fs::create_dir(&path) {
+		// If it already exists, ignore
+		Ok(_) => Ok(()),
+		Err(err) if err.kind() == std::io::ErrorKind::AlreadyExists => Ok(()),
+		Err(err) => Err(err),
+	}
+}

@@ -33,7 +33,7 @@ fn extract_file(input_file: &Path, output_dir: &Path) -> Result<(), anyhow::Erro
 
 	let model_set = Model3dSet::from_reader(&mut input_file).context("Unable to parse file")?;
 
-	self::try_create_folder(output_dir)?;
+	dcb_util::try_create_folder(output_dir).with_context(|| format!("Unable to create directory {}", output_dir.display()))?;
 	for (idx, (pos, size, ..)) in model_set.models.iter().enumerate() {
 		// Get the filename
 		let path = output_dir.join(format!("{}.TMD", idx));
@@ -55,15 +55,4 @@ fn extract_file(input_file: &Path, output_dir: &Path) -> Result<(), anyhow::Erro
 	}
 
 	Ok(())
-}
-
-/// Attempts to create a folder. Returns `Ok` if it already exists.
-#[allow(clippy::create_dir)] // We only want to create a single level
-fn try_create_folder(path: impl AsRef<std::path::Path>) -> Result<(), anyhow::Error> {
-	match std::fs::create_dir(&path) {
-		// If it already exists, ignore
-		Ok(_) => Ok(()),
-		Err(err) if err.kind() == std::io::ErrorKind::AlreadyExists => Ok(()),
-		Err(err) => Err(err).with_context(|| format!("Unable to create directory {}", path.as_ref().display())),
-	}
 }
