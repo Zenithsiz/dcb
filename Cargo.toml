@@ -15,7 +15,7 @@ members = [
 	"dcb-tools/dcb-decompiler",
 	"dcb-tools/undrv",
 	"dcb-tools/drv",
-	"dcb-tools/pak-extractor",
+	"dcb-tools/unpak",
 	"dcb-tools/model-set-extractor",
 	"dcb-tools/cdrom-xa-packer",
 ]
