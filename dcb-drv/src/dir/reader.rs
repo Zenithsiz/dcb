@@ -41,9 +41,7 @@ impl DirReader {
 		self, reader: &mut R,
 	) -> Result<impl Iterator<Item = Result<DirEntryReader, ReadEntryError>> + '_, ReadEntriesError> {
 		// Seek to the sector
-		reader
-			.seek(SeekFrom::Start(u64::from(self.sector_pos) * 2048))
-			.map_err(ReadEntriesError::Seek)?;
+		self.seek_to(reader).map_err(ReadEntriesError::Seek)?;
 
 		// Then create the iterator
 		let iter = std::iter::from_fn(move || {

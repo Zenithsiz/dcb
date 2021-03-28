@@ -134,6 +134,11 @@ pub fn fmt_err(err: &(dyn std::error::Error + 'static), f: &mut fmt::Formatter) 
 	}
 }
 
+/// Returns a wrapper that prints an error
+pub fn fmt_err_wrapper<'a>(err: &'a (dyn std::error::Error + 'static)) -> impl fmt::Display + 'a {
+	DisplayWrapper::new(move |f| self::fmt_err(err, f))
+}
+
 /// A `BCD` u8 type
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Debug)]
 pub struct BcdU8(pub u8);
