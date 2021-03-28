@@ -31,7 +31,7 @@ pub enum ToBytesError {
 	/// Out of range minute
 	#[error("Out of range minute {_0:#x}")]
 	OutOfRangeMinute(u8),
-	
+
 	/// Out of range second
 	#[error("Out of range second {_0:#x}")]
 	OutOfRangeSecond(u8),

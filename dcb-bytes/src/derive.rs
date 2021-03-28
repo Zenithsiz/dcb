@@ -19,7 +19,10 @@ macro_rules! derive_bytes_split {
 				type ToError   = !;
 
 				fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError> {
-					let ( $($field,)* ) = arrayref::array_refs![bytes, $( <<$U as ByteOrderExt<$crate::byteorder::$BYTEORDER>>::ByteArray as ByteArray>::SIZE ),*];
+					let ( $($field,)* ) = arrayref::array_refs![
+						bytes,
+						$( <<$U as ByteOrderExt<$crate::byteorder::$BYTEORDER>>::ByteArray as ByteArray>::SIZE ),*
+					];
 
 					Ok(Self {
 						$(
@@ -29,7 +32,10 @@ macro_rules! derive_bytes_split {
 				}
 
 				fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError> {
-					let ( $($field,)* ) = arrayref::mut_array_refs![bytes, $( <<$U as ByteOrderExt<$crate::byteorder::$BYTEORDER>>::ByteArray as ByteArray>::SIZE ),*];
+					let ( $($field,)* ) = arrayref::mut_array_refs![
+						bytes,
+						$( <<$U as ByteOrderExt<$crate::byteorder::$BYTEORDER>>::ByteArray as ByteArray>::SIZE ),*
+					];
 
 					$(
 						<$U as ByteOrderExt::<$crate::byteorder::$BYTEORDER>>::write(&self.$field.into(), $field);

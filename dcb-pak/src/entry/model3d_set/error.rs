@@ -23,7 +23,7 @@ pub enum FromReaderError {
 	/// Unable to get position
 	#[error("Unable to get position")]
 	GetPos(#[source] io::Error),
-	
+
 	/// Unable to read model
 	#[error("Unable to read model")]
 	ReadModel(#[source] model::FromReaderError),

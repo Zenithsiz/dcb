@@ -1,7 +1,7 @@
 //! File reader
 
 // Imports
-use dcb_cdrom_xa::{CdRomReader, Sector, reader::ReadSectorError};
+use dcb_cdrom_xa::{reader::ReadSectorError, CdRomReader, Sector};
 use std::{convert::TryFrom, io};
 
 /// A file reader
