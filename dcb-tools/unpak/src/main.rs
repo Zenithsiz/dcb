@@ -52,16 +52,21 @@ fn extract_file(input_file: &Path, output_dir: &Path) -> Result<(), anyhow::Erro
 		};
 
 		let path = output_dir.join(format!("{}.{}", filename, extension));
-
-		log::info!("{} ({} bytes)", path.display(), entry.header().size);
+		println!(
+			"{} ({}B)",
+			path.display(),
+			size_format::SizeFormatterSI::new(u64::from(entry.header().size))
+		);
 
 		// Seek the file and read it's size at most
 		let mut contents = entry.contents();
 
 		// Then create the output file and copy.
+		/*
 		if path.exists() {
 			log::warn!("Overriding file {}", path.display());
 		}
+		*/
 		let mut output_file = std::fs::File::create(&path).with_context(|| format!("Unable to create file {}", path.display()))?;
 		std::io::copy(&mut contents, &mut output_file).with_context(|| format!("Unable to write file {}", path.display()))?;
 	}

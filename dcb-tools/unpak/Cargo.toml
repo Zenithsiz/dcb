@@ -18,3 +18,6 @@ simplelog = "0.9.0"
 
 # Error handling
 anyhow = "1.0.38"
+
+# Util
+size_format = "1.0.2"
