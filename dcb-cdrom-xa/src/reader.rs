@@ -14,7 +14,7 @@ use dcb_bytes::Bytes;
 use std::io::{Read, Seek, SeekFrom};
 
 /// A CD-ROM/XA Mode 2 Form 1 reader.
-#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Hash, Debug)]
 pub struct CdRomReader<R> {
 	/// Underlying reader
 	reader: R,
@@ -32,6 +32,25 @@ impl<R> CdRomReader<R> {
 	#[must_use]
 	pub const fn new(reader: R) -> Self {
 		Self { reader }
+	}
+}
+
+// Getters
+impl<R> CdRomReader<R> {
+	/// Returns the underlying reader
+	pub const fn reader(&self) -> &R {
+		&self.reader
+	}
+
+	/// Returns the underlying reader as mutable
+	pub fn reader_mut(&mut self) -> &mut R {
+		&mut self.reader
+	}
+
+	/// Converts this into it's underlying reader
+	#[allow(clippy::missing_const_for_fn)] // False positive
+	pub fn into_reader(self) -> R {
+		self.reader
 	}
 }
 

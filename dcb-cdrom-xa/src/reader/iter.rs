@@ -5,6 +5,7 @@ use crate::{reader, CdRomReader, Sector};
 use std::io;
 
 /// Iterator over sectors
+#[derive(Debug)]
 pub struct SectorsRangeIter<'a, R: io::Read> {
 	/// The cdrom
 	cdrom: &'a mut CdRomReader<R>,
