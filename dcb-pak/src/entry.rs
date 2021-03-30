@@ -17,7 +17,7 @@ use std::io;
 
 /// A `.PAK` entry reader
 #[derive(PartialEq, Eq, Debug)]
-pub struct PakEntry<'a, R> {
+pub struct PakEntryReader<'a, R> {
 	/// Header
 	header: Header,
 
@@ -25,7 +25,7 @@ pub struct PakEntry<'a, R> {
 	reader: &'a mut R,
 }
 
-impl<'a, R> PakEntry<'a, R> {
+impl<'a, R> PakEntryReader<'a, R> {
 	/// Returns this entry's header
 	#[must_use]
 	pub const fn header(&self) -> &Header {
@@ -33,7 +33,7 @@ impl<'a, R> PakEntry<'a, R> {
 	}
 }
 
-impl<'a, R: io::Read> PakEntry<'a, R> {
+impl<'a, R: io::Read> PakEntryReader<'a, R> {
 	/// Deserializes an entry from a reader
 	pub fn from_reader(reader: &'a mut R) -> Result<Option<Self>, FromReaderError> {
 		// Read the header

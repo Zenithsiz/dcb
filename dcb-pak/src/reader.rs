@@ -7,7 +7,7 @@ pub mod error;
 pub use error::FromReaderError;
 
 // Imports
-use super::PakEntry;
+use super::PakEntryReader;
 use std::io::{self, SeekFrom};
 
 /// A `.PAK` file reader
@@ -39,12 +39,12 @@ impl<R> PakFileReader<R> {
 // Read + Seek
 impl<R: io::Read + io::Seek> PakFileReader<R> {
 	/// Returns the next entry
-	pub fn next_entry(&mut self) -> Result<Option<PakEntry<R>>, FromReaderError> {
+	pub fn next_entry(&mut self) -> Result<Option<PakEntryReader<R>>, FromReaderError> {
 		// Seek to our current position
 		self.reader.seek(SeekFrom::Start(self.cur_pos)).map_err(FromReaderError::SeekNextEntry)?;
 
 		// Try to read an entry
-		let entry = match PakEntry::from_reader(&mut self.reader).map_err(FromReaderError::ReadEntry)? {
+		let entry = match PakEntryReader::from_reader(&mut self.reader).map_err(FromReaderError::ReadEntry)? {
 			Some(entry) => {
 				// Note: `0x8` is the size of the header.
 				self.cur_pos += 0x8 + u64::from(entry.header().size);

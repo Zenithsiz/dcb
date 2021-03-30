@@ -70,6 +70,6 @@ pub mod header;
 pub mod reader;
 
 // Exports
-pub use entry::PakEntry;
+pub use entry::PakEntryReader;
 pub use header::Header;
 pub use reader::PakFileReader;
