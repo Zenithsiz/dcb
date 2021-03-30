@@ -65,11 +65,9 @@
 #![allow(clippy::missing_panics_doc)]
 
 // Modules
-pub mod entry;
 pub mod header;
 pub mod reader;
 
 // Exports
-pub use entry::PakEntryReader;
 pub use header::Header;
 pub use reader::PakFileReader;

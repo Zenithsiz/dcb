@@ -1,13 +1,14 @@
 //! `.PAK` file reader
 
 // Modules
+pub mod entry;
 pub mod error;
 
 // Exports
+pub use entry::PakEntryReader;
 pub use error::FromReaderError;
 
 // Imports
-use super::PakEntryReader;
 use std::io::{self, SeekFrom};
 
 /// A `.PAK` file reader

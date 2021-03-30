@@ -11,7 +11,7 @@ pub use error::FromReaderError;
 pub use model3d_set::Model3dSet;
 
 // Imports
-use super::Header;
+use crate::Header;
 use dcb_bytes::Bytes;
 use std::io;
 
