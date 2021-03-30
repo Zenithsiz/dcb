@@ -22,7 +22,7 @@ pub struct Header {
 	/// Id
 	pub id: u16,
 
-	/// Size of first file
+	/// Size of the file
 	pub size: u32,
 }
 

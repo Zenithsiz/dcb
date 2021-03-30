@@ -20,6 +20,7 @@ pub struct PakFileReader<R> {
 	cur_pos: u64,
 }
 
+// Constructor
 impl<R> PakFileReader<R> {
 	/// Creates a new reader
 	pub const fn new(reader: R) -> Self {
@@ -27,8 +28,15 @@ impl<R> PakFileReader<R> {
 	}
 }
 
+// Getters
+impl<R> PakFileReader<R> {
+	/// Returns the current position
+	pub const fn cur_pos(&self) -> u64 {
+		self.cur_pos
+	}
+}
 
-// Constructor
+// Read + Seek
 impl<R: io::Read + io::Seek> PakFileReader<R> {
 	/// Returns the next entry
 	pub fn next_entry(&mut self) -> Result<Option<PakEntry<R>>, FromReaderError> {

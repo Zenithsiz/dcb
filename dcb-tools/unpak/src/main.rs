@@ -45,9 +45,9 @@ fn main() -> Result<(), anyhow::Error> {
 }
 
 /// Extracts a `.pak` file to `output_dir`.
-fn extract_file(input_file: &Path, output_dir: &Path, cli_data: &CliData) -> Result<(), anyhow::Error> {
+fn extract_file(input_file_path: &Path, output_dir: &Path, cli_data: &CliData) -> Result<(), anyhow::Error> {
 	// Open the file and parse a `pak` filesystem from it.
-	let input_file = fs::File::open(input_file).context("Unable to open input file")?;
+	let input_file = fs::File::open(input_file_path).context("Unable to open input file")?;
 	let mut input_file = io::BufReader::new(input_file);
 	let mut pak_fs = PakFileReader::new(&mut input_file);
 
@@ -57,9 +57,13 @@ fn extract_file(input_file: &Path, output_dir: &Path, cli_data: &CliData) -> Res
 	}
 
 	// Then read all entries
+	let mut idx = 0;
 	while let Some(entry) = pak_fs.next_entry().context("Unable to read entry")? {
-		// Get the filename
-		let filename = entry.header().id;
+		let idx = {
+			let cur_idx = idx;
+			idx += 1;
+			cur_idx
+		};
 
 		// Get the extension
 		let extension = match entry.header().kind {
@@ -74,7 +78,7 @@ fn extract_file(input_file: &Path, output_dir: &Path, cli_data: &CliData) -> Res
 			header::Kind::AudioVb => "VB",
 		};
 
-		let path = output_dir.join(format!("{}.{}", filename, extension));
+		let path = output_dir.join(format!("{}.{}", idx, extension));
 		if !cli_data.quiet {
 			println!(
 				"{} ({}B)",
