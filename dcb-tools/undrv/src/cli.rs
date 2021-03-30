@@ -34,7 +34,7 @@ impl CliData {
 			.setting(AppSettings::ArgRequiredElseHelp)
 			.arg(
 				ClapArg::with_name(INPUT_FILES_STR)
-					.help("The input file to use")
+					.help("The input files to use")
 					.required(true)
 					.multiple(true),
 			)
