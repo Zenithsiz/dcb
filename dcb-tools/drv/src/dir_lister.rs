@@ -78,8 +78,8 @@ impl Iterator for DirLister {
 			let date = chrono::NaiveDateTime::from_timestamp(i64::try_from(secs_since_epoch).map_err(|_err| NextError::EntryDateI64Secs)?, 0);
 
 			// Check if it's a directory or file
-			let kind = match metadata.is_file() {
-				true => {
+			let kind = match metadata.is_dir() {
+				false => {
 					let mut file = fs::File::open(&path).map_err(NextError::OpenFile)?;
 					let size = file
 						.stream_len()
@@ -97,7 +97,7 @@ impl Iterator for DirLister {
 					let file = FileWriter::new(extension, file, size);
 					DirEntryWriterKind::File(file)
 				},
-				false => {
+				true => {
 					let entries = Self::new(&path).map_err(NextError::OpenDir)?;
 
 					log::info!("{} ({} entries)", path.display(), entries.entries_len);
