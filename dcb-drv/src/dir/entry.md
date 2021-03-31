@@ -16,4 +16,4 @@ Each directory entry has the following layout:
 # Limitations
 
 The max size for a file is `u32::MAX` bytes, but the filesystem itself can hold `2^43` bytes in total, as each
-directory and file position is done by sector.
+directory and file position is identified by sector.
