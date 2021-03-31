@@ -44,9 +44,10 @@ impl<A: OnlyValidCharsAlphabet> Alphabet for A {
 	fn validate(bytes: &[u8]) -> Result<&[u8], Self::Error> {
 		// Go through all bytes and validate them until end of
 		// string or terminator.
+		let terminator = Self::terminator();
 		for (pos, &byte) in bytes.iter().enumerate() {
 			// If we found the terminator, terminate
-			if byte == Self::terminator() {
+			if byte == terminator {
 				return Ok(&bytes[..pos]);
 			}
 
