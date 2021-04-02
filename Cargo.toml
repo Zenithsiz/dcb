@@ -18,4 +18,5 @@ members = [
 	"dcb-tools/unpak",
 	"dcb-tools/model-set-extractor",
 	"dcb-tools/dcb-iso2bin",
+	"dcb-tools/dcb-bin2iso",
 ]
