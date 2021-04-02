@@ -1,5 +1,13 @@
 //! Errors
 
+/// Error type for [`Address::from_sector_pos`](super::Address::from_sector_pos)
+#[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
+pub enum FromSectorPosError {
+	/// Sector is too large
+	#[error("Sector position {_0:#x} is too large")]
+	TooLarge(usize),
+}
+
 /// Error type for [`Bytes::from_bytes`](dcb_bytes::Bytes::from_bytes)
 #[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
 pub enum FromBytesError {

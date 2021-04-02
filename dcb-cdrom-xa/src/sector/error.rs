@@ -3,6 +3,14 @@
 // Imports
 use super::header;
 
+/// Error type for [`Sector::new`](super::Sector::new)
+#[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
+pub enum NewError {
+	/// Unable to create address
+	#[error("Unable to create address")]
+	Address(#[source] header::address::FromSectorPosError),
+}
+
 /// Error type for [`Bytes::from_bytes`](dcb_bytes::Bytes::from_bytes)
 #[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
 pub enum FromBytesError {

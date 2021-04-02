@@ -1,5 +1,5 @@
 [package]
-name = "cdrom-xa-packer"
+name = "dcb-iso2bin"
 version = "0.1.0"
 authors = ["Filipe Rodrigues <filipejacintorodrigues1@gmail.com>"]
 edition = "2018"

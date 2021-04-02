@@ -7,7 +7,7 @@ pub mod error;
 pub use error::WriteSectorError;
 
 // Imports
-use crate::Sector;
+use crate::{sector::header::SubHeader, Sector};
 use dcb_bytes::Bytes;
 use std::io::Write;
 
@@ -16,6 +16,9 @@ use std::io::Write;
 pub struct CdRomWriter<W> {
 	/// Underlying writer
 	writer: W,
+
+	/// Current sector
+	cur_sector: usize,
 }
 
 // Constants
@@ -28,20 +31,29 @@ impl<W> CdRomWriter<W> {
 impl<W> CdRomWriter<W> {
 	/// Creates a new CD-ROM reader
 	#[must_use]
-	pub const fn new(writer: W) -> Self {
-		Self { writer }
+	pub const fn new(writer: W, start_sector: usize) -> Self {
+		Self {
+			writer,
+			cur_sector: start_sector,
+		}
 	}
 }
 
 // Write
 impl<W: Write> CdRomWriter<W> {
-	/// Writes the next sector
-	pub fn write_sector(&mut self, sector: &Sector) -> Result<(), WriteSectorError> {
+	/// Writes the next sector data
+	pub fn write_sector(&mut self, data: [u8; 2048], subheader: SubHeader) -> Result<(), WriteSectorError> {
+		// Create the sector
+		let sector = Sector::new(data, self.cur_sector, subheader).map_err(WriteSectorError::Sector)?;
+
 		// Serialize it
 		let mut bytes = [0; 2352];
 		sector.to_bytes(&mut bytes).map_err(WriteSectorError::ToBytes)?;
 
-		// And write it
-		self.writer.write_all(&bytes).map_err(WriteSectorError::Write)
+		// Write it and increase out sector
+		self.writer.write_all(&bytes).map_err(WriteSectorError::Write)?;
+		self.cur_sector += 1;
+
+		Ok(())
 	}
 }

@@ -1,14 +1,14 @@
-//! `.DRV` packer
-
-// Features
-#![feature()]
+//! CdRom packer
 
 // Modules
 mod cli;
 
 // Imports
 use anyhow::Context;
-use dcb_cdrom_xa::{CdRomWriter, Sector};
+use dcb_cdrom_xa::{
+	sector::header::{subheader::SubMode, SubHeader},
+	CdRomWriter,
+};
 use std::{
 	fs,
 	io::{self, Read},
@@ -37,10 +37,10 @@ fn pack_cdrom_xa(input_file: &Path, output_file: &Path) -> Result<(), anyhow::Er
 
 	// Create the output file
 	let output_file = fs::File::create(output_file).context("Unable to create output file")?;
-	let mut output_file = CdRomWriter::new(output_file);
+	let mut output_file = CdRomWriter::new(output_file, 75 * 2);
 
 	// Read the input file by chunks of 2048.
-	'write_loop: for sector_pos in 0.. {
+	'write_loop: loop {
 		let mut data = [0; 2048];
 
 		// Inlined from `Read::read_exact`.
@@ -61,9 +61,16 @@ fn pack_cdrom_xa(input_file: &Path, output_file: &Path) -> Result<(), anyhow::Er
 			}
 		}
 
-		let sector = Sector::new(data, sector_pos).context("Unable to create sector")?;
+		let subheader = SubHeader {
+			file:        0,
+			channel:     0,
+			submode:     SubMode::DATA,
+			coding_info: 0,
+		};
 
-		output_file.write_sector(&sector).context("Unable to write sector to output file")?;
+		output_file
+			.write_sector(data, subheader)
+			.context("Unable to write sector to output file")?;
 	}
 
 	Ok(())

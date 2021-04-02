@@ -18,10 +18,10 @@ impl CliData {
 	/// Constructs all of the cli data given and returns it
 	pub fn new() -> Self {
 		// Get all matches from cli
-		let matches = ClapApp::new("CdRom/XA Packer")
+		let matches = ClapApp::new("Iso to Bin")
 			.version("0.1")
 			.author("Filipe [...] <[...]@gmail.com>")
-			.about("Packs a file into the CdRom/XA format")
+			.about("Coverts an ISO 9660 filesystem file to a `.bin` file in the CdRom/XA format")
 			.arg(ClapArg::with_name("INPUT_FILE").help("The input file to use").required(true).index(1))
 			.arg(
 				ClapArg::with_name("OUTPUT")

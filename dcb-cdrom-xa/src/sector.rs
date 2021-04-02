@@ -9,15 +9,14 @@ pub mod header;
 // Exports
 pub use ecc::Ecc;
 pub use edc::Edc;
-pub use error::{FromBytesError, ToBytesError};
+pub use error::{FromBytesError, NewError, ToBytesError};
 pub use header::Header;
 
 // Imports
+use self::header::SubHeader;
 use dcb_bytes::Bytes;
 use dcb_util::{array_split, array_split_mut};
 use header::Address;
-
-use self::header::SubHeader;
 
 /// A CD-ROM/XA Sector
 ///
@@ -32,15 +31,14 @@ pub struct Sector {
 }
 
 impl Sector {
-	/// Creates a new sector given it's sector position and ata
-	#[must_use]
-	pub fn new(data: [u8; 2048], sector_pos: usize) -> Option<Self> {
+	/// Creates a new sector given it's data, sector position and subheader data
+	pub fn new(data: [u8; 2048], sector_pos: usize, subheader: SubHeader) -> Result<Self, NewError> {
 		let header = Header {
-			address:   Address::from_sector_pos(sector_pos)?,
-			subheader: SubHeader::new(),
+			address: Address::from_sector_pos(sector_pos).map_err(NewError::Address)?,
+			subheader,
 		};
 
-		Some(Self { header, data })
+		Ok(Self { header, data })
 	}
 }
 

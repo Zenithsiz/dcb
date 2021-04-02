@@ -4,7 +4,7 @@
 pub mod error;
 
 // Exports
-pub use error::{FromBytesError, ToBytesError};
+pub use error::{FromBytesError, FromSectorPosError, ToBytesError};
 
 // Imports
 use dcb_util::{array_split, array_split_mut, BcdU8};
@@ -33,14 +33,14 @@ impl Address {
 	/// Creates a new sector given a position
 	///
 	/// Starts the first sector at 2 seconds.
-	#[must_use]
-	pub fn from_sector_pos(sector_pos: usize) -> Option<Self> {
+	pub fn from_sector_pos(sector_pos: usize) -> Result<Self, FromSectorPosError> {
 		let block = u8::try_from(sector_pos % 75).expect("Must fit");
 		let total_secs = sector_pos / 75;
-		let sec = u8::try_from(total_secs % 60).expect("must fit");
-		let min = u8::try_from(total_secs / 60).ok()?;
+		let sec = u8::try_from(total_secs % 60).expect("Must fit");
+		#[allow(clippy::map_err_ignore)] // We want to ignore the error here, only one way for it to fail
+		let min = u8::try_from(total_secs / 60).map_err(|_| FromSectorPosError::TooLarge(sector_pos))?;
 
-		Some(Self { min, sec, block })
+		Ok(Self { min, sec, block })
 	}
 }
 
