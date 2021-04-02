@@ -15,16 +15,16 @@ pub enum FromBytesError {
 	InvalidMode(u8),
 
 	/// Unable to read subheader
-	#[error("Unable to read subheader")]
-	SubHeader(subheader::FromBytesError),
+	#[error("Unable to parse subheader")]
+	SubHeader(#[source] subheader::FromBytesError),
 
 	/// The two sub-headers were different
 	#[error("The two sub-headers were different {_0:?} & {_1:?}")]
 	DifferentSubHeaders(SubHeader, SubHeader),
 
 	/// Unable to read address
-	#[error("Unable to read address")]
-	Address(address::FromBytesError),
+	#[error("Unable to parse address")]
+	Address(#[source] address::FromBytesError),
 }
 
 /// Error type for [`Bytes::to_bytes`](dcb_bytes::Bytes::to_bytes)

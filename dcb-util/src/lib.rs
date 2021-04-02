@@ -148,7 +148,7 @@ impl BcdU8 {
 	#[must_use]
 	pub const fn to_u8(self) -> Option<u8> {
 		let lo = self.0 & 0xF;
-		let hi = self.0 & 0xF0 >> 4u8;
+		let hi = (self.0 & 0xF0) >> 4u8;
 		match (lo, hi) {
 			(0..=9, 0..=9) => Some(lo + hi * 10),
 			_ => None,
