@@ -1,8 +1,5 @@
 //! `.DRV` extractor
 
-// Features
-#![feature(osstring_ascii)]
-
 // Modules
 mod cli;
 

@@ -11,7 +11,6 @@
 	//unsafe_block_in_unsafe_fn,
 	format_args_capture,
 	never_type,
-	or_patterns,
 	associated_type_bounds,
 	bindings_after_at,
 	iter_map_while,

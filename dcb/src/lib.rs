@@ -19,7 +19,6 @@
 	core_intrinsics,
 	const_assume,
 	bindings_after_at,
-	or_patterns,
 	once_cell,
 	box_syntax
 )]

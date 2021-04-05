@@ -119,10 +119,10 @@ impl Alphabet for FileAlphabet {
 	type Error = ValidateFileAlphabetError;
 
 	fn validate(bytes: &[u8]) -> Result<&[u8], Self::Error> {
-		// Special cases for the root, `.` and `..`, respectively
+		// Special cases for `.`, `..` and the root, respectively
 		// TODO: Remove exceptions from this string and make directories store the
 		//       current and parent separately.
-		if let [b'\0'] | [] | [b'\x01'] = bytes {
+		if let [] | [b'\x01' | b'\0'] = bytes {
 			return Ok(bytes);
 		}
 

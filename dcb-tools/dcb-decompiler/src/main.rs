@@ -1,14 +1,6 @@
 //! Decompiler
 
-#![feature(
-	box_syntax,
-	backtrace,
-	panic_info_message,
-	array_chunks,
-	format_args_capture,
-	or_patterns,
-	bindings_after_at
-)]
+#![feature(box_syntax, backtrace, panic_info_message, array_chunks, format_args_capture, bindings_after_at)]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]
 // Instead of `unwrap`, we must use `expect` and provide a reason
