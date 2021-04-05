@@ -11,6 +11,10 @@ pub enum DirListNewError {
 	#[error("Unable to read directory {}", _0.display())]
 	ReadDir(PathBuf, #[source] io::Error),
 
+	/// Unable to read entry
+	#[error("Unable to read entry in {}", _0.display())]
+	ReadEntries(PathBuf, #[source] io::Error),
+
 	/// Too many entries in directory
 	#[error("Too many entries in directory")]
 	TooManyEntries,
@@ -19,10 +23,6 @@ pub enum DirListNewError {
 /// Error for [`Iterator::Item`]
 #[derive(Debug, thiserror::Error)]
 pub enum NextError {
-	/// Unable to read entry
-	#[error("Unable to read entry")]
-	ReadEntry(#[source] io::Error),
-
 	/// Unable to read entry metadata
 	#[error("Unable to read entry metadata")]
 	ReadMetadata(#[source] io::Error),

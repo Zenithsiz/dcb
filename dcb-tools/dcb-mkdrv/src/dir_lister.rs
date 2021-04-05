@@ -8,9 +8,11 @@ pub use error::{DirListNewError, NextError};
 
 // Imports
 use dcb_drv::{dir::entry::DirEntryWriterKind, DirEntryWriter, DirWriter, DirWriterLister, FileWriter};
+use fs::FileType;
 use std::{
+	cmp::Ordering,
 	convert::{TryFrom, TryInto},
-	fs,
+	fs::{self, DirEntry},
 	io::Seek,
 	path::Path,
 	time::SystemTime,
@@ -19,26 +21,44 @@ use std::{
 /// Directory list
 #[derive(Debug)]
 pub struct DirLister {
-	/// Directory read
-	dir: fs::ReadDir,
-
-	/// Number of entries
-	entries_len: u32,
+	/// All entries
+	entries: Vec<DirEntry>,
 }
 
 impl DirLister {
 	/// Creates a new iterator from a path
 	pub fn new(path: &Path) -> Result<Self, DirListNewError> {
-		// Get the length
-		let len = fs::read_dir(path)
+		// Read the directory entries
+		let mut entries = fs::read_dir(path)
 			.map_err(|err| DirListNewError::ReadDir(path.to_path_buf(), err))?
-			.count();
-		let entries_len = u32::try_from(len).map_err(|_err| DirListNewError::TooManyEntries)?;
+			.collect::<Result<Vec<_>, _>>()
+			.map_err(|err| DirListNewError::ReadEntries(path.to_path_buf(), err))?;
 
-		// And read the directory
-		let dir = fs::read_dir(path).map_err(|err| DirListNewError::ReadDir(path.to_path_buf(), err))?;
+		// If there are too many entries, return Err
+		if u32::try_from(entries.len()).is_err() {
+			return Err(DirListNewError::TooManyEntries);
+		}
 
-		Ok(Self { dir, entries_len })
+		// Then sort them by type and then name
+		entries.sort_by(|lhs, rhs| {
+			// Get if they're a directory
+			// Note: If we can't read it, we just say it's a directory
+			let lhs_is_dir = lhs.file_type().as_ref().map_or(false, FileType::is_dir);
+			let rhs_is_dir = rhs.file_type().as_ref().map_or(false, FileType::is_dir);
+
+			// Sort directories first
+			match (lhs_is_dir, rhs_is_dir) {
+				(true, false) => return Ordering::Less,
+				(false, true) => return Ordering::Greater,
+				_ => (),
+			}
+
+			// Then compare by name
+			// TODO: Avoid allocations here?
+			lhs.file_name().cmp(&rhs.file_name())
+		});
+
+		Ok(Self { entries })
 	}
 }
 
@@ -47,21 +67,19 @@ impl DirWriterLister for DirLister {
 	type FileReader = fs::File;
 
 	fn entries_len(&self) -> u32 {
-		self.entries_len
+		// Note: We makes sure it's less than `u32::MAX` in the constructor
+		self.entries.len().try_into().expect("Too many entries")
 	}
 }
 
-impl Iterator for DirLister {
+impl IntoIterator for DirLister {
 	type Item = Result<DirEntryWriter<Self>, <Self as DirWriterLister>::Error>;
 
-	fn next(&mut self) -> Option<Self::Item> {
-		// Get the next entry
-		let entry = self.dir.next()?;
+	type IntoIter = impl Iterator<Item = Self::Item>;
 
-		// Then read it
-		let res = try {
+	fn into_iter(self) -> Self::IntoIter {
+		self.entries.into_iter().map(|entry| {
 			// Read the entry and it's metadata
-			let entry = entry.map_err(NextError::ReadEntry)?;
 			let metadata = entry.metadata().map_err(NextError::ReadMetadata)?;
 			let path = entry.path();
 			let name = path
@@ -100,16 +118,14 @@ impl Iterator for DirLister {
 				true => {
 					let entries = Self::new(&path).map_err(NextError::OpenDir)?;
 
-					log::info!("{} ({} entries)", path.display(), entries.entries_len);
+					log::info!("{} ({} entries)", path.display(), entries.entries.len());
 
 					let dir = DirWriter::new(entries);
 					DirEntryWriterKind::Dir(dir)
 				},
 			};
 
-			DirEntryWriter::new(name, date, kind)
-		};
-
-		Some(res)
+			Ok(DirEntryWriter::new(name, date, kind))
+		})
 	}
 }
