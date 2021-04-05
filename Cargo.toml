@@ -17,6 +17,6 @@ members = [
 	"dcb-tools/dcb-mkdrv",
 	"dcb-tools/dcb-unpak",
 	"dcb-tools/model-set-extractor",
-	"dcb-tools/dcb-iso2bin",
-	"dcb-tools/dcb-bin2iso",
+	"dcb-tools/dcb-mkbin",
+	"dcb-tools/dcb-unbin",
 ]

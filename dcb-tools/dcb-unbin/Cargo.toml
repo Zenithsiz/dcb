@@ -1,5 +1,5 @@
 [package]
-name = "dcb-iso2bin"
+name = "dcb-unbin"
 version = "0.1.0"
 authors = ["Filipe Rodrigues <filipejacintorodrigues1@gmail.com>"]
 edition = "2018"
