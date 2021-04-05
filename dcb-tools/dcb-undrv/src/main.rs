@@ -33,6 +33,7 @@ fn main() -> Result<(), anyhow::Error> {
 
 		// Open the file and parse a `drv` filesystem from it.
 		let input_file = fs::File::open(&input_file_path).context("Unable to open input file")?;
+		let input_file_metadata = input_file.metadata().context("Unable to get input file metadata")?;
 		let mut input_file = io::BufReader::new(input_file);
 
 		// Create output directory if it doesn't exist
@@ -41,6 +42,16 @@ fn main() -> Result<(), anyhow::Error> {
 		// Then extract the tree
 		if let Err(err) = self::extract_tree(&mut input_file, &DrvFsReader::root(), &output_dir, &cli_data) {
 			log::error!("Unable to extract files from {}: {:?}", input_file_path.display(), err);
+		}
+
+		// And set it's time to the input file
+		let time = filetime::FileTime::from_last_modification_time(&input_file_metadata);
+		if let Err(err) = filetime::set_file_mtime(&output_dir, time) {
+			log::warn!(
+				"Unable to write date for output directory {}: {}",
+				output_dir.display(),
+				dcb_util::fmt_err_wrapper(&err)
+			);
 		}
 	}
 
@@ -106,8 +117,13 @@ fn extract_tree<R: io::Read + io::Seek>(reader: &mut R, dir: &DirReader, path: &
 					println!("{}/", path.display());
 				}
 
-				// Create the directory and set it's modification date
+				// Create the directory and recurse over it
 				dcb_util::try_create_folder(&path).with_context(|| format!("Unable to create directory {}", path.display()))?;
+				self::extract_tree(reader, dir, &path, &cli_data).with_context(|| format!("Unable to extract directory {}", path.display()))?;
+
+				// Then set it's date
+				// Note: We must do this *after* extracting the tree, else the time
+				//       will be updated.
 				if let Err(err) = filetime::set_file_mtime(&path, time) {
 					log::warn!(
 						"Unable to write date for directory {}: {}",
@@ -115,9 +131,6 @@ fn extract_tree<R: io::Read + io::Seek>(reader: &mut R, dir: &DirReader, path: &
 						dcb_util::fmt_err_wrapper(&err)
 					);
 				}
-
-				// Then recurse over it
-				self::extract_tree(reader, dir, &path, &cli_data).with_context(|| format!("Unable to extract directory {}", path.display()))?;
 			},
 		}
 	}
