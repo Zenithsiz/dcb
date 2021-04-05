@@ -3,30 +3,37 @@
 // Imports
 use std::{io, path::PathBuf};
 
-/// Error for [`DirList::new`]
-// TODO: Rename
+/// Error for [`DirList::new`](super::DirLister::new)
 #[derive(Debug, thiserror::Error)]
-pub enum DirListNewError {
+pub enum NewError {
 	/// Unable to read directory
 	#[error("Unable to read directory {}", _0.display())]
 	ReadDir(PathBuf, #[source] io::Error),
 
 	/// Unable to read entry
 	#[error("Unable to read entry in {}", _0.display())]
-	ReadEntries(PathBuf, #[source] io::Error),
+	ReadEntries(PathBuf, #[source] ReadEntryError),
 
 	/// Too many entries in directory
 	#[error("Too many entries in directory")]
 	TooManyEntries,
 }
 
-/// Error for [`Iterator::Item`]
+/// Error for [`DirList::new`](super::DirLister::new)'s entry reading
 #[derive(Debug, thiserror::Error)]
-pub enum NextError {
+pub enum ReadEntryError {
+	/// Unable to read entry
+	#[error("Unable to read entry")]
+	Read(#[source] io::Error),
+
 	/// Unable to read entry metadata
 	#[error("Unable to read entry metadata")]
 	ReadMetadata(#[source] io::Error),
+}
 
+/// Error for [`Iterator::Item`]
+#[derive(Debug, thiserror::Error)]
+pub enum NextError {
 	/// Entry had no name
 	#[error("Entry had no name")]
 	NoEntryName,
@@ -69,5 +76,5 @@ pub enum NextError {
 
 	/// Unable to open directory
 	#[error("Unable to open directory")]
-	OpenDir(#[source] self::DirListNewError),
+	OpenDir(#[source] self::NewError),
 }
