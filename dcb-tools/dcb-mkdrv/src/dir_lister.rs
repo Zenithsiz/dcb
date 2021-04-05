@@ -110,7 +110,7 @@ impl IntoIterator for DirLister {
 						.try_into()
 						.map_err(NextError::InvalidFileExtension)?;
 
-					log::info!("{} ({} bytes)", path.display(), size);
+					println!("{} ({} bytes)", path.display(), size);
 
 					let file = FileWriter::new(extension, file, size);
 					DirEntryWriterKind::File(file)
@@ -118,7 +118,7 @@ impl IntoIterator for DirLister {
 				true => {
 					let entries = Self::new(&path).map_err(NextError::OpenDir)?;
 
-					log::info!("{} ({} entries)", path.display(), entries.entries.len());
+					println!("{} ({} entries)", path.display(), entries.entries.len());
 
 					let dir = DirWriter::new(entries);
 					DirEntryWriterKind::Dir(dir)
