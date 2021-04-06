@@ -1,7 +1,8 @@
 # Project
 /resources/*
-!/resources/known_data.yaml
-!/resources/known_funcs.yaml
+!/resources/foreign_data.yaml
+!/resources/game_data.yaml
+!/resources/game_funcs.yaml
 
 # Cargo
 /target

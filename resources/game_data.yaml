@@ -1,0 +1,131 @@
+---
+# Executable
+- name: ExeStart
+  pos: 0x80010000
+  ty:
+    Marker:
+      len: 0x3e4c
+  kind: Known
+- name: ExeEnd
+  pos: 0x8006dd3c
+  ty:
+    Marker:
+      len: 0xa2C4
+  kind: Known
+
+- name: CrossMoveEffectStringsRaw
+  desc: The cross move effect string table with raw symbols
+  pos: 0x8006e47c
+  ty:
+    Array:
+      ty: u32
+      len: 16
+  kind: Known
+- name: CrossMoveEffectStrings
+  desc: The cross move effect string table with escaped symbols
+  pos: 0x8006e4bc
+  ty:
+    Array:
+      ty: u32
+      len: 16
+  kind: Known
+- name: PartnerEffectStrings
+  desc: Partner effects string table.
+  pos: 0x8006edb4
+  ty:
+    Array:
+      ty: u32
+      len: 82
+
+- name: HeapStartKuseg
+  desc: Stores the start of the heap in KUSEG (Minus 0x4).
+  pos: 0x8006f988
+  ty: u32
+  kind: Known
+- name: HeapSize
+  desc: Stores the size of the heap .
+  pos: 0x8006f98c
+  ty: u32
+  kind: Known
+- name: StartReturnAddress
+  desc: Stores the return address in `start` when calling `InitHeap`
+  pos: 0x80077a20
+  ty: u32
+  kind: Known
+
+- name: GPU_STAT_PTR
+  pos: 0x8006f9b0
+  ty: u32
+  kind: Known
+- name: Timer1Ptr
+  pos: 0x8006f9b4
+  ty: u32
+  kind: Known
+
+- name: I_STAT_PTR
+  pos: 0x80070aac
+  ty: u32
+  kind: Known
+- name: I_MASK_PTR
+  pos: 0x80070ab0
+  ty: u32
+  kind: Known
+- name: DPCR_PTR
+  pos: 0x80070ab4
+  ty: u32
+  kind: Known
+
+- name: something6_data1
+  pos: 0x80070ae8
+  ty: u32
+  kind: Known
+- name: ZeroStart
+  desc: "Start of the zero section in `start`"
+  pos: 0x80077a08
+  ty: u32
+  kind: Known
+- name: HeapStart
+  desc: Start of the heap
+  pos: 0x801ddf38
+  ty: u32
+  kind: Known
+- name: something1_data2
+  pos: 0x80010000
+  ty:
+    AsciiStr:
+      len: 6
+  kind: Known
+- name: StackTop
+  desc: Stack top address
+  pos: 0x8006dd44
+  ty: u32
+  kind: Known
+- name: StackSize
+  desc: Stack size
+  pos: 0x8006dd48
+  ty: u32
+  kind: Known
+- name: something1_executed
+  pos: 0x8006f984
+  ty: u32
+  kind: Known
+- name: something5_data1
+  pos: 0x8006fa20
+  ty:
+    Array:
+      ty: u16
+      len: 2
+  kind: Known
+- name: something5_data5
+  pos: 0x8006fa5c
+  ty: u32
+  kind: Known
+- name: FuncList1
+  pos: 0x80070a88
+  ty: u32
+  kind: Known
+- name: FuncList1Ptr
+  desc: Pointer to FuncList1
+  pos: 0x80070aa8
+  ty: u32
+  kind: Known

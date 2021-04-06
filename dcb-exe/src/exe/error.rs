@@ -41,11 +41,19 @@ pub enum DeserializeError {
 /// Error type for getting the known function table
 #[derive(Debug, thiserror::Error)]
 pub enum GetKnownError {
-	/// Unable to open file
-	#[error("Unable to open file")]
-	File(#[source] std::io::Error),
+	/// Unable to open game data file
+	#[error("Unable to open game data file")]
+	OpenGame(#[source] std::io::Error),
 
-	/// Unable to parse file
-	#[error("Unable to parse file")]
-	Parse(#[source] serde_yaml::Error),
+	/// Unable to parse game data file
+	#[error("Unable to parse game data file")]
+	ParseGame(#[source] serde_yaml::Error),
+
+	/// Unable to open foreign data file
+	#[error("Unable to open foreign data file")]
+	OpenForeign(#[source] std::io::Error),
+
+	/// Unable to parse foreign data file
+	#[error("Unable to parse foreign data file")]
+	ParseForeign(#[source] serde_yaml::Error),
 }

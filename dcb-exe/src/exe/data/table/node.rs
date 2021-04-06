@@ -72,7 +72,7 @@ impl DataNode {
 			// If it contains it, check if we can insert it there
 			else if node.contains(&data) {
 				// If `data` is heuristics and `node`'s data is known and not a marker, return Err
-				if data.found().is_heuristics() && node.data.found().is_known() && !matches!(node.data.ty(), DataType::Marker { .. }) {
+				if data.kind().is_heuristics() && node.data.kind().is_known() && !matches!(node.data.ty(), DataType::Marker { .. }) {
 					return Err(InsertError::InsertHeuristicsIntoNonMarkerKnown {
 						data,
 						known: node.data.clone(),

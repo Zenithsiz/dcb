@@ -7,12 +7,12 @@
 //! and description.
 
 // Modules
-pub mod found;
+pub mod kind;
 pub mod table;
 pub mod ty;
 
 // Exports
-pub use found::Found;
+pub use kind::DataKind;
 pub use table::DataTable;
 pub use ty::DataType;
 
@@ -53,23 +53,23 @@ pub struct Data {
 	/// Data type
 	ty: DataType,
 
-	/// Method found
-	#[serde(default = "Found::known")]
-	found: Found,
+	/// Data kind
+	#[serde(default = "DataKind::known")]
+	kind: DataKind,
 }
 
 impl Data {
 	/// Creates a dummy over all of [`Pos`]'s range
 	pub(crate) fn dummy() -> Self {
 		Self {
-			name:  String::new(),
-			desc:  String::new(),
-			pos:   Pos(0),
-			ty:    DataType::Array {
+			name: String::new(),
+			desc: String::new(),
+			pos:  Pos(0),
+			ty:   DataType::Array {
 				ty:  Box::new(DataType::Word),
 				len: 0xFFFF_FFFF / 4,
 			},
-			found: Found::Known,
+			kind: DataKind::Known,
 		}
 	}
 
@@ -85,10 +85,10 @@ impl Data {
 		&self.desc
 	}
 
-	/// Returns how this data was discovered
+	/// Returns this data's kind
 	#[must_use]
-	pub const fn found(&self) -> Found {
-		self.found
+	pub const fn kind(&self) -> DataKind {
+		self.kind
 	}
 
 	/// Returns the start position of this data as a reference
@@ -175,28 +175,28 @@ impl Data {
 						desc: String::new(),
 						pos,
 						ty: DataType::AsciiStr { len: string.len() },
-						found: Found::Heuristics,
+						kind: DataKind::Heuristics,
 					},
 					Directive::Dw(_) => Self {
 						name: format!("data_w{idx}"),
 						desc: String::new(),
 						pos,
 						ty: DataType::Word,
-						found: Found::Heuristics,
+						kind: DataKind::Heuristics,
 					},
 					Directive::Dh(_) => Self {
 						name: format!("data_h{idx}"),
 						desc: String::new(),
 						pos,
 						ty: DataType::HalfWord,
-						found: Found::Heuristics,
+						kind: DataKind::Heuristics,
 					},
 					Directive::Db(_) => Self {
 						name: format!("data_b{idx}"),
 						desc: String::new(),
 						pos,
 						ty: DataType::Byte,
-						found: Found::Heuristics,
+						kind: DataKind::Heuristics,
 					},
 				}
 			})

@@ -150,9 +150,14 @@ impl Exe {
 
 /// Returns all known data locations
 fn get_known_data_table() -> Result<DataTable, GetKnownError> {
-	let file = std::fs::File::open("resources/known_data.yaml").map_err(GetKnownError::File)?;
+	let game_data_file = std::fs::File::open("resources/game_data.yaml").map_err(GetKnownError::OpenGame)?;
+	let game_data: Vec<Data> = serde_yaml::from_reader(game_data_file).map_err(GetKnownError::ParseGame)?;
 
-	let data: Vec<Data> = serde_yaml::from_reader(file).map_err(GetKnownError::Parse)?;
+	let foreign_data_file = std::fs::File::open("resources/foreign_data.yaml").map_err(GetKnownError::OpenForeign)?;
+	let foreign_data: Vec<Data> = serde_yaml::from_reader(foreign_data_file).map_err(GetKnownError::ParseForeign)?;
 
-	Ok(DataTable::new(data))
+	let mut data_table = DataTable::new(game_data);
+	data_table.extend(foreign_data);
+
+	Ok(data_table)
 }

@@ -72,7 +72,7 @@ impl FuncTable {
 impl FuncTable {
 	/// Returns all known functions
 	pub fn get_known() -> Result<Self, GetKnownError> {
-		let file = File::open("resources/known_funcs.yaml").map_err(GetKnownError::File)?;
+		let file = File::open("resources/game_funcs.yaml").map_err(GetKnownError::File)?;
 
 		serde_yaml::from_reader(file).map_err(GetKnownError::Parse)
 	}

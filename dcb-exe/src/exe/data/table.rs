@@ -13,7 +13,7 @@ pub use error::{ExtendError, NewError};
 pub use node::DataNode;
 
 // Imports
-use super::{Data, Found};
+use super::{Data, DataKind};
 use crate::exe::Pos;
 use std::fmt;
 
@@ -66,9 +66,9 @@ impl DataTable {
 		for data in data {
 			// Try to insert and log if we get an error.
 			if let Err(err) = self.root.insert(data) {
-				let log_level = match err.data().found() {
-					Found::Known => log::Level::Warn,
-					Found::Heuristics => log::Level::Trace,
+				let log_level = match err.data().kind() {
+					DataKind::Known | DataKind::Foreign => log::Level::Warn,
+					DataKind::Heuristics => log::Level::Trace,
 				};
 				log::log!(
 					log_level,
