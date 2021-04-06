@@ -8,7 +8,6 @@ pub mod data;
 pub mod error;
 pub mod func;
 pub mod header;
-pub mod inst;
 pub mod iter;
 pub mod pos;
 
@@ -22,6 +21,8 @@ pub use pos::Pos;
 // Imports
 use dcb_bytes::{ByteArray, Bytes};
 use std::{convert::TryFrom, io, ops::Range};
+
+use crate::inst;
 
 /// The game executable
 #[derive(Clone, Debug)]

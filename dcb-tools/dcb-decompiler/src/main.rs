@@ -8,11 +8,8 @@ mod cli;
 // Imports
 use anyhow::Context;
 use dcb_exe::{
-	exe::{
-		inst::{basic, pseudo, Directive, Inst, InstFmt, InstTarget, InstTargetFmt},
-		iter::ExeItem,
-		Func,
-	},
+	exe::{iter::ExeItem, Func},
+	inst::{basic, pseudo, Directive, Inst, InstFmt, InstTarget, InstTargetFmt},
 	Exe, Pos,
 };
 use std::fmt;

@@ -75,6 +75,7 @@
 
 // Modules
 pub mod exe;
+pub mod inst;
 
 // Exports
 pub use exe::{Exe, Header, Pos};

@@ -13,6 +13,7 @@ members = [
 	"dcb-pak",
 	"dcb-tools/dcb-extractor",
 	"dcb-tools/dcb-decompiler",
+	"dcb-tools/dcb-compiler",
 	"dcb-tools/dcb-undrv",
 	"dcb-tools/dcb-mkdrv",
 	"dcb-tools/dcb-unpak",
