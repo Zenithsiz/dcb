@@ -8,9 +8,9 @@ mod cli;
 // Imports
 use anyhow::Context;
 use dcb_exe::{
-	exe::{iter::ExeItem}, Func,
 	inst::{basic, pseudo, Directive, Inst, InstFmt, InstTarget, InstTargetFmt},
-	Exe, Pos,
+	reader::iter::ExeItem,
+	ExeReader, Func, Pos,
 };
 use std::fmt;
 
@@ -27,7 +27,7 @@ fn main() -> Result<(), anyhow::Error> {
 
 	// Read the executable
 	log::debug!("Deserializing executable");
-	let exe = Exe::deserialize(&mut input_file).context("Unable to parse game executable")?;
+	let exe = ExeReader::deserialize(&mut input_file).context("Unable to parse game executable")?;
 
 	if cli.print_header {
 		println!("Header:\n{}", exe.header());
@@ -115,7 +115,7 @@ fn main() -> Result<(), anyhow::Error> {
 
 /// Returns a display-able for an instruction inside a possible function
 #[must_use]
-pub fn inst_display<'a>(inst: &'a Inst, exe: &'a Exe, func: Option<&'a Func>, pos: Pos) -> impl fmt::Display + 'a {
+pub fn inst_display<'a>(inst: &'a Inst, exe: &'a ExeReader, func: Option<&'a Func>, pos: Pos) -> impl fmt::Display + 'a {
 	// Overload the target of as many as possible using `inst_target`.
 	dcb_util::DisplayWrapper::new(move |f| match inst {
 		Inst::Basic(basic::Inst::Cond(inst)) => write!(f, "{}", self::inst_target_fmt(inst, pos, self::inst_target(exe, func, inst.target(pos)))),
@@ -141,7 +141,7 @@ pub fn inst_display<'a>(inst: &'a Inst, exe: &'a Exe, func: Option<&'a Func>, po
 
 /// Looks up a function, data or label, if possible, else returns the position.
 #[must_use]
-pub fn inst_target<'a>(exe: &'a Exe, func: Option<&'a Func>, pos: Pos) -> impl fmt::Display + 'a {
+pub fn inst_target<'a>(exe: &'a ExeReader, func: Option<&'a Func>, pos: Pos) -> impl fmt::Display + 'a {
 	dcb_util::DisplayWrapper::new(move |f| {
 		// Try to get a label for the current function, if it exists
 		if let Some(label) = func.and_then(|func| func.labels.get(&pos)) {

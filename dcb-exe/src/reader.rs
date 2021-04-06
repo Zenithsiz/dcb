@@ -1,10 +1,6 @@
-//! Executable
-//!
-//! This module defines the `Exe` type, which encompasses the whole
-//! executable part of the game file (`SLUS_013`).
+//! Executable reader
 
 // Modules
-
 pub mod error;
 pub mod iter;
 
@@ -18,7 +14,7 @@ use std::{convert::TryFrom, io, ops::Range};
 
 /// The game executable
 #[derive(Clone, Debug)]
-pub struct Exe {
+pub struct ExeReader {
 	/// The executable header
 	header: Header,
 
@@ -33,12 +29,12 @@ pub struct Exe {
 }
 
 // Constants
-impl Exe {
+impl ExeReader {
 	/// MD5 Checksum
 	pub const MD5_CHECKSUM: md5::Digest = md5::Digest(*b"\xc5\xf7\x5c\x43\xf4\xc5\x16\xcb\x4c\xc9\x11\x89\xfa\x76\xd7\x8a");
 }
 
-impl Exe {
+impl ExeReader {
 	/// Returns this executable's header
 	#[must_use]
 	pub const fn header(&self) -> &Header {
@@ -94,7 +90,7 @@ impl Exe {
 	}
 }
 
-impl Exe {
+impl ExeReader {
 	/// Deserializes the executable from file
 	pub fn deserialize<R: io::Read + io::Seek>(file: &mut R) -> Result<Self, DeserializeError> {
 		// Read header

@@ -75,15 +75,15 @@
 
 // Modules
 pub mod data;
-pub mod exe;
 pub mod func;
 pub mod header;
 pub mod inst;
 pub mod pos;
+pub mod reader;
 
 // Exports
 pub use data::{Data, DataTable, DataType};
-pub use exe::Exe;
 pub use func::{Func, FuncTable};
 pub use header::Header;
 pub use pos::Pos;
+pub use reader::ExeReader;

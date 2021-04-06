@@ -1,13 +1,13 @@
 //! Executable iterator
 
 // Imports
-use crate::{inst::ParseIter, Data, Exe, Func, Pos};
+use crate::{inst::ParseIter, Data, ExeReader, Func, Pos};
 
 /// Iterator over the executable's data locations, functions and others.
 #[derive(Clone, Debug)]
 pub struct Iter<'a> {
 	/// Executable
-	exe: &'a Exe,
+	exe: &'a ExeReader,
 
 	/// Current position
 	cur_pos: Pos,
@@ -15,7 +15,7 @@ pub struct Iter<'a> {
 
 impl<'a> Iter<'a> {
 	/// Creates a new iterator
-	pub(super) const fn new(exe: &'a Exe) -> Self {
+	pub(super) const fn new(exe: &'a ExeReader) -> Self {
 		Self {
 			exe,
 			cur_pos: exe.header.start_pos,
