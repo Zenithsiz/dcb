@@ -1,7 +1,7 @@
 //! Errors
 
 // Imports
-use super::{func, header};
+use crate::{func, header};
 
 /// Error type for [`Table::deserialize`]
 #[derive(Debug, thiserror::Error)]

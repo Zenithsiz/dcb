@@ -1,7 +1,7 @@
 //! Errors
 
 // Imports
-use crate::exe::Data;
+use crate::Data;
 
 /// Error for [`DataNode::insert`]
 #[derive(Debug, thiserror::Error)]

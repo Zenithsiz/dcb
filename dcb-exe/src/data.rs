@@ -17,7 +17,7 @@ pub use table::DataTable;
 pub use ty::DataType;
 
 // Imports
-use crate::exe::{
+use crate::{
 	inst::{self, basic, pseudo, Inst},
 	Pos,
 };

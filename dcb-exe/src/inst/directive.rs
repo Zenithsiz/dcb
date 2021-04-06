@@ -2,7 +2,7 @@
 
 // Imports
 use super::{InstFmt, InstSize, InstTargetFmt};
-use crate::exe::{DataType, Pos};
+use crate::{DataType, Pos};
 use ascii::{AsciiChar, AsciiStr};
 use dcb_util::NextFromBytes;
 

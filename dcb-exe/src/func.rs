@@ -12,7 +12,7 @@ pub mod table;
 pub use table::FuncTable;
 
 // Imports
-use crate::exe::Pos;
+use crate::Pos;
 use std::{borrow::Borrow, collections::BTreeMap};
 
 /// A function within the executable

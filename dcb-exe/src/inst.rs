@@ -38,10 +38,7 @@ pub use target::InstTarget;
 
 // Imports
 use self::{basic::Decodable as _, directive::DecodeWithDataError, pseudo::Decodable as _};
-use crate::{
-	exe::{Data, DataTable, FuncTable},
-	Pos,
-};
+use crate::{Data, DataTable, FuncTable, Pos};
 
 /// An assembler instruction.
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]

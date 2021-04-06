@@ -4,25 +4,17 @@
 //! executable part of the game file (`SLUS_013`).
 
 // Modules
-pub mod data;
+
 pub mod error;
-pub mod func;
-pub mod header;
 pub mod iter;
-pub mod pos;
 
 // Exports
-pub use data::{Data, DataTable, DataType};
 pub use error::{DeserializeError, GetKnownError};
-pub use func::{Func, FuncTable};
-pub use header::Header;
-pub use pos::Pos;
 
 // Imports
+use crate::{inst, Data, DataTable, FuncTable, Header, Pos};
 use dcb_bytes::{ByteArray, Bytes};
 use std::{convert::TryFrom, io, ops::Range};
-
-use crate::inst;
 
 /// The game executable
 #[derive(Clone, Debug)]

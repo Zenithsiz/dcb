@@ -74,8 +74,16 @@
 #![allow(clippy::missing_panics_doc)]
 
 // Modules
+pub mod data;
 pub mod exe;
+pub mod func;
+pub mod header;
 pub mod inst;
+pub mod pos;
 
 // Exports
-pub use exe::{Exe, Header, Pos};
+pub use data::{Data, DataTable, DataType};
+pub use exe::Exe;
+pub use func::{Func, FuncTable};
+pub use header::Header;
+pub use pos::Pos;

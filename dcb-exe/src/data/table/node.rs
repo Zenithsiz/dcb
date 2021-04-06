@@ -7,10 +7,7 @@ pub mod error;
 pub use error::InsertError;
 
 // Imports
-use crate::{
-	exe::{Data, DataType},
-	Pos,
-};
+use crate::{Data, DataType, Pos};
 use std::{
 	borrow::Borrow,
 	cmp::Ordering,

@@ -14,7 +14,7 @@ pub use node::DataNode;
 
 // Imports
 use super::{Data, DataKind};
-use crate::exe::Pos;
+use crate::Pos;
 use std::fmt;
 
 /// Data table

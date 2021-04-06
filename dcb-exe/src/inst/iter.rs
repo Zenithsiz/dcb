@@ -2,10 +2,7 @@
 
 // Imports
 use super::{DecodeError, Inst, InstSize};
-use crate::{
-	exe::{DataTable, FuncTable},
-	Pos,
-};
+use crate::{DataTable, FuncTable, Pos};
 
 /// Parsing iterator.
 ///

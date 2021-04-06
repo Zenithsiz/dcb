@@ -8,7 +8,7 @@ mod cli;
 // Imports
 use anyhow::Context;
 use dcb_exe::{
-	exe::{iter::ExeItem, Func},
+	exe::{iter::ExeItem}, Func,
 	inst::{basic, pseudo, Directive, Inst, InstFmt, InstTarget, InstTargetFmt},
 	Exe, Pos,
 };

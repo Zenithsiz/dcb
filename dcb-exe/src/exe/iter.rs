@@ -1,8 +1,7 @@
 //! Executable iterator
 
 // Imports
-use super::{inst::ParseIter, Data, Func};
-use crate::{Exe, Pos};
+use crate::{inst::ParseIter, Data, Exe, Func, Pos};
 
 /// Iterator over the executable's data locations, functions and others.
 #[derive(Clone, Debug)]

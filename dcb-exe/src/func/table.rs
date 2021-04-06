@@ -16,7 +16,7 @@ pub use error::GetKnownError;
 
 // Imports
 use super::Func;
-use crate::exe::{
+use crate::{
 	inst::{basic, Directive, Inst, InstTarget, Register},
 	DataTable, Pos,
 };
