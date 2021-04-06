@@ -8,7 +8,6 @@ edition = "2018"
 
 # Dcb
 dcb-bytes = { path = "../dcb-bytes" }
-dcb-io = { path = "../dcb-io" }
 dcb-util = { path = "../dcb-util" }
 
 # Log

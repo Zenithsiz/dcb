@@ -20,8 +20,8 @@ pub use header::Header;
 pub use pos::Pos;
 
 // Imports
-use dcb_io::GameFile;
-use std::{io, ops::Range};
+use dcb_bytes::{ByteArray, Bytes};
+use std::{convert::TryFrom, io, ops::Range};
 
 /// The game executable
 #[derive(Clone, Debug)]
@@ -96,18 +96,8 @@ impl Exe {
 }
 
 impl Exe {
-	/// Deserializes the executable from a game file
-	pub fn deserialize<R: io::Read + io::Seek>(_file: &mut GameFile<R>) -> Result<Self, DeserializeError> {
-		// Read the `SYSTEM.CNF` file
-		//let _system_cnf = file.file("SYSTEM.CNF");
-
-		todo!();
-
-		/*
-		// Seek to the table
-		file.seek(std::io::SeekFrom::Start(Self::START_ADDRESS.as_u64()))
-			.map_err(DeserializeError::Seek)?;
-
+	/// Deserializes the executable from file
+	pub fn deserialize<R: io::Read + io::Seek>(file: &mut R) -> Result<Self, DeserializeError> {
 		// Read header
 		let mut header_bytes = [0u8; <<Header as Bytes>::ByteArray as ByteArray>::SIZE];
 		file.read_exact(&mut header_bytes).map_err(DeserializeError::ReadHeader)?;
@@ -143,12 +133,11 @@ impl Exe {
 			data_table: known_data_table,
 			func_table,
 		})
-		*/
 	}
 }
 
 /// Returns all known data locations
-fn _get_known_data_table() -> Result<DataTable, GetKnownError> {
+fn get_known_data_table() -> Result<DataTable, GetKnownError> {
 	let file = std::fs::File::open("resources/known_data.yaml").map_err(GetKnownError::File)?;
 
 	let data: Vec<Data> = serde_yaml::from_reader(file).map_err(GetKnownError::Parse)?;
