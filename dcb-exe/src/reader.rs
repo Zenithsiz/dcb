@@ -28,12 +28,6 @@ pub struct ExeReader {
 	func_table: FuncTable,
 }
 
-// Constants
-impl ExeReader {
-	/// MD5 Checksum
-	pub const MD5_CHECKSUM: md5::Digest = md5::Digest(*b"\xc5\xf7\x5c\x43\xf4\xc5\x16\xcb\x4c\xc9\x11\x89\xfa\x76\xd7\x8a");
-}
-
 impl ExeReader {
 	/// Returns this executable's header
 	#[must_use]
@@ -108,12 +102,6 @@ impl ExeReader {
 		// Read all of the bytes
 		let mut bytes = vec![0u8; usize::try_from(header.size).expect("Len didn't fit into `usize`")].into_boxed_slice();
 		file.read_exact(bytes.as_mut()).map_err(DeserializeError::ReadData)?;
-
-		// If it's checksum doesn't fit ours, return Err
-		let checksum = md5::compute(&bytes);
-		if checksum != Self::MD5_CHECKSUM {
-			return Err(DeserializeError::DataChecksum { checksum });
-		}
 
 		// Read the known data and func table
 		let mut known_data_table = self::get_known_data_table().map_err(DeserializeError::KnownDataTable)?;
