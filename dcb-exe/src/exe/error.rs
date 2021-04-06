@@ -22,6 +22,13 @@ pub enum DeserializeError {
 	#[error("Unable to read data")]
 	ReadData(#[source] std::io::Error),
 
+	/// Data checksum was wrong
+	#[error("Data checksum was invalid: {checksum:?}")]
+	DataChecksum {
+		/// Checksum found
+		checksum: md5::Digest,
+	},
+
 	/// Unable to get known data
 	#[error("Unable to get known data table")]
 	KnownDataTable(#[source] GetKnownError),
