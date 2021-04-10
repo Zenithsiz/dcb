@@ -21,6 +21,7 @@
 // Modules
 pub mod basic;
 pub mod directive;
+pub mod error;
 pub mod fmt;
 pub mod iter;
 pub mod pseudo;
@@ -30,6 +31,7 @@ pub mod target;
 
 // Exports
 pub use directive::Directive;
+pub use error::DecodeError;
 pub use fmt::{InstFmt, InstTargetFmt};
 pub use iter::ParseIter;
 pub use reg::Register;
@@ -37,8 +39,8 @@ pub use size::InstSize;
 pub use target::InstTarget;
 
 // Imports
-use self::{basic::Decodable as _, directive::DecodeWithDataError, pseudo::Decodable as _};
-use crate::{Data, DataTable, FuncTable, Pos};
+use self::{basic::Decodable as _, pseudo::Decodable as _};
+use crate::{DataTable, FuncTable, Pos};
 
 /// An assembler instruction.
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -52,24 +54,6 @@ pub enum Inst<'a> {
 
 	/// A directive
 	Directive(Directive<'a>),
-}
-
-/// Error type for [`Inst::decode`]
-#[derive(Debug, thiserror::Error)]
-pub enum DecodeError<'a> {
-	/// Invalid data location to read from
-	#[error("Attempted to decode instruction from within data location")]
-	InvalidDataLocation {
-		/// The data location
-		data: &'a Data,
-
-		/// Underlying error
-		err: DecodeWithDataError,
-	},
-
-	/// Bytes is empty
-	#[error("No more bytes")]
-	NoBytes,
 }
 
 impl<'a> Inst<'a> {
