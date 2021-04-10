@@ -1,4 +1,5 @@
-//! Derive macros for [`Bytes`](dcb_bytes::Bytes)
+//! Derive macros for `Bytes`
+// TODO: Check why we can't link to `Bytes` here?
 
 // Imports
 use quote::ToTokens;

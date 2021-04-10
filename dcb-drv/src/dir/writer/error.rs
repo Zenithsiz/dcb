@@ -3,7 +3,7 @@
 // Imports
 use std::io;
 
-/// Error for [`DirWriter::to_writer`](super::DirWriter::to_writer)
+/// Error for [`DirWriter::write_entries`](super::DirWriter::write_entries)
 #[derive(Debug, thiserror::Error)]
 pub enum WriteEntriesError<E: std::error::Error + 'static> {
 	/// Unable to get current sector

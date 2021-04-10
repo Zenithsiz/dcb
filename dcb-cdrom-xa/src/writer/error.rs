@@ -3,7 +3,7 @@
 // Imports
 use crate::sector;
 
-/// Error type for [`CdRom::write_sector`](super::CdRom::write_sector)
+/// Error type for [`CdRomWriter::write_sector`](super::CdRomWriter::write_sector)
 #[derive(Debug, thiserror::Error)]
 pub enum WriteSectorError {
 	/// Unable to create sector

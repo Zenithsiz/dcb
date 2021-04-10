@@ -27,19 +27,19 @@ impl DataKind {
 		Self::Heuristics
 	}
 
-	/// Returns `true` if the data kind is [`Known`].
+	/// Returns `true` if the data kind is [`Known`](Self::Known).
 	#[must_use]
 	pub const fn is_known(self) -> bool {
 		matches!(self, Self::Known)
 	}
 
-	/// Returns `true` if the data kind is [`Foreign`].
+	/// Returns `true` if the data kind is [`Foreign`](Self::Foreign).
 	#[must_use]
 	pub const fn is_foreign(self) -> bool {
 		matches!(self, Self::Foreign)
 	}
 
-	/// Returns `true` if the data kind is [`Heuristics`].
+	/// Returns `true` if the data kind is [`Heuristics`](Self::Heuristics).
 	#[must_use]
 	pub const fn is_heuristics(self) -> bool {
 		matches!(self, Self::Heuristics)

@@ -3,7 +3,7 @@
 // Imports
 use crate::{func, header};
 
-/// Error type for [`Table::deserialize`]
+/// Error type for [`ExeReader::deserialize`](super::ExeReader::deserialize)
 #[derive(Debug, thiserror::Error)]
 pub enum DeserializeError {
 	/// Unable to seek game file

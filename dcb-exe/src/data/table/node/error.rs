@@ -3,7 +3,7 @@
 // Imports
 use crate::Data;
 
-/// Error for [`DataNode::insert`]
+/// Error for [`DataNode::insert`](super::DataNode::insert)
 #[derive(Debug, thiserror::Error)]
 pub enum InsertError {
 	/// The data location is not part of this node

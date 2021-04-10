@@ -4,7 +4,7 @@
 use crate::header;
 use std::io;
 
-/// Error for [`PakEntry::from_reader`](super::PakEntry::from_reader)
+/// Error for [`PakEntryReader::from_reader`](super::PakEntryReader::from_reader)
 #[derive(Debug, thiserror::Error)]
 pub enum FromReaderError {
 	/// Unable to read header

@@ -5,7 +5,7 @@ use super::model;
 use dcb_util::null_ascii_string;
 use std::io;
 
-/// Error for [`Model3dSet::deserialize`](super::Model3dSet::deserialize)
+/// Error for [`Model3dSet::from_reader`](super::Model3dSet::from_reader)
 #[derive(Debug, thiserror::Error)]
 pub enum FromReaderError {
 	/// Unable to read header

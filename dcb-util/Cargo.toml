@@ -6,6 +6,9 @@ edition = "2018"
 
 [dependencies]
 
+# Dcb
+dcb-bytes = { path = "../dcb-bytes" }
+
 # Util
 arrayref = "0.3.6"
 ascii = { version = "1.0.0", features = ["serde"] }

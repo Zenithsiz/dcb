@@ -4,9 +4,9 @@
 //! stores all function within the executable.
 //!
 //! Typically these functions will be a mix of the known function,
-//! available through [`FuncTable::known`] and heuristically
+//! available through [`FuncTable::get_known`] and heuristically
 //! discovered functions through inst references, available
-//! through [`FuncTable::search_insts`].
+//! through [`FuncTable::search_instructions`].
 
 // Modules
 pub mod error;

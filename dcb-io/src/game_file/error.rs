@@ -8,9 +8,9 @@ pub enum NewError {
 	ParseFilesystem(#[source] dcb_iso9660::NewError),
 }
 
-/// Error for [`GameFile::read_file`](super::GameFile::read_file)
+/// Error for [`GameFile::read_drv`](super::GameFile::read_drv)
 #[derive(Debug, thiserror::Error)]
-pub enum ReadFileError {
+pub enum ReadDrvError {
 	/// Unable to read filesystem root
 	#[error("Unable to read filesystem root")]
 	ReadRoot(#[source] dcb_iso9660::entry::ReadDirError),

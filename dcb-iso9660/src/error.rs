@@ -4,7 +4,7 @@
 use super::volume_descriptor::{self};
 use dcb_cdrom_xa::reader::{ReadSectorError, SeekSectorError};
 
-/// Error type for [`Filesystem::new`](super::Filesystem::new)
+/// Error type for [`FilesystemReader::new`](super::FilesystemReader::new)
 #[derive(Debug, thiserror::Error)]
 pub enum NewError {
 	/// Unable to seek to volume descriptor set

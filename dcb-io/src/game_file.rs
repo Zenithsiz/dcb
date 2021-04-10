@@ -7,7 +7,7 @@ pub mod error;
 
 use dcb_iso9660::entry::FileReader;
 // Exports
-pub use error::{NewError, ReadFileError};
+pub use error::{NewError, ReadDrvError};
 
 // Imports
 use dcb_cdrom_xa::CdRomReader;
@@ -44,17 +44,17 @@ impl<'a, R> GameFile<'a, R> {
 
 impl<'a, R: io::Read + io::Seek> GameFile<'a, R> {
 	/// Reads a game file
-	pub fn read_drv<'b>(&'b mut self, name: &str) -> Result<FileReader<'b, R>, ReadFileError>
+	pub fn read_drv<'b>(&'b mut self, name: &str) -> Result<FileReader<'b, R>, ReadDrvError>
 	where
 		'a: 'b,
 	{
 		// Read the root directory
-		let root_dir = self.filesystem.root_dir().read_dir(self.cdrom).map_err(ReadFileError::ReadRoot)?;
+		let root_dir = self.filesystem.root_dir().read_dir(self.cdrom).map_err(ReadDrvError::ReadRoot)?;
 
 		// Get the file
-		let entry = root_dir.find(name).ok_or(ReadFileError::FindFile)?;
+		let entry = root_dir.find(name).ok_or(ReadDrvError::FindFile)?;
 
 		// And read it
-		entry.read_file(self.cdrom).map_err(ReadFileError::ReadFile)
+		entry.read_file(self.cdrom).map_err(ReadDrvError::ReadFile)
 	}
 }

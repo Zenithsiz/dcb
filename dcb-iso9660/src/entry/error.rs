@@ -34,7 +34,7 @@ pub enum FromReaderError {
 }
 
 
-/// Error type for [`Entry::read`](super::Entry::read)
+/// Error type for [`DirEntry::read_file`](super::DirEntry::read_file)
 #[derive(Debug, thiserror::Error)]
 pub enum ReadFileError {
 	/// Not a file
@@ -46,7 +46,7 @@ pub enum ReadFileError {
 	SeekSector(#[source] SeekSectorError),
 }
 
-/// Error type for [`Entry::read_entries`](super::Entry::read_entries)
+/// Error type for [`DirEntry::read_dir`](super::DirEntry::read_dir)
 #[derive(Debug, thiserror::Error)]
 pub enum ReadDirError {
 	/// Not a directory

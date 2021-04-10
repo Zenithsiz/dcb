@@ -3,7 +3,7 @@
 // Imports
 use crate::sector;
 
-/// Error type for [`CdRom::seek_sector`](super::CdRom::seek_sector)
+/// Error type for [`CdRomReader::seek_sector`](super::CdRomReader::seek_sector)
 #[derive(Debug, thiserror::Error)]
 #[error("Unable to seek to sector {sector:#x}")]
 pub struct SeekSectorError {
@@ -15,7 +15,7 @@ pub struct SeekSectorError {
 	pub err: std::io::Error,
 }
 
-/// Error type for [`CdRom::read_nth_sector`](super::CdRom::read_nth_sector)
+/// Error type for [`CdRomReader::read_nth_sector`](super::CdRomReader::read_nth_sector)
 #[derive(Debug, thiserror::Error)]
 pub enum ReadNthSectorError {
 	/// Unable to seek to sector
@@ -27,7 +27,7 @@ pub enum ReadNthSectorError {
 	ReadNext(#[source] ReadSectorError),
 }
 
-/// Error type for [`CdRom::read_sector`](super::CdRom::read_sector)
+/// Error type for [`CdRomReader::read_sector`](super::CdRomReader::read_sector)
 #[derive(Debug, thiserror::Error)]
 pub enum ReadSectorError {
 	/// Unable to read sector
