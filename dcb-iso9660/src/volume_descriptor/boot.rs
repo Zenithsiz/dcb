@@ -7,7 +7,7 @@ pub mod error;
 pub use error::FromBytesError;
 
 // Imports
-use super::super::StrArrA;
+use crate::StrArrA;
 use dcb_bytes::Bytes;
 use dcb_util::array_split;
 

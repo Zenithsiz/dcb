@@ -7,7 +7,7 @@ pub mod error;
 pub use error::FromBytesError;
 
 // Imports
-use super::super::{date_time::DecDateTime, entry::DirEntry, StrArrA, StrArrD};
+use crate::{date_time::DecDateTime, entry::DirEntry, StrArrA, StrArrD};
 use byteorder::{ByteOrder, LittleEndian};
 use dcb_bytes::Bytes;
 use dcb_util::array_split;
