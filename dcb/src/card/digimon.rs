@@ -11,10 +11,9 @@ use crate::card::property::{
 	ArrowColor, CrossMoveEffect, Effect, EffectCondition, Level, MaybeArrowColor, MaybeCrossMoveEffect, MaybeEffect, MaybeEffectCondition, Move,
 	Speciality,
 };
-use dcb_util::{array_split, array_split_mut, null_ascii_string::NullAsciiString, AsciiStrArr};
-
 use byteorder::{ByteOrder, LittleEndian};
 use dcb_bytes::Bytes;
+use dcb_util::{array_split, array_split_mut, null_ascii_string::NullAsciiString, AsciiStrArr};
 use ref_cast::RefCast;
 
 /// A digimon card

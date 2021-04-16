@@ -6,13 +6,12 @@ pub mod error;
 // Exports
 pub use error::{FromBytesError, ToBytesError};
 
-// Import
+// Imports
+use crate::Pos;
 use byteorder::{ByteOrder, LittleEndian};
 use dcb_bytes::Bytes;
 use dcb_util::{array_split, null_ascii_string::NullAsciiString, AsciiStrArr};
 use std::fmt;
-
-use crate::Pos;
 
 /// The header of the executable.
 #[derive(PartialEq, Eq, Clone, Copy, Hash, Debug)]

@@ -1,7 +1,7 @@
 //! Errors
 
 // Imports
-use super::volume_descriptor::{self};
+use super::volume_descriptor;
 use dcb_cdrom_xa::reader::{ReadSectorError, SeekSectorError};
 
 /// Error type for [`FilesystemReader::new`](super::FilesystemReader::new)

@@ -5,15 +5,14 @@ pub mod error;
 pub mod header;
 
 // Exports
-use std::{convert::TryInto, io};
-
-use dcb_bytes::Bytes;
 pub use error::{DeserializeError, SerializeError};
 pub use header::Header;
 
 // Imports
 use super::CardHeader;
 use crate::card::{self, property::CardType, Digimon, Digivolve, Item};
+use dcb_bytes::Bytes;
+use std::{convert::TryInto, io};
 
 /// Table storing all cards.
 #[derive(PartialEq, Eq, Clone, Debug)]

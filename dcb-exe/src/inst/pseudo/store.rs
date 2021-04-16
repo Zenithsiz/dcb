@@ -1,13 +1,12 @@
 //! Store instructions
 
 // Imports
+use super::Decodable;
 use crate::{
 	inst::{basic, InstSize, InstTarget, InstTargetFmt, Register},
 	Pos,
 };
 use int_conv::{Join, SignExtended, Signed};
-
-use super::Decodable;
 
 /// Store pseudo instructions
 ///

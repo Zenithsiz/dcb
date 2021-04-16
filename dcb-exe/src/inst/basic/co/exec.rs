@@ -1,7 +1,5 @@
 //! Co-processor exec instructions
 
-//! Lui instruction
-
 // Imports
 use crate::inst::{
 	basic::{Decodable, Encodable},

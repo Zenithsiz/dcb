@@ -1,13 +1,9 @@
 // Unit tests
 
-// Lints
-#![allow(clippy::panic)] // Unit tests are supposed to panic on error.
-
 // Imports
-use std::convert::TryFrom;
-
 use super::*;
 use crate::Validatable;
+use std::convert::TryFrom;
 
 #[test]
 fn valid_bytes() {

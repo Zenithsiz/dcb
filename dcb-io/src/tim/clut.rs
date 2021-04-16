@@ -3,12 +3,12 @@
 // Modules
 pub mod error;
 
-use dcb_util::array_split;
 // Exports
 pub use error::DeserializeError;
 
 // Imports
 use byteorder::{ByteOrder, LittleEndian, ReadBytesExt};
+use dcb_util::array_split;
 use std::{convert::TryFrom, io};
 
 /// Color lookup table

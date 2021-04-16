@@ -5,12 +5,12 @@
 // Modules
 pub mod error;
 
-use dcb_iso9660::entry::FileReader;
 // Exports
 pub use error::{NewError, ReadDrvError};
 
 // Imports
 use dcb_cdrom_xa::CdRomReader;
+use dcb_iso9660::entry::FileReader;
 use std::io;
 
 /// Game file reader.

@@ -1,10 +1,9 @@
 //! Move register instruction
 
 // Imports
-use std::convert::TryInto;
-
 use super::Decodable;
 use crate::inst::{basic, InstFmt, InstSize, Register};
+use std::convert::TryInto;
 
 /// Move register instruction
 ///

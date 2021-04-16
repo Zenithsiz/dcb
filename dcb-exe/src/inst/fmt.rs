@@ -3,10 +3,9 @@
 //! See the [`InstFmt`] type for more details.
 
 // Imports
+use super::InstTarget;
 use crate::Pos;
 use std::fmt;
-
-use super::InstTarget;
 
 /// A formattable instruction
 ///

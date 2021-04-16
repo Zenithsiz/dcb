@@ -1,6 +1,5 @@
 //! Shift instruction
 
-
 // Modules
 pub mod imm;
 pub mod reg;
