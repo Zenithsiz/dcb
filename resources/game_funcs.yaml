@@ -3,7 +3,7 @@
 - name: start
   signature: fn() -> !
   desc: Executable start
-  comments:
+  inline_comments:
     0x80056280: Zero out ZeroStart .. HeapStart word by word.
     0x80056284: ^
     0x80056288: ^
@@ -22,7 +22,7 @@
   signature: fn() -> !
   desc: Runs the main loop of the game.
     Never seems to return.
-  comments:
+  inline_comments:
     0x80013e50: The return address is stored, but it seems it's never popped.
     0x80013e54: Just sets `something1_executed` to 1.
     0x80013e5c: Setup interrupts and DMA and possibly other stuff.
@@ -43,7 +43,7 @@
   desc: If something1_executed is 0, sets it to 1.
     Also calls `call_func_arr(something1_data2, something1_data2)` if 0,
     but this seems to be a nop.
-  comments:
+  inline_comments:
     0x80056348: If *something1_executed != 0, skip
     0x80056350: Else set it to 1.
     0x80056368: "args: (something1_data2, something1_data2). Seems like a nop?"
@@ -59,7 +59,7 @@
     After running the game for a bit it doesn't seem to be triggered,
     all the way from the start of a new game to the battle arena fight.
   signature: "fn(start: *fn(), end: *fn())"
-  comments:
+  inline_comments:
     0x800563a0: If `start >= end`, return
     0x800563a8: Load the current function
     0x800563b0: If it was null, skip the call.
@@ -77,7 +77,7 @@
 - name: something3
   signature: fn()
   desc: Calls `something5`.
-  comments:
+  inline_comments:
     0x80056604: "Loads FuncList1[3]"
     0x8005660c: "Calls FuncList1[3] (i.e. something5)"
   start_pos: 0x800565f4
@@ -88,7 +88,7 @@
   signature: fn()
   desc: Setups interrupt and DMA.
     If called again, simply returns.
-  comments:
+  inline_comments:
     0x8005679c: Loads *something5_data1
     0x800567a4: "If the loaded value is not zero, exit"
     0x800567c0: Stop all interrupts by writing 0 to I_MASK
@@ -111,7 +111,7 @@
 - name: something6
   signature: "fn(arg: u32)"
   desc: ""
-  comments:
+  inline_comments:
     0x80056404: Get the gpu status from `GPU_STAT`
     0x80056408: Read the horizontal retrace from timer1
     0x80056418: Read the horizontal retrace again.
@@ -142,7 +142,7 @@
 # ?
 - name: something7
   signature: "fn(a: u32, b: u32)"
-  comments:
+  inline_comments:
     0x80056578: If something6_data1 >= a, return
     0x8005659c: If (b << 15 - 1) != -1, goto try_again
     0x800565dc: If something6_data1 < a, try again, else exit.
@@ -174,7 +174,7 @@
 - name: memset_zero
   signature: "fn(u32* ptr, u32 size)"
   desc: "Zeroes out the memory at `ptr` for `size` words.\n"
-  comments:
+  inline_comments:
     0x80056c90: "If size == 0, return"
     0x80056c94: size--
     0x80056c9c: "*ptr = 0"
@@ -199,29 +199,72 @@
   start_pos: 0x8006a6b0
   end_pos: 0x8006a6fc
 
-- name: main_loop_sub1
+- name: prng_next
   signature: fn()
-  desc: "Called on loop by `main_loop` forever, maybe an interrupt breaks
-    out of the loop, but not sure how this function is related to that.\n
-    Simply reads from 0x801ddc10, calculates `(value * 0x41c64e6d) as u32 + 0x3039`,\n
-    storing it back into 0x801ddc10, then returns `value << 10 | 0x7fff`, where `value`
-    is the new value, just stored back."
+  desc: |-
+    Advances the current prng, stored at `cur_prng_value`.
+    Returns `cur_prng_value << 0x10 | 0x7fff`.
   start_pos: 0x80069124
   end_pos: 0x80069154
 
 - name: something8
   signature: "fn(a: u32, b: u32, c: u32, d: u32)"
   desc: ""
-  comments:
+  inline_comments:
     0x80061910: "args: ($s1, $s0, c & 0xffff, d & 0xffff)"
   start_pos: 0x800618e4
   end_pos: 0x80061954
+
+- name: modify_spu_delay1
+  signature: "fn() -> u32"
+  desc: |-
+    Sets `SPU_DELAY` to `(SPU_DELAY & 0xf0fffff) | 0x2000ffff`
+    and returns the new value
+  inline_comments:
+    0x8004b45c: "$v0 = *SPU_DELAY"
+    0x8004b474: "*SPU_DELAY = $v0"
+  start_pos: 0x8004b428
+  end_pos: 0x8004b450
+
+- name: modify_spu_delay2
+  signature: "fn() -> u32"
+  desc: |-
+    Sets `SPU_DELAY` to `(SPU_DELAY & 0xf0fffff) | 0x2200ffff`
+    and returns the new value
+  inline_comments:
+    0x8004b45c: "$v0 = *SPU_DELAY"
+    0x8004b474: "*SPU_DELAY = $v0"
+  start_pos: 0x8004b450
+  end_pos: 0x8004b478
+
+- name: calc_0x890e6fbd
+  signature: "fn() -> u32"
+  desc: |-
+    Simply calculates and returns `0x890e6fbd`.
+  inline_comments:
+    0x8004b480: "$sp[0x4] = 0xd;"
+    0x8004b488: "$sp[0x4] = 0x0;"
+    0x8004b4a4: "$sp[0x4] *= 13;"
+    0x8004b4b4: "$sp[0x0] += 1;"
+    0x8004b4c4: "if $sp[0x0] <= 0x3c { goto .loop; }"
+  comments:
+    0x8004b48c: |-
+      let value = 0xd;
+      for _ in 0..0x3c {
+        value *= 13;
+      }
+      return value;
+  labels:
+    0x8004b48c: "loop"
+    0x8004b4b8: "while_condition"
+  start_pos: 0x8004b478
+  end_pos: 0x8004b4d4
 
 # A functions
 - name: InitHeap
   signature: "fn(addr: *u32, size: u32)"
   desc: Calls A(0x39)
-  comments:
+  inline_comments:
     0x8006a738: Register tailcall. Likely to prevent calling in KSEG0 and do it in KUSEG
     0x8006a73c: "arg: 0x39"
   start_pos: 0x8006a734
@@ -405,3 +448,297 @@
   desc: Calls C(0x0a)
   start_pos: 0x8006a894
   end_pos: 0x8006a8a0
+
+# Std
+- name: sprintf
+  signature: "fn sprintf(buffer: *char, format: *const char, ...) -> i32"
+  inline_comments:
+    0x80069d6c: "if *buffer == '\\0' { goto.65; }"
+    0x80069d84: "if *buffer == '%' { goto .58; }"
+  comments:
+    0x80069d24: "Save arguments on wasted space."
+    0x80069d30: |-
+      Reserve stack space and save all additional
+      registers there
+  labels:
+    0x80069d84: "0"
+    0x80069db4: "1"
+    0x80069de8: "2"
+    0x80069e04: "3"
+    0x80069e14: "4"
+    0x80069e30: "5"
+    0x80069e4c: "6"
+    0x80069e84: "7"
+    0x80069e98: "8"
+    0x80069ed4: "9"
+    0x80069ee0: "10"
+    0x80069f34: "11"
+    0x80069f70: "12"
+    0x80069f7c: "13"
+    0x80069f9c: "14"
+    0x80069fbc: "15"
+    0x80069fc0: "16"
+    0x80069fe4: "17"
+    0x80069ff0: "18"
+    0x80069FFC: "66"
+    0x8006a008: "19"
+    0x8006a028: "20"
+    0x8006a058: "21"
+    0x8006a06c: "22"
+    0x8006a080: "23"
+    0x8006a0b0: "24"
+    0x8006a0b4: "25"
+    0x8006a0f4: "26"
+    0x8006a108: "27"
+    0x8006a118: "28"
+    0x8006a14c: "29"
+    0x8006a164: "30"
+    0x8006a180: "31"
+    0x8006a1a0: "32"
+    0x8006a1d0: "33"
+    0x8006a1f4: "34"
+    0x8006a208: "35"
+    0x8006a210: "36"
+    0x8006a22c: "37"
+    0x8006a268: "38"
+    0x8006a280: "39"
+    0x8006a2a0: "40"
+    0x8006a2b4: "41"
+    0x8006a2c0: "42"
+    0x8006a2c8: "43"
+    0x8006a2f8: "44"
+    0x8006a328: "45"
+    0x8006a33c: "46"
+    0x8006a344: "47"
+    0x8006a364: "48"
+    0x8006a380: "49"
+    0x8006a39c: "50"
+    0x8006a3cc: "51"
+    0x8006a3ec: "52"
+    0x8006a43c: "53"
+    0x8006a458: "54"
+    0x8006a478: "55"
+    0x8006a4a4: "56"
+    0x8006a4ac: "57"
+    0x8006a4b8: "58"
+    0x8006a4c4: "59"
+    0x8006a4ec: "60"
+    0x8006a514: "61"
+    0x8006a518: "62"
+    0x8006a534: "63"
+    0x8006a550: "64"
+    0x8006a570: "65"
+  start_pos: 0x80069d24
+  end_pos: 0x8006a5a4
+
+- name: memcpy_args_reversed
+  signature: "fn(src: *const u8, dst: *mut u8, len: u32) -> *mut u8"
+  desc: |-
+    `memcpy` with the first two arguments swapped.
+  inline_comments:
+    0x80069044: "if src == NULL { return 0; }"
+    0x80069048: ""
+    0x8006904c: "if len <= 0 { return src; }"
+  comments:
+    0x80069054: |-
+      do {
+        *dst = *src;
+        src += 1;
+        len -= 1;
+        dst += 1;
+      } while (len > 0)
+  labels:
+    0x80069054: "loop"
+    0x8006906c: "end"
+    0x80069070: "on_null"
+  start_pos: 0x80069044
+  end_pos: 0x80069078
+
+- name: mem_zero
+  signature: "fn(dst: *mut u8, len: u32) -> *mut u8"
+  desc: |-
+    Zeroes out `len` bytes of `dst`.
+    If `len <= 0`, returns `NULL`.
+    Otherwise returns `dst`.
+  inline_comments:
+    0x80069084: "if dst == NULL { return 0; }"
+    0x80069088: ""
+    0x8006908c: ""
+    0x80069090: "if len >  0 { _ret = dst; }"
+    0x80069094: "if len <= 0 { return 0; }"
+  comments:
+    0x8006909c: |-
+      do {
+        *dst = 0;
+        len -= 1;
+        dst += 1;
+      } while (len > 0)
+  labels:
+    0x8006909c: "loop"
+    0x800690ac: "end"
+  start_pos: 0x80069084
+  end_pos: 0x800690b4
+
+- name: memcpy
+  signature: "fn(dst: *mut u8, src: *const u8, len: u32) -> *mut u8"
+  inline_comments:
+    0x800690b4: "if ptr == NULL { return 0; }"
+    0x800690b8: ""
+    0x800690bc: "if len <= 0 { return 0; }"
+  comments:
+    0x800690c4: |-
+      do {
+        *dst = *src;
+        src += 1;
+        len -= 1;
+        dst += 1;
+      } while (len > 0)
+  labels:
+    0x800690c4: "loop"
+    0x800690dc: "end"
+    0x800690e0: "on_null"
+  start_pos: 0x800690b4
+  end_pos: 0x800690e8
+
+- name: memset
+  signature: "fn(dst: *mut u8, value: u32, len: u32) -> *mut u8"
+  inline_comments:
+    0x800690f4: "if ptr == NULL { return 0; }"
+    0x800690f8: ""
+    0x800690fc: ""
+    0x80069100: "if len >  0 { _ret = ptr; }"
+    0x80069104: "if len <= 0 { return 0; }"
+  comments:
+    0x8006910c: |-
+      do {
+        *dst = value;
+        len -= 1;
+        ptr += 1;
+      } while (len > 0)
+  labels:
+    0x8006910c: "loop"
+    0x8006911c: "end"
+  start_pos: 0x800690f4
+  end_pos: 0x80069124
+
+- name: strcat
+  signature: "fn(dst: *mut u8, src: *const u8) -> *mut u8"
+  desc: ""
+  inline_comments:
+    0x8006917c: "if dst == NULL { return NULL; }"
+    0x80069180: ""
+    0x80069184: "if src == NULL { return NULL; }"
+    0x8006918c: "let dst_len = strlen(dst);"
+    0x80069190: ""
+    0x80069194: ""
+    0x80069198: "let src_len = strlen(src);"
+    0x800691a4: "if dst + dst_len == src + src_len { return NULL; }"
+    0x800691b4: "dst += 1; if *dst == 0 { goto go_back_1_dst; }"
+    0x800691cc: "dst -= 1;"
+    0x800691e8: "return dst;"
+  comments:
+    0x800691ac: |-
+      Skips `dst` until it hits one-past '\\0'.
+      Then backs up one and begins appending `src`
+    0x800691bc: |-
+      // Note: This causes `dst` to be one-past the null.
+      do {
+        let tmp = *dst;
+        dst += 1;
+      } while tmp != 0
+    0x800691d0: |-
+      // Note: The null is copied in this loop too.
+      do {
+        let tmp = *src;
+        *dst = src;
+        src += 1;
+        dst += 1;
+      } while tmp != 0
+  labels:
+    0x800691bc: "advance_dst_until_past_null"
+    0x800691cc: "go_back_1_dst"
+    0x800691d0: "loop"
+    0x800691ec: "on_null"
+    0x800691f0: "exit"
+  start_pos: 0x80069164
+  end_pos: 0x80069208
+
+- name: strlen
+  signature: "fn(ptr: *const u8) -> u32"
+  desc: ""
+  inline_comments:
+    0x800692d8: "if ptr == NULL { return 0; }"
+  labels:
+    0x800692e8: "increase_len"
+    0x800692ec: "loop"
+    0x80069300: "on_null"
+  start_pos: 0x800692d4
+  end_pos: 0x80069308
+
+# TODO: Investigate this more, seems weird
+- name: strcmp
+  signature: "fn(lhs: *const u8, rhs: *const u8) -> u32"
+  desc: ""
+  inline_comments:
+    0x80069214: "if lhs == NULL { goto .lhs_null; }"
+    0x8006921c: "if rhs != NULL { goto .start_cmp; }"
+    0x80069224: "if lhs == rhs  { return 0; } // Same as `rhs == NULL`"
+    0x80069228: ""
+    0x8006922c: "if lhs == NULL { return -1; } // Always true?"
+    0x80069234: "// Dead code?"
+    0x8006925c: "rhs += 1;"
+    0x80069248: "lhs += 1;"
+    0x8006926c: "return lhs[0] - rhs[-1]; // Note: This is because we don't advance `lhs` when we don't take the branch"
+  comments:
+    0x8006924c: |-
+      // Note: Includes the code from `.2` and `.1`
+      loop {
+        let left = *lhs;
+        let right = *rhs;
+        rhs += 1;
+        if left == right {
+          if *right == 0 { return 0; }
+        }
+      }
+    0x8006926c: |-
+      // This is because we update `rhs` prematurely in the previous loop.
+      // Note: This returns the lexicographic order by comparing the last character.
+      return lhs[0] - rhs[-1];
+  labels:
+    0x80069224: "lhs_null"
+    0x8006923c: "1"
+    0x80069244: "2"
+    0x8006924c: "start_cmp"
+    0x80069270: "exit"
+  start_pos: 0x80069214
+  end_pos: 0x80069278
+
+- name: strcpy
+  signature: "fn(dst: *mut u8, src: *const u8) -> *mut u8"
+  desc: ""
+  inline_comments:
+    0x80069284: "if dst == NULL { return NULL; }"
+    0x80069288: ""
+    0x8006928c: "if dst == NULL { return NULL; }"
+    0x800692bc: "// Returns the original `lhs`"
+  comments:
+    0x80069294: |-
+      let tmp = *rhs;
+      rhs += 1;
+      *lhs = tmp;
+      lhs += 1;
+      if tmp == 0 { return lhs; }
+    0x800692a8: |-
+      do {
+        let tmp = *rhs;
+        rhs += 1;
+        *lhs = tmp;
+        lhs += 1;
+        if tmp == 0 { return lhs; }
+      }
+  labels:
+    0x800692a8: "loop"
+    0x800692bc: "end"
+    0x800692c0: "on_null"
+  start_pos: 0x80069284
+  end_pos: 0x800692c8

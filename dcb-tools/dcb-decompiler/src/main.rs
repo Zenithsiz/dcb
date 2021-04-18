@@ -1,6 +1,14 @@
 //! Decompiler
 
-#![feature(box_syntax, backtrace, panic_info_message, array_chunks, format_args_capture, bindings_after_at)]
+#![feature(
+	box_syntax,
+	backtrace,
+	panic_info_message,
+	array_chunks,
+	format_args_capture,
+	bindings_after_at,
+	iter_map_while
+)]
 
 // Modules
 mod cli;
@@ -12,7 +20,7 @@ use dcb_exe::{
 	reader::iter::ExeItem,
 	ExeReader, Func, Pos,
 };
-use std::fmt;
+use std::{collections::BTreeMap, fmt};
 
 fn main() -> Result<(), anyhow::Error> {
 	// Initialize the logger
@@ -33,10 +41,19 @@ fn main() -> Result<(), anyhow::Error> {
 		println!("Header:\n{}", exe.header());
 	}
 
+	// Instruction buffers
+	let mut inst_buffers: BTreeMap<Pos, String> = BTreeMap::new();
+
+	// If currently in an inline-comment alignment
+	let mut cur_inline_comment_alignment_max_inst_len: Option<usize> = None;
+
 	for item in exe.iter() {
 		match item {
 			// For each function or header, print a header and all it's instructions
 			ExeItem::Func { func, insts } => {
+				// Drop any old instruction buffers
+				inst_buffers = inst_buffers.split_off(&func.start_pos);
+
 				println!("\n##########");
 				println!("{}:", func.name);
 				if !func.signature.is_empty() {
@@ -45,10 +62,55 @@ fn main() -> Result<(), anyhow::Error> {
 				for description in func.desc.lines() {
 					println!("# {description}");
 				}
-				for (pos, inst) in insts {
+
+				let insts: Vec<_> = insts.collect();
+				for (cur_n, (pos, inst)) in insts.iter().enumerate() {
+					// If there's a comment, print it
+					if let Some(comment) = func.comments.get(pos) {
+						// Iterate over the lines in the comment
+						for line in comment.lines() {
+							println!("# {line}");
+						}
+					}
+
 					// If there's a label, print it
-					if let Some(label) = func.labels.get(&pos) {
+					if let Some(label) = func.labels.get(pos) {
 						println!("\t.{label}:");
+					}
+
+					// If we don't have a comment, remove the current alignment
+					if !func.inline_comments.contains_key(&pos) {
+						cur_inline_comment_alignment_max_inst_len = None;
+					}
+
+					// If we don't have any alignment padding, and this instruction and the next have inline comments,
+					// set the inline alignment
+					if cur_inline_comment_alignment_max_inst_len.is_none() &&
+						func.inline_comments.contains_key(&pos) &&
+						func.inline_comments.contains_key(&(pos + 4))
+					{
+						let max_inst_len = (0..)
+							.map_while(|n| {
+								// If the next instruction doesn't have a comment, return
+								let offset = 4 * n;
+								let pos = pos + offset;
+								if !func.inline_comments.contains_key(&pos) {
+									return None;
+								}
+
+								// Then build the instruction
+								let inst = &insts.get(cur_n + n)?.1;
+								let inst = inst_buffers
+									.entry(pos)
+									.or_insert_with(|| self::inst_display(inst, &exe, Some(func), pos).to_string());
+								let inst_len = inst.len();
+
+								Some(inst_len)
+							})
+							.max()
+							.expect("Next instruction had an inline comment");
+
+						cur_inline_comment_alignment_max_inst_len = Some(max_inst_len);
 					}
 
 					// Write the position
@@ -56,11 +118,35 @@ fn main() -> Result<(), anyhow::Error> {
 						print!("{pos}:");
 					}
 
-					// Write the instruction
-					print!("\t{}", self::inst_display(&inst, &exe, Some(func), pos));
+					// If we have the instruction buffer, pop it and use it
+					match inst_buffers.get(&pos) {
+						Some(inst) => print!("\t{inst}"),
+						None => print!("\t{}", self::inst_display(&inst, &exe, Some(func), *pos)),
+					}
 
-					// If there's a comment, print it
-					if let Some(comment) = func.comments.get(&pos) {
+					// If there's an inline comment, print it
+					if let Some(comment) = func.inline_comments.get(&pos) {
+						// Replace any newlines with '\n'
+						let modified_comment;
+						let comment = match comment.contains('\n') {
+							true => {
+								modified_comment = comment.replace("\n", "\\n");
+								&modified_comment
+							},
+							false => comment,
+						};
+
+						// If we have alignment padding, apply it
+						if let Some(max_inst_len) = cur_inline_comment_alignment_max_inst_len {
+							let inst = inst_buffers
+								.get(&pos)
+								.expect("Instruction wasn't in buffer during inline comment alignment");
+							let padding = max_inst_len - inst.len();
+							for _ in 0..padding {
+								print!(" ");
+							}
+						}
+
 						print!(" # {comment}");
 					}
 

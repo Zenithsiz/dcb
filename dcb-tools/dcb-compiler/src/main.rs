@@ -7,6 +7,8 @@ mod cli;
 
 // Imports
 use anyhow::Context;
+use dcb_exe::inst::parse::InstParser;
+use std::io::Write;
 
 fn main() -> Result<(), anyhow::Error> {
 	// Initialize the logger
@@ -17,10 +19,16 @@ fn main() -> Result<(), anyhow::Error> {
 	let cli = cli::CliData::new();
 
 	// Open the input and output file
-	let _input_file = std::fs::File::open(&cli.input_path).context("Unable to open input file")?;
-	let _output_file = std::fs::File::open(&cli.output_file_path).context("Unable to open output file")?;
+	let input_file = std::fs::File::open(&cli.input_path).context("Unable to open input file")?;
+	let mut output_file = std::fs::File::create(&cli.output_file_path).context("Unable to open output file")?;
 
-	// Read the executable
+	// Read the input
+	let parser = InstParser::new(input_file);
+
+	// For each instruction, output it
+	for inst in parser {
+		writeln!(output_file, "{:?}", inst).context("Unable to write to output file")?;
+	}
 	/*
 	let exe = Exe::new();
 

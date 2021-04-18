@@ -179,6 +179,7 @@ impl FuncTable {
 					name: format!("func_{idx}"),
 					signature: "fn()".to_owned(),
 					desc: String::new(),
+					inline_comments: BTreeMap::new(),
 					comments: BTreeMap::new(),
 					labels,
 					start_pos: func_pos,

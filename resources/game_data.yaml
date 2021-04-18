@@ -84,6 +84,11 @@
   pos: 0x80077a08
   ty: u32
   kind: Known
+- name: cur_prng_value
+  desc: Current prng value
+  pos: 0x801ddc10
+  ty: u32
+  kind: Known
 - name: HeapStart
   desc: Start of the heap
   pos: 0x801ddf38
@@ -122,7 +127,10 @@
   kind: Known
 - name: FuncList1
   pos: 0x80070a88
-  ty: u32
+  ty:
+    Array:
+      ty: u32
+      len: 8
   kind: Known
 - name: FuncList1Ptr
   desc: Pointer to FuncList1

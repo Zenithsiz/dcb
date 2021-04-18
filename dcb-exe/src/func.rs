@@ -30,6 +30,10 @@ pub struct Func {
 	#[serde(default)]
 	pub desc: String,
 
+	/// Inline Comments
+	#[serde(default)]
+	pub inline_comments: BTreeMap<Pos, String>,
+
 	/// Comments
 	#[serde(default)]
 	pub comments: BTreeMap<Pos, String>,
