@@ -173,19 +173,19 @@ impl InstFmt for Inst {
 		match kind {
 			Kind::CopN     { imm } => write!(f, "cop{n} {imm:#x}"),
 			Kind::MoveFrom { dst, src, kind } => match kind {
-				RegisterKind::Control => write!(f, "cfc{n} {dst}, ${src:#x}"),
-				RegisterKind::Data    => write!(f, "mfc{n} {dst}, ${src:#x}"),
+				RegisterKind::Control => write!(f, "cfc{n} {dst}, {src:#x}"),
+				RegisterKind::Data    => write!(f, "mfc{n} {dst}, {src:#x}"),
 			}
 			Kind::MoveTo   { dst, src, kind } => match kind {
-				RegisterKind::Data    => write!(f, "mtc{n} {src}, ${dst:#x}"),
-				RegisterKind::Control => write!(f, "ctc{n} {src}, ${dst:#x}"),
+				RegisterKind::Data    => write!(f, "mtc{n} {src}, {dst:#x}"),
+				RegisterKind::Control => write!(f, "ctc{n} {src}, {dst:#x}"),
 			}
 			Kind::Branch   { offset, on } => match on {
 				true  => write!(f, "bc{n}f {offset:#x}"),
 				false => write!(f, "bc{n}t {offset:#x}"),
 			}
-			Kind::Load     { dst, src, offset } => write!(f, "lwc{n} ${dst:#x}, {offset:#x}({src})"),
-			Kind::Store    { dst, src, offset } => write!(f, "swc{n} ${dst:#x}, {offset:#x}({src})"),
+			Kind::Load     { dst, src, offset } => write!(f, "lwc{n} {dst:#x}, {offset:#x}({src})"),
+			Kind::Store    { dst, src, offset } => write!(f, "swc{n} {dst:#x}, {offset:#x}({src})"),
 		}
 	}
 }
