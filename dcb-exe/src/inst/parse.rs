@@ -77,7 +77,7 @@ impl<R: io::BufRead> InstParser<R> {
 		}
 
 		// Check if we have a label
-		let (label, mnemonic, mut args) = match rest.strip_prefix(':').map(str::trim_start) {
+		let (label_name, mnemonic, mut args) = match rest.strip_prefix(':').map(str::trim_start) {
 			// If it started with `:`, read a name after it and return it.
 			Some(rest) => {
 				let label = name;
@@ -85,7 +85,7 @@ impl<R: io::BufRead> InstParser<R> {
 				// If it starts with a comment or it's empty, return only the label
 				if rest.starts_with('#') || rest.is_empty() {
 					return Ok(ParsedLine {
-						label: Some(label.to_owned()),
+						label: Some(ParsedLabel { name: label.to_owned() }),
 						inst:  None,
 					});
 				}
@@ -97,7 +97,7 @@ impl<R: io::BufRead> InstParser<R> {
 					// If everything after the label was a name, return a 0-argument label
 					None => {
 						return Ok(ParsedLine {
-							label: Some(label.to_owned()),
+							label: Some(ParsedLabel { name: label.to_owned() }),
 							inst:  Some(ParsedInst {
 								mnemonic: rest.to_owned(),
 								args:     vec![],
@@ -260,7 +260,7 @@ impl<R: io::BufRead> InstParser<R> {
 
 
 		Ok(ParsedLine {
-			label: label.map(str::to_owned),
+			label: label_name.map(|name| ParsedLabel { name: name.to_owned() }),
 			inst:  Some(ParsedInst {
 				mnemonic: mnemonic.to_owned(),
 				args:     parsed_args,
@@ -288,10 +288,17 @@ impl<R: io::BufRead> Iterator for InstParser<R> {
 #[derive(PartialEq, Clone, Debug)]
 pub struct ParsedLine {
 	/// Label
-	pub label: Option<String>,
+	pub label: Option<ParsedLabel>,
 
 	/// Instruction
 	pub inst: Option<ParsedInst>,
+}
+
+/// A parsed label
+#[derive(PartialEq, Clone, Debug)]
+pub struct ParsedLabel {
+	/// Name
+	pub name: String,
 }
 
 /// A parsed instruction

@@ -7,10 +7,13 @@ mod cli;
 
 // Imports
 use anyhow::Context;
-use dcb_exe::inst::parse::{InstParser, ParsedArg};
-use dcb_util::SignedHex;
+use dcb_exe::inst::parse::{InstParser, ParsedArg, ParsedInst, ParsedLabel};
+use dcb_util::{BTreeMapParIter, SignedHex};
 use itertools::{Itertools, Position};
-use std::io::{BufReader, Write};
+use std::{
+	collections::BTreeMap,
+	io::{BufReader, Write},
+};
 
 fn main() -> Result<(), anyhow::Error> {
 	// Initialize the logger
@@ -26,22 +29,39 @@ fn main() -> Result<(), anyhow::Error> {
 	let mut output_file = std::fs::File::create(&cli.output_file_path).context("Unable to open output file")?;
 
 	// Read the input
-	let parser = InstParser::new(input_file);
+	let lines = InstParser::new(input_file)
+		.enumerate()
+		.map(|(n, res)| res.map(|line| (n, line)).map_err(|err| (n, err)));
+	let res = itertools::process_results(lines, |lines| {
+		let mut labels = BTreeMap::new();
+		let mut insts = BTreeMap::new();
+
+		for (n, line) in lines {
+			if let Some(label) = line.label {
+				assert!(labels.insert(n, label).is_none());
+			}
+			if let Some(inst) = line.inst {
+				assert!(insts.insert(n, inst).is_none());
+			}
+		}
+
+		(labels, insts)
+	});
+	let (labels, insts): (BTreeMap<usize, ParsedLabel>, BTreeMap<usize, ParsedInst>) = match res {
+		Ok(v) => v,
+		Err((n, err)) => return Err(err).context(format!("Unable to process line {}", n + 1)),
+	};
 
 	// For each instruction, output it
-	for (n, line) in parser.enumerate() {
-		let line = line.with_context(|| format!("Unable to parse line {}", n + 1))?;
+	for (_, line) in BTreeMapParIter::new(&labels, &insts) {
+		let (label, inst) = line.into_opt_pair();
 
-		if line.label.is_none() && line.inst.is_none() {
-			continue;
+		if let Some(label) = &label {
+			let padding = if inst.is_some() { " " } else { "" };
+			write!(output_file, "{}:{}", label.name, padding).context("Unable to write to output file")?;
 		}
 
-		if let Some(label) = line.label {
-			let padding = if line.inst.is_some() { " " } else { "" };
-			write!(output_file, "{}:{}", label, padding).context("Unable to write to output file")?;
-		}
-
-		if let Some(inst) = line.inst {
+		if let Some(inst) = &inst {
 			let padding = if inst.args.is_empty() { "" } else { " " };
 			write!(output_file, "{}{}", inst.mnemonic, padding).context("Unable to write to output file")?;
 
