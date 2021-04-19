@@ -58,6 +58,7 @@
 // Modules
 pub mod array_split;
 pub mod ascii_str_arr;
+pub mod btree_map_par_iter;
 pub mod discarding_sorted_merge_iter;
 pub mod display_wrapper;
 pub mod impl_bytes;
@@ -74,6 +75,7 @@ pub use display_wrapper::DisplayWrapper;
 pub use next_from_bytes::NextFromBytes;
 pub use null_ascii_string::NullAsciiString;
 //pub use peekable_iter::PeekableIter;
+pub use btree_map_par_iter::BTreeMapParIter;
 pub use signed_hex::SignedHex;
 
 // Imports
