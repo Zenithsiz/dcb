@@ -224,10 +224,21 @@ fn range_intersect<T: Ord>(lhs: Range<T>, rhs: Range<T>) -> bool {
 
 /// Removes, modifies and re-inserts a value back into a set
 ///
-/// Panics if `element` doesn't exist.
-fn btree_set_modify<T: Ord + Borrow<Q> + std::fmt::Debug, Q: Ord, U>(set: &mut BTreeSet<T>, element: &Q, f: impl FnOnce(&mut T) -> U) -> U {
+/// It is a logical error to modify an element's order.
+/// This function *might* panic if the order is changed
+fn btree_set_modify<T: Ord + Borrow<Q>, Q: Ord, U>(set: &mut BTreeSet<T>, element: &Q, f: impl FnOnce(&mut T) -> U) -> U {
+	// Take the element from the set
 	let mut node = set.take(element).expect("Element didn't exist");
+
+	// Run the function on it and then reinsert it.
 	let res = f(&mut node);
-	set.replace(node).expect_none("Just removed it");
+
+	// Then re-insert it
+	match set.replace(node) {
+		Some(_) => panic!("Order of element changed during mutation"),
+		// Sanity check to make sure the element hasn't changed order
+		None => assert!(set.contains(element), "Order of element changed during mutation"),
+	}
+
 	res
 }

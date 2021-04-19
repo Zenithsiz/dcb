@@ -17,7 +17,6 @@
 	array_chunks,
 	ordering_helpers,
 	const_btree_new,
-	option_expect_none,
 )]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]
