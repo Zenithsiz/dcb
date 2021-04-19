@@ -260,6 +260,18 @@
   start_pos: 0x8004b478
   end_pos: 0x8004b4d4
 
+- name: func_0x80013fa4
+  start_pos: 0x80013fa4
+  end_pos: 0x800141b8
+
+- name: func_0x800141b8
+  start_pos: 0x800141b8
+  end_pos: 0x800142d0
+
+- name: func_0x800142d0
+  start_pos: 0x800142d0
+  end_pos: 0x80014364
+
 # A functions
 - name: InitHeap
   signature: "fn(addr: *u32, size: u32)"

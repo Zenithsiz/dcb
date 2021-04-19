@@ -137,3 +137,8 @@
   pos: 0x80070aa8
   ty: u32
   kind: Known
+
+- name: func_0x800142d0_data1
+  pos: 0x80077a1a
+  ty: u16
+  kind: Known

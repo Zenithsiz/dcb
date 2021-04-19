@@ -10,7 +10,7 @@ pub use error::InsertError;
 use crate::{Data, DataType, Pos};
 use std::{
 	borrow::Borrow,
-	cmp::Ordering,
+	cmp::{self, Ordering},
 	collections::BTreeSet,
 	fmt,
 	ops::{Bound, Range},
@@ -105,7 +105,7 @@ impl DataNode {
 		}
 
 		// And insert it
-		assert!(self.nodes.insert(Self::new(data)), "No node with this position should exist");
+		assert_eq!(self.nodes.replace(Self::new(data)), None, "No node with this position should exist",);
 		Ok(())
 	}
 
@@ -208,18 +208,18 @@ impl fmt::Display for DataNode {
 }
 
 /// Checks if a range contains another range
-fn range_contains_range<T: PartialOrd>(bigger: Range<T>, smaller: Range<T>) -> bool {
+fn range_contains_range<T: Ord>(bigger: Range<T>, smaller: Range<T>) -> bool {
 	smaller.start >= bigger.start && smaller.end <= bigger.end
 }
 
 /// Checks if two ranges are disjoint
-fn range_disjoint<T: PartialOrd>(lhs: Range<T>, rhs: Range<T>) -> bool {
-	lhs.start <= rhs.end || rhs.start <= lhs.end
+fn range_disjoint<T: Ord>(lhs: Range<T>, rhs: Range<T>) -> bool {
+	!self::range_intersect(lhs, rhs)
 }
 
 /// Checks if two ranges intersect
-fn range_intersect<T: PartialOrd>(lhs: Range<T>, rhs: Range<T>) -> bool {
-	!self::range_disjoint(lhs, rhs)
+fn range_intersect<T: Ord>(lhs: Range<T>, rhs: Range<T>) -> bool {
+	cmp::max(lhs.start, rhs.start) < cmp::min(lhs.end, rhs.end)
 }
 
 /// Removes, modifies and re-inserts a value back into a set
