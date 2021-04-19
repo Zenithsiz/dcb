@@ -18,6 +18,7 @@ byteorder = "1.4.2"
 ascii = { version = "1.0.0", features = ["serde"] }
 int-conv = "0.1.4"
 bitmatch = "0.1.1"
+snailquote = "0.3.0"
 
 # Serde
 serde = { version = "1.0.120", features = ["derive"] }

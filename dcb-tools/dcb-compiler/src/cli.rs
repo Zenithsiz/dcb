@@ -31,7 +31,13 @@ impl CliData {
 					.required(true)
 					.index(1),
 			)
-			.arg(ClapArg::with_name(OUTPUT_FILE_STR).long("output").short("o").help("Sets the output file"))
+			.arg(
+				ClapArg::with_name(OUTPUT_FILE_STR)
+					.long("output")
+					.short("o")
+					.help("Sets the output file")
+					.takes_value(true),
+			)
 			.get_matches();
 
 		// Get the input filename

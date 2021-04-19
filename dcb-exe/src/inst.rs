@@ -23,6 +23,7 @@ pub mod basic;
 pub mod directive;
 pub mod error;
 pub mod fmt;
+pub mod parse;
 pub mod iter;
 pub mod pseudo;
 pub mod reg;
