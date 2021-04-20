@@ -5,6 +5,7 @@ use super::{InstFmt, InstSize, InstTargetFmt};
 use crate::{DataType, Pos};
 use ascii::{AsciiChar, AsciiStr};
 use dcb_util::NextFromBytes;
+use std::io::{self, Write};
 
 /// A directive
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -133,6 +134,16 @@ impl<'a> Directive<'a> {
 
 		// Else read a single byte
 		bytes.next_u8().map(Self::Db)
+	}
+
+	/// Encodes this data by writing it
+	pub fn write(&self, f: &mut impl Write) -> Result<(), io::Error> {
+		match self {
+			Directive::Dw(value) => f.write_all(&value.to_le_bytes()),
+			Directive::Dh(value) => f.write_all(&value.to_le_bytes()),
+			Directive::Db(value) => f.write_all(&value.to_le_bytes()),
+			Directive::Ascii(ascii) => f.write_all(ascii.as_bytes()),
+		}
 	}
 }
 
