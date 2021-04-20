@@ -53,7 +53,7 @@ impl ops::Add<u32> for Pos {
 	type Output = Self;
 
 	fn add(self, rhs: u32) -> Self::Output {
-		Self(self.0 + rhs)
+		Self(self.0.wrapping_add(rhs))
 	}
 }
 
@@ -62,7 +62,7 @@ impl ops::Add<i32> for Pos {
 	type Output = Self;
 
 	fn add(self, rhs: i32) -> Self::Output {
-		Self((self.0.as_signed() + rhs).as_unsigned())
+		Self((self.0.as_signed().wrapping_add(rhs)).as_unsigned())
 	}
 }
 
@@ -81,7 +81,7 @@ impl ops::Sub<u32> for Pos {
 	type Output = Self;
 
 	fn sub(self, rhs: u32) -> Self::Output {
-		Self(self.0 - rhs)
+		Self(self.0.wrapping_sub(rhs))
 	}
 }
 
