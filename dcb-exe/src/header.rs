@@ -10,7 +10,7 @@ pub use error::{FromBytesError, ToBytesError};
 use crate::Pos;
 use byteorder::{ByteOrder, LittleEndian};
 use dcb_bytes::Bytes;
-use dcb_util::{array_split, null_ascii_string::NullAsciiString, AsciiStrArr};
+use dcb_util::{array_split, array_split_mut, null_ascii_string::NullAsciiString, AsciiStrArr};
 use std::fmt;
 
 /// The header of the executable.
@@ -125,7 +125,41 @@ impl Bytes for Header {
 		})
 	}
 
-	fn to_bytes(&self, _bytes: &mut Self::ByteArray) -> Result<(), Self::ToError> {
-		todo!()
+	fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError> {
+		let bytes = array_split_mut!(bytes,
+			magic            : [0x8],   // 0x0
+			zero             : [0x8],   // 0x8
+			pc0              : [0x4],   // 0x10
+			gp0              : [0x4],   // 0x14
+			dest             : [0x4],   // 0x18
+			size             : [0x4],   // 0x1c
+			unknown20        : [0x4],   // 0x20
+			unknown24        : [0x4],   // 0x24
+			memfill_start    : [0x4],   // 0x28
+			memfill_size     : [0x4],   // 0x2c
+			initial_sp_base  : [0x4],   // 0x30
+			initial_sp_offset: [0x4],   // 0x34
+			zero2            : [0x14],  // 0x38
+			marker           : [0x7b4], // 0x4c
+		);
+
+		// Write the magic and zeroes
+		*bytes.magic = *Self::MAGIC;
+		*bytes.zero = [0; 0x8];
+		*bytes.zero2 = [0; 0x14];
+
+		LittleEndian::write_u32(bytes.pc0, self.pc0);
+		LittleEndian::write_u32(bytes.gp0, self.gp0);
+		LittleEndian::write_u32(bytes.dest, self.start_pos.0);
+		LittleEndian::write_u32(bytes.size, self.size);
+		LittleEndian::write_u32(bytes.unknown20, self.unknown20);
+		LittleEndian::write_u32(bytes.unknown24, self.unknown24);
+		LittleEndian::write_u32(bytes.memfill_start, self.memfill_start);
+		LittleEndian::write_u32(bytes.memfill_size, self.memfill_size);
+		LittleEndian::write_u32(bytes.initial_sp_base, self.initial_sp_base);
+		LittleEndian::write_u32(bytes.initial_sp_offset, self.initial_sp_offset);
+		bytes.marker.write_string(&self.marker);
+
+		Ok(())
 	}
 }
