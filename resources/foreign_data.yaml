@@ -486,3 +486,15 @@
     Marker:
       len: 0x80000
   kind: Foreign
+
+# Others
+- name: cur_prng_value
+  desc: Current prng value
+  pos: 0x801ddc10
+  ty: u32
+  kind: Known
+- name: HeapStart
+  desc: Start of the heap
+  pos: 0x801ddf38
+  ty: u32
+  kind: Known
