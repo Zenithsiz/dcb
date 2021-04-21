@@ -5,6 +5,7 @@ use crate::inst::{
 	basic::{Decodable, Encodable},
 	InstFmt, Register,
 };
+use dcb_util::SignedHex;
 use int_conv::{Signed, Truncated, ZeroExtended};
 
 /// Co-processor register kind
@@ -181,11 +182,11 @@ impl InstFmt for Inst {
 				RegisterKind::Control => write!(f, "ctc{n} {src}, {dst:#x}"),
 			}
 			Kind::Branch   { offset, on } => match on {
-				true  => write!(f, "bc{n}f {offset:#x}"),
-				false => write!(f, "bc{n}t {offset:#x}"),
+				true  => write!(f, "bc{n}f {:#x}", SignedHex(offset)),
+				false => write!(f, "bc{n}t {:#x}", SignedHex(offset)),
 			}
-			Kind::Load     { dst, src, offset } => write!(f, "lwc{n} {dst:#x}, {offset:#x}({src})"),
-			Kind::Store    { dst, src, offset } => write!(f, "swc{n} {dst:#x}, {offset:#x}({src})"),
+			Kind::Load     { dst, src, offset } => write!(f, "lwc{n} {dst:#x}, {:#x}({src})", SignedHex(offset)),
+			Kind::Store    { dst, src, offset } => write!(f, "swc{n} {dst:#x}, {:#x}({src})", SignedHex(offset)),
 		}
 	}
 }
