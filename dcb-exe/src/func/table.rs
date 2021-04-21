@@ -149,44 +149,52 @@ impl FuncTable {
 			.filter(|&target| data_table.get_containing(target).is_none())
 			.collect();
 
-		function_entries
-			.iter()
-			.enumerate()
-			.map(|(idx, &func_pos)| {
-				// Try to get the end position from the returns
-				// Note: +8 for return + inst after.
-				let mut end_pos: Pos = returns.range(func_pos..).next().copied().unwrap_or(func_pos) + 8;
+		let mut cur_funcs = BTreeSet::<Func>::new();
+		for (idx, &func_pos) in function_entries.iter().enumerate() {
+			// Try to get the end position from the returns
+			// Note: +8 for return + inst after.
+			let mut end_pos: Pos = returns.range(func_pos..).next().copied().unwrap_or(func_pos) + 8;
 
-				// If there's a function in between us and the return, use the last tailcall instead
-				if let Some(next_func_pos) = function_entries.range(func_pos + 4i32..end_pos).next() {
-					end_pos = tailcalls.range(..next_func_pos).next_back().copied().unwrap_or(func_pos) + 8i32;
+			// If there's a function in between us and the return, use the last tailcall instead
+			if let Some(next_func_pos) = function_entries.range(func_pos + 4i32..end_pos).next() {
+				end_pos = tailcalls.range(..next_func_pos).next_back().copied().unwrap_or(func_pos) + 8i32;
 
-					// If we got a tailcall before this function, just end it 2 insts
-					if end_pos <= func_pos {
-						end_pos = func_pos + 8i32;
-					}
+				// If we got a tailcall before this function, just end it 2 insts
+				if end_pos <= func_pos {
+					end_pos = func_pos + 8i32;
 				}
+			}
 
-				// Get all labels within this function
-				// Note: We skip labels on the function location itself.
-				let labels = labels
-					.range((Bound::Excluded(func_pos), Bound::Excluded(end_pos)))
-					.enumerate()
-					.map(|(idx, &pos)| (pos, format!("{idx}")))
-					.collect();
+			// If this function would intersect any other, skip this one.
+			if cur_funcs.range(func_pos..end_pos).next().is_some() ||
+				cur_funcs.range(..=func_pos).next_back().map_or(false, |func| func.end_pos > func_pos) ||
+				cur_funcs.range(func_pos..).next().map_or(false, |func| func.start_pos < end_pos)
+			{
+				continue;
+			}
 
-				Func {
-					name: format!("func_{idx}"),
-					signature: "fn()".to_owned(),
-					desc: String::new(),
-					inline_comments: BTreeMap::new(),
-					comments: BTreeMap::new(),
-					labels,
-					start_pos: func_pos,
-					end_pos,
-				}
-			})
-			.collect()
+			// Get all labels within this function
+			// Note: We skip labels on the function location itself.
+			let labels = labels
+				.range((Bound::Excluded(func_pos), Bound::Excluded(end_pos)))
+				.enumerate()
+				.map(|(idx, &pos)| (pos, format!("{idx}")))
+				.collect();
+
+			let func = Func {
+				name: format!("func_{idx}"),
+				signature: "fn()".to_owned(),
+				desc: String::new(),
+				inline_comments: BTreeMap::new(),
+				comments: BTreeMap::new(),
+				labels,
+				start_pos: func_pos,
+				end_pos,
+			};
+			assert!(cur_funcs.insert(func));
+		}
+
+		cur_funcs.into_iter().collect()
 	}
 }
 
