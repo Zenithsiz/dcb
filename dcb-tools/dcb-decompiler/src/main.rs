@@ -20,7 +20,7 @@ use dcb_exe::{
 	reader::iter::ExeItem,
 	ExeReader, Func, Pos,
 };
-use std::{collections::BTreeMap, fmt};
+use std::{collections::BTreeMap, fmt, path::PathBuf};
 
 fn main() -> Result<(), anyhow::Error> {
 	// Initialize the logger
@@ -38,7 +38,13 @@ fn main() -> Result<(), anyhow::Error> {
 	let exe = ExeReader::deserialize(&mut input_file).context("Unable to parse game executable")?;
 
 	if cli.print_header {
-		println!("Header:\n{}", exe.header());
+		let header_file_path = {
+			let mut path = cli.input_path.clone().into_os_string();
+			path.push(".header");
+			PathBuf::from(path)
+		};
+		let header_file = std::fs::File::create(header_file_path).context("Unable to create header file")?;
+		serde_yaml::to_writer(header_file, exe.header()).context("Unable to write header to file")?;
 	}
 
 	// Instruction buffers
