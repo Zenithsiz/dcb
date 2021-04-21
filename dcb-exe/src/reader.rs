@@ -112,7 +112,7 @@ impl ExeReader {
 
 		// Then parse all heuristic tables
 		let heuristics_data = Data::search_instructions(insts_range.clone(), insts.clone());
-		let heuristics_func_table = FuncTable::search_instructions(insts_range, insts, &known_data_table);
+		let heuristics_func_table = FuncTable::search_instructions(insts_range, insts, &known_func_table, &known_data_table);
 		known_data_table.extend(heuristics_data);
 		let func_table = known_func_table.merge_with(heuristics_func_table);
 

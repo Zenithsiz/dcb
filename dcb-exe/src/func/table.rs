@@ -79,7 +79,9 @@ impl FuncTable {
 
 	/// Creates a new list of functions from an iterator over insts
 	#[must_use]
-	pub fn search_instructions<'a>(insts_range: Range<Pos>, insts: impl Iterator<Item = (Pos, Inst<'a>)> + Clone, data_table: &DataTable) -> Self {
+	pub fn search_instructions<'a>(
+		insts_range: Range<Pos>, insts: impl Iterator<Item = (Pos, Inst<'a>)> + Clone, known_func_table: &Self, data_table: &DataTable,
+	) -> Self {
 		// Get all returns
 		let returns: BTreeSet<Pos> = insts
 			.clone()
@@ -166,9 +168,13 @@ impl FuncTable {
 			}
 
 			// If this function would intersect any other, skip this one.
-			if cur_funcs.range(func_pos..end_pos).next().is_some() ||
-				cur_funcs.range(..=func_pos).next_back().map_or(false, |func| func.end_pos > func_pos) ||
-				cur_funcs.range(func_pos..).next().map_or(false, |func| func.start_pos < end_pos)
+			if cur_funcs.range(..=func_pos).next_back().map_or(false, |func| func.end_pos > func_pos) ||
+				cur_funcs.range(func_pos..).next().map_or(false, |func| func.start_pos < end_pos) ||
+				known_func_table
+					.range(..=func_pos)
+					.next_back()
+					.map_or(false, |func| func.end_pos > func_pos) ||
+				known_func_table.range(func_pos..).next().map_or(false, |func| func.start_pos < end_pos)
 			{
 				continue;
 			}
