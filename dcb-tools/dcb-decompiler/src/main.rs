@@ -215,9 +215,8 @@ pub fn inst_display<'a>(inst: &'a Inst, exe: &'a ExeReader, func: Option<&'a Fun
 			write!(f, "{}", self::inst_target_fmt(inst, pos, self::inst_target(exe, func, inst.target(pos))))
 		},
 		Inst::Pseudo(pseudo::Inst::LoadImm(
-			inst
-			@ pseudo::load_imm::Inst {
-				kind: pseudo::load_imm::Kind::Address(Pos(target)) | pseudo::load_imm::Kind::Word(target),
+			inst @ pseudo::load_imm::Inst {
+				kind: pseudo::load_imm::Kind::Address(Pos(target)),
 				..
 			},
 		)) => write!(f, "{}", self::inst_target_fmt(inst, pos, self::inst_target(exe, func, Pos(*target)))),
