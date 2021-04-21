@@ -1,12 +1,12 @@
 //! Load instructions
 
 // Imports
-use super::Decodable;
+use super::{Decodable, Encodable};
 use crate::{
 	inst::{basic, InstSize, InstTarget, InstTargetFmt, Register},
 	Pos,
 };
-use int_conv::{Join, SignExtended, Signed};
+use int_conv::{Join, SignExtended, Signed, Split};
 
 /// Load pseudo instructions
 ///
@@ -43,6 +43,31 @@ impl Decodable for Inst {
 		};
 
 		Some(inst)
+	}
+}
+
+impl Encodable for Inst {
+	type Iterator = impl Iterator<Item = basic::Inst>;
+
+	fn encode(&self) -> Self::Iterator {
+		let addr = self.target.0;
+		let (lo, hi) = match addr.lo().as_signed() < 0 {
+			true => (u16::MAX - addr.lo(), addr.hi().wrapping_add(1)),
+			false => addr.lo_hi(),
+		};
+
+		std::array::IntoIter::new([
+			basic::Inst::Lui(basic::lui::Inst {
+				dst:   self.value,
+				value: hi,
+			}),
+			basic::Inst::Load(basic::load::Inst {
+				value:  self.value,
+				addr:   self.value,
+				offset: lo.as_signed(),
+				kind:   self.kind,
+			}),
+		])
 	}
 }
 

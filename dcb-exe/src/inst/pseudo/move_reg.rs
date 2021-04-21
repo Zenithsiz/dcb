@@ -1,7 +1,7 @@
 //! Move register instruction
 
 // Imports
-use super::Decodable;
+use super::{Decodable, Encodable};
 use crate::inst::{basic, InstFmt, InstSize, Register};
 use std::convert::TryInto;
 
@@ -32,6 +32,19 @@ impl Decodable for Inst {
 			}) => Some(Self { dst, src: lhs }),
 			_ => None,
 		}
+	}
+}
+
+impl Encodable for Inst {
+	type Iterator = impl Iterator<Item = basic::Inst>;
+
+	fn encode(&self) -> Self::Iterator {
+		std::iter::once(basic::Inst::Alu(basic::alu::Inst::Reg(basic::alu::reg::Inst {
+			dst:  self.dst,
+			lhs:  self.src,
+			rhs:  Register::Zr,
+			kind: basic::alu::reg::Kind::AddUnsigned,
+		})))
 	}
 }
 

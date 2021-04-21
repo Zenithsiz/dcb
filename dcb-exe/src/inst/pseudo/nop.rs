@@ -1,7 +1,7 @@
 //! Nop
 
 // Imports
-use super::Decodable;
+use super::{Decodable, Encodable};
 use crate::inst::{basic, InstFmt, InstSize, Register};
 
 /// No-op
@@ -10,25 +10,23 @@ use crate::inst::{basic, InstFmt, InstSize, Register};
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub struct Inst {
 	/// Length of this nop, in instructions
-	len: usize,
+	pub len: usize,
+}
+
+impl Inst {
+	/// Instruction used by the nop
+	pub const INST: basic::Inst = basic::Inst::Shift(basic::shift::Inst::Imm(basic::shift::imm::Inst {
+		dst:  Register::Zr,
+		lhs:  Register::Zr,
+		rhs:  0,
+		kind: basic::shift::imm::Kind::LeftLogical,
+	}));
 }
 
 impl Decodable for Inst {
 	fn decode(insts: impl Iterator<Item = basic::Inst> + Clone) -> Option<Self> {
 		// Get how many nops there are, in a row
-		let len = insts
-			.take_while(|inst| {
-				matches!(
-					inst,
-					basic::Inst::Shift(basic::shift::Inst::Imm(basic::shift::imm::Inst {
-						dst:  Register::Zr,
-						lhs:  Register::Zr,
-						rhs:  0,
-						kind: basic::shift::imm::Kind::LeftLogical,
-					}))
-				)
-			})
-			.count();
+		let len = insts.take_while(|inst| matches!(inst, &Self::INST)).count();
 
 		match len {
 			0 => None,
@@ -36,6 +34,16 @@ impl Decodable for Inst {
 		}
 	}
 }
+
+
+impl Encodable for Inst {
+	type Iterator = impl Iterator<Item = basic::Inst>;
+
+	fn encode(&self) -> Self::Iterator {
+		std::iter::repeat(Self::INST).take(self.len)
+	}
+}
+
 
 impl InstSize for Inst {
 	fn size(&self) -> usize {

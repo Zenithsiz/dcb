@@ -1,13 +1,13 @@
 //! Load immediate
 
 // Imports
-use super::Decodable;
+use super::{Decodable, Encodable};
 use crate::{
 	inst::{basic, InstFmt, InstSize, InstTargetFmt, Register},
 	Pos,
 };
 use dcb_util::SignedHex;
-use int_conv::{Join, SignExtended, Signed};
+use int_conv::{Join, SignExtended, Signed, Split};
 use std::convert::TryInto;
 
 /// Immediate kind
@@ -102,6 +102,54 @@ impl Decodable for Inst {
 		};
 
 		Some(inst)
+	}
+}
+
+impl Encodable for Inst {
+	type Iterator = impl Iterator<Item = basic::Inst>;
+
+	#[auto_enums::auto_enum(Iterator)]
+	fn encode(&self) -> Self::Iterator {
+		match self.kind {
+			Kind::Address(Pos(addr)) => {
+				let (lo, hi) = match addr.lo().as_signed() < 0 {
+					true => (u16::MAX - addr.lo(), addr.hi().wrapping_add(1)),
+					false => addr.lo_hi(),
+				};
+
+				std::array::IntoIter::new([
+					basic::Inst::Lui(basic::lui::Inst { dst: self.dst, value: hi }),
+					basic::Inst::Alu(basic::alu::Inst::Imm(basic::alu::imm::Inst {
+						dst:  self.dst,
+						lhs:  self.dst,
+						kind: basic::alu::imm::Kind::AddUnsigned(lo.as_signed()),
+					})),
+				])
+			},
+			Kind::Word(value) => {
+				let (lo, hi) = value.lo_hi();
+
+				std::array::IntoIter::new([
+					basic::Inst::Lui(basic::lui::Inst { dst: self.dst, value: hi }),
+					basic::Inst::Alu(basic::alu::Inst::Imm(basic::alu::imm::Inst {
+						dst:  self.dst,
+						lhs:  self.dst,
+						kind: basic::alu::imm::Kind::Or(lo),
+					})),
+				])
+			},
+			Kind::HalfWordUnsigned(value) => std::iter::once(basic::Inst::Alu(basic::alu::Inst::Imm(basic::alu::imm::Inst {
+				dst:  self.dst,
+				lhs:  Register::Zr,
+				kind: basic::alu::imm::Kind::Or(value),
+			}))),
+
+			Kind::HalfWordSigned(value) => std::iter::once(basic::Inst::Alu(basic::alu::Inst::Imm(basic::alu::imm::Inst {
+				dst:  self.dst,
+				lhs:  Register::Zr,
+				kind: basic::alu::imm::Kind::AddUnsigned(value),
+			}))),
+		}
 	}
 }
 

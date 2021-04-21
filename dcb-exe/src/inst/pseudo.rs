@@ -45,6 +45,21 @@ impl Decodable for Inst {
 	}
 }
 
+impl Encodable for Inst {
+	type Iterator = impl IntoIterator<Item = basic::Inst>;
+
+	#[auto_enums::auto_enum(Iterator)]
+	fn encode(&self) -> Self::Iterator {
+		match self {
+			Inst::LoadImm(inst) => inst.encode(),
+			Inst::Nop(inst) => inst.encode(),
+			Inst::MoveReg(inst) => inst.encode(),
+			Inst::Load(inst) => inst.encode(),
+			Inst::Store(inst) => inst.encode(),
+		}
+	}
+}
+
 impl InstSize for Inst {
 	fn size(&self) -> usize {
 		match self {
@@ -76,11 +91,12 @@ pub trait Decodable: InstSize + Sized {
 	fn decode(insts: impl Iterator<Item = basic::Inst> + Clone) -> Option<Self>;
 }
 
-/*
 /// An encodable pseudo instruction
-pub trait Encodable: Decodable {
-	/// Encodes this instruction
+pub trait Encodable {
+	/// Iterator type
+	type Iterator: IntoIterator<Item = basic::Inst>;
+
+	/// Encodes this instruction as basic instructions
 	#[must_use]
-	fn encode(&self) -> Self::Raw;
+	fn encode(&self) -> Self::Iterator;
 }
-*/
