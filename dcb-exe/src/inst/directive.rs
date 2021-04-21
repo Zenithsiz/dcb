@@ -142,7 +142,12 @@ impl<'a> Directive<'a> {
 			Directive::Dw(value) => f.write_all(&value.to_le_bytes()),
 			Directive::Dh(value) => f.write_all(&value.to_le_bytes()),
 			Directive::Db(value) => f.write_all(&value.to_le_bytes()),
-			Directive::Ascii(ascii) => f.write_all(ascii.as_bytes()),
+			Directive::Ascii(ascii) => {
+				f.write_all(ascii.as_bytes())?;
+				let zeros = [0; 4];
+				let zeros = &zeros[..4 - ascii.len() % 4];
+				f.write_all(zeros)
+			},
 		}
 	}
 }
