@@ -68,13 +68,13 @@ pub struct Raw {
 /// Load instructions
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub struct Inst {
-	/// Source register, `rt`
-	pub src: Register,
+	/// Value register, `rt`
+	pub value: Register,
 
-	/// Destination register, `rs`
-	pub dst: Register,
+	/// Address register, `rs`
+	pub addr: Register,
 
-	/// Destination offset.
+	/// Address offset.
 	pub offset: i16,
 
 	/// Kind
@@ -97,8 +97,8 @@ impl Decodable for Inst {
 		};
 
 		Some(Self {
-			src: Register::new(raw.s)?,
-			dst: Register::new(raw.t)?,
+			value: Register::new(raw.t)?,
+			addr: Register::new(raw.s)?,
 			offset: raw.i.truncated::<u16>().as_signed(),
 			kind,
 		})
@@ -116,8 +116,8 @@ impl Encodable for Inst {
 			Kind::HalfWordUnsigned => 0x5,
 			Kind::WordRight => 0x6,
 		};
-		let s = self.src.idx();
-		let t = self.dst.idx();
+		let s = self.value.idx();
+		let t = self.addr.idx();
 		let i = self.offset.as_unsigned().zero_extended::<u32>();
 
 		Raw { p, s, t, i }
@@ -126,9 +126,9 @@ impl Encodable for Inst {
 
 impl InstFmt for Inst {
 	fn fmt(&self, _pos: crate::Pos, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-		let Self { dst, src, offset, kind } = self;
+		let Self { addr, value, offset, kind } = self;
 		let mnemonic = kind.mnemonic();
 
-		write!(f, "{mnemonic} {dst}, {:#}({src})", SignedHex(offset))
+		write!(f, "{mnemonic} {value}, {:#}({addr})", SignedHex(offset))
 	}
 }

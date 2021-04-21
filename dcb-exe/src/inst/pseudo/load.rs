@@ -17,8 +17,8 @@ use int_conv::{Join, SignExtended, Signed};
 /// ```
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub struct Inst {
-	/// Destination register
-	pub dst: Register,
+	/// Value register
+	pub value: Register,
 
 	/// Target
 	pub target: Pos,
@@ -29,10 +29,11 @@ pub struct Inst {
 
 impl Decodable for Inst {
 	fn decode(mut insts: impl Iterator<Item = basic::Inst> + Clone) -> Option<Self> {
+		#[allow(clippy::suspicious_operation_groupings)] // We're checking for `lui $dst, {} / l* $dst, {}($dst)`.
 		let inst = match insts.next()? {
 			basic::Inst::Lui(lui) => match insts.next()? {
-				basic::Inst::Load(load) if load.dst == lui.dst && load.dst == load.src => Self {
-					dst:    lui.dst,
+				basic::Inst::Load(load) if load.value == lui.dst && load.addr == load.value => Self {
+					value:  load.value,
 					target: Pos((u32::join(0, lui.value).as_signed() + load.offset.sign_extended::<i32>()).as_unsigned()),
 					kind:   load.kind,
 				},
@@ -59,9 +60,9 @@ impl InstTarget for Inst {
 
 impl InstTargetFmt for Inst {
 	fn fmt(&self, _pos: crate::Pos, target: impl std::fmt::Display, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-		let Self { dst, kind, .. } = self;
+		let Self { value, kind, .. } = self;
 		let mnemonic = kind.mnemonic();
 
-		write!(f, "{mnemonic} {dst}, {target}")
+		write!(f, "{mnemonic} {value}, {target}")
 	}
 }

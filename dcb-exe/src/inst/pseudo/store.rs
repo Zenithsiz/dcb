@@ -17,8 +17,8 @@ use int_conv::{Join, SignExtended, Signed};
 /// ```
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub struct Inst {
-	/// Destination register
-	pub dst: Register,
+	/// Value register
+	pub value: Register,
 
 	/// Target
 	pub target: Pos,
@@ -31,8 +31,8 @@ impl Decodable for Inst {
 	fn decode(mut insts: impl Iterator<Item = basic::Inst> + Clone) -> Option<Self> {
 		let inst = match insts.next()? {
 			basic::Inst::Lui(lui) if lui.dst == Register::At => match insts.next()? {
-				basic::Inst::Store(store) if store.src == Register::At => Self {
-					dst:    lui.dst,
+				basic::Inst::Store(store) if store.addr == Register::At => Self {
+					value:  store.value,
 					target: Pos((u32::join(0, lui.value).as_signed() + store.offset.sign_extended::<i32>()).as_unsigned()),
 					kind:   store.kind,
 				},
@@ -59,9 +59,9 @@ impl InstTarget for Inst {
 
 impl InstTargetFmt for Inst {
 	fn fmt(&self, _pos: crate::Pos, target: impl std::fmt::Display, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-		let Self { dst, kind, .. } = self;
+		let Self { value, kind, .. } = self;
 		let mnemonic = kind.mnemonic();
 
-		write!(f, "{mnemonic} {dst}, {target}")
+		write!(f, "{mnemonic} {value}, {target}")
 	}
 }
