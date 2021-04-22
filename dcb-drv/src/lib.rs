@@ -53,7 +53,7 @@
 // We're fine with shadowing, as long as it's related
 #![allow(clippy::shadow_reuse, clippy::shadow_same)]
 // Matching on booleans can look better than `if / else`
-#![allow(clippy::match_bool, clippy::single_match_else)]
+#![allow(clippy::match_bool, clippy::single_match_else, clippy::if_not_else)]
 // If the `else` isn't needed, we don't put it
 #![allow(clippy::else_if_without_else)]
 // We're fine with non-exhaustive structs / enums, we aren't committing to them yet.
