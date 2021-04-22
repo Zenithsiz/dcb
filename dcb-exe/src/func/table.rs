@@ -142,9 +142,9 @@ impl FuncTable {
 						kind: basic::jmp::imm::Kind::JumpLink,
 						..
 					},
-				))) => Some(inst.target(pos)),
+				))) if pos.0 % 4 == 0 => Some(inst.target(pos)),
 				// `dw`
-				Inst::Directive(Directive::Dw(address)) => Some(Pos(address)),
+				Inst::Directive(Directive::Dw(address)) if address % 4 == 0 => Some(Pos(address)),
 				_ => None,
 			})
 			.filter(|target| insts_range.contains(target))
