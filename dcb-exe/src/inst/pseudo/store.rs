@@ -51,7 +51,7 @@ impl Encodable for Inst {
 	fn encode(&self) -> Self::Iterator {
 		let addr = self.target.0;
 		let (lo, hi) = match addr.lo().as_signed() < 0 {
-			true => (u16::MAX - addr.lo(), addr.hi().wrapping_add(1)),
+			true => (addr.lo(), addr.hi().wrapping_add(1)),
 			false => addr.lo_hi(),
 		};
 

@@ -113,7 +113,7 @@ impl Encodable for Inst {
 		match self.kind {
 			Kind::Address(Pos(addr)) => {
 				let (lo, hi) = match addr.lo().as_signed() < 0 {
-					true => (u16::MAX - addr.lo(), addr.hi().wrapping_add(1)),
+					true => (addr.lo(), addr.hi().wrapping_add(1)),
 					false => addr.lo_hi(),
 				};
 
