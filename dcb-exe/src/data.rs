@@ -18,7 +18,7 @@ pub use ty::DataType;
 
 // Imports
 use crate::{
-	inst::{self, basic, pseudo, Inst},
+	inst::{self, basic, pseudo, Inst, LabelName},
 	Pos,
 };
 use inst::directive::Directive;
@@ -131,6 +131,13 @@ impl Data {
 	#[must_use]
 	pub fn size(&self) -> usize {
 		self.ty.size()
+	}
+
+	/// Consumes this data and returns it as a label
+	#[must_use]
+	#[allow(clippy::missing_const_for_fn)] // False positive
+	pub fn into_label(self) -> (Pos, LabelName) {
+		(self.pos, LabelName(self.name))
 	}
 }
 

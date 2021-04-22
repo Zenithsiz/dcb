@@ -11,6 +11,7 @@ pub use error::ParseError;
 // Imports
 use crate::inst::Register;
 use std::{
+	borrow::Borrow,
 	io::{self, Lines},
 	str::FromStr,
 };
@@ -295,10 +296,16 @@ pub struct ParsedLine {
 }
 
 /// A parsed label
-#[derive(PartialEq, Clone, Debug)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Hash, Debug)]
 pub struct ParsedLabel {
 	/// Name
 	pub name: String,
+}
+
+impl Borrow<String> for ParsedLabel {
+	fn borrow(&self) -> &String {
+		&self.name
+	}
 }
 
 /// A parsed instruction
@@ -343,6 +350,62 @@ pub enum ParsedArg {
 		/// The offset
 		offset: i64,
 	},
+}
+
+impl ParsedArg {
+	/// Returns this argument as a string
+	#[must_use]
+	pub fn as_string(&self) -> Option<&str> {
+		match self {
+			Self::String(string) => Some(string),
+			_ => None,
+		}
+	}
+
+	/// Returns this argument as a register
+	#[must_use]
+	pub const fn as_register(&self) -> Option<Register> {
+		match *self {
+			Self::Register(reg) => Some(reg),
+			_ => None,
+		}
+	}
+
+	/// Returns this argument as a register offset
+	#[must_use]
+	pub const fn as_register_offset(&self) -> Option<(Register, i64)> {
+		match *self {
+			Self::RegisterOffset { register, offset } => Some((register, offset)),
+			_ => None,
+		}
+	}
+
+	/// Returns this argument as a literal
+	#[must_use]
+	pub const fn as_literal(&self) -> Option<i64> {
+		match *self {
+			Self::Literal(literal) => Some(literal),
+			_ => None,
+		}
+	}
+
+	/// Returns this argument as a label
+	#[must_use]
+	pub fn as_label(&self) -> Option<&str> {
+		match self {
+			Self::Label(label) => Some(label),
+			_ => None,
+		}
+	}
+
+	/// Returns this argument as a label offset
+	#[must_use]
+	pub fn as_label_offset(&self) -> Option<(&str, i64)> {
+		match self {
+			Self::LabelOffset { label, offset } => Some((label, *offset)),
+			_ => None,
+		}
+	}
 }
 
 
