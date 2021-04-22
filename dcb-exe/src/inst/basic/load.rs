@@ -116,8 +116,8 @@ impl Encodable for Inst {
 			Kind::HalfWordUnsigned => 0x5,
 			Kind::WordRight => 0x6,
 		};
-		let s = self.value.idx();
-		let t = self.addr.idx();
+		let t = self.value.idx();
+		let s = self.addr.idx();
 		let i = self.offset.as_unsigned().zero_extended::<u32>();
 
 		Raw { p, s, t, i }

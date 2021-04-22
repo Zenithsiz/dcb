@@ -99,7 +99,7 @@ impl Inst {
 				(MultKind::Mult, MultMode::  Signed) => "mult",
 				(MultKind::Mult, MultMode::Unsigned) => "multu",
 				(MultKind::Div , MultMode::  Signed) => "div",
-				(MultKind::Div , MultMode::Unsigned) => "diu",
+				(MultKind::Div , MultMode::Unsigned) => "divu",
 			},
 			Self::MoveFrom { src, .. } => match src {
 				MultReg::Hi => "mfhi",

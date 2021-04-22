@@ -182,11 +182,11 @@ impl InstFmt for Inst {
 				RegisterKind::Control => write!(f, "ctc{n} {src}, {dst:#x}"),
 			}
 			Kind::Branch   { offset, on } => match on {
-				true  => write!(f, "bc{n}f {:#x}", SignedHex(offset)),
-				false => write!(f, "bc{n}t {:#x}", SignedHex(offset)),
+				true  => write!(f, "bc{n}f {:#}", SignedHex(offset)),
+				false => write!(f, "bc{n}t {:#}", SignedHex(offset)),
 			}
-			Kind::Load     { dst, src, offset } => write!(f, "lwc{n} {dst:#x}, {:#x}({src})", SignedHex(offset)),
-			Kind::Store    { dst, src, offset } => write!(f, "swc{n} {dst:#x}, {:#x}({src})", SignedHex(offset)),
+			Kind::Load     { dst, src, offset } => write!(f, "lwc{n} {dst:#x}, {:#}({src})", SignedHex(offset)),
+			Kind::Store    { dst, src, offset } => write!(f, "swc{n} {dst:#x}, {:#}({src})", SignedHex(offset)),
 		}
 	}
 }

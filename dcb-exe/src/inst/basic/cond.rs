@@ -136,7 +136,7 @@ impl InstTargetFmt for Inst {
 
 		// `beq $zr, $zr, offset` => `b offset`
 		// `beq $zr, $arg, offset` => `beqz $arg, offset`
-		// `beq $zr, $arg, offset` => `bnez $arg, offset`
+		// `bne $zr, $arg, offset` => `bnez $arg, offset`
 		match kind {
 			Kind::Equal(Register::Zr) => match arg {
 				Register::Zr => write!(f, "b {target}"),
