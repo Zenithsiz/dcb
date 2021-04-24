@@ -51,6 +51,18 @@ impl<A: Alphabet> StrAlphabet<A> {
 	}
 }
 
+impl<A: Alphabet> PartialEq<[u8]> for StrAlphabet<A> {
+	fn eq(&self, other: &[u8]) -> bool {
+		self.bytes.eq(other)
+	}
+}
+
+impl<A: Alphabet, const N: usize> PartialEq<[u8; N]> for StrAlphabet<A> {
+	fn eq(&self, other: &[u8; N]) -> bool {
+		self.bytes.eq(other)
+	}
+}
+
 impl<A: Alphabet> fmt::Debug for StrAlphabet<A> {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 		write!(f, "{:?}", self.as_lossy_str())
