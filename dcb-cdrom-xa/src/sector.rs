@@ -1,5 +1,7 @@
 #![doc(include = "sector.md")]
 
+// TODO: Even with the form bit set, the data seems to only be 2048 bytes anyway, check what's happening
+
 // Modules
 pub mod ecc;
 pub mod edc;
@@ -82,7 +84,8 @@ impl Bytes for Sector {
 
 			true => {
 				let bytes = array_split!(bytes.rest,
-					data  : [0x914],
+					data  : [0x800],
+					rest  : [0x114],
 					edc   : [0x4  ],
 				);
 
@@ -137,7 +140,8 @@ impl Bytes for Sector {
 
 			Data::Form2(data) => {
 				let bytes = array_split_mut!(bytes.rest,
-					data  : [0x914],
+					data  : [0x800],
+					rest  : [0x114],
 					edc   : [0x4  ],
 				);
 
@@ -161,7 +165,7 @@ pub enum Data {
 	Form1([u8; 2048]),
 
 	/// Form 2
-	Form2([u8; 2324]),
+	Form2([u8; 2048]),
 }
 
 impl Data {
@@ -169,19 +173,22 @@ impl Data {
 	#[must_use]
 	pub const fn as_form1(&self) -> Option<&[u8; 2048]> {
 		match self {
-			Self::Form1(v) => Some(v),
-			_ => None,
+			Self::Form1(data) |
+			// Note: We pretend form 2 is form 1 for now until we figure out what's going on
+			Self::Form2(data) => Some(data),
 		}
 	}
 
+	/*
 	/// Returns this data as form 2
 	#[must_use]
-	pub const fn as_form2(&self) -> Option<&[u8; 2324]> {
+	pub const fn as_form2(&self) -> Option<&[u8; 2048]> {
 		match self {
-			Self::Form2(v) => Some(v),
+			Self::Form2(data) => Some(data),
 			_ => None,
 		}
 	}
+	*/
 }
 
 impl From<[u8; 2048]> for Data {
@@ -190,17 +197,10 @@ impl From<[u8; 2048]> for Data {
 	}
 }
 
-impl From<[u8; 2324]> for Data {
-	fn from(arr: [u8; 2324]) -> Self {
-		Self::Form2(arr)
-	}
-}
-
 impl AsRef<[u8]> for Data {
 	fn as_ref(&self) -> &[u8] {
 		match self {
-			Data::Form1(data) => data,
-			Data::Form2(data) => data,
+			Data::Form1(data) | Data::Form2(data) => data,
 		}
 	}
 }
