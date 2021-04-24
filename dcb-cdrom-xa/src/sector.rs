@@ -63,19 +63,21 @@ impl Bytes for Sector {
 					edc   : [0x4  ],
 					ecc   : [0x114],
 				);
-				let edc = Edc::from_bytes(bytes.edc).into_ok();
-				let data = *bytes.data;
 
-				// TODO: Verify / correct ecc
+				// TODO: Verify & correct ecc
 
 				// Verify edc
+				let edc = Edc::from_bytes(bytes.edc).into_ok();
 				let edc_bytes = &byte_array[0x10..0x818];
 				if let Err(calculated) = edc.is_valid(edc_bytes) {
-					return Err(FromBytesError::WrongEdc { found: edc.crc, calculated });
+					return Err(FromBytesError::WrongEdc {
+						found:      edc.crc,
+						calculated: calculated.crc,
+					});
 				}
 
 
-				Data::Form1(data)
+				Data::Form1(*bytes.data)
 			},
 
 			true => {
@@ -83,12 +85,15 @@ impl Bytes for Sector {
 					data  : [0x914],
 					edc   : [0x4  ],
 				);
-				let edc = Edc::from_bytes(bytes.edc).into_ok();
 
 				// Verify edc
+				let edc = Edc::from_bytes(bytes.edc).into_ok();
 				let edc_bytes = &byte_array[0x10..0x92c];
 				if let Err(calculated) = edc.is_valid(edc_bytes) {
-					return Err(FromBytesError::WrongEdc { found: edc.crc, calculated });
+					return Err(FromBytesError::WrongEdc {
+						found:      edc.crc,
+						calculated: calculated.crc,
+					});
 				}
 
 				Data::Form2(*bytes.data)
@@ -99,6 +104,13 @@ impl Bytes for Sector {
 	}
 
 	fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError> {
+		// Calculate edc before writing
+		let edc = match self.data {
+			Data::Form1(_) => Edc::calc_ecc(&bytes[0x10..0x818]),
+			Data::Form2(_) => Edc::calc_ecc(&bytes[0x10..0x92c]),
+		};
+
+
 		let bytes = array_split_mut!(bytes,
 			header: [0x18 ],
 			rest  : [0x918],
@@ -114,13 +126,26 @@ impl Bytes for Sector {
 					ecc   : [0x114],
 				);
 
+				// Write the data
 				*bytes.data = data;
 
-				// TODO: Edc, Ecc
+				// Write the edc
+				edc.to_bytes(bytes.edc).into_ok();
+
+				// TODO: Ecc
 			},
 
-			Data::Form2(_) => {
-				todo!();
+			Data::Form2(data) => {
+				let bytes = array_split_mut!(bytes.rest,
+					data  : [0x914],
+					edc   : [0x4  ],
+				);
+
+				// Write the data
+				*bytes.data = data;
+
+				// Write the edc
+				edc.to_bytes(bytes.edc).into_ok();
 			},
 		}
 

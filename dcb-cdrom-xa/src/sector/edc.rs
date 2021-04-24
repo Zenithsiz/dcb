@@ -5,6 +5,7 @@ use byteorder::{ByteOrder, LittleEndian};
 use dcb_bytes::Bytes;
 
 /// Error detection
+#[derive(PartialEq, Eq, Clone, Copy)]
 pub struct Edc {
 	/// Crc
 	pub crc: u32,
@@ -35,18 +36,24 @@ impl Edc {
 		table
 	}
 
-	/// Checks if `bytes` is valid.
-	pub fn is_valid(&self, bytes: &[u8]) -> Result<(), u32> {
+	/// Calculates the `ecc` of some bytes
+	#[must_use]
+	pub fn calc_ecc(bytes: &[u8]) -> Self {
 		let mut crc = 0;
 		#[allow(clippy::as_conversions)]
 		for &b in bytes {
 			let idx = (crc ^ u32::from(b)) & 0xFF;
 			crc = (crc >> 8u32) ^ Self::CRC_TABLE[idx as usize];
 		}
+		Self { crc }
+	}
 
-		match crc == self.crc {
+	/// Checks if `bytes` is valid.
+	pub fn is_valid(self, bytes: &[u8]) -> Result<(), Self> {
+		let ecc = Self::calc_ecc(bytes);
+		match ecc == self {
 			true => Ok(()),
-			false => Err(crc),
+			false => Err(ecc),
 		}
 	}
 }
