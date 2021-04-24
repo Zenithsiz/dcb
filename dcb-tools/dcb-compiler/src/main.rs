@@ -142,10 +142,6 @@ fn main() -> Result<(), anyhow::Error> {
 		let inst =
 			Inst::from_parsed(inst, pos, &labels_by_name).with_context(|| format!("Unable to compile instruction at {} in line {}", pos, n + 1))?;
 
-		if pos.0 == 0x80010000 + 0x0004c064 - 0x800 {
-			dbg!(inst);
-		}
-
 		inst.write(&mut output_file).context("Unable to write to file")?;
 	}
 
