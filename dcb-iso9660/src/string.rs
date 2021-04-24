@@ -177,5 +177,18 @@ pub type FileStrArr<const N: usize> = StrArrAlphabet<FileAlphabet, N>;
 /// File string
 pub type FileString = StringAlphabet<FileAlphabet>;
 
+impl FileStr {
+	/// Returns this filename without the version
+	#[must_use]
+	pub fn without_version(&self) -> &str {
+		let s = std::str::from_utf8(self.as_bytes()).expect("File string had invalid utf8 characters");
+
+		match s.split_once(';') {
+			Some((s, _)) => s,
+			None => s,
+		}
+	}
+}
+
 /// File string slice
 pub type FileStr = StrAlphabet<FileAlphabet>;
