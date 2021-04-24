@@ -2,32 +2,52 @@
 
 // Imports
 use byteorder::{ByteOrder, LittleEndian};
-use crc::{crc32, Hasher32};
 use dcb_bytes::Bytes;
 
 /// Error detection
 pub struct Edc {
 	/// Crc
-	crc: u32,
+	pub crc: u32,
 }
 
 impl Edc {
-	/// Polynomial used for CRC
-	pub const POLY: u32 = 0b1000_0000_0000_0001_1000_0000_0001_1011;
+	/// Crc Polynomial
+	pub const CRC_POLY: u32 = 0xd8018001;
+	/// The crc table
+	pub const CRC_TABLE: [u32; 256] = Self::crc_table();
 
-	/// Checks if `raw_data` is valid.
-	#[must_use]
-	#[allow(clippy::trivially_copy_pass_by_ref)] // We can more easily calculate a reference to it.
-	pub fn is_valid(&self, raw_subheader: &[u8; 0x8], raw_data: &[u8; 0x800]) -> bool {
-		let mut digest = crc32::Digest::new(Self::POLY);
-		digest.write(raw_subheader);
-		digest.write(raw_data);
-		let crc = digest.sum32();
+	/// Calculates the crc table
+	const fn crc_table() -> [u32; 256] {
+		let mut table = [0u32; 256];
+		let mut n = 0;
+		while n < table.len() {
+			#[allow(clippy::as_conversions, clippy::cast_possible_truncation)] // `n < 256`
+			let mut value = n as u32;
+			let mut i = 0usize;
+			while i < 8 {
+				value = if value & 1 != 0 { Self::CRC_POLY } else { 0 } ^ (value >> 1u32);
+				i += 1;
+			}
+			table[n] = value;
+			n += 1;
+		}
 
-		log::warn!("Found crc {:#x}", crc);
-		log::warn!("Expected crc {:#x}", self.crc);
+		table
+	}
 
-		crc == self.crc
+	/// Checks if `bytes` is valid.
+	pub fn is_valid(&self, bytes: &[u8]) -> Result<(), u32> {
+		let mut crc = 0;
+		#[allow(clippy::as_conversions)]
+		for &b in bytes {
+			let idx = (crc ^ u32::from(b)) & 0xFF;
+			crc = (crc >> 8u32) ^ Self::CRC_TABLE[idx as usize];
+		}
+
+		match crc == self.crc {
+			true => Ok(()),
+			false => Err(crc),
+		}
 	}
 }
 

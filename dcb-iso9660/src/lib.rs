@@ -101,7 +101,7 @@ impl FilesystemReader {
 		let mut sectors = cdrom.read_sectors();
 		let primary_volume_descriptor = loop {
 			match sectors.next() {
-				Some(Ok(sector)) => match VolumeDescriptor::from_bytes(&sector.data) {
+				Some(Ok(sector)) => match VolumeDescriptor::from_bytes(sector.data.as_form1().ok_or(NewError::PrimaryFormatWrongForm)?) {
 					Ok(VolumeDescriptor::Primary(primary)) => break primary,
 					Ok(VolumeDescriptor::SetTerminator) => return Err(NewError::MissingPrimaryVolumeBeforeSetTerminator),
 					Ok(volume_descriptor) => log::debug!("Skipping {:?} volume descriptor before primary", volume_descriptor.kind()),

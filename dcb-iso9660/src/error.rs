@@ -26,4 +26,8 @@ pub enum NewError {
 	/// Invalid volume descriptor
 	#[error("Invalid volume descriptor")]
 	InvalidVolumeDescriptor(#[source] volume_descriptor::FromBytesError),
+
+	/// Primary volume must be in form1
+	#[error("Primary volume must be in form 1")]
+	PrimaryFormatWrongForm,
 }

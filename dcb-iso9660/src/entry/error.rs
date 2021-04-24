@@ -60,4 +60,8 @@ pub enum ReadDirError {
 	/// Unable to parse an entry
 	#[error("Unable to parse an entry")]
 	ParseEntry(#[source] self::FromReaderError),
+
+	/// Directory sector must be form 1
+	#[error("Directory sector must be form 1")]
+	DirSectorWrongForm,
 }

@@ -36,9 +36,7 @@ fn extract_cdrom_xa(input_file: &Path, output_file: &Path) -> Result<(), anyhow:
 	for sector in input_file.read_sectors() {
 		let sector = sector.context("Unable to read sector")?;
 
-		println!("{:?}", sector.header);
-
-		output_file.write_all(&sector.data).context("Unable to write data")?;
+		output_file.write_all(sector.data.as_ref()).context("Unable to write data")?;
 	}
 
 	Ok(())

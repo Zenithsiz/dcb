@@ -89,7 +89,8 @@ impl DirEntry {
 		let sector = cdrom.read_nth_sector(u64::from(self.sector_pos)).map_err(ReadDirError::ReadSector)?;
 
 		// Then keep parsing until we run out.
-		let mut bytes = std::io::Cursor::new(&sector.data[..size]);
+		let data = sector.data.as_form1().ok_or(ReadDirError::DirSectorWrongForm)?;
+		let mut bytes = std::io::Cursor::new(&data[..size]);
 		let dirs = std::iter::from_fn(move || match Self::from_reader(&mut bytes) {
 			// Note: If it fails due to the record size being 0, return None
 			Err(FromReaderError::RecordSizeTooSmall(0)) => None,

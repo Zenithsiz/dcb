@@ -16,7 +16,6 @@ bitflags = "1.2.1"
 
 # Util
 byteorder = "1.4.2"
-crc = "1.8.1"
 
 # Derives
 thiserror = "1.0.23"

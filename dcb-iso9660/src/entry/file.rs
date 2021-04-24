@@ -77,12 +77,16 @@ impl<'a, R: io::Read> io::Read for FileReader<'a, R> {
 		// Get the sector in cache
 		let cur_pos = self.cur_pos;
 		let sector = self.cached()?;
+		let sector_data = sector
+			.data
+			.as_form1()
+			.ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "Sector must be in form 1"))?;
 
 		// If we have enough bytes remaining in it to fill the buffer, read and return
 		let pos_in_sector = usize::try_from(cur_pos % 2048).expect("Unable to get current sector position as `usize`");
 		let remaining_sector_bytes = 2048 - pos_in_sector;
 		if buf.len() < remaining_sector_bytes {
-			buf.copy_from_slice(&sector.data[pos_in_sector..pos_in_sector + buf.len()]);
+			buf.copy_from_slice(&sector_data[pos_in_sector..pos_in_sector + buf.len()]);
 			self.cur_pos += u64::try_from(buf.len()).expect("Buffer size didn't fit into `u64`");
 			return Ok(buf.len());
 		}
@@ -90,7 +94,7 @@ impl<'a, R: io::Read> io::Read for FileReader<'a, R> {
 		// Else write all we have currently, clear our buffer and return
 		// Note: This also covers the case in which we have just enough bytes to
 		//       fill it.
-		buf[..remaining_sector_bytes].copy_from_slice(&sector.data[pos_in_sector..]);
+		buf[..remaining_sector_bytes].copy_from_slice(&sector_data[pos_in_sector..]);
 		self.cur_pos += u64::try_from(remaining_sector_bytes).expect("Unable to get remaining sector bytes as `u64`");
 		self.cached = None;
 		Ok(remaining_sector_bytes)
