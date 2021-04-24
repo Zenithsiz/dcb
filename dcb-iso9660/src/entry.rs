@@ -5,16 +5,19 @@ pub mod error;
 pub mod file;
 
 // Exports
-pub use error::{FromReaderError, ReadDirError, ReadFileError};
+pub use error::{FromReaderError, ReadDirError, ReadFileError, ToWriterError};
 pub use file::FileReader;
 
 // Imports
 use super::string::FileString;
 use crate::Dir;
-use byteorder::{ByteOrder, LittleEndian};
+use byteorder::{BigEndian, ByteOrder, LittleEndian};
 use dcb_cdrom_xa::CdRomReader;
-use dcb_util::array_split;
-use std::{convert::TryFrom, io};
+use dcb_util::{array_split, array_split_mut};
+use std::{
+	convert::{TryFrom, TryInto},
+	io,
+};
 
 /// A directory entry.
 #[derive(PartialEq, Eq, Clone, Debug)]
@@ -86,7 +89,9 @@ impl DirEntry {
 		}
 
 		// Read the sector
-		let sector = cdrom.read_nth_sector(u64::from(self.sector_pos)).map_err(ReadDirError::ReadSector)?;
+		let sector = cdrom
+			.read_nth_sector(u64::from(dbg!(self.sector_pos)))
+			.map_err(ReadDirError::ReadSector)?;
 
 		// Then keep parsing until we run out.
 		let data = sector.data.as_form1().ok_or(ReadDirError::DirSectorWrongForm)?;
@@ -160,5 +165,46 @@ impl DirEntry {
 			size: LittleEndian::read_u32(header_bytes.extent_size_lsb),
 			flags: Flags::from_bits(*header_bytes.file_flags).ok_or(FromReaderError::InvalidFlags)?,
 		})
+	}
+
+	/// Writes this directory to a writer
+	pub fn to_writer<W: io::Write>(&self, writer: &mut W) -> Result<(), ToWriterError> {
+		// Write the header
+		let mut header_bytes = [0u8; 0x21];
+		let header = array_split_mut!(&mut header_bytes,
+			record_size                  :  0x1,
+			extended_attribute_record_len:  0x1,
+			extent_location_lsb          : [0x4],
+			extent_location_msb          : [0x4],
+			extent_size_lsb              : [0x4],
+			extent_size_msb              : [0x4],
+			recording_date_time          : [0x7],
+			file_flags                   :  0x1,
+			file_unit_size               :  0x1,
+			interleave_gap_size          :  0x1,
+			volume_sequence_number_lsb   : [0x2],
+			volume_sequence_number_msb   : [0x2],
+			name_len                     :  0x1,
+		);
+
+		// Fill the header
+		*header.record_size = (0x21 + self.name.len()).try_into().expect("Name was too large");
+		*header.extended_attribute_record_len = 0;
+		LittleEndian::write_u32(header.extent_location_lsb, self.sector_pos);
+		BigEndian::write_u32(header.extent_location_lsb, self.sector_pos);
+		LittleEndian::write_u32(header.extent_size_lsb, self.size);
+		BigEndian::write_u32(header.extent_size_msb, self.size);
+		*header.file_flags = self.flags.bits();
+		*header.file_unit_size = 0;
+		*header.interleave_gap_size = 0;
+		*header.name_len = *header.record_size - 0x21;
+
+		// Write the header
+		writer.write_all(&header_bytes).map_err(ToWriterError::WriteHeader)?;
+
+		// Then write the name
+		writer.write_all(self.name.as_bytes()).map_err(ToWriterError::WriteName)?;
+
+		Ok(())
 	}
 }

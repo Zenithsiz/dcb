@@ -10,7 +10,7 @@ pub use error::FromBytesError;
 use crate::{date_time::DecDateTime, entry::DirEntry, StrArrA, StrArrD};
 use byteorder::{ByteOrder, LittleEndian};
 use dcb_bytes::Bytes;
-use dcb_util::array_split;
+use dcb_util::{array_split, array_split_mut};
 
 /// Primary volume descriptor
 #[derive(PartialEq, Eq, Clone, Debug)]
@@ -149,7 +149,68 @@ impl Bytes for PrimaryVolumeDescriptor {
 		})
 	}
 
-	fn to_bytes(&self, _bytes: &mut Self::ByteArray) -> Result<(), Self::ToError> {
-		todo!()
+	fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError> {
+		let bytes = array_split_mut!(bytes,
+			zeroes0                      :  0x1,
+			system_id                    : [0x20],
+			volume_id                    : [0x20],
+			zeroes1                      : [0x8 ],
+			volume_space_size_lsb        : [0x4 ],
+			volume_space_size_msb        : [0x4 ],
+			zeroes2                      : [0x20],
+			volume_set_size_lsb          : [0x2 ],
+			volume_set_size_msb          : [0x2 ],
+			volume_sequence_number_lsb   : [0x2 ],
+			volume_sequence_number_msb   : [0x2 ],
+			logical_block_size_lsb       : [0x2 ],
+			logical_block_size_msb       : [0x2 ],
+			path_table_size_lsb          : [0x4 ],
+			path_table_size_msb          : [0x4 ],
+			path_table_lsb_location      : [0x4 ],
+			path_table_lsb_opt_location  : [0x4 ],
+			path_table_msb_location      : [0x4 ],
+			path_table_msb_opt_location  : [0x4 ],
+			root_dir_entry               : [0x22],
+			volume_set_id                : [0x80],
+			publisher_id                 : [0x80],
+			data_preparer_id             : [0x80],
+			application_id               : [0x80],
+			copyright_file_id            : [0x26],
+			abstract_file_id             : [0x24],
+			bibliographic_file_id        : [0x25],
+			volume_creation_date_time    : [0x11],
+			volume_modification_date_time: [0x11],
+			volume_expiration_date_time  : [0x11],
+			volume_effective_date_time   : [0x11],
+			file_structure_version       :  0x1,
+			zeroes3                      :  0x1,
+			data                         : [0x200],
+			reserved                     : [0x28d],
+		);
+
+		self.system_id.to_bytes(bytes.system_id);
+		self.volume_id.to_bytes(bytes.volume_id);
+		LittleEndian::write_u32(bytes.volume_space_size_lsb, self.volume_space_size);
+		LittleEndian::write_u16(bytes.volume_sequence_number_lsb, self.volume_sequence_number);
+		LittleEndian::write_u16(bytes.logical_block_size_lsb, self.logical_block_size);
+		LittleEndian::write_u32(bytes.path_table_size_lsb, self.path_table_size);
+		LittleEndian::write_u32(bytes.path_table_lsb_location, self.path_table_location);
+		LittleEndian::write_u32(bytes.path_table_lsb_opt_location, self.path_table_opt_location);
+		self.root_dir_entry
+			.to_writer(&mut std::io::Cursor::<&mut [u8]>::new(bytes.root_dir_entry))
+			.expect("Couldn't write root entry"); // TODO: Error handling
+		self.volume_set_id.to_bytes(bytes.volume_set_id);
+		self.publisher_id.to_bytes(bytes.publisher_id);
+		self.data_preparer_id.to_bytes(bytes.data_preparer_id);
+		self.application_id.to_bytes(bytes.application_id);
+		self.copyright_file_id.to_bytes(bytes.copyright_file_id);
+		self.abstract_file_id.to_bytes(bytes.abstract_file_id);
+		self.bibliographic_file_id.to_bytes(bytes.bibliographic_file_id);
+		self.volume_creation_date_time.to_bytes(bytes.volume_creation_date_time).into_ok();
+		self.volume_modification_date_time.to_bytes(bytes.volume_modification_date_time).into_ok();
+		self.volume_expiration_date_time.to_bytes(bytes.volume_expiration_date_time).into_ok();
+		self.volume_effective_date_time.to_bytes(bytes.volume_effective_date_time).into_ok();
+
+		Ok(())
 	}
 }

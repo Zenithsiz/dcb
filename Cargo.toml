@@ -12,6 +12,7 @@ members = [
 	"dcb-drv",
 	"dcb-pak",
 	"dcb-tools/dcb-uniso-bin",
+	"dcb-tools/dcb-mkiso-bin",
 	"dcb-tools/dcb-decompiler",
 	"dcb-tools/dcb-compiler",
 	"dcb-tools/dcb-undrv",

@@ -34,6 +34,19 @@ pub enum FromReaderError {
 }
 
 
+/// Error type for [`DirEntry::to_writer`](super::DirEntry::to_writer)
+#[derive(Debug, thiserror::Error)]
+pub enum ToWriterError {
+	/// Unable to write header
+	#[error("Unable to write header")]
+	WriteHeader(#[source] io::Error),
+
+	/// Unable to write name
+	#[error("Unable to write name")]
+	WriteName(#[source] io::Error),
+}
+
+
 /// Error type for [`DirEntry::read_file`](super::DirEntry::read_file)
 #[derive(Debug, thiserror::Error)]
 pub enum ReadFileError {

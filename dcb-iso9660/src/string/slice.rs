@@ -32,6 +32,14 @@ impl<A: Alphabet> StrAlphabet<A> {
 		A::validate(bytes).map(|bytes| Self::ref_cast(bytes))
 	}
 
+	/// Writes this string to bytes
+	///
+	/// # Panics
+	/// Panics if `self` and `bytes` are different lengths
+	pub fn to_bytes(&self, bytes: &mut [u8]) {
+		bytes.copy_from_slice(self.as_bytes());
+	}
+
 	/// Returns this string as a lossy `str`
 	#[must_use]
 	pub fn as_lossy_str(&self) -> &Utf8Lossy {

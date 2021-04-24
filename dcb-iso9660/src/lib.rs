@@ -127,3 +127,42 @@ impl FilesystemReader {
 		&self.primary_volume_descriptor.root_dir_entry
 	}
 }
+
+/// A filesystem reader
+#[derive(PartialEq, Eq, Clone, Debug)]
+pub struct FilesystemWriter {}
+
+impl FilesystemWriter {
+	/// Creates a new filesystem writer
+	#[must_use]
+	pub const fn new() -> Self {
+		/*
+		// Create the primary volume descriptor and write it
+		// Note: W
+		// 22
+		let primary_volume_descriptor = PrimaryVolumeDescriptor {
+			system_id: (),
+			volume_id: (),
+			volume_space_size: (),
+			volume_sequence_number: (),
+			logical_block_size: (),
+			path_table_size: (),
+			path_table_location: (),
+			path_table_opt_location: (),
+			root_dir_entry: (),
+			volume_set_id: (),
+			publisher_id: (),
+			data_preparer_id: (),
+			application_id: (),
+			copyright_file_id: (),
+			abstract_file_id: (),
+			bibliographic_file_id: (),
+			volume_creation_date_time: (),
+			volume_modification_date_time: (),
+			volume_expiration_date_time: (),
+			volume_effective_date_time: (),
+		};
+		*/
+		Self {}
+	}
+}
