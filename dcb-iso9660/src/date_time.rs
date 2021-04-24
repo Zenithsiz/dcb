@@ -9,7 +9,7 @@ pub use error::FromBytesError;
 // Imports
 use super::StrArrD;
 use dcb_bytes::Bytes;
-use dcb_util::array_split;
+use dcb_util::{array_split, array_split_mut};
 use std::{cmp::Ordering, fmt};
 
 /// Decimal date time
@@ -51,8 +51,8 @@ impl Bytes for DecDateTime {
 			month         : [0x2],
 			day           : [0x2],
 			hour          : [0x2],
-			minute        : [0x2],
-			second        : [0x2],
+			minutes       : [0x2],
+			seconds       : [0x2],
 			hundredths_sec: [0x2],
 			time_zone     :  0x1 ,
 		);
@@ -64,18 +64,40 @@ impl Bytes for DecDateTime {
 			month:          self::parse_decimal_string(bytes.month, [b'0', b'0'], [b'1', b'2']).ok_or_else(|| FromBytesError::Month(*bytes.month))?,
 			day:            self::parse_decimal_string(bytes.day, [b'0', b'0'], [b'3', b'1']).ok_or_else(|| FromBytesError::Day(*bytes.day))?,
 			hour:           self::parse_decimal_string(bytes.hour, [b'0', b'0'], [b'2', b'3']).ok_or_else(|| FromBytesError::Hour(*bytes.hour))?,
-			minutes:        self::parse_decimal_string(bytes.minute, [b'0', b'0'], [b'5', b'9'])
-				.ok_or_else(|| FromBytesError::Minute(*bytes.minute))?,
-			seconds:        self::parse_decimal_string(bytes.second, [b'0', b'0'], [b'5', b'9'])
-				.ok_or_else(|| FromBytesError::Second(*bytes.second))?,
+			minutes:        self::parse_decimal_string(bytes.minutes, [b'0', b'0'], [b'5', b'9'])
+				.ok_or_else(|| FromBytesError::Minute(*bytes.minutes))?,
+			seconds:        self::parse_decimal_string(bytes.seconds, [b'0', b'0'], [b'5', b'9'])
+				.ok_or_else(|| FromBytesError::Second(*bytes.seconds))?,
 			hundredths_sec: self::parse_decimal_string(bytes.hundredths_sec, [b'0', b'0'], [b'9', b'9'])
 				.ok_or_else(|| FromBytesError::HundredthsSec(*bytes.hundredths_sec))?,
 			time_zone:      *bytes.time_zone,
 		})
 	}
 
-	fn to_bytes(&self, _bytes: &mut Self::ByteArray) -> Result<(), Self::ToError> {
-		todo!()
+	// TODO: Error checking
+	fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError> {
+		let bytes = array_split_mut!(bytes,
+			year          : [0x4],
+			month         : [0x2],
+			day           : [0x2],
+			hour          : [0x2],
+			minute        : [0x2],
+			second        : [0x2],
+			hundredths_sec: [0x2],
+			time_zone     :  0x1 ,
+		);
+
+
+		*bytes.year = *self.year.as_bytes_arr();
+		*bytes.month = *self.month.as_bytes_arr();
+		*bytes.day = *self.day.as_bytes_arr();
+		*bytes.hour = *self.hour.as_bytes_arr();
+		*bytes.minute = *self.minutes.as_bytes_arr();
+		*bytes.second = *self.seconds.as_bytes_arr();
+		*bytes.hundredths_sec = *self.hundredths_sec.as_bytes_arr();
+		*bytes.time_zone = self.time_zone;
+
+		Ok(())
 	}
 }
 
