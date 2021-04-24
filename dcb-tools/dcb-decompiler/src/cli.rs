@@ -47,7 +47,8 @@ impl CliData {
 				ClapArg::with_name(OUTPUT_DIR_STR)
 					.long("output")
 					.short("o")
-					.help("Sets the input game file to use"),
+					.help("Sets the input game file to use")
+					.takes_value(true),
 			)
 			.arg(
 				ClapArg::with_name(PRINT_INST_POS_STR)
