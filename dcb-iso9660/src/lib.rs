@@ -115,6 +115,12 @@ impl FilesystemReader {
 		Ok(Self { primary_volume_descriptor })
 	}
 
+	/// Returns the primary volume descriptor
+	#[must_use]
+	pub const fn primary_volume_descriptor(&self) -> &PrimaryVolumeDescriptor {
+		&self.primary_volume_descriptor
+	}
+
 	/// Returns the root directory entry
 	#[must_use]
 	pub const fn root_dir(&self) -> &DirEntry {
