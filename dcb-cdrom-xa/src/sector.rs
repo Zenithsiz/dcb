@@ -80,21 +80,12 @@ impl Bytes for Sector {
 		};
 
 		// Validate edc
-		{
-			let bytes = match data {
-				Data::Form1(_) => &byte_array[0x10..0x818],
-				Data::Form2(_) => &byte_array[0x10..0x92c],
-			};
-
-			//if !header.subheader.submode.contains(SubMode::FORM) {
-			if let Err(expected_edc) = edc.is_valid(bytes) {
-				log::warn!(
-					"Sector crc {:#010x} doesn't match calculated crc {:#010x} match in {:?}",
-					edc.crc,
-					expected_edc,
-					header
-				);
-			}
+		let edc_bytes = match data {
+			Data::Form1(_) => &byte_array[0x10..0x818],
+			Data::Form2(_) => &byte_array[0x10..0x92c],
+		};
+		if let Err(calculated) = edc.is_valid(edc_bytes) {
+			return Err(FromBytesError::WrongEdc { found: edc.crc, calculated });
 		}
 
 		Ok(Self { header, data })

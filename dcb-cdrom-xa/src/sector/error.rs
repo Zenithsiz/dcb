@@ -17,6 +17,16 @@ pub enum FromBytesError {
 	/// Unable to read header
 	#[error("Unable to parse header")]
 	Header(#[source] header::FromBytesError),
+
+	/// Edc was wrong
+	#[error("Found crc {found}, calculated {calculated}")]
+	WrongEdc {
+		/// Found
+		found: u32,
+
+		/// Calculated
+		calculated: u32,
+	},
 }
 
 /// Error type for [`Bytes::to_bytes`](dcb_bytes::Bytes::to_bytes)
