@@ -26,6 +26,12 @@ impl<A: Alphabet, const N: usize> StrArrAlphabet<A, N> {
 			len:     valid_bytes.len(),
 		})
 	}
+
+	/// Returns this string as a byte array, ignoring length
+	#[must_use]
+	pub fn as_bytes_arr(&self) -> &[u8; N] {
+		&self.bytes
+	}
 }
 
 impl<A: Alphabet, const N: usize> Deref for StrArrAlphabet<A, N> {
