@@ -56,7 +56,7 @@ impl Bytes for Sector {
 
 		let header = Header::from_bytes(bytes.header).map_err(FromBytesError::Header)?;
 
-		let (data, edc, _ecc) = match header.subheader.submode.contains(SubMode::FORM) {
+		let data = match header.subheader.submode.contains(SubMode::FORM) {
 			false => {
 				let bytes = array_split!(bytes.rest,
 					data  : [0x800],
@@ -64,8 +64,18 @@ impl Bytes for Sector {
 					ecc   : [0x114],
 				);
 				let edc = Edc::from_bytes(bytes.edc).into_ok();
+				let data = *bytes.data;
 
-				(Data::Form1(*bytes.data), edc, Some(bytes.ecc))
+				// TODO: Verify / correct ecc
+
+				// Verify edc
+				let edc_bytes = &byte_array[0x10..0x818];
+				if let Err(calculated) = edc.is_valid(edc_bytes) {
+					return Err(FromBytesError::WrongEdc { found: edc.crc, calculated });
+				}
+
+
+				Data::Form1(data)
 			},
 
 			true => {
@@ -75,18 +85,15 @@ impl Bytes for Sector {
 				);
 				let edc = Edc::from_bytes(bytes.edc).into_ok();
 
-				(Data::Form2(*bytes.data), edc, None)
+				// Verify edc
+				let edc_bytes = &byte_array[0x10..0x92c];
+				if let Err(calculated) = edc.is_valid(edc_bytes) {
+					return Err(FromBytesError::WrongEdc { found: edc.crc, calculated });
+				}
+
+				Data::Form2(*bytes.data)
 			},
 		};
-
-		// Validate edc
-		let edc_bytes = match data {
-			Data::Form1(_) => &byte_array[0x10..0x818],
-			Data::Form2(_) => &byte_array[0x10..0x92c],
-		};
-		if let Err(calculated) = edc.is_valid(edc_bytes) {
-			return Err(FromBytesError::WrongEdc { found: edc.crc, calculated });
-		}
 
 		Ok(Self { header, data })
 	}
