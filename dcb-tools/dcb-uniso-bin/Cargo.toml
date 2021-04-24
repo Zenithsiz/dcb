@@ -1,5 +1,5 @@
 [package]
-name = "dcb-extractor"
+name = "dcb-uniso-bin"
 version = "0.1.0"
 authors = ["Filipe Rodrigues <filipejacintorodrigues1@gmail.com>"]
 edition = "2018"
@@ -7,8 +7,9 @@ edition = "2018"
 [dependencies]
 # Dcb
 dcb = { path = "../../dcb" }
-dcb-io = { path = "../../dcb-io" }
+dcb-iso9660 = { path = "../../dcb-iso9660" }
 dcb-cdrom-xa = { path = "../../dcb-cdrom-xa" }
+dcb-bytes = { path = "../../dcb-bytes" }
 dcb-util = { path = "../../dcb-util" }
 
 # Text

@@ -11,7 +11,7 @@ members = [
 	"dcb-cdrom-xa",
 	"dcb-drv",
 	"dcb-pak",
-	"dcb-tools/dcb-extractor",
+	"dcb-tools/dcb-uniso-bin",
 	"dcb-tools/dcb-decompiler",
 	"dcb-tools/dcb-compiler",
 	"dcb-tools/dcb-undrv",
