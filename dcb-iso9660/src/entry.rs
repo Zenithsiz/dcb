@@ -94,8 +94,17 @@ impl DirEntry {
 		let dirs = std::iter::from_fn(move || match Self::from_reader(&mut bytes) {
 			// Note: If it fails due to the record size being 0, return None
 			Err(FromReaderError::RecordSizeTooSmall(0)) => None,
-			res => Some(res.map_err(ReadDirError::ParseEntry)),
+			Ok(entry) => {
+				// If it's the current or parent directory, skip
+				if *entry.name == [b'\x00'] || *entry.name == [b'\x01'] {
+					Some(Ok(None))
+				} else {
+					Some(Ok(Some(entry)))
+				}
+			},
+			Err(err) => Some(Err(ReadDirError::ParseEntry(err))),
 		})
+		.flat_map(Result::transpose)
 		.collect::<Result<Vec<_>, _>>()?;
 
 		Ok(Dir::new(dirs))
