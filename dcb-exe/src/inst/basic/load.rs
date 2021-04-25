@@ -9,7 +9,7 @@ use crate::inst::{
 use dcb_util::SignedHex;
 use int_conv::{Signed, Truncated, ZeroExtended};
 
-/// Load instruction kind
+/// Instruction kind
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum Kind {
 	/// Byte, `i8`
@@ -35,7 +35,7 @@ pub enum Kind {
 }
 
 impl Kind {
-	/// Returns the mnemonic for this load kind
+	/// Returns the mnemonic for this kind
 	#[must_use]
 	pub const fn mnemonic(self) -> &'static str {
 		match self {
@@ -48,22 +48,6 @@ impl Kind {
 			Self::WordRight => "lwr",
 		}
 	}
-}
-
-/// Raw representation
-#[derive(PartialEq, Eq, Clone, Copy, Debug)]
-pub struct Raw {
-	/// Opcode (lower 3 bits)
-	pub p: u32,
-
-	/// Rs
-	pub s: u32,
-
-	/// Rt
-	pub t: u32,
-
-	/// Immediate
-	pub i: u32,
 }
 
 /// Load instructions
@@ -83,32 +67,38 @@ pub struct Inst {
 }
 
 impl Decodable for Inst {
-	type Raw = Raw;
+	type Raw = u32;
 
+	#[bitmatch::bitmatch]
 	fn decode(raw: Self::Raw) -> Option<Self> {
-		let kind = match raw.p {
-			0x0 => Kind::Byte,
-			0x1 => Kind::HalfWord,
-			0x2 => Kind::WordLeft,
-			0x3 => Kind::Word,
-			0x4 => Kind::ByteUnsigned,
-			0x5 => Kind::HalfWordUnsigned,
-			0x6 => Kind::WordRight,
+		let [p, s, t, i] = #[bitmatch]
+		match raw {
+			"100ppp_sssss_ttttt_iiiii_iiiii_iiiiii" => [p, s, t, i],
 			_ => return None,
 		};
 
 		Some(Self {
-			value: Register::new(raw.t)?,
-			addr: Register::new(raw.s)?,
-			offset: raw.i.truncated::<u16>().as_signed(),
-			kind,
+			value:  Register::new(t)?,
+			addr:   Register::new(s)?,
+			offset: i.truncated::<u16>().as_signed(),
+			kind:   match p {
+				0x0 => Kind::Byte,
+				0x1 => Kind::HalfWord,
+				0x2 => Kind::WordLeft,
+				0x3 => Kind::Word,
+				0x4 => Kind::ByteUnsigned,
+				0x5 => Kind::HalfWordUnsigned,
+				0x6 => Kind::WordRight,
+				_ => return None,
+			},
 		})
 	}
 }
 
 impl Encodable for Inst {
+	#[bitmatch::bitmatch]
 	fn encode(&self) -> Self::Raw {
-		let p = match self.kind {
+		let p: u32 = match self.kind {
 			Kind::Byte => 0x0,
 			Kind::HalfWord => 0x1,
 			Kind::WordLeft => 0x2,
@@ -121,7 +111,7 @@ impl Encodable for Inst {
 		let s = self.addr.idx();
 		let i = self.offset.as_unsigned().zero_extended::<u32>();
 
-		Raw { p, s, t, i }
+		bitpack!("100ppp_sssss_ttttt_iiiii_iiiii_iiiiii")
 	}
 }
 

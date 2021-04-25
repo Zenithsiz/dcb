@@ -12,23 +12,7 @@ use crate::{
 use int_conv::{SignExtended, Signed, Truncated, ZeroExtended};
 use std::fmt;
 
-/// Raw representation
-#[derive(PartialEq, Eq, Clone, Copy, Debug)]
-pub struct Raw {
-	/// Opcode (lower 3 bits)
-	pub p: u32,
-
-	/// Rs
-	pub s: u32,
-
-	/// Rt
-	pub t: u32,
-
-	/// Immediate
-	pub i: u32,
-}
-
-/// Condition kind
+/// Instruction kind
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum Kind {
 	/// Equal
@@ -78,36 +62,42 @@ impl Inst {
 }
 
 impl Decodable for Inst {
-	type Raw = Raw;
+	type Raw = u32;
 
+	#[bitmatch::bitmatch]
 	fn decode(raw: Self::Raw) -> Option<Self> {
-		let kind = match raw.p {
-			0x1 => match raw.t {
-				0b00000 => Kind::LessThanZero,
-				0b00001 => Kind::GreaterOrEqualZero,
-				0b10000 => Kind::LessThanZeroLink,
-				0b10001 => Kind::GreaterOrEqualZeroLink,
-				_ => return None,
-			},
-			0x4 => Kind::Equal(Register::new(raw.t)?),
-			0x5 => Kind::NotEqual(Register::new(raw.t)?),
-			0x6 => Kind::LessOrEqualZero,
-			0x7 => Kind::GreaterThanZero,
+		let [p, s, t, i] = #[bitmatch]
+		match raw {
+			"000ppp_sssss_ttttt_iiiii_iiiii_iiiiii" => [p, s, t, i],
 			_ => return None,
 		};
 
 		Some(Self {
-			arg: Register::new(raw.s)?,
-			offset: raw.i.truncated::<u16>().as_signed(),
-			kind,
+			arg:    Register::new(s)?,
+			offset: i.truncated::<u16>().as_signed(),
+			kind:   match p {
+				0x1 => match t {
+					0b00000 => Kind::LessThanZero,
+					0b00001 => Kind::GreaterOrEqualZero,
+					0b10000 => Kind::LessThanZeroLink,
+					0b10001 => Kind::GreaterOrEqualZeroLink,
+					_ => return None,
+				},
+				0x4 => Kind::Equal(Register::new(t)?),
+				0x5 => Kind::NotEqual(Register::new(t)?),
+				0x6 => Kind::LessOrEqualZero,
+				0x7 => Kind::GreaterThanZero,
+				_ => return None,
+			},
 		})
 	}
 }
 
 impl Encodable for Inst {
+	#[bitmatch::bitmatch]
 	fn encode(&self) -> Self::Raw {
 		#[rustfmt::skip]
-		let (p, t) = match self.kind {
+		let (p, t): (u32, u32) = match self.kind {
 			Kind::Equal(reg)             => (0x4, reg.idx()),
 			Kind::NotEqual(reg)          => (0x5, reg.idx()),
 			Kind::LessOrEqualZero        => (0x6, 0),
@@ -119,9 +109,9 @@ impl Encodable for Inst {
 		};
 
 		let s = self.arg.idx();
-		let i = self.offset.as_unsigned().zero_extended();
+		let i: u32 = self.offset.as_unsigned().zero_extended();
 
-		Raw { p, s, t, i }
+		bitpack!("000ppp_sssss_ttttt_iiiii_iiiii_iiiiii")
 	}
 }
 

@@ -9,7 +9,7 @@ use dcb_util::SignedHex;
 use int_conv::{Signed, Truncated, ZeroExtended};
 use std::fmt;
 
-/// Alu immediate instruction kind
+/// Instruction kind
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum Kind {
 	/// Add signed with overflow trap
@@ -61,22 +61,6 @@ impl Kind {
 	}
 }
 
-/// Raw representation
-#[derive(PartialEq, Eq, Clone, Copy, Debug)]
-pub struct Raw {
-	/// Opcode (lower 3 bits)
-	pub p: u32,
-
-	/// Rs
-	pub s: u32,
-
-	/// Rt
-	pub t: u32,
-
-	/// Immediate
-	pub i: u32,
-}
-
 /// Alu immediate instructions
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub struct Inst {
@@ -91,45 +75,50 @@ pub struct Inst {
 }
 
 impl Decodable for Inst {
-	type Raw = Raw;
+	type Raw = u32;
 
+	#[bitmatch::bitmatch]
 	fn decode(raw: Self::Raw) -> Option<Self> {
-		#[rustfmt::skip]
-		let kind = match raw.p {
-			0x0 => Kind::Add                (raw.i.truncated::<u16>().as_signed()),
-			0x1 => Kind::AddUnsigned        (raw.i.truncated::<u16>().as_signed()),
-			0x2 => Kind::SetLessThan        (raw.i.truncated::<u16>().as_signed()),
-			0x3 => Kind::SetLessThanUnsigned(raw.i.truncated::<u16>()),
-			0x4 => Kind::And                (raw.i.truncated::<u16>()),
-			0x5 => Kind::Or                 (raw.i.truncated::<u16>()),
-			0x6 => Kind::Xor                (raw.i.truncated::<u16>()),
+		let [p, s, t, i] = #[bitmatch]
+		match raw {
+			"001ppp_sssss_ttttt_iiiii_iiiii_iiiiii" => [p, s, t, i],
 			_ => return None,
 		};
 
 		Some(Self {
-			dst: Register::new(raw.t)?,
-			lhs: Register::new(raw.s)?,
-			kind,
+			dst:  Register::new(t)?,
+			lhs:  Register::new(s)?,
+			kind: match p {
+				0x0 => Kind::Add(i.truncated::<u16>().as_signed()),
+				0x1 => Kind::AddUnsigned(i.truncated::<u16>().as_signed()),
+				0x2 => Kind::SetLessThan(i.truncated::<u16>().as_signed()),
+				0x3 => Kind::SetLessThanUnsigned(i.truncated::<u16>()),
+				0x4 => Kind::And(i.truncated::<u16>()),
+				0x5 => Kind::Or(i.truncated::<u16>()),
+				0x6 => Kind::Xor(i.truncated::<u16>()),
+				_ => return None,
+			},
 		})
 	}
 }
 
 impl Encodable for Inst {
+	#[bitmatch::bitmatch]
 	fn encode(&self) -> Self::Raw {
 		#[rustfmt::skip]
-		let (p, i) = match self.kind {
+		let (p, i): (u32, u32) = match self.kind {
 			Kind::Add                (rhs) => (0x0, rhs.as_unsigned().zero_extended::<u32>()),
 			Kind::AddUnsigned        (rhs) => (0x1, rhs.as_unsigned().zero_extended::<u32>()),
 			Kind::SetLessThan        (rhs) => (0x2, rhs.as_unsigned().zero_extended::<u32>()),
-			Kind::SetLessThanUnsigned(rhs) => (0x3, rhs.as_unsigned().zero_extended::<u32>()),
-			Kind::And                (rhs) => (0x4, rhs.as_unsigned().zero_extended::<u32>()),
-			Kind::Or                 (rhs) => (0x5, rhs.as_unsigned().zero_extended::<u32>()),
-			Kind::Xor                (rhs) => (0x6, rhs.as_unsigned().zero_extended::<u32>()),
+			Kind::SetLessThanUnsigned(rhs) => (0x3, rhs              .zero_extended::<u32>()),
+			Kind::And                (rhs) => (0x4, rhs              .zero_extended::<u32>()),
+			Kind::Or                 (rhs) => (0x5, rhs              .zero_extended::<u32>()),
+			Kind::Xor                (rhs) => (0x6, rhs              .zero_extended::<u32>()),
 		};
-		let s = self.lhs.idx();
 		let t = self.dst.idx();
+		let s = self.lhs.idx();
 
-		Raw { p, s, t, i }
+		bitpack!("001ppp_sssss_ttttt_iiiii_iiiii_iiiiii")
 	}
 }
 
@@ -139,8 +128,9 @@ impl InstFmt for Inst {
 		let mnemonic = kind.mnemonic();
 		let value = kind.value_fmt();
 
-		// If `$dst` and `$lhs` are the same, only print one of them
-		match dst == lhs {
+		// If we're not `slti[u]` and if `$dst` and `$lhs` are the same,
+		// only print one of them
+		match !matches!(kind, Kind::SetLessThan(_) | Kind::SetLessThanUnsigned(_)) && dst == lhs {
 			true => write!(f, "{mnemonic} {dst}, {value}"),
 			false => write!(f, "{mnemonic} {dst}, {lhs}, {value}"),
 		}

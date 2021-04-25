@@ -27,19 +27,6 @@ impl Kind {
 	}
 }
 
-/// Raw representation
-#[derive(PartialEq, Eq, Clone, Copy, Debug)]
-pub struct Raw {
-	/// Rs
-	pub s: u32,
-
-	/// Rd
-	pub d: u32,
-
-	/// Func (lower bit)
-	pub f: u32,
-}
-
 /// Jmp register instructions
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub struct Inst {
@@ -51,29 +38,37 @@ pub struct Inst {
 }
 
 impl Decodable for Inst {
-	type Raw = Raw;
+	type Raw = u32;
 
+	#[bitmatch::bitmatch]
 	fn decode(raw: Self::Raw) -> Option<Self> {
-		let kind = match raw.f {
-			0 => Kind::Jump,
-			1 => Kind::JumpLink(Register::new(raw.d)?),
+		let [s, d, f] = #[bitmatch]
+		match raw {
+			"000000_sssss_?????_ddddd_?????_00100f" => [s, d, f],
 			_ => return None,
 		};
-		let target = Register::new(raw.s)?;
+
+		let kind = match f {
+			0 => Kind::Jump,
+			1 => Kind::JumpLink(Register::new(d)?),
+			_ => return None,
+		};
+		let target = Register::new(s)?;
 
 		Some(Self { target, kind })
 	}
 }
 
 impl Encodable for Inst {
+	#[bitmatch::bitmatch]
 	fn encode(&self) -> Self::Raw {
-		let (f, d) = match self.kind {
+		let (f, d): (u32, u32) = match self.kind {
 			Kind::Jump => (0, 0),
 			Kind::JumpLink(reg) => (1, reg.idx()),
 		};
 		let s = self.target.idx();
 
-		Raw { s, d, f }
+		bitpack!("000000_sssss_?????_ddddd_?????_00100f")
 	}
 }
 

@@ -1,7 +1,10 @@
 //! Shift register instructions
 
 // Imports
-use crate::inst::{InstFmt, Register, basic::{Decodable, Encodable, ModifiesReg}};
+use crate::inst::{
+	basic::{Decodable, Encodable, ModifiesReg},
+	InstFmt, Register,
+};
 
 /// Shift register instruction kind
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -28,22 +31,6 @@ impl Kind {
 	}
 }
 
-/// Raw representation
-#[derive(PartialEq, Eq, Clone, Copy, Debug)]
-pub struct Raw {
-	/// Rs
-	pub s: u32,
-
-	/// Rt
-	pub t: u32,
-
-	/// Rd
-	pub d: u32,
-
-	/// Func (lower 4 bits)
-	pub f: u32,
-}
-
 /// Shift register instructions
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub struct Inst {
@@ -61,10 +48,17 @@ pub struct Inst {
 }
 
 impl Decodable for Inst {
-	type Raw = Raw;
+	type Raw = u32;
 
+	#[bitmatch::bitmatch]
 	fn decode(raw: Self::Raw) -> Option<Self> {
-		let kind = match raw.f {
+		let [s, t, d, f] = #[bitmatch]
+		match raw {
+			"000000_sssss_ttttt_ddddd_?????_0001ff" => [s, t, d, f],
+			_ => return None,
+		};
+
+		let kind = match f {
 			0x0 => Kind::LeftLogical,
 			0x2 => Kind::RightLogical,
 			0x3 => Kind::RightArithmetic,
@@ -72,16 +66,17 @@ impl Decodable for Inst {
 		};
 
 		Some(Self {
-			dst: Register::new(raw.d)?,
-			lhs: Register::new(raw.t)?,
-			rhs: Register::new(raw.s)?,
+			dst: Register::new(d)?,
+			lhs: Register::new(t)?,
+			rhs: Register::new(s)?,
 			kind,
 		})
 	}
 }
 impl Encodable for Inst {
+	#[bitmatch::bitmatch]
 	fn encode(&self) -> Self::Raw {
-		let f = match self.kind {
+		let f: u32 = match self.kind {
 			Kind::LeftLogical => 0x0,
 			Kind::RightLogical => 0x2,
 			Kind::RightArithmetic => 0x3,
@@ -91,7 +86,7 @@ impl Encodable for Inst {
 		let t = self.lhs.idx();
 		let s = self.rhs.idx();
 
-		Raw { s, t, d, f }
+		bitpack!("000000_sssss_ttttt_ddddd_?????_0001ff")
 	}
 }
 

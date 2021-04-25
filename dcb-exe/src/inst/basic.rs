@@ -20,91 +20,6 @@ pub mod sys;
 use super::{InstSize, Register};
 use crate::inst::InstFmt;
 
-/// Raw instruction
-#[derive(PartialEq, Eq, Clone, Copy, Debug)]
-pub enum Raw {
-	/// Alu
-	Alu(alu::Raw),
-
-	/// Condition
-	Cond(cond::Raw),
-
-	/// Jump
-	Jmp(jmp::Raw),
-
-	/// Load
-	Load(load::Raw),
-
-	/// Load upper immediate
-	Lui(lui::Raw),
-
-	/// Multiplication
-	Mult(mult::Raw),
-
-	/// Shift
-	Shift(shift::Raw),
-
-	/// Store
-	Store(store::Raw),
-
-	/// Syscall
-	Sys(sys::Raw),
-
-	/// Co-processor
-	Co(u32),
-}
-
-impl Raw {
-	/// Constructs a raw instruction from a `u32`.
-	#[must_use]
-	#[bitmatch::bitmatch]
-	#[allow(clippy::many_single_char_names)] // `bitmatch` can only output single character names.
-	pub fn from_u32(raw: u32) -> Option<Self> {
-		#[rustfmt::skip]
-		let raw = #[bitmatch] match raw {
-			"000000_?????_ttttt_ddddd_iiiii_0000ff" => Self::Shift(shift::Raw::Imm(shift::imm::Raw {       t, d, i, f })),
-			"000000_sssss_ttttt_ddddd_?????_0001ff" => Self::Shift(shift::Raw::Reg(shift::reg::Raw {    s, t, d,    f })),
-			"000000_sssss_?????_ddddd_?????_00100f" => Self::Jmp  (jmp  ::Raw::Reg(jmp  ::reg::Raw {    s,    d,    f })),
-			"000000_ccccc_ccccc_ccccc_ccccc_00110f" => Self::Sys  (                sys  ::     Raw {             c, f } ),
-			"000000_sssss_ttttt_ddddd_?????_01ffff" => Self::Mult (                mult ::     Raw {    s, t, d,    f } ),
-			"000000_sssss_ttttt_ddddd_?????_10ffff" => Self::Alu  (alu  ::Raw::Reg(alu  ::reg::Raw {    s, t, d,    f })),
-			"00001p_iiiii_iiiii_iiiii_iiiii_iiiiii" => Self::Jmp  (jmp  ::Raw::Imm(jmp  ::imm::Raw { p,          i    })),
-			"000ppp_sssss_ttttt_iiiii_iiiii_iiiiii" => Self::Cond (                cond ::     Raw { p, s, t,    i    } ),
-			"001111_?????_ttttt_iiiii_iiiii_iiiiii" => Self::Lui  (                lui  ::     Raw {       t,    i    } ),
-			"001ppp_sssss_ttttt_iiiii_iiiii_iiiiii" => Self::Alu  (alu  ::Raw::Imm(alu  ::imm::Raw { p, s, t,    i    })),
-			"100ppp_sssss_ttttt_iiiii_iiiii_iiiiii" => Self::Load (                load ::     Raw { p, s, t,    i    } ),
-			"101ppp_sssss_ttttt_iiiii_iiiii_iiiiii" => Self::Store(                store::     Raw { p, s, t,    i    } ),
-			"?1????_?????_?????_?????_?????_??????" => Self::Co   (raw),
-			_ => return None,
-		};
-
-		Some(raw)
-	}
-
-	/// Encodes this raw as a `u32`
-	#[must_use]
-	#[bitmatch::bitmatch]
-	#[rustfmt::skip]
-	pub const fn as_u32(&self) -> u32 {
-		match *self {
-			Self::Shift(shift::Raw::Imm(shift::imm::Raw {       t, d, i, f })) => bitpack!("000000_?????_ttttt_ddddd_iiiii_0000ff"),
-			Self::Shift(shift::Raw::Reg(shift::reg::Raw {    s, t, d,    f })) => bitpack!("000000_sssss_ttttt_ddddd_?????_0001ff"),
-			Self::Jmp  (jmp  ::Raw::Reg(jmp  ::reg::Raw {    s,    d,    f })) => bitpack!("000000_sssss_?????_ddddd_?????_00100f"),
-			Self::Sys  (                sys  ::     Raw {             c, f } ) => bitpack!("000000_ccccc_ccccc_ccccc_ccccc_00110f"),
-			Self::Mult (                mult ::     Raw {    s, t, d,    f } ) => bitpack!("000000_sssss_ttttt_ddddd_?????_01ffff"),
-			Self::Alu  (alu  ::Raw::Reg(alu  ::reg::Raw {    s, t, d,    f })) => bitpack!("000000_sssss_ttttt_ddddd_?????_10ffff"),
-			Self::Jmp  (jmp  ::Raw::Imm(jmp  ::imm::Raw { p,          i    })) => bitpack!("00001p_iiiii_iiiii_iiiii_iiiii_iiiiii"),
-			Self::Cond (                cond ::     Raw { p, s, t,    i    } ) => bitpack!("000ppp_sssss_ttttt_iiiii_iiiii_iiiiii"),
-			Self::Lui  (                lui  ::     Raw {       t,    i    } ) => bitpack!("001111_?????_ttttt_iiiii_iiiii_iiiiii"),
-			Self::Alu  (alu  ::Raw::Imm(alu  ::imm::Raw { p, s, t,    i    })) => bitpack!("001ppp_sssss_ttttt_iiiii_iiiii_iiiiii"),
-			Self::Load (                load ::     Raw { p, s, t,    i    } ) => bitpack!("100ppp_sssss_ttttt_iiiii_iiiii_iiiiii"),
-			Self::Store(                store::     Raw { p, s, t,    i    } ) => bitpack!("101ppp_sssss_ttttt_iiiii_iiiii_iiiiii"),
-			Self::Co   (raw) => raw,
-		}
-	}
-}
-
-
 /// All basic instructions
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 #[derive(derive_more::TryInto)]
@@ -142,25 +57,21 @@ pub enum Inst {
 
 
 impl Decodable for Inst {
-	type Raw = Raw;
+	type Raw = u32;
 
+	#[rustfmt::skip]
 	fn decode(raw: Self::Raw) -> Option<Self> {
-		#[rustfmt::skip]
-		let inst =
-		match raw {
-			Raw::Alu  (raw) => Self::Alu  (alu  ::Inst::decode(raw)?),
-			Raw::Cond (raw) => Self::Cond (cond ::Inst::decode(raw)?),
-			Raw::Jmp  (raw) => Self::Jmp  (jmp  ::Inst::decode(raw)?),
-			Raw::Load (raw) => Self::Load (load ::Inst::decode(raw)?),
-			Raw::Lui  (raw) => Self::Lui  (lui  ::Inst::decode(raw)?),
-			Raw::Mult (raw) => Self::Mult (mult ::Inst::decode(raw)?),
-			Raw::Shift(raw) => Self::Shift(shift::Inst::decode(raw)?),
-			Raw::Store(raw) => Self::Store(store::Inst::decode(raw)?),
-			Raw::Sys  (raw) => Self::Sys  (sys  ::Inst::decode(raw)?),
-			Raw::Co   (raw) => Self::Co   (co   ::Inst::decode(raw)?),
-		};
-
-		Some(inst)
+		None
+			.or_else(|| alu  ::Inst::decode(raw).map(Self::Alu  ))
+			.or_else(|| cond ::Inst::decode(raw).map(Self::Cond ))
+			.or_else(|| jmp  ::Inst::decode(raw).map(Self::Jmp  ))
+			.or_else(|| load ::Inst::decode(raw).map(Self::Load ))
+			.or_else(|| lui  ::Inst::decode(raw).map(Self::Lui  ))
+			.or_else(|| mult ::Inst::decode(raw).map(Self::Mult ))
+			.or_else(|| shift::Inst::decode(raw).map(Self::Shift))
+			.or_else(|| store::Inst::decode(raw).map(Self::Store))
+			.or_else(|| sys  ::Inst::decode(raw).map(Self::Sys  ))
+			.or_else(|| co   ::Inst::decode(raw).map(Self::Co   ))
 	}
 }
 
@@ -168,33 +79,34 @@ impl Encodable for Inst {
 	#[rustfmt::skip]
 	fn encode(&self) -> Self::Raw {
 		match self {
-			Self::Alu  (inst) => Raw::Alu  (inst.encode()),
-			Self::Cond (inst) => Raw::Cond (inst.encode()),
-			Self::Jmp  (inst) => Raw::Jmp  (inst.encode()),
-			Self::Load (inst) => Raw::Load (inst.encode()),
-			Self::Lui  (inst) => Raw::Lui  (inst.encode()),
-			Self::Mult (inst) => Raw::Mult (inst.encode()),
-			Self::Shift(inst) => Raw::Shift(inst.encode()),
-			Self::Store(inst) => Raw::Store(inst.encode()),
-			Self::Sys  (inst) => Raw::Sys  (inst.encode()),
-			Self::Co   (inst) => Raw::Co   (inst.encode()),
+			Self::Alu  (inst) => inst.encode(),
+			Self::Cond (inst) => inst.encode(),
+			Self::Jmp  (inst) => inst.encode(),
+			Self::Load (inst) => inst.encode(),
+			Self::Lui  (inst) => inst.encode(),
+			Self::Mult (inst) => inst.encode(),
+			Self::Shift(inst) => inst.encode(),
+			Self::Store(inst) => inst.encode(),
+			Self::Sys  (inst) => inst.encode(),
+			Self::Co   (inst) => inst.encode(),
 		}
 	}
 }
 
 impl ModifiesReg for Inst {
+	#[rustfmt::skip]
 	fn modifies_reg(&self, reg: Register) -> bool {
 		match self {
-			Inst::Alu(inst) => inst.modifies_reg(reg),
-			Inst::Cond(inst) => inst.modifies_reg(reg),
-			Inst::Jmp(inst) => inst.modifies_reg(reg),
-			Inst::Load(inst) => inst.modifies_reg(reg),
-			Inst::Lui(inst) => inst.modifies_reg(reg),
-			Inst::Mult(inst) => inst.modifies_reg(reg),
+			Inst::Alu  (inst) => inst.modifies_reg(reg),
+			Inst::Cond (inst) => inst.modifies_reg(reg),
+			Inst::Jmp  (inst) => inst.modifies_reg(reg),
+			Inst::Load (inst) => inst.modifies_reg(reg),
+			Inst::Lui  (inst) => inst.modifies_reg(reg),
+			Inst::Mult (inst) => inst.modifies_reg(reg),
 			Inst::Shift(inst) => inst.modifies_reg(reg),
 			Inst::Store(inst) => inst.modifies_reg(reg),
-			Inst::Sys(inst) => inst.modifies_reg(reg),
-			Inst::Co(inst) => inst.modifies_reg(reg),
+			Inst::Sys  (inst) => inst.modifies_reg(reg),
+			Inst::Co   (inst) => inst.modifies_reg(reg),
 		}
 	}
 }

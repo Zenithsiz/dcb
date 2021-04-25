@@ -32,22 +32,6 @@ impl Kind {
 	}
 }
 
-/// Raw representation
-#[derive(PartialEq, Eq, Clone, Copy, Debug)]
-pub struct Raw {
-	/// Rt
-	pub t: u32,
-
-	/// Rd
-	pub d: u32,
-
-	/// Immediate
-	pub i: u32,
-
-	/// Function (lower 2 bits)
-	pub f: u32,
-}
-
 /// Shift immediate instructions
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub struct Inst {
@@ -65,10 +49,17 @@ pub struct Inst {
 }
 
 impl Decodable for Inst {
-	type Raw = Raw;
+	type Raw = u32;
 
+	#[bitmatch::bitmatch]
 	fn decode(raw: Self::Raw) -> Option<Self> {
-		let kind = match raw.f {
+		let [t, d, i, f] = #[bitmatch]
+		match raw {
+			"000000_?????_ttttt_ddddd_iiiii_0000ff" => [t, d, i, f],
+			_ => return None,
+		};
+
+		let kind = match f {
 			0x0 => Kind::LeftLogical,
 			0x2 => Kind::RightLogical,
 			0x3 => Kind::RightArithmetic,
@@ -76,26 +67,27 @@ impl Decodable for Inst {
 		};
 
 		Some(Self {
-			dst: Register::new(raw.d)?,
-			lhs: Register::new(raw.t)?,
-			rhs: raw.i.truncated(),
+			dst: Register::new(d)?,
+			lhs: Register::new(t)?,
+			rhs: i.truncated(),
 			kind,
 		})
 	}
 }
 
 impl Encodable for Inst {
+	#[bitmatch::bitmatch]
 	fn encode(&self) -> Self::Raw {
-		let f = match self.kind {
+		let f: u32 = match self.kind {
 			Kind::LeftLogical => 0x0,
 			Kind::RightLogical => 0x2,
 			Kind::RightArithmetic => 0x3,
 		};
 		let t = self.lhs.idx();
 		let d = self.dst.idx();
-		let i = self.rhs.zero_extended();
+		let i = self.rhs.zero_extended::<u32>();
 
-		Raw { t, d, i, f }
+		bitpack!("000000_?????_ttttt_ddddd_iiiii_0000ff")
 	}
 }
 

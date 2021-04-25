@@ -37,22 +37,6 @@ pub enum MultReg {
 	Hi,
 }
 
-/// Raw representation
-#[derive(PartialEq, Eq, Clone, Copy, Debug)]
-pub struct Raw {
-	/// Rs
-	pub s: u32,
-
-	/// Rt
-	pub t: u32,
-
-	/// Rd
-	pub d: u32,
-
-	/// Func (bottom 4 bits)
-	pub f: u32,
-}
-
 /// Multiplication instructions
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum Inst {
@@ -115,24 +99,30 @@ impl Inst {
 }
 
 impl Decodable for Inst {
-	type Raw = Raw;
+	type Raw = u32;
 
 	#[rustfmt::skip]
+	#[bitmatch::bitmatch]
 	fn decode(raw: Self::Raw) -> Option<Self> {
-		Some(match raw.f {
+		let [s, t, d, f] = #[bitmatch] match raw {
+			"000000_sssss_ttttt_ddddd_?????_01ffff" => [s, t, d, f],
+			_ => return None,
+		};
+		
+		Some(match f {
 			// 00x0
-			0x0 => Self::MoveFrom { dst: Register::new(raw.d)?, src: MultReg::Hi },
-			0x2 => Self::MoveFrom { dst: Register::new(raw.d)?, src: MultReg::Lo },
+			0x0 => Self::MoveFrom { dst: Register::new(d)?, src: MultReg::Hi },
+			0x2 => Self::MoveFrom { dst: Register::new(d)?, src: MultReg::Lo },
 
 			// 00x1
-			0x1 => Self::MoveTo { src: Register::new(raw.s)?, dst: MultReg::Hi },
-			0x3 => Self::MoveTo { src: Register::new(raw.s)?, dst: MultReg::Lo },
+			0x1 => Self::MoveTo { src: Register::new(s)?, dst: MultReg::Hi },
+			0x3 => Self::MoveTo { src: Register::new(s)?, dst: MultReg::Lo },
 
 			// 10xx
-			0x8 => Self::Mult { kind: MultKind::Mult, mode: MultMode::  Signed, lhs: Register::new(raw.s)?, rhs: Register::new(raw.t)? },
-			0x9 => Self::Mult { kind: MultKind::Mult, mode: MultMode::Unsigned, lhs: Register::new(raw.s)?, rhs: Register::new(raw.t)? },
-			0xa => Self::Mult { kind: MultKind::Div , mode: MultMode::  Signed, lhs: Register::new(raw.s)?, rhs: Register::new(raw.t)? },
-			0xb => Self::Mult { kind: MultKind::Div , mode: MultMode::Unsigned, lhs: Register::new(raw.s)?, rhs: Register::new(raw.t)? },
+			0x8 => Self::Mult { kind: MultKind::Mult, mode: MultMode::  Signed, lhs: Register::new(s)?, rhs: Register::new(t)? },
+			0x9 => Self::Mult { kind: MultKind::Mult, mode: MultMode::Unsigned, lhs: Register::new(s)?, rhs: Register::new(t)? },
+			0xa => Self::Mult { kind: MultKind::Div , mode: MultMode::  Signed, lhs: Register::new(s)?, rhs: Register::new(t)? },
+			0xb => Self::Mult { kind: MultKind::Div , mode: MultMode::Unsigned, lhs: Register::new(s)?, rhs: Register::new(t)? },
 
 			_ => return None,
 		})
@@ -140,39 +130,41 @@ impl Decodable for Inst {
 }
 
 impl Encodable for Inst {
+	#[bitmatch::bitmatch]
 	fn encode(&self) -> Self::Raw {
-		match self {
-			Self::Mult { kind, mode, lhs, rhs } => Raw {
-				s: lhs.idx(),
-				t: rhs.idx(),
-				d: 0,
-
-				f: match (kind, mode) {
+		let [s, t, d, f] = match self {
+			Self::Mult { kind, mode, lhs, rhs } => [
+				lhs.idx(),
+				rhs.idx(),
+				0,
+				match (kind, mode) {
 					(MultKind::Mult, MultMode::Signed) => 0x8,
 					(MultKind::Mult, MultMode::Unsigned) => 0x9,
 					(MultKind::Div, MultMode::Signed) => 0xa,
 					(MultKind::Div, MultMode::Unsigned) => 0xb,
 				},
-			},
-			Self::MoveFrom { dst, src } => Raw {
-				s: 0,
-				t: 0,
-				d: dst.idx(),
-				f: match src {
+			],
+			Self::MoveFrom { dst, src } => [
+				0,
+				0,
+				dst.idx(),
+				match src {
 					MultReg::Hi => 0x0,
 					MultReg::Lo => 0x2,
 				},
-			},
-			Self::MoveTo { dst, src } => Raw {
-				s: src.idx(),
-				t: 0,
-				d: 0,
-				f: match dst {
+			],
+			Self::MoveTo { dst, src } => [
+				src.idx(),
+				0,
+				0,
+				match dst {
 					MultReg::Hi => 0x1,
 					MultReg::Lo => 0x3,
 				},
-			},
-		}
+			],
+		};
+		
+		bitpack!("000000_sssss_ttttt_ddddd_?????_01ffff")
 	}
 }
 

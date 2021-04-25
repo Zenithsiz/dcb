@@ -1,7 +1,10 @@
 //! Alu register instructions
 
 // Imports
-use crate::inst::{InstFmt, Register, basic::{Decodable, Encodable, ModifiesReg}};
+use crate::inst::{
+	basic::{Decodable, Encodable, ModifiesReg},
+	InstFmt, Register,
+};
 
 /// Alu register instruction kind
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -56,22 +59,6 @@ impl Kind {
 	}
 }
 
-/// Raw representation
-#[derive(PartialEq, Eq, Clone, Copy, Debug)]
-pub struct Raw {
-	/// Rs
-	pub s: u32,
-
-	/// Rt
-	pub t: u32,
-
-	/// Rd
-	pub d: u32,
-
-	/// Func (lower 4 bits)
-	pub f: u32,
-}
-
 /// Alu register instructions
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub struct Inst {
@@ -89,43 +76,50 @@ pub struct Inst {
 }
 
 impl Decodable for Inst {
-	type Raw = Raw;
+	type Raw = u32;
 
+	#[bitmatch::bitmatch]
 	fn decode(raw: Self::Raw) -> Option<Self> {
-		let kind = match raw.f {
-			0x0 => Kind::Add,
-			0x1 => Kind::AddUnsigned,
-			0x2 => Kind::Sub,
-			0x3 => Kind::SubUnsigned,
-			0x4 => Kind::And,
-			0x5 => Kind::Or,
-			0x6 => Kind::Xor,
-			0x7 => Kind::Nor,
-			0xa => Kind::SetLessThan,
-			0xb => Kind::SetLessThanUnsigned,
+		let [s, t, d, f] = #[bitmatch]
+		match raw {
+			"000000_sssss_ttttt_ddddd_?????_10ffff" => [s, t, d, f],
 			_ => return None,
 		};
 
 		Some(Self {
-			dst: Register::new(raw.d)?,
-			lhs: Register::new(raw.s)?,
-			rhs: Register::new(raw.t)?,
-			kind,
+			dst:  Register::new(d)?,
+			lhs:  Register::new(s)?,
+			rhs:  Register::new(t)?,
+			kind: match f {
+				0x0 => Kind::Add,
+				0x1 => Kind::AddUnsigned,
+				0x2 => Kind::Sub,
+				0x3 => Kind::SubUnsigned,
+				0x4 => Kind::And,
+				0x5 => Kind::Or,
+				0x6 => Kind::Xor,
+				0x7 => Kind::Nor,
+				0xa => Kind::SetLessThan,
+				0xb => Kind::SetLessThanUnsigned,
+				_ => return None,
+			},
 		})
 	}
 }
 impl Encodable for Inst {
+	#[bitmatch::bitmatch]
 	fn encode(&self) -> Self::Raw {
-		let f = match self.kind {
-			Kind::Add => 0x0,
-			Kind::AddUnsigned => 0x1,
-			Kind::Sub => 0x2,
-			Kind::SubUnsigned => 0x3,
-			Kind::And => 0x4,
-			Kind::Or => 0x5,
-			Kind::Xor => 0x6,
-			Kind::Nor => 0x7,
-			Kind::SetLessThan => 0xa,
+		#[rustfmt::skip]
+		let f: u32 = match self.kind {
+			Kind::Add                 => 0x0,
+			Kind::AddUnsigned         => 0x1,
+			Kind::Sub                 => 0x2,
+			Kind::SubUnsigned         => 0x3,
+			Kind::And                 => 0x4,
+			Kind::Or                  => 0x5,
+			Kind::Xor                 => 0x6,
+			Kind::Nor                 => 0x7,
+			Kind::SetLessThan         => 0xa,
 			Kind::SetLessThanUnsigned => 0xb,
 		};
 
@@ -133,7 +127,7 @@ impl Encodable for Inst {
 		let s = self.lhs.idx();
 		let t = self.rhs.idx();
 
-		Raw { s, t, d, f }
+		bitpack!("000000_sssss_ttttt_ddddd_?????_10ffff")
 	}
 }
 
@@ -151,7 +145,7 @@ impl InstFmt for Inst {
 }
 
 impl ModifiesReg for Inst {
-    fn modifies_reg(&self, reg: Register) -> bool {
-        self.dst == reg
-    }
+	fn modifies_reg(&self, reg: Register) -> bool {
+		self.dst == reg
+	}
 }

@@ -28,16 +28,6 @@ impl Kind {
 	}
 }
 
-/// Raw representation
-#[derive(PartialEq, Eq, Clone, Copy, Debug)]
-pub struct Raw {
-	/// Comment
-	pub c: u32,
-
-	/// Func (bottom bit)
-	pub f: u32,
-}
-
 /// Syscall instructions
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub struct Inst {
@@ -49,28 +39,36 @@ pub struct Inst {
 }
 
 impl Decodable for Inst {
-	type Raw = Raw;
+	type Raw = u32;
 
+	#[bitmatch::bitmatch]
 	fn decode(raw: Self::Raw) -> Option<Self> {
-		let kind = match raw.f {
+		let [c, f] = #[bitmatch]
+		match raw {
+			"000000_ccccc_ccccc_ccccc_ccccc_00110f" => [c, f],
+			_ => return None,
+		};
+
+		let kind = match f {
 			0 => Kind::Sys,
 			1 => Kind::Break,
 			_ => return None,
 		};
 
-		Some(Self { comment: raw.c, kind })
+		Some(Self { comment: c, kind })
 	}
 }
 
 impl Encodable for Inst {
+	#[bitmatch::bitmatch]
 	fn encode(&self) -> Self::Raw {
 		let c = self.comment;
-		let f = match self.kind {
+		let f: u32 = match self.kind {
 			Kind::Sys => 0,
 			Kind::Break => 1,
 		};
 
-		Raw { c, f }
+		bitpack!("000000_ccccc_ccccc_ccccc_ccccc_00110f")
 	}
 }
 

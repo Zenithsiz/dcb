@@ -11,17 +11,6 @@ use crate::inst::{
 	InstFmt,
 };
 
-/// Raw representation
-#[derive(PartialEq, Eq, Clone, Copy, Debug)]
-#[derive(derive_more::From)]
-pub enum Raw {
-	/// Immediate
-	Imm(imm::Raw),
-
-	/// Register
-	Reg(reg::Raw),
-}
-
 /// Alu register instructions
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 #[derive(derive_more::TryInto)]
@@ -34,22 +23,17 @@ pub enum Inst {
 }
 
 impl Decodable for Inst {
-	type Raw = Raw;
+	type Raw = u32;
 
 	fn decode(raw: Self::Raw) -> Option<Self> {
-		match raw {
-			Raw::Imm(raw) => Some(Self::Imm(imm::Inst::decode(raw)?)),
-			Raw::Reg(raw) => Some(Self::Reg(reg::Inst::decode(raw)?)),
-		}
+		None.or_else(|| imm::Inst::decode(raw).map(Self::Imm))
+			.or_else(|| reg::Inst::decode(raw).map(Self::Reg))
 	}
 }
 
 impl Encodable for Inst {
 	fn encode(&self) -> Self::Raw {
-		match self {
-			Self::Imm(inst) => Raw::Imm(inst.encode()),
-			Self::Reg(inst) => Raw::Reg(inst.encode()),
-		}
+		todo!();
 	}
 }
 

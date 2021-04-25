@@ -8,16 +8,6 @@ use crate::inst::{
 };
 use int_conv::{Truncated, ZeroExtended};
 
-/// Raw representation
-#[derive(PartialEq, Eq, Clone, Copy, Debug)]
-pub struct Raw {
-	/// Rt
-	pub t: u32,
-
-	/// Immediate
-	pub i: u32,
-}
-
 /// Load instructions
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub struct Inst {
@@ -29,21 +19,29 @@ pub struct Inst {
 }
 
 impl Decodable for Inst {
-	type Raw = Raw;
+	type Raw = u32;
 
+	#[bitmatch::bitmatch]
 	fn decode(raw: Self::Raw) -> Option<Self> {
+		let [t, i] = #[bitmatch]
+		match raw {
+			"001111_?????_ttttt_iiiii_iiiii_iiiiii" => [t, i],
+			_ => return None,
+		};
+
 		Some(Self {
-			dst:   Register::new(raw.t)?,
-			value: raw.i.truncated::<u16>(),
+			dst:   Register::new(t)?,
+			value: i.truncated::<u16>(),
 		})
 	}
 }
 impl Encodable for Inst {
+	#[bitmatch::bitmatch]
 	fn encode(&self) -> Self::Raw {
-		Raw {
-			t: self.dst.idx(),
-			i: self.value.zero_extended::<u32>(),
-		}
+		let t = self.dst.idx();
+		let i = self.value.zero_extended::<u32>();
+
+		bitpack!("001111_?????_ttttt_iiiii_iiiii_iiiiii")
 	}
 }
 

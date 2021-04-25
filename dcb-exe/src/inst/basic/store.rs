@@ -42,22 +42,6 @@ impl Kind {
 	}
 }
 
-/// Raw representation
-#[derive(PartialEq, Eq, Clone, Copy, Debug)]
-pub struct Raw {
-	/// Opcode (lower 3 bits)
-	pub p: u32,
-
-	/// Rs
-	pub s: u32,
-
-	/// Rt
-	pub t: u32,
-
-	/// Immediate
-	pub i: u32,
-}
-
 /// Store instructions
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub struct Inst {
@@ -75,10 +59,17 @@ pub struct Inst {
 }
 
 impl Decodable for Inst {
-	type Raw = Raw;
+	type Raw = u32;
 
+	#[bitmatch::bitmatch]
 	fn decode(raw: Self::Raw) -> Option<Self> {
-		let kind = match raw.p {
+		let [p, s, t, i] = #[bitmatch]
+		match raw {
+			"101ppp_sssss_ttttt_iiiii_iiiii_iiiiii" => [p, s, t, i],
+			_ => return None,
+		};
+
+		let kind = match p {
 			0x0 => Kind::Byte,
 			0x1 => Kind::HalfWord,
 			0x2 => Kind::WordLeft,
@@ -88,16 +79,17 @@ impl Decodable for Inst {
 		};
 
 		Some(Self {
-			value: Register::new(raw.t)?,
-			addr: Register::new(raw.s)?,
-			offset: raw.i.truncated::<u16>().as_signed(),
+			value: Register::new(t)?,
+			addr: Register::new(s)?,
+			offset: i.truncated::<u16>().as_signed(),
 			kind,
 		})
 	}
 }
 impl Encodable for Inst {
+	#[bitmatch::bitmatch]
 	fn encode(&self) -> Self::Raw {
-		let p = match self.kind {
+		let p: u32 = match self.kind {
 			Kind::Byte => 0x0,
 			Kind::HalfWord => 0x1,
 			Kind::WordLeft => 0x2,
@@ -108,7 +100,7 @@ impl Encodable for Inst {
 		let s = self.addr.idx();
 		let i = self.offset.as_unsigned().zero_extended::<u32>();
 
-		Raw { p, s, t, i }
+		bitpack!("101ppp_sssss_ttttt_iiiii_iiiii_iiiiii")
 	}
 }
 

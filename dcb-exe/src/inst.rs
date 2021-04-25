@@ -82,7 +82,7 @@ impl<'a> Inst<'a> {
 			.array_chunks::<4>()
 			.copied()
 			.map(u32::from_ne_bytes)
-			.map_while(|word| basic::Raw::from_u32(word).and_then(basic::Inst::decode))
+			.map_while(basic::Inst::decode)
 			.fuse();
 
 		// Try to decode a pseudo-instruction
@@ -112,11 +112,11 @@ impl<'a> Inst<'a> {
 	pub fn write(&self, f: &mut impl Write) -> Result<(), io::Error> {
 		match self {
 			Inst::Basic(inst) => {
-				f.write_all(&inst.encode().as_u32().to_le_bytes())?;
+				f.write_all(&inst.encode().to_le_bytes())?;
 			},
 			Inst::Pseudo(inst) => {
 				for inst in inst.encode() {
-					f.write_all(&inst.encode().as_u32().to_le_bytes())?;
+					f.write_all(&inst.encode().to_le_bytes())?;
 				}
 			},
 			Inst::Directive(directive) => directive.write(f)?,
