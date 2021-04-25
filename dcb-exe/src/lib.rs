@@ -19,6 +19,7 @@
 	const_btree_new,
 	unwrap_infallible,
 	min_type_alias_impl_trait,
+	external_doc,
 )]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]
