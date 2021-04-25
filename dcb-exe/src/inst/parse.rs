@@ -35,13 +35,13 @@ impl<R: io::BufRead> InstParser<R> {
 	// TODO: Remove everything around this, make it just this function
 	#[allow(clippy::too_many_lines)] // TODO: Refactor this
 	#[allow(clippy::shadow_unrelated)] // We can't do this in only one place, fix naming instead
-	pub fn parse_from_line(line: &str) -> Result<ParsedLine, ParseError> {
+	pub fn parse_from_line(line: &str) -> Result<Line, ParseError> {
 		// Trim the line we read
 		let line = line.trim();
 
 		// If it starts with a comment or it's empty, return an empty line
 		if line.starts_with('#') || line.is_empty() {
-			return Ok(ParsedLine { label: None, inst: None });
+			return Ok(Line { label: None, inst: None });
 		}
 
 		// Name character validator
@@ -56,9 +56,9 @@ impl<R: io::BufRead> InstParser<R> {
 			Some((name, rest)) => (name, rest.trim_start()),
 			// If the whole line was a name, return a 0-argument instruction
 			None => {
-				return Ok(ParsedLine {
+				return Ok(Line {
 					label: None,
-					inst:  Some(ParsedInst {
+					inst:  Some(Inst {
 						mnemonic: line.to_owned(),
 						args:     vec![],
 					}),
@@ -68,9 +68,9 @@ impl<R: io::BufRead> InstParser<R> {
 
 		// If the rest was a comment, or empty, return a 0-argument instruction
 		if rest.starts_with('#') || rest.is_empty() {
-			return Ok(ParsedLine {
+			return Ok(Line {
 				label: None,
-				inst:  Some(ParsedInst {
+				inst:  Some(Inst {
 					mnemonic: name.to_owned(),
 					args:     vec![],
 				}),
@@ -85,8 +85,8 @@ impl<R: io::BufRead> InstParser<R> {
 
 				// If it starts with a comment or it's empty, return only the label
 				if rest.starts_with('#') || rest.is_empty() {
-					return Ok(ParsedLine {
-						label: Some(ParsedLabel { name: label.to_owned() }),
+					return Ok(Line {
+						label: Some(Label { name: label.to_owned() }),
 						inst:  None,
 					});
 				}
@@ -97,9 +97,9 @@ impl<R: io::BufRead> InstParser<R> {
 					Some((mnemonic, rest)) => (mnemonic, rest.trim_start()),
 					// If everything after the label was a name, return a 0-argument label
 					None => {
-						return Ok(ParsedLine {
-							label: Some(ParsedLabel { name: label.to_owned() }),
-							inst:  Some(ParsedInst {
+						return Ok(Line {
+							label: Some(Label { name: label.to_owned() }),
+							inst:  Some(Inst {
 								mnemonic: rest.to_owned(),
 								args:     vec![],
 							}),
@@ -157,7 +157,7 @@ impl<R: io::BufRead> InstParser<R> {
 				// Create the string and push it
 				// Note: For whatever reason 'snailquote' requires the quotes to be included in `string`
 				let string = snailquote::unescape(string).map_err(ParseError::StringUnescape)?;
-				parsed_args.push(ParsedArg::String(string));
+				parsed_args.push(Arg::String(string));
 			}
 			// Else if it starts with a number (possibly negative), read a literal
 			else if args.starts_with(is_valid_literal_first_char) {
@@ -187,11 +187,11 @@ impl<R: io::BufRead> InstParser<R> {
 
 					// Then parse it and push the offset
 					let register = Register::from_str(reg).map_err(|()| ParseError::UnknownRegister)?;
-					parsed_args.push(ParsedArg::RegisterOffset { register, offset: num });
+					parsed_args.push(Arg::RegisterOffset { register, offset: num });
 				}
 				// Else simply add the literal
 				else {
-					parsed_args.push(ParsedArg::Literal(num));
+					parsed_args.push(Arg::Literal(num));
 				}
 			}
 			// Else if it starts with '$', it's a register
@@ -202,7 +202,7 @@ impl<R: io::BufRead> InstParser<R> {
 
 				// Then parse it and add it
 				let reg = Register::from_str(reg).map_err(|()| ParseError::UnknownRegister)?;
-				parsed_args.push(ParsedArg::Register(reg));
+				parsed_args.push(Arg::Register(reg));
 			}
 			// Else try to read it as a label with a possible offset
 			else {
@@ -234,11 +234,11 @@ impl<R: io::BufRead> InstParser<R> {
 
 				// And add it
 				let label = match offset {
-					Some(offset) => ParsedArg::LabelOffset {
+					Some(offset) => Arg::LabelOffset {
 						label: label.to_owned(),
 						offset,
 					},
-					None => ParsedArg::Label(label.to_owned()),
+					None => Arg::Label(label.to_owned()),
 				};
 				parsed_args.push(label);
 			}
@@ -260,9 +260,9 @@ impl<R: io::BufRead> InstParser<R> {
 		}
 
 
-		Ok(ParsedLine {
-			label: label_name.map(|name| ParsedLabel { name: name.to_owned() }),
-			inst:  Some(ParsedInst {
+		Ok(Line {
+			label: label_name.map(|name| Label { name: name.to_owned() }),
+			inst:  Some(Inst {
 				mnemonic: mnemonic.to_owned(),
 				args:     parsed_args,
 			}),
@@ -271,7 +271,7 @@ impl<R: io::BufRead> InstParser<R> {
 }
 
 impl<R: io::BufRead> Iterator for InstParser<R> {
-	type Item = Result<ParsedLine, ParseError>;
+	type Item = Result<Line, ParseError>;
 
 	fn next(&mut self) -> Option<Self::Item> {
 		// Get the next line
@@ -285,42 +285,42 @@ impl<R: io::BufRead> Iterator for InstParser<R> {
 	}
 }
 
-/// A parsed line
+/// An instruction line
 #[derive(PartialEq, Clone, Debug)]
-pub struct ParsedLine {
+pub struct Line {
 	/// Label
-	pub label: Option<ParsedLabel>,
+	pub label: Option<Label>,
 
 	/// Instruction
-	pub inst: Option<ParsedInst>,
+	pub inst: Option<Inst>,
 }
 
-/// A parsed label
+/// A label
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Hash, Debug)]
-pub struct ParsedLabel {
+pub struct Label {
 	/// Name
 	pub name: String,
 }
 
-impl Borrow<String> for ParsedLabel {
+impl Borrow<String> for Label {
 	fn borrow(&self) -> &String {
 		&self.name
 	}
 }
 
-/// A parsed instruction
+/// An instructions
 #[derive(PartialEq, Clone, Debug)]
-pub struct ParsedInst {
+pub struct Inst {
 	/// Mnemonic
 	pub mnemonic: String,
 
 	/// Components
-	pub args: Vec<ParsedArg>,
+	pub args: Vec<Arg>,
 }
 
-/// Parsed instruction argument
+/// An argument
 #[derive(PartialEq, Clone, Debug)]
-pub enum ParsedArg {
+pub enum Arg {
 	/// String
 	String(String),
 
@@ -352,7 +352,7 @@ pub enum ParsedArg {
 	},
 }
 
-impl ParsedArg {
+impl Arg {
 	/// Returns this argument as a string
 	#[must_use]
 	pub fn as_string(&self) -> Option<&str> {

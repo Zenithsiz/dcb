@@ -14,7 +14,7 @@ pub mod target;
 
 // Exports
 pub use directive::Directive;
-pub use error::{DecodeError, FromParsedError};
+pub use error::{DecodeError, ParseError};
 pub use fmt::{InstFmt, InstTargetFmt};
 pub use iter::ParseIter;
 pub use reg::Register;
@@ -22,21 +22,9 @@ pub use size::InstSize;
 pub use target::InstTarget;
 
 // Imports
-use self::{
-	basic::{Decodable as _, Encodable as _},
-	parse::{ParsedArg, ParsedInst},
-	pseudo::{Decodable as _, Encodable as _},
-};
+use self::{basic::Decodable as _, pseudo::Decodable as _};
 use crate::{DataTable, FuncTable, Pos};
-use ascii::AsciiStr;
-use int_conv::Signed;
-use std::{
-	borrow::Borrow,
-	collections::HashMap,
-	convert::{TryFrom, TryInto},
-	io::{self, Write},
-	ops::{Add, Deref, Div, Sub},
-};
+use std::{borrow::Borrow, ops::Deref};
 
 /// An assembler instruction.
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -107,7 +95,8 @@ impl<'a> Inst<'a> {
 		// Else read it as a directive
 		Directive::decode(pos, bytes).map(Self::Directive).ok_or(DecodeError::NoBytes)
 	}
-
+}
+/*
 	/// Writes this instruction
 	pub fn write(&self, f: &mut impl Write) -> Result<(), io::Error> {
 		match self {
@@ -131,7 +120,7 @@ impl<'a> Inst<'a> {
 	///       as wrong number of arguments, unless necessary to get it's size.
 	#[allow(clippy::too_many_lines)] // TODO: Refactor?
 	#[allow(clippy::match_same_arms)] // Too much work to refactor more currently
-	pub fn size_from_parsed(inst: &'a ParsedInst, _pos: Pos) -> Result<u32, FromParsedError> {
+	pub fn size_from_parsed(inst: &'a Inst, _pos: Pos) -> Result<u32, ParseError> {
 		let mnemonic = inst.mnemonic.as_str();
 		let args = inst.args.as_slice();
 
@@ -139,10 +128,10 @@ impl<'a> Inst<'a> {
 			("dw", _) => 4,
 			("dh", _) => 2,
 			("db", _) => 1,
-			(".ascii", [ParsedArg::String(ref s)]) => (s.len() + (4 - s.len() % 4)).try_into()?,
-			("nop", [ParsedArg::Literal(len)]) => (4 * len).try_into()?,
+			(".ascii", [parse::Arg::String(ref s)]) => (s.len() + (4 - s.len() % 4)).try_into()?,
+			("nop", [parse::Arg::Literal(len)]) => (4 * len).try_into()?,
 			("nop", []) => 4,
-			("li", [_, ParsedArg::Literal(value)]) => match (u16::try_from(*value), i16::try_from(*value)) {
+			("li", [_, parse::Arg::Literal(value)]) => match (u16::try_from(*value), i16::try_from(*value)) {
 				(Ok(_), _) | (_, Ok(_)) => 4,
 				_ => 8,
 			},
@@ -150,11 +139,11 @@ impl<'a> Inst<'a> {
 
 			(
 				"sb" | "sh" | "swl" | "sw" | "swr" | "lb" | "lh" | "lwl" | "lw" | "lbu" | "lhu" | "lwr",
-				[ParsedArg::Register(_), ParsedArg::RegisterOffset { .. }],
+				[parse::Arg::Register(_), parse::Arg::RegisterOffset { .. }],
 			) => 4,
 			(
 				"sb" | "sh" | "swl" | "sw" | "swr" | "lb" | "lh" | "lwl" | "lw" | "lbu" | "lhu" | "lwr",
-				[ParsedArg::Register(_), ParsedArg::Literal(_) | ParsedArg::Label(_) | ParsedArg::LabelOffset { .. }],
+				[parse::Arg::Register(_), parse::Arg::Literal(_) | parse::Arg::Label(_) | parse::Arg::LabelOffset { .. }],
 			) => 8,
 
 			// Jump immediate
@@ -168,7 +157,7 @@ impl<'a> Inst<'a> {
 				_,
 			) => 4,
 
-			_ => return Err(FromParsedError::UnknownMnemonic),
+			_ => return Err(ParseError::UnknownMnemonic),
 		};
 
 		Ok(inst_size)
@@ -176,7 +165,7 @@ impl<'a> Inst<'a> {
 
 	/// Creates an instruction from a parsed instruction
 	#[allow(clippy::too_many_lines)] // TODO: Refactor?
-	pub fn from_parsed(inst: &'a ParsedInst, pos: Pos, labels_by_name: &HashMap<LabelName, Pos>) -> Result<Self, FromParsedError> {
+	pub fn from_parsed(inst: &'a Inst, pos: Pos, labels_by_name: &HashMap<LabelName, Pos>) -> Result<Self, ParseError> {
 		let mnemonic = inst.mnemonic.as_str();
 		let args = inst.args.as_slice();
 
@@ -185,27 +174,27 @@ impl<'a> Inst<'a> {
 			labels_by_name
 				.get(label)
 				.copied()
-				.ok_or_else(|| FromParsedError::UnknownLabel(label.to_owned()))
+				.ok_or_else(|| ParseError::UnknownLabel(label.to_owned()))
 		};
 
 		// Helper that converts a label to an offset
-		let label_to_offset = |label: &str, offset: i64| -> Result<i16, FromParsedError> {
+		let label_to_offset = |label: &str, offset: i64| -> Result<i16, ParseError> {
 			label_to_target(label)?
 				.sub(pos)
 				.add(offset)
 				.div(4)
 				.sub(1)
 				.try_into()
-				.map_err(FromParsedError::RelativeJumpTooFar)
+				.map_err(ParseError::RelativeJumpTooFar)
 		};
 
 		let inst = match mnemonic {
 			// Directives
 			"dw" | "dh" | "db" | ".ascii" => {
 				// Get the argument, we only support single arguments
-				let arg: &'a ParsedArg = match args {
+				let arg: &'a parse::Arg = match args {
 					[arg] => arg,
-					_ => return Err(FromParsedError::InvalidArguments),
+					_ => return Err(ParseError::InvalidArguments),
 				};
 
 				// Then get the directive itself
@@ -213,27 +202,27 @@ impl<'a> Inst<'a> {
 				let directive = match mnemonic {
 					"dw" => match arg {
 						// If it's a label, get the label's address
-						ParsedArg::Label(label) => labels_by_name
+						parse::Arg::Label(label) => labels_by_name
 							.get(label)
 							.map(|&Pos(pos)| Directive::Dw(pos))
-							.ok_or_else(|| FromParsedError::UnknownLabel(label.clone()))?,
-						ParsedArg::LabelOffset { label, offset } => labels_by_name
+							.ok_or_else(|| ParseError::UnknownLabel(label.clone()))?,
+						parse::Arg::LabelOffset { label, offset } => labels_by_name
 							.get(label)
-							.map(|pos| Ok::<_, FromParsedError>(pos + u32::try_from(*offset)?))
-							.ok_or_else(|| FromParsedError::UnknownLabel(label.clone()))?
+							.map(|pos| Ok::<_, ParseError>(pos + u32::try_from(*offset)?))
+							.ok_or_else(|| ParseError::UnknownLabel(label.clone()))?
 							.map(|Pos(pos)| Directive::Dw(pos))?,
-						&ParsedArg::Literal(value) => Directive::Dw(value.try_into()?),
+						&parse::Arg::Literal(value) => Directive::Dw(value.try_into()?),
 
-						_ => return Err(FromParsedError::InvalidArguments),
+						_ => return Err(ParseError::InvalidArguments),
 					},
-					"dh" => Directive::Dh(arg.as_literal().ok_or(FromParsedError::InvalidArguments)?.try_into()?),
-					"db" => Directive::Db(arg.as_literal().ok_or(FromParsedError::InvalidArguments)?.try_into()?),
+					"dh" => Directive::Dh(arg.as_literal().ok_or(ParseError::InvalidArguments)?.try_into()?),
+					"db" => Directive::Db(arg.as_literal().ok_or(ParseError::InvalidArguments)?.try_into()?),
 					".ascii" => arg
 						.as_string()
 						.map(AsciiStr::from_ascii)
-						.ok_or(FromParsedError::InvalidArguments)?
+						.ok_or(ParseError::InvalidArguments)?
 						.map(Directive::Ascii)
-						.map_err(FromParsedError::StringNonAscii)?,
+						.map_err(ParseError::StringNonAscii)?,
 					_ => unreachable!(),
 				};
 
@@ -243,23 +232,23 @@ impl<'a> Inst<'a> {
 
 			// Nop
 			"nop" => match *args {
-				[ParsedArg::Literal(len)] => Self::Pseudo(pseudo::Inst::Nop(pseudo::nop::Inst { len: len.try_into()? })),
+				[parse::Arg::Literal(len)] => Self::Pseudo(pseudo::Inst::Nop(pseudo::nop::Inst { len: len.try_into()? })),
 				[] => Self::Pseudo(pseudo::Inst::Nop(pseudo::nop::Inst { len: 1 })),
-				_ => return Err(FromParsedError::InvalidArguments),
+				_ => return Err(ParseError::InvalidArguments),
 			},
 
 			// Move
 			"move" => match *args {
-				[ParsedArg::Register(dst), ParsedArg::Register(src)] => Self::Pseudo(pseudo::Inst::MoveReg(pseudo::move_reg::Inst { dst, src })),
-				_ => return Err(FromParsedError::InvalidArguments),
+				[parse::Arg::Register(dst), parse::Arg::Register(src)] => Self::Pseudo(pseudo::Inst::MoveReg(pseudo::move_reg::Inst { dst, src })),
+				_ => return Err(ParseError::InvalidArguments),
 			},
 
 			// Load immediate
 			"li" => {
 				// Note: No labels for `li`
 				let (reg, value) = match *args {
-					[ParsedArg::Register(reg), ParsedArg::Literal(value)] => (reg, value),
-					_ => return Err(FromParsedError::InvalidArguments),
+					[parse::Arg::Register(reg), parse::Arg::Literal(value)] => (reg, value),
+					_ => return Err(ParseError::InvalidArguments),
 				};
 
 				// Try to convert it to a `i16`, then `u16`, then `u32`.
@@ -278,13 +267,13 @@ impl<'a> Inst<'a> {
 			// Load address
 			"la" => {
 				let (dst, target) = match *args {
-					[ParsedArg::Register(dst), ParsedArg::Literal(value)] => (dst, Pos(value.try_into()?)),
-					[ParsedArg::Register(dst), ParsedArg::Label(ref label)] => (dst, label_to_target(label)?),
-					[ParsedArg::Register(dst), ParsedArg::LabelOffset { ref label, offset }] => {
+					[parse::Arg::Register(dst), parse::Arg::Literal(value)] => (dst, Pos(value.try_into()?)),
+					[parse::Arg::Register(dst), parse::Arg::Label(ref label)] => (dst, label_to_target(label)?),
+					[parse::Arg::Register(dst), parse::Arg::LabelOffset { ref label, offset }] => {
 						(dst, label_to_target(label)? + i32::try_from(offset)?)
 					},
 
-					_ => return Err(FromParsedError::InvalidArguments),
+					_ => return Err(ParseError::InvalidArguments),
 				};
 
 				Self::Pseudo(pseudo::Inst::LoadImm(pseudo::load_imm::Inst {
@@ -296,9 +285,9 @@ impl<'a> Inst<'a> {
 			// Alu Immediate
 			"addi" | "addiu" | "slti" | "sltiu" | "andi" | "ori" | "xori" => {
 				let (reg1, reg2, lit) = match *args {
-					[ParsedArg::Register(reg), ParsedArg::Literal(lit)] => (reg, reg, lit),
-					[ParsedArg::Register(reg1), ParsedArg::Register(reg2), ParsedArg::Literal(lit)] => (reg1, reg2, lit),
-					_ => return Err(FromParsedError::InvalidArguments),
+					[parse::Arg::Register(reg), parse::Arg::Literal(lit)] => (reg, reg, lit),
+					[parse::Arg::Register(reg1), parse::Arg::Register(reg2), parse::Arg::Literal(lit)] => (reg1, reg2, lit),
+					_ => return Err(ParseError::InvalidArguments),
 				};
 
 				Self::Basic(basic::Inst::Alu(basic::alu::Inst::Imm(basic::alu::imm::Inst {
@@ -320,9 +309,9 @@ impl<'a> Inst<'a> {
 			// Alu register
 			"add" | "addu" | "sub" | "subu" | "and" | "or" | "xor" | "nor" | "slt" | "sltu" => {
 				let (reg1, reg2, reg3) = match *args {
-					[ParsedArg::Register(reg1), ParsedArg::Register(reg2)] => (reg1, reg1, reg2),
-					[ParsedArg::Register(reg1), ParsedArg::Register(reg2), ParsedArg::Register(reg3)] => (reg1, reg2, reg3),
-					_ => return Err(FromParsedError::InvalidArguments),
+					[parse::Arg::Register(reg1), parse::Arg::Register(reg2)] => (reg1, reg1, reg2),
+					[parse::Arg::Register(reg1), parse::Arg::Register(reg2), parse::Arg::Register(reg3)] => (reg1, reg2, reg3),
+					_ => return Err(ParseError::InvalidArguments),
 				};
 
 				Self::Basic(basic::Inst::Alu(basic::alu::Inst::Reg(basic::alu::reg::Inst {
@@ -348,9 +337,9 @@ impl<'a> Inst<'a> {
 			// Shift Immediate
 			"sll" | "srl" | "sra" => {
 				let (reg1, reg2, lit) = match *args {
-					[ParsedArg::Register(reg), ParsedArg::Literal(lit)] => (reg, reg, lit),
-					[ParsedArg::Register(reg1), ParsedArg::Register(reg2), ParsedArg::Literal(lit)] => (reg1, reg2, lit),
-					_ => return Err(FromParsedError::InvalidArguments),
+					[parse::Arg::Register(reg), parse::Arg::Literal(lit)] => (reg, reg, lit),
+					[parse::Arg::Register(reg1), parse::Arg::Register(reg2), parse::Arg::Literal(lit)] => (reg1, reg2, lit),
+					_ => return Err(ParseError::InvalidArguments),
 				};
 
 				Self::Basic(basic::Inst::Shift(basic::shift::Inst::Imm(basic::shift::imm::Inst {
@@ -369,9 +358,9 @@ impl<'a> Inst<'a> {
 			// Shift register
 			"sllv" | "srlv" | "srav" => {
 				let (reg1, reg2, reg3) = match *args {
-					[ParsedArg::Register(reg1), ParsedArg::Register(reg2)] => (reg1, reg1, reg2),
-					[ParsedArg::Register(reg1), ParsedArg::Register(reg2), ParsedArg::Register(reg3)] => (reg1, reg2, reg3),
-					_ => return Err(FromParsedError::InvalidArguments),
+					[parse::Arg::Register(reg1), parse::Arg::Register(reg2)] => (reg1, reg1, reg2),
+					[parse::Arg::Register(reg1), parse::Arg::Register(reg2), parse::Arg::Register(reg3)] => (reg1, reg2, reg3),
+					_ => return Err(ParseError::InvalidArguments),
 				};
 
 				Self::Basic(basic::Inst::Shift(basic::shift::Inst::Reg(basic::shift::reg::Inst {
@@ -390,15 +379,15 @@ impl<'a> Inst<'a> {
 			// Store / Load
 			"sb" | "sh" | "swl" | "sw" | "swr" | "lb" | "lh" | "lwl" | "lw" | "lbu" | "lhu" | "lwr" => {
 				let (reg1, reg2_offset, target) = match *args {
-					[ParsedArg::Register(reg1), ParsedArg::RegisterOffset { register: reg2, offset }] => {
+					[parse::Arg::Register(reg1), parse::Arg::RegisterOffset { register: reg2, offset }] => {
 						(reg1, Some((reg2, offset.try_into()?)), None)
 					},
-					[ParsedArg::Register(reg), ParsedArg::Literal(pos)] => (reg, None, Some(Pos(pos.try_into()?))),
-					[ParsedArg::Register(reg), ParsedArg::Label(ref label)] => (reg, None, Some(label_to_target(label)?)),
-					[ParsedArg::Register(reg), ParsedArg::LabelOffset { ref label, offset }] => {
+					[parse::Arg::Register(reg), parse::Arg::Literal(pos)] => (reg, None, Some(Pos(pos.try_into()?))),
+					[parse::Arg::Register(reg), parse::Arg::Label(ref label)] => (reg, None, Some(label_to_target(label)?)),
+					[parse::Arg::Register(reg), parse::Arg::LabelOffset { ref label, offset }] => {
 						(reg, None, Some(label_to_target(label)? + i32::try_from(offset)?))
 					},
-					_ => return Err(FromParsedError::InvalidArguments),
+					_ => return Err(ParseError::InvalidArguments),
 				};
 
 				match (mnemonic, reg2_offset, target) {
@@ -467,10 +456,10 @@ impl<'a> Inst<'a> {
 			// Jump immediate
 			"j" | "jal" => {
 				let target = match *args {
-					[ParsedArg::Literal(pos)] => Pos(pos.try_into()?),
-					[ParsedArg::Label(ref label)] => label_to_target(label)?,
-					[ParsedArg::LabelOffset { ref label, offset }] => label_to_target(label)? + i32::try_from(offset)?,
-					_ => return Err(FromParsedError::InvalidArguments),
+					[parse::Arg::Literal(pos)] => Pos(pos.try_into()?),
+					[parse::Arg::Label(ref label)] => label_to_target(label)?,
+					[parse::Arg::LabelOffset { ref label, offset }] => label_to_target(label)? + i32::try_from(offset)?,
+					_ => return Err(ParseError::InvalidArguments),
 				};
 
 				Self::Basic(basic::Inst::Jmp(basic::jmp::Inst::Imm(basic::jmp::imm::Inst {
@@ -486,9 +475,9 @@ impl<'a> Inst<'a> {
 			// Jump register
 			"jr" | "jalr" => {
 				let (target, link) = match *args {
-					[ParsedArg::Register(target)] => (target, None),
-					[ParsedArg::Register(target), ParsedArg::Register(link)] => (target, Some(link)),
-					_ => return Err(FromParsedError::InvalidArguments),
+					[parse::Arg::Register(target)] => (target, None),
+					[parse::Arg::Register(target), parse::Arg::Register(link)] => (target, Some(link)),
+					_ => return Err(ParseError::InvalidArguments),
 				};
 
 				Self::Basic(basic::Inst::Jmp(basic::jmp::Inst::Reg(basic::jmp::reg::Inst {
@@ -497,7 +486,7 @@ impl<'a> Inst<'a> {
 						("jr", None) => basic::jmp::reg::Kind::Jump,
 						("jalr", None) => basic::jmp::reg::Kind::JumpLink(Register::Ra),
 						("jalr", Some(link)) => basic::jmp::reg::Kind::JumpLink(link),
-						_ => return Err(FromParsedError::InvalidArguments),
+						_ => return Err(ParseError::InvalidArguments),
 					},
 				})))
 			},
@@ -508,36 +497,38 @@ impl<'a> Inst<'a> {
 				// Note: Literals are absolute
 				let (reg1, reg2, offset) = match *args {
 					// <reg1> <reg2> <target>
-					[ParsedArg::Register(reg1), ParsedArg::Register(reg2), ParsedArg::Literal(target)] => (
+					[parse::Arg::Register(reg1), parse::Arg::Register(reg2), parse::Arg::Literal(target)] => (
 						Some(reg1),
 						Some(reg2),
 						u32::try_from(target)?.wrapping_sub(pos.0).as_signed().div(4i32).sub(1i32).try_into()?,
 					),
-					[ParsedArg::Register(reg1), ParsedArg::Register(reg2), ParsedArg::Label(ref label)] => {
+					[parse::Arg::Register(reg1), parse::Arg::Register(reg2), parse::Arg::Label(ref label)] => {
 						(Some(reg1), Some(reg2), label_to_offset(label, 0)?)
 					},
-					[ParsedArg::Register(reg1), ParsedArg::Register(reg2), ParsedArg::LabelOffset { ref label, offset }] => {
+					[parse::Arg::Register(reg1), parse::Arg::Register(reg2), parse::Arg::LabelOffset { ref label, offset }] => {
 						(Some(reg1), Some(reg2), label_to_offset(label, offset)?)
 					},
 
 					// <reg> <target>
-					[ParsedArg::Register(reg1), ParsedArg::Literal(target)] => (
+					[parse::Arg::Register(reg1), parse::Arg::Literal(target)] => (
 						Some(reg1),
 						None,
 						u32::try_from(target)?.wrapping_sub(pos.0).as_signed().div(4i32).sub(1i32).try_into()?,
 					),
-					[ParsedArg::Register(reg1), ParsedArg::Label(ref label)] => (Some(reg1), None, label_to_offset(label, 0)?),
-					[ParsedArg::Register(reg1), ParsedArg::LabelOffset { ref label, offset }] => (Some(reg1), None, label_to_offset(label, offset)?),
+					[parse::Arg::Register(reg1), parse::Arg::Label(ref label)] => (Some(reg1), None, label_to_offset(label, 0)?),
+					[parse::Arg::Register(reg1), parse::Arg::LabelOffset { ref label, offset }] => {
+						(Some(reg1), None, label_to_offset(label, offset)?)
+					},
 
 					// <target>
-					[ParsedArg::Literal(target)] => (
+					[parse::Arg::Literal(target)] => (
 						None,
 						None,
 						u32::try_from(target)?.wrapping_sub(pos.0).as_signed().div(4i32).sub(1i32).try_into()?,
 					),
-					[ParsedArg::Label(ref label)] => (None, None, label_to_offset(label, 0)?),
-					[ParsedArg::LabelOffset { ref label, offset }] => (None, None, label_to_offset(label, offset)?),
-					_ => return Err(FromParsedError::InvalidArguments),
+					[parse::Arg::Label(ref label)] => (None, None, label_to_offset(label, 0)?),
+					[parse::Arg::LabelOffset { ref label, offset }] => (None, None, label_to_offset(label, offset)?),
+					_ => return Err(ParseError::InvalidArguments),
 				};
 
 				match (mnemonic, reg1, reg2) {
@@ -599,25 +590,25 @@ impl<'a> Inst<'a> {
 
 					(_, None, Some(_)) => unreachable!(),
 
-					_ => return Err(FromParsedError::InvalidArguments),
+					_ => return Err(ParseError::InvalidArguments),
 				}
 			},
 
 			// Lui
 			"lui" => match *args {
-				[ParsedArg::Register(dst), ParsedArg::Literal(value)] => Self::Basic(basic::Inst::Lui(basic::lui::Inst {
+				[parse::Arg::Register(dst), parse::Arg::Literal(value)] => Self::Basic(basic::Inst::Lui(basic::lui::Inst {
 					dst,
 					value: value.try_into()?,
 				})),
-				_ => return Err(FromParsedError::InvalidArguments),
+				_ => return Err(ParseError::InvalidArguments),
 			},
 
 			// Co-processor
 			"cop0" | "cop1" | "cop2" | "cop3" => {
 				let n = mnemonic[3..].parse().expect("Unable to parse 0..=3");
 				let imm = match *args {
-					[ParsedArg::Literal(imm)] => imm.try_into()?,
-					_ => return Err(FromParsedError::InvalidArguments),
+					[parse::Arg::Literal(imm)] => imm.try_into()?,
+					_ => return Err(ParseError::InvalidArguments),
 				};
 
 				Self::Basic(basic::Inst::Co(basic::co::Inst {
@@ -629,8 +620,8 @@ impl<'a> Inst<'a> {
 			"ctc2" | "ctc3" => {
 				let n = mnemonic[3..].parse().expect("Unable to parse 0..=3");
 				let (reg, imm) = match *args {
-					[ParsedArg::Register(dst), ParsedArg::Literal(src)] => (dst, src.try_into()?),
-					_ => return Err(FromParsedError::InvalidArguments),
+					[parse::Arg::Register(dst), parse::Arg::Literal(src)] => (dst, src.try_into()?),
+					_ => return Err(ParseError::InvalidArguments),
 				};
 
 				let kind = match &mnemonic[0..=0] {
@@ -654,8 +645,8 @@ impl<'a> Inst<'a> {
 			"lwc0" | "lwc1" | "lwc2" | "lwc3" | "swc0" | "swc1" | "swc2" | "swc3" => {
 				let n = mnemonic[3..].parse().expect("Unable to parse 0..=3");
 				let (dst, src, offset) = match *args {
-					[ParsedArg::Literal(dst), ParsedArg::RegisterOffset { register: src, offset }] => (dst.try_into()?, src, offset.try_into()?),
-					_ => return Err(FromParsedError::InvalidArguments),
+					[parse::Arg::Literal(dst), parse::Arg::RegisterOffset { register: src, offset }] => (dst.try_into()?, src, offset.try_into()?),
+					_ => return Err(ParseError::InvalidArguments),
 				};
 
 				match &mnemonic[0..=0] {
@@ -674,8 +665,8 @@ impl<'a> Inst<'a> {
 			// Mult move
 			"mflo" | "mfhi" | "mtlo" | "mthi" => {
 				let reg = match *args {
-					[ParsedArg::Register(reg)] => reg,
-					_ => return Err(FromParsedError::InvalidArguments),
+					[parse::Arg::Register(reg)] => reg,
+					_ => return Err(ParseError::InvalidArguments),
 				};
 
 				let mult_reg = match &mnemonic[2..=3] {
@@ -695,8 +686,8 @@ impl<'a> Inst<'a> {
 			// Mult / Div
 			"mult" | "multu" | "div" | "divu" => {
 				let (lhs, rhs) = match *args {
-					[ParsedArg::Register(lhs), ParsedArg::Register(rhs)] => (lhs, rhs),
-					_ => return Err(FromParsedError::InvalidArguments),
+					[parse::Arg::Register(lhs), parse::Arg::Register(rhs)] => (lhs, rhs),
+					_ => return Err(ParseError::InvalidArguments),
 				};
 
 				Self::Basic(basic::Inst::Mult(basic::mult::Inst::Mult {
@@ -718,8 +709,8 @@ impl<'a> Inst<'a> {
 			// Syscalls
 			"break" | "sys" => {
 				let comment = match *args {
-					[ParsedArg::Literal(comment)] => comment.try_into()?,
-					_ => return Err(FromParsedError::InvalidArguments),
+					[parse::Arg::Literal(comment)] => comment.try_into()?,
+					_ => return Err(ParseError::InvalidArguments),
 				};
 
 				Self::Basic(basic::Inst::Sys(basic::sys::Inst {
@@ -727,16 +718,17 @@ impl<'a> Inst<'a> {
 					kind: match mnemonic {
 						"break" => basic::sys::Kind::Break,
 						"sys" => basic::sys::Kind::Sys,
-						_ => return Err(FromParsedError::InvalidArguments),
+						_ => return Err(ParseError::InvalidArguments),
 					},
 				}))
 			},
-			_ => return Err(FromParsedError::UnknownMnemonic),
+			_ => return Err(ParseError::UnknownMnemonic),
 		};
 
 		Ok(inst)
 	}
 }
+*/
 
 impl<'a> InstSize for Inst<'a> {
 	fn size(&self) -> usize {

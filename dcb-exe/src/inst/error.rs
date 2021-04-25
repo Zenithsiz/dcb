@@ -26,7 +26,7 @@ pub enum DecodeError<'a> {
 
 /// Error type for [`Inst::from_parsed`](super::Inst::from_parsed)
 #[derive(Debug, thiserror::Error)]
-pub enum FromParsedError {
+pub enum ParseError {
 	/// Unknown mnemonic
 	#[error("Unknown mnemonic")]
 	UnknownMnemonic,
