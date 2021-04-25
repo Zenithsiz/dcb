@@ -55,6 +55,8 @@
 #![allow(clippy::similar_names)]
 // We only use `# Panics` where a panic might be caused by a mis-use of the user, not assertions
 #![allow(clippy::missing_panics_doc)]
+// Some errors don't carry enough information to include them in another super-error
+#![allow(clippy::map_err_ignore)]
 
 // Modules
 pub mod byteorder_ext;
