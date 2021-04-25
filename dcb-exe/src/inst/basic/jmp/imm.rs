@@ -3,8 +3,8 @@
 // Imports
 use crate::{
 	inst::{
-		basic::{Decodable, Encodable},
-		InstTarget, InstTargetFmt,
+		basic::{Decodable, Encodable, ModifiesReg},
+		InstTarget, InstTargetFmt, Register,
 	},
 	Pos,
 };
@@ -95,5 +95,11 @@ impl InstTargetFmt for Inst {
 		let mnemonic = self.kind.mnemonic();
 
 		write!(f, "{mnemonic} {target}")
+	}
+}
+
+impl ModifiesReg for Inst {
+	fn modifies_reg(&self, _reg: Register) -> bool {
+		false
 	}
 }

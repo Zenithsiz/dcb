@@ -1,6 +1,7 @@
 //! Load instructions
 
 // Imports
+use super::ModifiesReg;
 use crate::inst::{
 	basic::{Decodable, Encodable},
 	InstFmt, Register,
@@ -130,5 +131,11 @@ impl InstFmt for Inst {
 		let mnemonic = kind.mnemonic();
 
 		write!(f, "{mnemonic} {value}, {:#}({addr})", SignedHex(offset))
+	}
+}
+
+impl ModifiesReg for Inst {
+	fn modifies_reg(&self, reg: Register) -> bool {
+		self.value == reg
 	}
 }

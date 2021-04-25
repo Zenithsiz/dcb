@@ -1,10 +1,7 @@
 //! Alu register instructions
 
 // Imports
-use crate::inst::{
-	basic::{Decodable, Encodable},
-	InstFmt, Register,
-};
+use crate::inst::{InstFmt, Register, basic::{Decodable, Encodable, ModifiesReg}};
 
 /// Alu register instruction kind
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -151,4 +148,10 @@ impl InstFmt for Inst {
 			false => write!(f, "{mnemonic} {dst}, {lhs}, {rhs}"),
 		}
 	}
+}
+
+impl ModifiesReg for Inst {
+    fn modifies_reg(&self, reg: Register) -> bool {
+        self.dst == reg
+    }
 }

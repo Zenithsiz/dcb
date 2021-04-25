@@ -1,6 +1,7 @@
 //! Co-processor instructions
 
 // Imports
+use super::ModifiesReg;
 use crate::inst::{
 	basic::{Decodable, Encodable},
 	InstFmt, Register,
@@ -187,6 +188,15 @@ impl InstFmt for Inst {
 			}
 			Kind::Load     { dst, src, offset } => write!(f, "lwc{n} {dst:#x}, {:#}({src})", SignedHex(offset)),
 			Kind::Store    { dst, src, offset } => write!(f, "swc{n} {dst:#x}, {:#}({src})", SignedHex(offset)),
+		}
+	}
+}
+
+impl ModifiesReg for Inst {
+	fn modifies_reg(&self, reg: Register) -> bool {
+		match self.kind {
+			Kind::MoveFrom { dst, .. } => dst == reg,
+			Kind::CopN { .. } | Kind::MoveTo { .. } | Kind::Branch { .. } | Kind::Load { .. } | Kind::Store { .. } => false,
 		}
 	}
 }

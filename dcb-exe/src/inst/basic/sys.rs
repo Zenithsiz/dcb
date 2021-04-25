@@ -1,9 +1,10 @@
 //! System calls
 
 // Imports
+use super::ModifiesReg;
 use crate::inst::{
 	basic::{Decodable, Encodable},
-	InstFmt,
+	InstFmt, Register,
 };
 
 /// Sys instruction func
@@ -80,5 +81,11 @@ impl InstFmt for Inst {
 		let mnemonic = kind.mnemonic();
 
 		write!(f, "{mnemonic} {comment:#x}")
+	}
+}
+
+impl ModifiesReg for Inst {
+	fn modifies_reg(&self, _reg: Register) -> bool {
+		false
 	}
 }

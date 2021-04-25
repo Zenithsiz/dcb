@@ -5,6 +5,7 @@ pub mod imm;
 pub mod reg;
 
 // Imports
+use super::ModifiesReg;
 use crate::inst::{
 	basic::{Decodable, Encodable},
 	InstFmt,
@@ -57,6 +58,15 @@ impl InstFmt for Inst {
 		match self {
 			Self::Imm(inst) => inst.fmt(pos, f),
 			Self::Reg(inst) => inst.fmt(pos, f),
+		}
+	}
+}
+
+impl ModifiesReg for Inst {
+	fn modifies_reg(&self, reg: crate::inst::Register) -> bool {
+		match self {
+			Inst::Imm(inst) => inst.modifies_reg(reg),
+			Inst::Reg(inst) => inst.modifies_reg(reg),
 		}
 	}
 }

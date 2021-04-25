@@ -2,7 +2,7 @@
 
 // Imports
 use crate::inst::{
-	basic::{Decodable, Encodable},
+	basic::{Decodable, Encodable, ModifiesReg},
 	InstFmt, Register,
 };
 use dcb_util::SignedHex;
@@ -144,5 +144,11 @@ impl InstFmt for Inst {
 			true => write!(f, "{mnemonic} {dst}, {value}"),
 			false => write!(f, "{mnemonic} {dst}, {lhs}, {value}"),
 		}
+	}
+}
+
+impl ModifiesReg for Inst {
+	fn modifies_reg(&self, reg: Register) -> bool {
+		self.dst == reg
 	}
 }

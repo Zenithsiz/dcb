@@ -1,10 +1,7 @@
 //! Shift register instructions
 
 // Imports
-use crate::inst::{
-	basic::{Decodable, Encodable},
-	InstFmt, Register,
-};
+use crate::inst::{InstFmt, Register, basic::{Decodable, Encodable, ModifiesReg}};
 
 /// Shift register instruction kind
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -108,5 +105,11 @@ impl InstFmt for Inst {
 			true => write!(f, "{mnemonic} {dst}, {rhs}"),
 			false => write!(f, "{mnemonic} {dst}, {lhs}, {rhs}"),
 		}
+	}
+}
+
+impl ModifiesReg for Inst {
+	fn modifies_reg(&self, reg: Register) -> bool {
+		self.dst == reg
 	}
 }

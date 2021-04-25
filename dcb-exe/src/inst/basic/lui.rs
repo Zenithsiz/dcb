@@ -1,6 +1,7 @@
 //! Lui instruction
 
 // Imports
+use super::ModifiesReg;
 use crate::inst::{
 	basic::{Decodable, Encodable},
 	InstFmt, Register,
@@ -52,5 +53,11 @@ impl InstFmt for Inst {
 		let Self { dst, value } = self;
 
 		write!(f, "lui {dst}, {value:#x}")
+	}
+}
+
+impl ModifiesReg for Inst {
+	fn modifies_reg(&self, reg: Register) -> bool {
+		self.dst == reg
 	}
 }

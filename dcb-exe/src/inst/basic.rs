@@ -17,7 +17,7 @@ pub mod store;
 pub mod sys;
 
 // Imports
-use super::InstSize;
+use super::{InstSize, Register};
 use crate::inst::InstFmt;
 
 /// Raw instruction
@@ -182,6 +182,23 @@ impl Encodable for Inst {
 	}
 }
 
+impl ModifiesReg for Inst {
+	fn modifies_reg(&self, reg: Register) -> bool {
+		match self {
+			Inst::Alu(inst) => inst.modifies_reg(reg),
+			Inst::Cond(inst) => inst.modifies_reg(reg),
+			Inst::Jmp(inst) => inst.modifies_reg(reg),
+			Inst::Load(inst) => inst.modifies_reg(reg),
+			Inst::Lui(inst) => inst.modifies_reg(reg),
+			Inst::Mult(inst) => inst.modifies_reg(reg),
+			Inst::Shift(inst) => inst.modifies_reg(reg),
+			Inst::Store(inst) => inst.modifies_reg(reg),
+			Inst::Sys(inst) => inst.modifies_reg(reg),
+			Inst::Co(inst) => inst.modifies_reg(reg),
+		}
+	}
+}
+
 // Any basic decodable instruction is 4 bytes
 impl<T: Decodable> InstSize for T {
 	fn size(&self) -> usize {
@@ -222,4 +239,10 @@ pub trait Encodable: Decodable {
 	/// Encodes this instruction
 	#[must_use]
 	fn encode(&self) -> Self::Raw;
+}
+
+/// Register modifying instructions
+pub trait ModifiesReg: Decodable {
+	/// Returns if this instruction modifies `reg`.
+	fn modifies_reg(&self, reg: Register) -> bool;
 }

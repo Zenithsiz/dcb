@@ -2,7 +2,7 @@
 
 // Imports
 use crate::inst::{
-	basic::{Decodable, Encodable},
+	basic::{Decodable, Encodable, ModifiesReg},
 	InstFmt, Register,
 };
 use int_conv::{Truncated, ZeroExtended};
@@ -109,5 +109,11 @@ impl InstFmt for Inst {
 			true => write!(f, "{mnemonic} {dst}, {rhs:#x}"),
 			false => write!(f, "{mnemonic} {dst}, {lhs}, {rhs:#x}"),
 		}
+	}
+}
+
+impl ModifiesReg for Inst {
+	fn modifies_reg(&self, reg: Register) -> bool {
+		self.dst == reg
 	}
 }

@@ -1,6 +1,7 @@
 //! Multiplications
 
 // Imports
+use super::ModifiesReg;
 use crate::inst::{
 	basic::{Decodable, Encodable},
 	InstFmt, Register,
@@ -181,6 +182,15 @@ impl InstFmt for Inst {
 		match self {
 			Self::Mult { lhs, rhs, .. } => write!(f, "{mnemonic} {lhs}, {rhs}"),
 			Self::MoveFrom { dst: arg, .. } | Self::MoveTo { src: arg, .. } => write!(f, "{mnemonic} {arg}"),
+		}
+	}
+}
+
+impl ModifiesReg for Inst {
+	fn modifies_reg(&self, reg: Register) -> bool {
+		match self {
+			Inst::MoveFrom { dst, .. } => *dst == reg,
+			Inst::Mult { .. } | Inst::MoveTo { .. } => false,
 		}
 	}
 }

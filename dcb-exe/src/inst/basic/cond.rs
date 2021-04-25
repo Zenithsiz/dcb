@@ -1,6 +1,7 @@
 //! Condition branches
 
 // Imports
+use super::ModifiesReg;
 use crate::{
 	inst::{
 		basic::{Decodable, Encodable},
@@ -152,5 +153,11 @@ impl InstTargetFmt for Inst {
 			Kind::LessThanZeroLink => write!(f, "bltzal {arg}, {target}"),
 			Kind::GreaterOrEqualZeroLink => write!(f, "bgezal {arg}, {target}"),
 		}
+	}
+}
+
+impl ModifiesReg for Inst {
+	fn modifies_reg(&self, _reg: Register) -> bool {
+		false
 	}
 }

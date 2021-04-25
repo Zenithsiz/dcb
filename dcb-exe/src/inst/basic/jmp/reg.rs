@@ -2,7 +2,7 @@
 
 // Imports
 use crate::inst::{
-	basic::{Decodable, Encodable},
+	basic::{Decodable, Encodable, ModifiesReg},
 	InstFmt, Register,
 };
 
@@ -90,5 +90,11 @@ impl InstFmt for Inst {
 				reg => write!(f, "{mnemonic} {target}, {reg}"),
 			},
 		}
+	}
+}
+
+impl ModifiesReg for Inst {
+	fn modifies_reg(&self, _reg: Register) -> bool {
+		false
 	}
 }
