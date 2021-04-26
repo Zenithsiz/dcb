@@ -3,7 +3,7 @@
 // Imports
 use super::ModifiesReg;
 use crate::inst::{
-	basic::{Decodable, Encodable},
+	basic::{Decode, Encode},
 	parse::LineArg,
 	InstFmt, Parsable, ParseCtx, ParseError, Register,
 };
@@ -98,7 +98,7 @@ pub struct Inst {
 	pub kind: Kind,
 }
 
-impl Decodable for Inst {
+impl Decode for Inst {
 	#[bitmatch::bitmatch]
 	fn decode(raw: u32) -> Option<Self> {
 		// Get `n`
@@ -122,7 +122,7 @@ impl Decodable for Inst {
 		Some(Self { n, kind })
 	}
 }
-impl Encodable for Inst {
+impl Encode for Inst {
 	#[bitmatch::bitmatch]
 	fn encode(&self) -> u32 {
 		let n = self.n;

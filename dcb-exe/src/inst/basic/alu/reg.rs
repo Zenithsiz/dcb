@@ -2,7 +2,7 @@
 
 // Imports
 use crate::inst::{
-	basic::{Decodable, Encodable, ModifiesReg},
+	basic::{Decode, Encode, ModifiesReg},
 	parse::LineArg,
 	InstFmt, Parsable, ParseCtx, ParseError, Register,
 };
@@ -76,7 +76,7 @@ pub struct Inst {
 	pub kind: Kind,
 }
 
-impl Decodable for Inst {
+impl Decode for Inst {
 	#[bitmatch::bitmatch]
 	fn decode(raw: u32) -> Option<Self> {
 		let [s, t, d, f] = #[bitmatch]
@@ -105,7 +105,7 @@ impl Decodable for Inst {
 		})
 	}
 }
-impl Encodable for Inst {
+impl Encode for Inst {
 	#[bitmatch::bitmatch]
 	fn encode(&self) -> u32 {
 		#[rustfmt::skip]

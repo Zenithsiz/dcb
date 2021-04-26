@@ -3,7 +3,7 @@
 // Imports
 use crate::{
 	inst::{
-		basic::{Decodable, Encodable, ModifiesReg},
+		basic::{Decode, Encode, ModifiesReg},
 		parse::LineArg,
 		InstTarget, InstTargetFmt, Parsable, ParseCtx, ParseError, Register,
 	},
@@ -49,7 +49,7 @@ impl Inst {
 	}
 }
 
-impl Decodable for Inst {
+impl Decode for Inst {
 	#[bitmatch::bitmatch]
 	fn decode(raw: u32) -> Option<Self> {
 		let [p, i] = #[bitmatch]
@@ -68,7 +68,7 @@ impl Decodable for Inst {
 	}
 }
 
-impl Encodable for Inst {
+impl Encode for Inst {
 	#[bitmatch::bitmatch]
 	fn encode(&self) -> u32 {
 		let p: u32 = match self.kind {

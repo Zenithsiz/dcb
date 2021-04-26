@@ -3,7 +3,7 @@
 // Imports
 use super::ModifiesReg;
 use crate::inst::{
-	basic::{Decodable, Encodable},
+	basic::{Decode, Encode},
 	parse::LineArg,
 	InstFmt, Parsable, ParseCtx, ParseError, Register,
 };
@@ -99,7 +99,7 @@ impl Inst {
 	}
 }
 
-impl Decodable for Inst {
+impl Decode for Inst {
 	#[rustfmt::skip]
 	#[bitmatch::bitmatch]
 	fn decode(raw: u32) -> Option<Self> {
@@ -128,7 +128,7 @@ impl Decodable for Inst {
 	}
 }
 
-impl Encodable for Inst {
+impl Encode for Inst {
 	#[rustfmt::skip]
 	#[bitmatch::bitmatch]
 	fn encode(&self) -> u32 {

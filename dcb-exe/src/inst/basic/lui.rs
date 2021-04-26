@@ -3,7 +3,7 @@
 // Imports
 use super::ModifiesReg;
 use crate::inst::{
-	basic::{Decodable, Encodable},
+	basic::{Decode, Encode},
 	parse::LineArg,
 	InstFmt, Parsable, ParseCtx, ParseError, Register,
 };
@@ -20,7 +20,7 @@ pub struct Inst {
 	pub value: u16,
 }
 
-impl Decodable for Inst {
+impl Decode for Inst {
 	#[bitmatch::bitmatch]
 	fn decode(raw: u32) -> Option<Self> {
 		let [t, i] = #[bitmatch]
@@ -36,7 +36,7 @@ impl Decodable for Inst {
 	}
 }
 
-impl Encodable for Inst {
+impl Encode for Inst {
 	#[bitmatch::bitmatch]
 	fn encode(&self) -> u32 {
 		let t = self.dst.idx();

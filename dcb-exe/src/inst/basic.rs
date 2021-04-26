@@ -56,7 +56,7 @@ pub enum Inst {
 }
 
 
-impl Decodable for Inst {
+impl Decode for Inst {
 	#[rustfmt::skip]
 	fn decode(raw: u32) -> Option<Self> {
 		None
@@ -73,20 +73,35 @@ impl Decodable for Inst {
 	}
 }
 
-impl Encodable for Inst {
+
+/// Encode error
+#[derive(PartialEq, Clone, Debug, thiserror::Error)]
+pub enum EncodeError {
+	/// Sys
+	#[error("Unable to encode `Shift` instruction")]
+	Shift(shift::EncodeError),
+
+	/// Sys
+	#[error("Unable to encode `Sys` instruction")]
+	Sys(sys::EncodeError),
+}
+
+impl TryEncode for Inst {
+	type Error = EncodeError;
+
 	#[rustfmt::skip]
-	fn encode(&self) -> u32 {
+	fn try_encode(&self) -> Result<u32, Self::Error> {
 		match self {
-			Self::Alu  (inst) => inst.encode(),
-			Self::Cond (inst) => inst.encode(),
-			Self::Jmp  (inst) => inst.encode(),
-			Self::Load (inst) => inst.encode(),
-			Self::Lui  (inst) => inst.encode(),
-			Self::Mult (inst) => inst.encode(),
-			Self::Shift(inst) => inst.encode(),
-			Self::Store(inst) => inst.encode(),
-			Self::Sys  (inst) => inst.encode(),
-			Self::Co   (inst) => inst.encode(),
+			Self::Alu  (inst) => Ok(inst.encode()),
+			Self::Cond (inst) => Ok(inst.encode()),
+			Self::Jmp  (inst) => Ok(inst.encode()),
+			Self::Load (inst) => Ok(inst.encode()),
+			Self::Lui  (inst) => Ok(inst.encode()),
+			Self::Mult (inst) => Ok(inst.encode()),
+			Self::Shift(inst) => inst.try_encode().map_err(EncodeError::Shift),
+			Self::Store(inst) => Ok(inst.encode()),
+			Self::Sys  (inst) => inst.try_encode().map_err(EncodeError::Sys),
+			Self::Co   (inst) => Ok(inst.encode()),
 		}
 	}
 }
@@ -140,7 +155,7 @@ impl ModifiesReg for Inst {
 }
 
 // Any basic decodable instruction is 4 bytes
-impl<T: Decodable> InstSize for T {
+impl<T: Decode> InstSize for T {
 	fn size(&self) -> usize {
 		4
 	}
@@ -165,23 +180,30 @@ impl InstFmt for Inst {
 }
 
 /// A decodable basic instruction
-pub trait Decodable: Sized {
+pub trait Decode: Sized {
 	/// Decodes this instruction
 	#[must_use]
 	fn decode(raw: u32) -> Option<Self>;
 }
 
 /// An encodable basic instruction
-pub trait Encodable {
+pub trait Encode {
 	/// Encodes this instruction
 	#[must_use]
 	fn encode(&self) -> u32;
 }
 
-// TODO: TryEncode?
+/// An encodable basic instruction with possible failure
+pub trait TryEncode {
+	/// Error type
+	type Error;
+
+	/// Attempts to encode the instructions
+	fn try_encode(&self) -> Result<u32, Self::Error>;
+}
 
 /// Register modifying instructions
-pub trait ModifiesReg: Decodable {
+pub trait ModifiesReg {
 	/// Returns if this instruction modifies `reg`.
 	fn modifies_reg(&self, reg: Register) -> bool;
 }

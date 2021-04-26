@@ -7,7 +7,7 @@ pub mod reg;
 // Imports
 use super::ModifiesReg;
 use crate::inst::{
-	basic::{Decodable, Encodable},
+	basic::{Decode, Encode},
 	parse::LineArg,
 	InstFmt, Parsable, ParseCtx, ParseError,
 };
@@ -23,14 +23,14 @@ pub enum Inst {
 	Reg(reg::Inst),
 }
 
-impl Decodable for Inst {
+impl Decode for Inst {
 	fn decode(raw: u32) -> Option<Self> {
 		None.or_else(|| imm::Inst::decode(raw).map(Self::Imm))
 			.or_else(|| reg::Inst::decode(raw).map(Self::Reg))
 	}
 }
 
-impl Encodable for Inst {
+impl Encode for Inst {
 	fn encode(&self) -> u32 {
 		match self {
 			Inst::Imm(inst) => inst.encode(),

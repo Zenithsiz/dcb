@@ -23,7 +23,7 @@ pub use size::InstSize;
 pub use target::InstTarget;
 
 // Imports
-use self::{basic::Decodable as _, pseudo::Decodable as _};
+use self::{basic::Decode as _, pseudo::Decodable as _};
 use crate::{DataTable, FuncTable, Pos};
 use std::{borrow::Borrow, ops::Deref};
 

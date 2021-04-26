@@ -5,9 +5,8 @@ pub mod imm;
 pub mod reg;
 
 // Imports
-use super::ModifiesReg;
 use crate::inst::{
-	basic::{Decodable, Encodable},
+	basic::{Decode, Encode, ModifiesReg, TryEncode},
 	parse::LineArg,
 	InstFmt, Parsable, ParseCtx, ParseError, Register,
 };
@@ -23,18 +22,28 @@ pub enum Inst {
 	Reg(reg::Inst),
 }
 
-impl Decodable for Inst {
+impl Decode for Inst {
 	fn decode(raw: u32) -> Option<Self> {
 		None.or_else(|| imm::Inst::decode(raw).map(Self::Imm))
 			.or_else(|| reg::Inst::decode(raw).map(Self::Reg))
 	}
 }
 
-impl Encodable for Inst {
-	fn encode(&self) -> u32 {
+/// Encode error
+#[derive(PartialEq, Clone, Debug, thiserror::Error)]
+pub enum EncodeError {
+	/// Unable to encode `imm` instruction
+	#[error("Unable to encode `imm` instruction")]
+	Imm(imm::EncodeError),
+}
+
+impl TryEncode for Inst {
+	type Error = EncodeError;
+
+	fn try_encode(&self) -> Result<u32, Self::Error> {
 		match self {
-			Self::Imm(inst) => inst.encode(),
-			Self::Reg(inst) => inst.encode(),
+			Self::Imm(inst) => inst.try_encode().map_err(EncodeError::Imm),
+			Self::Reg(inst) => Ok(inst.encode()),
 		}
 	}
 }

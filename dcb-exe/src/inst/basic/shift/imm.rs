@@ -2,7 +2,7 @@
 
 // Imports
 use crate::inst::{
-	basic::{Decodable, Encodable, ModifiesReg},
+	basic::{Decode, ModifiesReg, TryEncode},
 	parse::LineArg,
 	InstFmt, Parsable, ParseCtx, ParseError, Register,
 };
@@ -50,7 +50,7 @@ pub struct Inst {
 	pub kind: Kind,
 }
 
-impl Decodable for Inst {
+impl Decode for Inst {
 	#[bitmatch::bitmatch]
 	fn decode(raw: u32) -> Option<Self> {
 		let [t, d, i, f] = #[bitmatch]
@@ -75,11 +75,22 @@ impl Decodable for Inst {
 	}
 }
 
-impl Encodable for Inst {
+/// Encode error
+#[derive(PartialEq, Clone, Debug, thiserror::Error)]
+pub enum EncodeError {
+	/// Rhs is too large
+	#[error("rhs is too large")]
+	Rhs,
+}
+
+impl TryEncode for Inst {
+	type Error = EncodeError;
+
 	#[bitmatch::bitmatch]
-	fn encode(&self) -> u32 {
-		// TODO: Maybe return error?
-		assert!(self.rhs < 32);
+	fn try_encode(&self) -> Result<u32, Self::Error> {
+		if self.rhs >= 32 {
+			return Err(EncodeError::Rhs);
+		}
 
 		let f: u32 = match self.kind {
 			Kind::LeftLogical => 0x0,
@@ -90,7 +101,7 @@ impl Encodable for Inst {
 		let d = self.dst.idx();
 		let i = self.rhs.zero_extended::<u32>();
 
-		bitpack!("000000_?????_ttttt_ddddd_iiiii_0000ff")
+		Ok(bitpack!("000000_?????_ttttt_ddddd_iiiii_0000ff"))
 	}
 }
 
