@@ -78,7 +78,16 @@ impl Encodable for Inst {
 
 impl<'a> Parsable<'a> for Inst {
 	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &'a str, args: &'a [LineArg], ctx: &'a Ctx) -> Result<Self, ParseError> {
-		let kind = Kind::from_mnemonic(mnemonic).ok_or(ParseError::UnknownMnemonic)?;
+		let kind = match mnemonic {
+			"lbi" => Kind::Byte,
+			"lhi" => Kind::HalfWord,
+			"lwli" => Kind::WordLeft,
+			"lwi" => Kind::Word,
+			"lbui" => Kind::ByteUnsigned,
+			"lhui" => Kind::HalfWordUnsigned,
+			"lwri" => Kind::WordRight,
+			_ => return Err(ParseError::UnknownMnemonic),
+		};
 
 		let (value, target) = match *args {
 			[LineArg::Register(value), ref arg] => (value, ctx.arg_pos(arg)?),
@@ -94,7 +103,15 @@ impl<'a> InstDisplay<'a> for Inst {
 	type Mnemonic = &'static str;
 
 	fn mnemonic<Ctx: DisplayCtx>(&'a self, _ctx: &Ctx) -> Self::Mnemonic {
-		self.kind.mnemonic()
+		match self.kind {
+			Kind::Byte => "lbi",
+			Kind::HalfWord => "lhi",
+			Kind::WordLeft => "lwli",
+			Kind::Word => "lwi",
+			Kind::ByteUnsigned => "lbui",
+			Kind::HalfWordUnsigned => "lhui",
+			Kind::WordRight => "lwri",
+		}
 	}
 
 	fn args<Ctx: DisplayCtx>(&'a self, _ctx: &Ctx) -> Self::Args {

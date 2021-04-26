@@ -31,6 +31,7 @@ pub trait ParseCtx {
 		match *arg {
 			LineArg::Literal(pos) => pos.try_into().map(Pos).map_err(|_| ParseError::LiteralOutOfRange),
 			LineArg::Label(ref label) => self.label_pos(label).ok_or(ParseError::UnknownLabel),
+			LineArg::LabelOffset { ref label, offset } => self.label_pos(label).map(|pos| pos + offset).ok_or(ParseError::UnknownLabel),
 			_ => Err(ParseError::InvalidArguments),
 		}
 	}

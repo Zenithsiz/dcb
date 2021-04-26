@@ -19,7 +19,7 @@ use dcb_bytes::Bytes;
 use dcb_exe::{
 	inst::{
 		parse::{line::InstParser, LineArg},
-		Inst, Label, LabelName,
+		Inst, InstSize, Label, LabelName, Parsable, ParseCtx,
 	},
 	Data, Pos,
 };
@@ -109,7 +109,11 @@ fn main() -> Result<(), anyhow::Error> {
 					}
 				}
 
-				let inst_size = Inst::size_from_parsed(&inst, cur_pos).map_err(|_| (n, anyhow::anyhow!("Unable to compile instruction")))?;
+				// TODO: Better solution than assembling the instruction with a dummy context.
+				let inst_size = Inst::parse(&inst.mnemonic, &inst.args, &DummyCtx { pos: cur_pos })
+					.context("Unable to compile instruction")
+					.map_err(|err| (n, err))?
+					.size();
 
 				assert!(insts.insert(cur_pos, (n, inst)).is_none());
 
@@ -139,8 +143,14 @@ fn main() -> Result<(), anyhow::Error> {
 
 	// For each instruction, pack it and output it to the file
 	for (&pos, (n, inst)) in &insts {
+		// Create the context
+		let ctx = Ctx {
+			pos,
+			labels_by_name: &labels_by_name,
+		};
+
 		let inst =
-			Inst::from_parsed(inst, pos, &labels_by_name).with_context(|| format!("Unable to compile instruction at {} in line {}", pos, n + 1))?;
+			Inst::parse(&inst.mnemonic, &inst.args, &ctx).with_context(|| format!("Unable to compile instruction at {} in line {}", pos, n + 1))?;
 
 		inst.write(&mut output_file).context("Unable to write to file")?;
 	}
@@ -150,7 +160,7 @@ fn main() -> Result<(), anyhow::Error> {
 
 	// Go back and write the header
 	let header = dcb_exe::Header {
-		pc0: header.pc0,
+		pc0: labels_by_name.get("start").context("No `start` label found")?.0,
 		gp0: header.gp0,
 		start_pos: header.start_pos,
 		size,
@@ -170,13 +180,45 @@ fn main() -> Result<(), anyhow::Error> {
 	Ok(())
 }
 
+/// Dummy context to get size
+struct DummyCtx {
+	/// Current position
+	pos: Pos,
+}
+
+impl ParseCtx for DummyCtx {
+	fn cur_pos(&self) -> Pos {
+		self.pos
+	}
+
+	fn label_pos(&self, _label: &str) -> Option<Pos> {
+		Some(self.pos)
+	}
+}
+
+/// Context
+struct Ctx<'a> {
+	/// Current position
+	pos: Pos,
+
+	/// All labels by name
+	labels_by_name: &'a HashMap<LabelName, Pos>,
+}
+
+impl ParseCtx for Ctx<'_> {
+	fn cur_pos(&self) -> Pos {
+		self.pos
+	}
+
+	fn label_pos(&self, label: &str) -> Option<Pos> {
+		self.labels_by_name.get(label).copied()
+	}
+}
+
 /// Header
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 #[derive(serde::Deserialize)]
-pub struct Header {
-	/// Initial program counter
-	pub pc0: u32,
-
+struct Header {
 	/// Initial global pointer
 	pub gp0: u32,
 

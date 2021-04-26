@@ -21,9 +21,13 @@ pub use reg::Register;
 pub use size::InstSize;
 
 // Imports
-use self::{basic::Decode as _, parse::LineArg, pseudo::Decodable as _};
+use self::{
+	basic::{Decode as _, TryEncode as _},
+	parse::LineArg,
+	pseudo::{Decodable as _, Encodable as _},
+};
 use crate::{DataTable, FuncTable, Pos};
-use std::{borrow::Borrow, ops::Deref};
+use std::{borrow::Borrow, io, ops::Deref};
 
 /// An assembler instruction.
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -94,6 +98,21 @@ impl<'a> Inst<'a> {
 		// Else read it as a directive
 		Directive::decode(pos, bytes).map(Self::Directive).ok_or(DecodeError::NoBytes)
 	}
+
+	/// Writes an instruction
+	pub fn write(&self, f: &mut impl io::Write) -> Result<(), WriteError> {
+		match self {
+			Inst::Basic(inst) => f.write_all(&inst.try_encode().map_err(WriteError::EncodeBasic)?.to_le_bytes())?,
+			Inst::Pseudo(inst) => {
+				for inst in inst.encode() {
+					f.write_all(&inst.try_encode().map_err(WriteError::EncodeBasic)?.to_le_bytes())?;
+				}
+			},
+			Inst::Directive(directive) => directive.write(f)?,
+		};
+
+		Ok(())
+	}
 }
 
 impl<'a> Parsable<'a> for Inst<'a> {
@@ -152,6 +171,18 @@ impl<'a> InstSize for Inst<'a> {
 			Inst::Directive(directive) => directive.size(),
 		}
 	}
+}
+
+/// Write error
+#[derive(Debug, thiserror::Error)]
+pub enum WriteError {
+	/// Io
+	#[error("Unable to write")]
+	Write(#[from] io::Error),
+
+	/// Encode basic
+	#[error("Unable to encode `basic` instruction")]
+	EncodeBasic(#[source] basic::EncodeError),
 }
 
 /// Label

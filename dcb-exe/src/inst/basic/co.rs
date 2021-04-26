@@ -209,6 +209,7 @@ impl<'a> Parsable<'a> for Inst {
 			"lwc0" | "lwc1" | "lwc2" | "lwc3" | "swc0" | "swc1" | "swc2" | "swc3" => {
 				let n = mnemonic[3..].parse().expect("Unable to parse 0..=3");
 				let (dst, src, offset) = match *args {
+					[LineArg::Literal(dst), LineArg::Register(src)] => (dst.try_into().map_err(|_| ParseError::LiteralOutOfRange)?, src, 0),
 					[LineArg::Literal(dst), LineArg::RegisterOffset { register: src, offset }] => (
 						dst.try_into().map_err(|_| ParseError::LiteralOutOfRange)?,
 						src,

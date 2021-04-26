@@ -82,6 +82,7 @@ impl<'a> Parsable<'a> for Inst {
 			},
 
 			"jalr" => match *args {
+				[LineArg::Register(target)] => (target, Kind::JumpLink(Register::Ra)),
 				[LineArg::Register(target), LineArg::Register(reg)] => (target, Kind::JumpLink(reg)),
 				_ => return Err(ParseError::InvalidArguments),
 			},

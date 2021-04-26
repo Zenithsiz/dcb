@@ -1,7 +1,7 @@
 //! Instruction position
 
 // Imports
-use int_conv::{SignExtended, Signed};
+use int_conv::{SignExtended, Signed, Truncated};
 use std::{convert::TryFrom, ops};
 
 /// An instruction position
@@ -63,6 +63,19 @@ impl ops::Add<i32> for Pos {
 
 	fn add(self, rhs: i32) -> Self::Output {
 		Self((self.0.as_signed().wrapping_add(rhs)).as_unsigned())
+	}
+}
+
+// `Pos + i64 = Pos`
+impl ops::Add<i64> for Pos {
+	type Output = Self;
+
+	fn add(self, rhs: i64) -> Self::Output {
+		Self(
+			(self.0.as_signed().sign_extended::<i64>().wrapping_add(rhs))
+				.truncated::<i32>()
+				.as_unsigned(),
+		)
 	}
 }
 

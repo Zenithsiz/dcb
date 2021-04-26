@@ -259,7 +259,7 @@ enum LabelDisplay<'a> {
 impl<'a> fmt::Display for LabelDisplay<'a> {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 		match self {
-			LabelDisplay::CurFuncLabel(label) => write!(f, "{label}"),
+			LabelDisplay::CurFuncLabel(label) => write!(f, ".{label}"),
 			LabelDisplay::OtherFuncLabel { func, label } => write!(f, "{func}.{label}"),
 			LabelDisplay::OtherFunc { func } => write!(f, "{func}"),
 			LabelDisplay::Data { name } => write!(f, "{name}"),
