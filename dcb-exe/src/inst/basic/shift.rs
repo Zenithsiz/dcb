@@ -5,11 +5,11 @@ pub mod imm;
 pub mod reg;
 
 // Imports
-use super::{ModifiesReg, Parsable, ParseError};
+use super::ModifiesReg;
 use crate::inst::{
 	basic::{Decodable, Encodable},
 	parse::LineArg,
-	InstFmt, ParseCtx, Register,
+	InstFmt, Parsable, ParseCtx, ParseError, Register,
 };
 
 /// Alu register instructions

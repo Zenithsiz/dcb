@@ -17,7 +17,7 @@ pub mod store;
 pub mod sys;
 
 // Imports
-use super::{parse::LineArg, InstSize, ParseCtx, Register};
+use super::{parse::LineArg, InstSize, ParseCtx, ParseError, Register};
 use crate::inst::InstFmt;
 
 /// All basic instructions
@@ -93,7 +93,7 @@ impl Encodable for Inst {
 	}
 }
 
-impl Parsable for Inst {
+impl super::parse::Parsable for Inst {
 	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &str, args: &[LineArg], ctx: &Ctx) -> Result<Self, ParseError> {
 		#[rustfmt::skip]
 		let parsers: &[&dyn Fn() -> Result<Self, ParseError>] = &[
@@ -181,40 +181,6 @@ pub trait Encodable: Decodable {
 	/// Encodes this instruction
 	#[must_use]
 	fn encode(&self) -> Self::Raw;
-}
-
-/// Parsing error
-#[derive(PartialEq, Clone, Debug, thiserror::Error)]
-pub enum ParseError {
-	/// Unknown mnemonic
-	#[error("Unknown mnemonic")]
-	UnknownMnemonic,
-
-	/// Literal was out of range
-	#[error("Literal out of range")]
-	LiteralOutOfRange,
-
-	/// Invalid arguments
-	#[error("Invalid arguments")]
-	InvalidArguments,
-
-	/// Relative jump is too far
-	#[error("Relative jump is too far")]
-	RelativeJumpTooFar,
-
-	/// Unknown label
-	#[error("Unknown label")]
-	UnknownLabel,
-
-	/// Target is not properly aligned
-	#[error("Target is not properly aligned")]
-	TargetAlign,
-}
-
-/// Instruction parsing
-pub trait Parsable: Sized {
-	/// Parses this instruction
-	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &str, args: &[LineArg], ctx: &Ctx) -> Result<Self, ParseError>;
 }
 
 /// Register modifying instructions

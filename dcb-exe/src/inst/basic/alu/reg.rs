@@ -2,8 +2,9 @@
 
 // Imports
 use crate::inst::{
-	basic::{Decodable, Encodable, ModifiesReg, Parsable, ParseError},
-	parse::LineArg, InstFmt, ParseCtx, Register,
+	basic::{Decodable, Encodable, ModifiesReg},
+	parse::LineArg,
+	InstFmt, Parsable, ParseCtx, ParseError, Register,
 };
 
 /// Alu register instruction kind
@@ -153,8 +154,9 @@ impl Parsable for Inst {
 			[LineArg::Register(_), LineArg::Register(_)] if ["slt", "sltu"].contains(&mnemonic) => Err(ParseError::InvalidArguments),
 
 			// Else parse both `$dst, $lhs, $rhs` and `$dst, $rhs`.
-			[LineArg::Register(lhs @ dst), LineArg::Register(rhs)] |
-			[LineArg::Register(dst), LineArg::Register(lhs), LineArg::Register(rhs)] => Ok(Self { dst, lhs, rhs, kind }),
+			[LineArg::Register(lhs @ dst), LineArg::Register(rhs)] | [LineArg::Register(dst), LineArg::Register(lhs), LineArg::Register(rhs)] => {
+				Ok(Self { dst, lhs, rhs, kind })
+			},
 			_ => Err(ParseError::InvalidArguments),
 		}
 	}

@@ -2,9 +2,9 @@
 
 // Imports
 use crate::inst::{
-	basic::{Decodable, Encodable, ModifiesReg, Parsable, ParseError},
+	basic::{Decodable, Encodable, ModifiesReg},
 	parse::LineArg,
-	InstFmt, ParseCtx, Register,
+	InstFmt, Parsable, ParseCtx, ParseError, Register,
 };
 
 /// Jmp register instruction kind

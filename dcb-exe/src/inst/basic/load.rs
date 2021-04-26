@@ -1,14 +1,15 @@
 //! Load instructions
 
 // Imports
-use super::{ModifiesReg, Parsable, ParseError};
+use super::ModifiesReg;
 use crate::inst::{
 	basic::{Decodable, Encodable},
 	parse::LineArg,
-	InstFmt, ParseCtx, Register,
+	InstFmt, Parsable, ParseCtx, ParseError, Register,
 };
 use dcb_util::SignedHex;
-use int_conv::{Signed, Truncated, ZeroExtended};use std::convert::TryInto;
+use int_conv::{Signed, Truncated, ZeroExtended};
+use std::convert::TryInto;
 
 /// Instruction kind
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]

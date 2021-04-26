@@ -1,15 +1,17 @@
 //! Condition branches
 
 // Imports
-use super::{ModifiesReg, Parsable, ParseError};
+use super::ModifiesReg;
 use crate::{
 	inst::{
 		basic::{Decodable, Encodable},
-		parse::LineArg, InstTarget, InstTargetFmt, ParseCtx, Register,
+		parse::LineArg,
+		InstTarget, InstTargetFmt, Parsable, ParseCtx, ParseError, Register,
 	},
 	Pos,
 };
-use int_conv::{SignExtended, Signed, Truncated, ZeroExtended};use std::{convert::TryInto, fmt};
+use int_conv::{SignExtended, Signed, Truncated, ZeroExtended};
+use std::{convert::TryInto, fmt};
 
 /// Instruction kind
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]

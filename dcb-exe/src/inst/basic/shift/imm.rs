@@ -2,11 +2,12 @@
 
 // Imports
 use crate::inst::{
-	basic::{Decodable, Encodable, ModifiesReg, Parsable, ParseError},
+	basic::{Decodable, Encodable, ModifiesReg},
 	parse::LineArg,
-	InstFmt, ParseCtx, Register,
+	InstFmt, Parsable, ParseCtx, ParseError, Register,
 };
-use int_conv::{Truncated, ZeroExtended};use std::convert::TryInto;
+use int_conv::{Truncated, ZeroExtended};
+use std::convert::TryInto;
 
 /// Shift immediate instruction kind
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]

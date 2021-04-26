@@ -1,11 +1,11 @@
 //! Lui instruction
 
 // Imports
-use super::{ModifiesReg, Parsable, ParseError};
+use super::ModifiesReg;
 use crate::inst::{
 	basic::{Decodable, Encodable},
 	parse::LineArg,
-	InstFmt, ParseCtx, Register,
+	InstFmt, Parsable, ParseCtx, ParseError, Register,
 };
 use int_conv::{Truncated, ZeroExtended};
 use std::convert::TryInto;

@@ -3,8 +3,9 @@
 // Imports
 use crate::{
 	inst::{
-		basic::{Decodable, Encodable, ModifiesReg, Parsable, ParseError},
-		parse::LineArg, InstTarget, InstTargetFmt, ParseCtx, Register,
+		basic::{Decodable, Encodable, ModifiesReg},
+		parse::LineArg,
+		InstTarget, InstTargetFmt, Parsable, ParseCtx, ParseError, Register,
 	},
 	Pos,
 };
