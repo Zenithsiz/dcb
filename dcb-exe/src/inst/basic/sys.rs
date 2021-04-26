@@ -4,7 +4,8 @@
 use super::{ModifiesReg, Parsable, ParseError};
 use crate::inst::{
 	basic::{Decodable, Encodable},
-	parse, InstFmt, ParseCtx, Register,
+	parse::LineArg,
+	InstFmt, ParseCtx, Register,
 };
 use std::convert::TryInto;
 
@@ -78,7 +79,7 @@ impl Encodable for Inst {
 
 
 impl Parsable for Inst {
-	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &str, args: &[parse::Arg], _ctx: &Ctx) -> Result<Self, ParseError> {
+	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &str, args: &[LineArg], _ctx: &Ctx) -> Result<Self, ParseError> {
 		let kind = match mnemonic {
 			"sys" => Kind::Sys,
 			"break" => Kind::Break,
@@ -86,7 +87,7 @@ impl Parsable for Inst {
 		};
 
 		let comment = match *args {
-			[parse::Arg::Literal(comment)] => comment.try_into().map_err(|_| ParseError::LiteralOutOfRange)?,
+			[LineArg::Literal(comment)] => comment.try_into().map_err(|_| ParseError::LiteralOutOfRange)?,
 			_ => return Err(ParseError::InvalidArguments),
 		};
 

@@ -4,7 +4,8 @@
 use super::{ModifiesReg, Parsable, ParseError};
 use crate::inst::{
 	basic::{Decodable, Encodable},
-	parse, InstFmt, ParseCtx, Register,
+	parse::LineArg,
+	InstFmt, ParseCtx, Register,
 };
 
 /// Operation kind
@@ -155,11 +156,11 @@ impl Encodable for Inst {
 }
 
 impl Parsable for Inst {
-	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &str, args: &[parse::Arg], _ctx: &Ctx) -> Result<Self, ParseError> {
+	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &str, args: &[LineArg], _ctx: &Ctx) -> Result<Self, ParseError> {
 		let inst = match mnemonic {
 			"mflo" | "mfhi" | "mtlo" | "mthi" => {
 				let reg = match *args {
-					[parse::Arg::Register(reg)] => reg,
+					[LineArg::Register(reg)] => reg,
 					_ => return Err(ParseError::InvalidArguments),
 				};
 
@@ -179,7 +180,7 @@ impl Parsable for Inst {
 			// Mult / Div
 			"mult" | "multu" | "div" | "divu" => {
 				let (lhs, rhs) = match *args {
-					[parse::Arg::Register(lhs), parse::Arg::Register(rhs)] => (lhs, rhs),
+					[LineArg::Register(lhs), LineArg::Register(rhs)] => (lhs, rhs),
 					_ => return Err(ParseError::InvalidArguments),
 				};
 

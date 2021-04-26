@@ -8,7 +8,8 @@ pub mod reg;
 use super::{ModifiesReg, Parsable, ParseError};
 use crate::inst::{
 	basic::{Decodable, Encodable},
-	parse, InstFmt, ParseCtx, Register,
+	parse::LineArg,
+	InstFmt, ParseCtx, Register,
 };
 
 /// Alu register instructions
@@ -41,7 +42,7 @@ impl Encodable for Inst {
 }
 
 impl Parsable for Inst {
-	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &str, args: &[parse::Arg], ctx: &Ctx) -> Result<Self, ParseError> {
+	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &str, args: &[LineArg], ctx: &Ctx) -> Result<Self, ParseError> {
 		match imm::Inst::parse(mnemonic, args, ctx) {
 			Ok(inst) => Ok(Self::Imm(inst)),
 			Err(ParseError::UnknownMnemonic) => reg::Inst::parse(mnemonic, args, ctx).map(Self::Reg),

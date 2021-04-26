@@ -5,12 +5,11 @@ use super::{ModifiesReg, Parsable, ParseError};
 use crate::{
 	inst::{
 		basic::{Decodable, Encodable},
-		parse, InstTarget, InstTargetFmt, ParseCtx, Register,
+		parse::LineArg, InstTarget, InstTargetFmt, ParseCtx, Register,
 	},
 	Pos,
 };
-use int_conv::{SignExtended, Signed, Truncated, ZeroExtended};
-use std::{convert::TryInto, fmt};
+use int_conv::{SignExtended, Signed, Truncated, ZeroExtended};use std::{convert::TryInto, fmt};
 
 /// Instruction kind
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -116,7 +115,7 @@ impl Encodable for Inst {
 }
 
 impl Parsable for Inst {
-	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &str, args: &[parse::Arg], ctx: &Ctx) -> Result<Self, ParseError> {
+	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &str, args: &[LineArg], ctx: &Ctx) -> Result<Self, ParseError> {
 		// Note: Literals are absolute, not relative
 
 		// Calculates the offset between a position and the current one
@@ -140,43 +139,43 @@ impl Parsable for Inst {
 				_ => return Err(ParseError::InvalidArguments),
 			},
 			"beqz" => match *args {
-				[parse::Arg::Register(arg), ref target] => (arg, target_arg_to_offset(target)?, Kind::Equal(Register::Zr)),
+				[LineArg::Register(arg), ref target] => (arg, target_arg_to_offset(target)?, Kind::Equal(Register::Zr)),
 				_ => return Err(ParseError::InvalidArguments),
 			},
 			"bnez" => match *args {
-				[parse::Arg::Register(arg), ref target] => (arg, target_arg_to_offset(target)?, Kind::NotEqual(Register::Zr)),
+				[LineArg::Register(arg), ref target] => (arg, target_arg_to_offset(target)?, Kind::NotEqual(Register::Zr)),
 				_ => return Err(ParseError::InvalidArguments),
 			},
 			"beq" => match *args {
-				[parse::Arg::Register(arg), parse::Arg::Register(reg), ref target] => (arg, target_arg_to_offset(target)?, Kind::Equal(reg)),
+				[LineArg::Register(arg), LineArg::Register(reg), ref target] => (arg, target_arg_to_offset(target)?, Kind::Equal(reg)),
 				_ => return Err(ParseError::InvalidArguments),
 			},
 			"bne" => match *args {
-				[parse::Arg::Register(arg), parse::Arg::Register(reg), ref target] => (arg, target_arg_to_offset(target)?, Kind::NotEqual(reg)),
+				[LineArg::Register(arg), LineArg::Register(reg), ref target] => (arg, target_arg_to_offset(target)?, Kind::NotEqual(reg)),
 				_ => return Err(ParseError::InvalidArguments),
 			},
 			"blez" => match *args {
-				[parse::Arg::Register(arg), ref target] => (arg, target_arg_to_offset(target)?, Kind::LessOrEqualZero),
+				[LineArg::Register(arg), ref target] => (arg, target_arg_to_offset(target)?, Kind::LessOrEqualZero),
 				_ => return Err(ParseError::InvalidArguments),
 			},
 			"bgtz" => match *args {
-				[parse::Arg::Register(arg), ref target] => (arg, target_arg_to_offset(target)?, Kind::GreaterThanZero),
+				[LineArg::Register(arg), ref target] => (arg, target_arg_to_offset(target)?, Kind::GreaterThanZero),
 				_ => return Err(ParseError::InvalidArguments),
 			},
 			"bltz" => match *args {
-				[parse::Arg::Register(arg), ref target] => (arg, target_arg_to_offset(target)?, Kind::LessThanZero),
+				[LineArg::Register(arg), ref target] => (arg, target_arg_to_offset(target)?, Kind::LessThanZero),
 				_ => return Err(ParseError::InvalidArguments),
 			},
 			"bgez" => match *args {
-				[parse::Arg::Register(arg), ref target] => (arg, target_arg_to_offset(target)?, Kind::GreaterOrEqualZero),
+				[LineArg::Register(arg), ref target] => (arg, target_arg_to_offset(target)?, Kind::GreaterOrEqualZero),
 				_ => return Err(ParseError::InvalidArguments),
 			},
 			"bltzal" => match *args {
-				[parse::Arg::Register(arg), ref target] => (arg, target_arg_to_offset(target)?, Kind::LessThanZeroLink),
+				[LineArg::Register(arg), ref target] => (arg, target_arg_to_offset(target)?, Kind::LessThanZeroLink),
 				_ => return Err(ParseError::InvalidArguments),
 			},
 			"bgezal" => match *args {
-				[parse::Arg::Register(arg), ref target] => (arg, target_arg_to_offset(target)?, Kind::GreaterOrEqualZeroLink),
+				[LineArg::Register(arg), ref target] => (arg, target_arg_to_offset(target)?, Kind::GreaterOrEqualZeroLink),
 				_ => return Err(ParseError::InvalidArguments),
 			},
 

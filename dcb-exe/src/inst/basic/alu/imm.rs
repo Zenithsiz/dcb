@@ -3,11 +3,10 @@
 // Imports
 use crate::inst::{
 	basic::{Decodable, Encodable, ModifiesReg, Parsable, ParseError},
-	parse, InstFmt, ParseCtx, Register,
+	parse::LineArg, InstFmt, ParseCtx, Register,
 };
 use dcb_util::SignedHex;
-use int_conv::{Signed, Truncated, ZeroExtended};
-use std::{convert::TryInto, fmt};
+use int_conv::{Signed, Truncated, ZeroExtended};use std::{convert::TryInto, fmt};
 
 /// Instruction kind
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -123,7 +122,7 @@ impl Encodable for Inst {
 }
 
 impl Parsable for Inst {
-	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &str, args: &[parse::Arg], _ctx: &Ctx) -> Result<Self, ParseError> {
+	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &str, args: &[LineArg], _ctx: &Ctx) -> Result<Self, ParseError> {
 		#[rustfmt::skip]
 		let to_kind = match mnemonic {
 			"addi"  => |value: i64| value.try_into().map(Kind::Add                ),
@@ -138,15 +137,16 @@ impl Parsable for Inst {
 
 		match *args {
 			// Disallow `slti` and `sltiu` in short form
-			[parse::Arg::Register(_), parse::Arg::Literal(_)] if ["slti", "sltiu"].contains(&mnemonic) => Err(ParseError::InvalidArguments),
+			[LineArg::Register(_), LineArg::Literal(_)] if ["slti", "sltiu"].contains(&mnemonic) => Err(ParseError::InvalidArguments),
 
 			// Else parse both `$dst, $lhs, value` and `$dst, value`.
-			[parse::Arg::Register(lhs @ dst), parse::Arg::Literal(value)] |
-			[parse::Arg::Register(dst), parse::Arg::Register(lhs), parse::Arg::Literal(value)] => Ok(Self {
-				dst,
-				lhs,
-				kind: to_kind(value).map_err(|_| ParseError::LiteralOutOfRange)?,
-			}),
+			[LineArg::Register(lhs @ dst), LineArg::Literal(value)] | [LineArg::Register(dst), LineArg::Register(lhs), LineArg::Literal(value)] => {
+				Ok(Self {
+					dst,
+					lhs,
+					kind: to_kind(value).map_err(|_| ParseError::LiteralOutOfRange)?,
+				})
+			},
 			_ => Err(ParseError::InvalidArguments),
 		}
 	}

@@ -3,7 +3,7 @@
 // Imports
 use crate::inst::{
 	basic::{Decodable, Encodable, ModifiesReg, Parsable, ParseError},
-	parse, InstFmt, ParseCtx, Register,
+	parse::LineArg, InstFmt, ParseCtx, Register,
 };
 
 /// Alu register instruction kind
@@ -132,7 +132,7 @@ impl Encodable for Inst {
 }
 
 impl Parsable for Inst {
-	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &str, args: &[parse::Arg], _ctx: &Ctx) -> Result<Self, ParseError> {
+	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &str, args: &[LineArg], _ctx: &Ctx) -> Result<Self, ParseError> {
 		#[rustfmt::skip]
 		let kind = match mnemonic {
 			"add"  => Kind::Add                ,
@@ -150,11 +150,11 @@ impl Parsable for Inst {
 
 		match *args {
 			// Disallow `slt` and `sltu` in short form
-			[parse::Arg::Register(_), parse::Arg::Register(_)] if ["slt", "sltu"].contains(&mnemonic) => Err(ParseError::InvalidArguments),
+			[LineArg::Register(_), LineArg::Register(_)] if ["slt", "sltu"].contains(&mnemonic) => Err(ParseError::InvalidArguments),
 
 			// Else parse both `$dst, $lhs, $rhs` and `$dst, $rhs`.
-			[parse::Arg::Register(lhs @ dst), parse::Arg::Register(rhs)] |
-			[parse::Arg::Register(dst), parse::Arg::Register(lhs), parse::Arg::Register(rhs)] => Ok(Self { dst, lhs, rhs, kind }),
+			[LineArg::Register(lhs @ dst), LineArg::Register(rhs)] |
+			[LineArg::Register(dst), LineArg::Register(lhs), LineArg::Register(rhs)] => Ok(Self { dst, lhs, rhs, kind }),
 			_ => Err(ParseError::InvalidArguments),
 		}
 	}

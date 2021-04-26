@@ -4,7 +4,8 @@
 use super::{ModifiesReg, Parsable, ParseError};
 use crate::inst::{
 	basic::{Decodable, Encodable},
-	parse, InstFmt, ParseCtx, Register,
+	parse::LineArg,
+	InstFmt, ParseCtx, Register,
 };
 use dcb_util::SignedHex;
 use int_conv::{Signed, Truncated, ZeroExtended};
@@ -106,7 +107,7 @@ impl Encodable for Inst {
 }
 
 impl Parsable for Inst {
-	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &str, args: &[parse::Arg], _ctx: &Ctx) -> Result<Self, ParseError> {
+	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &str, args: &[LineArg], _ctx: &Ctx) -> Result<Self, ParseError> {
 		let kind = match mnemonic {
 			"sb" => Kind::Byte,
 			"sh" => Kind::HalfWord,
@@ -117,8 +118,8 @@ impl Parsable for Inst {
 		};
 
 		let (value, addr, offset) = match *args {
-			[parse::Arg::Register(value), parse::Arg::Register(addr)] => (value, addr, 0),
-			[parse::Arg::Register(value), parse::Arg::RegisterOffset { register: addr, offset }] => {
+			[LineArg::Register(value), LineArg::Register(addr)] => (value, addr, 0),
+			[LineArg::Register(value), LineArg::RegisterOffset { register: addr, offset }] => {
 				(value, addr, offset.try_into().map_err(|_| ParseError::LiteralOutOfRange)?)
 			},
 			_ => return Err(ParseError::InvalidArguments),

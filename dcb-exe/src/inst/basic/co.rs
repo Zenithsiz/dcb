@@ -4,7 +4,8 @@
 use super::{ModifiesReg, Parsable, ParseError};
 use crate::inst::{
 	basic::{Decodable, Encodable},
-	parse, InstFmt, ParseCtx, Register,
+	parse::LineArg,
+	InstFmt, ParseCtx, Register,
 };
 use dcb_util::SignedHex;
 use int_conv::{Signed, Truncated, ZeroExtended};
@@ -170,12 +171,12 @@ impl Encodable for Inst {
 }
 
 impl Parsable for Inst {
-	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &str, args: &[parse::Arg], _ctx: &Ctx) -> Result<Self, ParseError> {
+	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &str, args: &[LineArg], _ctx: &Ctx) -> Result<Self, ParseError> {
 		let inst = match mnemonic {
 			"cop0" | "cop1" | "cop2" | "cop3" => {
 				let n = mnemonic[3..].parse().expect("Unable to parse 0..=3");
 				let imm = match *args {
-					[parse::Arg::Literal(imm)] => imm.try_into().map_err(|_| ParseError::LiteralOutOfRange)?,
+					[LineArg::Literal(imm)] => imm.try_into().map_err(|_| ParseError::LiteralOutOfRange)?,
 					_ => return Err(ParseError::InvalidArguments),
 				};
 
@@ -185,7 +186,7 @@ impl Parsable for Inst {
 			"ctc2" | "ctc3" => {
 				let n = mnemonic[3..].parse().expect("Unable to parse 0..=3");
 				let (reg, imm) = match *args {
-					[parse::Arg::Register(dst), parse::Arg::Literal(src)] => (dst, src.try_into().map_err(|_| ParseError::LiteralOutOfRange)?),
+					[LineArg::Register(dst), LineArg::Literal(src)] => (dst, src.try_into().map_err(|_| ParseError::LiteralOutOfRange)?),
 					_ => return Err(ParseError::InvalidArguments),
 				};
 
@@ -210,7 +211,7 @@ impl Parsable for Inst {
 			"lwc0" | "lwc1" | "lwc2" | "lwc3" | "swc0" | "swc1" | "swc2" | "swc3" => {
 				let n = mnemonic[3..].parse().expect("Unable to parse 0..=3");
 				let (dst, src, offset) = match *args {
-					[parse::Arg::Literal(dst), parse::Arg::RegisterOffset { register: src, offset }] => (
+					[LineArg::Literal(dst), LineArg::RegisterOffset { register: src, offset }] => (
 						dst.try_into().map_err(|_| ParseError::LiteralOutOfRange)?,
 						src,
 						offset.try_into().map_err(|_| ParseError::LiteralOutOfRange)?,

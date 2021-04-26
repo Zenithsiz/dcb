@@ -17,7 +17,7 @@ pub mod store;
 pub mod sys;
 
 // Imports
-use super::{parse, InstSize, ParseCtx, Register};
+use super::{parse::LineArg, InstSize, ParseCtx, Register};
 use crate::inst::InstFmt;
 
 /// All basic instructions
@@ -94,7 +94,7 @@ impl Encodable for Inst {
 }
 
 impl Parsable for Inst {
-	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &str, args: &[parse::Arg], ctx: &Ctx) -> Result<Self, ParseError> {
+	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &str, args: &[LineArg], ctx: &Ctx) -> Result<Self, ParseError> {
 		#[rustfmt::skip]
 		let parsers: &[&dyn Fn() -> Result<Self, ParseError>] = &[
 			&|| alu  ::Inst::parse(mnemonic, args, ctx).map(Self::Alu  ),
@@ -214,7 +214,7 @@ pub enum ParseError {
 /// Instruction parsing
 pub trait Parsable: Sized {
 	/// Parses this instruction
-	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &str, args: &[parse::Arg], ctx: &Ctx) -> Result<Self, ParseError>;
+	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &str, args: &[LineArg], ctx: &Ctx) -> Result<Self, ParseError>;
 }
 
 /// Register modifying instructions

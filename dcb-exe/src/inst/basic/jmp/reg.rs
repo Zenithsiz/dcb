@@ -3,7 +3,8 @@
 // Imports
 use crate::inst::{
 	basic::{Decodable, Encodable, ModifiesReg, Parsable, ParseError},
-	parse, InstFmt, ParseCtx, Register,
+	parse::LineArg,
+	InstFmt, ParseCtx, Register,
 };
 
 /// Jmp register instruction kind
@@ -74,15 +75,15 @@ impl Encodable for Inst {
 
 
 impl Parsable for Inst {
-	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &str, args: &[parse::Arg], _ctx: &Ctx) -> Result<Self, ParseError> {
+	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &str, args: &[LineArg], _ctx: &Ctx) -> Result<Self, ParseError> {
 		let (target, kind) = match mnemonic {
 			"jr" => match *args {
-				[parse::Arg::Register(target)] => (target, Kind::Jump),
+				[LineArg::Register(target)] => (target, Kind::Jump),
 				_ => return Err(ParseError::InvalidArguments),
 			},
 
 			"jalr" => match *args {
-				[parse::Arg::Register(target), parse::Arg::Register(reg)] => (target, Kind::JumpLink(reg)),
+				[LineArg::Register(target), LineArg::Register(reg)] => (target, Kind::JumpLink(reg)),
 				_ => return Err(ParseError::InvalidArguments),
 			},
 

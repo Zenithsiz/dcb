@@ -3,7 +3,8 @@
 // Imports
 use crate::inst::{
 	basic::{Decodable, Encodable, ModifiesReg, Parsable, ParseError},
-	parse, InstFmt, ParseCtx, Register,
+	parse::LineArg,
+	InstFmt, ParseCtx, Register,
 };
 
 /// Shift register instruction kind
@@ -92,7 +93,7 @@ impl Encodable for Inst {
 }
 
 impl Parsable for Inst {
-	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &str, args: &[parse::Arg], _ctx: &Ctx) -> Result<Self, ParseError> {
+	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &str, args: &[LineArg], _ctx: &Ctx) -> Result<Self, ParseError> {
 		let kind = match mnemonic {
 			"sllv" => Kind::LeftLogical,
 			"srlv" => Kind::RightLogical,
@@ -101,8 +102,9 @@ impl Parsable for Inst {
 		};
 
 		match *args {
-			[parse::Arg::Register(lhs @ dst), parse::Arg::Register(rhs)] |
-			[parse::Arg::Register(dst), parse::Arg::Register(lhs), parse::Arg::Register(rhs)] => Ok(Self { dst, lhs, rhs, kind }),
+			[LineArg::Register(lhs @ dst), LineArg::Register(rhs)] | [LineArg::Register(dst), LineArg::Register(lhs), LineArg::Register(rhs)] => {
+				Ok(Self { dst, lhs, rhs, kind })
+			},
 			_ => Err(ParseError::InvalidArguments),
 		}
 	}

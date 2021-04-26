@@ -4,7 +4,7 @@
 use crate::{
 	inst::{
 		basic::{Decodable, Encodable, ModifiesReg, Parsable, ParseError},
-		parse, InstTarget, InstTargetFmt, ParseCtx, Register,
+		parse::LineArg, InstTarget, InstTargetFmt, ParseCtx, Register,
 	},
 	Pos,
 };
@@ -83,7 +83,7 @@ impl Encodable for Inst {
 }
 
 impl Parsable for Inst {
-	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &str, args: &[parse::Arg], ctx: &Ctx) -> Result<Self, ParseError> {
+	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &str, args: &[LineArg], ctx: &Ctx) -> Result<Self, ParseError> {
 		let (pos, kind) = match mnemonic {
 			"j" => match args {
 				[arg] => (ctx.arg_pos(arg)?, Kind::Jump),

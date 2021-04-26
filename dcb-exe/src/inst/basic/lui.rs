@@ -4,7 +4,8 @@
 use super::{ModifiesReg, Parsable, ParseError};
 use crate::inst::{
 	basic::{Decodable, Encodable},
-	parse, InstFmt, ParseCtx, Register,
+	parse::LineArg,
+	InstFmt, ParseCtx, Register,
 };
 use int_conv::{Truncated, ZeroExtended};
 use std::convert::TryInto;
@@ -48,13 +49,13 @@ impl Encodable for Inst {
 }
 
 impl Parsable for Inst {
-	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &str, args: &[parse::Arg], _ctx: &Ctx) -> Result<Self, ParseError> {
+	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &str, args: &[LineArg], _ctx: &Ctx) -> Result<Self, ParseError> {
 		if mnemonic != "lui" {
 			return Err(ParseError::UnknownMnemonic);
 		}
 
 		match *args {
-			[parse::Arg::Register(dst), parse::Arg::Literal(value)] => Ok(Self {
+			[LineArg::Register(dst), LineArg::Literal(value)] => Ok(Self {
 				dst,
 				value: value.try_into().map_err(|_| ParseError::LiteralOutOfRange)?,
 			}),
