@@ -5,32 +5,37 @@
 // Imports
 use super::InstTarget;
 use crate::{inst::Register, Pos};
+use dcb_util::SignedHex;
 use std::fmt;
 
 /// Instruction display
-pub trait InstDisplay {
+// TODO: Move `'a` to gat once they are implemented
+pub trait InstDisplay<'a> {
 	/// Mnemonic type
 	type Mnemonic: fmt::Display;
 
 	/// Args type
-	type Args: IntoIterator<Item = InstFmtArg>;
+	type Args: IntoIterator<Item = InstFmtArg<'a>>;
 
 	/// Returns this instruction's mnemonic
-	fn mnemonic<Ctx: DisplayCtx>(&self, ctx: &Ctx) -> Self::Mnemonic;
+	fn mnemonic<Ctx: DisplayCtx>(&'a self, ctx: &Ctx) -> Self::Mnemonic;
 
 	/// Returns all arguments of this instruction
-	fn args<Ctx: DisplayCtx>(&self, ctx: &Ctx) -> Self::Args;
+	fn args<Ctx: DisplayCtx>(&'a self, ctx: &Ctx) -> Self::Args;
 }
 
 /// Display context
 pub trait DisplayCtx {
 	/// Current position
 	fn cur_pos(&self) -> Pos;
+
+	/// Returns any label at `pos`, possibly with an offset
+	fn pos_label(&self, pos: Pos) -> Option<(&str, i64)>;
 }
 
 /// An formattable argument
-#[derive(PartialEq, Clone, Debug)]
-pub enum InstFmtArg {
+#[derive(PartialEq, Clone, Copy, Debug)]
+pub enum InstFmtArg<'a> {
 	/// Register
 	Register(Register),
 
@@ -48,9 +53,12 @@ pub enum InstFmtArg {
 
 	/// Target
 	Target(Pos),
+
+	/// String
+	String(&'a str),
 }
 
-impl InstFmtArg {
+impl<'a> InstFmtArg<'a> {
 	/// Creates a `Literal` variant
 	#[must_use]
 	pub fn literal(value: impl Into<i64>) -> Self {
@@ -63,6 +71,23 @@ impl InstFmtArg {
 		Self::RegisterOffset {
 			register,
 			offset: offset.into(),
+		}
+	}
+
+	/// Writes this argument
+	pub fn write<Ctx: DisplayCtx>(&self, f: &mut fmt::Formatter, ctx: &Ctx) -> Result<(), fmt::Error> {
+		match *self {
+			// Register offsets with 0 offset are formatted like normal registers
+			InstFmtArg::Register(register) | InstFmtArg::RegisterOffset { register, offset: 0 } => write!(f, "{register}"),
+			InstFmtArg::RegisterOffset { register, offset } => write!(f, "{}({register})", SignedHex(offset)),
+			// Note: Literals do not go through label lookup
+			InstFmtArg::Literal(value) => write!(f, "{}", SignedHex(value)),
+			InstFmtArg::Target(pos) => match ctx.pos_label(pos) {
+				Some((label, 0)) => write!(f, "{label}"),
+				Some((label, offset)) => write!(f, "{label}+{}", SignedHex(offset)),
+				None => write!(f, "{pos}"),
+			},
+			InstFmtArg::String(s) => write!(f, "{}", s.escape_debug()),
 		}
 	}
 }

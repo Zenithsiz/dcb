@@ -206,17 +206,17 @@ impl Parsable for Inst {
 	}
 }
 
-impl InstDisplay for Inst {
+impl<'a> InstDisplay<'a> for Inst {
 	type Mnemonic = &'static str;
 
-	type Args = impl Iterator<Item = InstFmtArg>;
+	type Args = impl Iterator<Item = InstFmtArg<'a>>;
 
-	fn mnemonic<Ctx: DisplayCtx>(&self, _ctx: &Ctx) -> Self::Mnemonic {
+	fn mnemonic<Ctx: DisplayCtx>(&'a self, _ctx: &Ctx) -> Self::Mnemonic {
 		Self::mnemonic(*self)
 	}
 
 	#[auto_enums::auto_enum(Iterator)]
-	fn args<Ctx: DisplayCtx>(&self, _ctx: &Ctx) -> Self::Args {
+	fn args<Ctx: DisplayCtx>(&'a self, _ctx: &Ctx) -> Self::Args {
 		match *self {
 			Self::Mult { lhs, rhs, .. } => array::IntoIter::new([InstFmtArg::Register(lhs), InstFmtArg::Register(rhs)]),
 			Self::MoveFrom { dst: arg, .. } | Self::MoveTo { src: arg, .. } => array::IntoIter::new([InstFmtArg::Register(arg)]),

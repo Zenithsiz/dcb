@@ -1,11 +1,14 @@
 //! Directives
 
 // Imports
-use super::{InstFmt, InstSize, InstTargetFmt};
+use super::{DisplayCtx, InstDisplay, InstFmt, InstFmtArg, InstSize, InstTargetFmt};
 use crate::{DataType, Pos};
 use ascii::{AsciiChar, AsciiStr};
 use dcb_util::NextFromBytes;
-use std::io::{self, Write};
+use std::{
+	array,
+	io::{self, Write},
+};
 
 /// A directive
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -149,6 +152,30 @@ impl<'a> Directive<'a> {
 				f.write_all(zeros)
 			},
 		}
+	}
+}
+
+impl<'a> InstDisplay<'a> for Directive<'a> {
+	type Args = array::IntoIter<InstFmtArg<'a>, 1>;
+	type Mnemonic = &'static str;
+
+	fn mnemonic<Ctx: DisplayCtx>(&'a self, _ctx: &Ctx) -> Self::Mnemonic {
+		match self {
+			Directive::Dw(_) => "dw",
+			Directive::Dh(_) => "dh",
+			Directive::Db(_) => "db",
+			Directive::Ascii(_) => ".ascii",
+		}
+	}
+
+	fn args<Ctx: DisplayCtx>(&'a self, _ctx: &Ctx) -> Self::Args {
+		let arg = match *self {
+			Directive::Dw(value) => InstFmtArg::literal(value),
+			Directive::Dh(value) => InstFmtArg::literal(value),
+			Directive::Db(value) => InstFmtArg::literal(value),
+			Directive::Ascii(s) => InstFmtArg::String(s.as_str()),
+		};
+		array::IntoIter::new([arg])
 	}
 }
 

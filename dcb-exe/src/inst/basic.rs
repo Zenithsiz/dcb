@@ -138,13 +138,13 @@ impl Parsable for Inst {
 	}
 }
 
-impl InstDisplay for Inst {
-	type Args = impl Iterator<Item = InstFmtArg>;
+impl<'a> InstDisplay<'a> for Inst {
+	type Args = impl Iterator<Item = InstFmtArg<'a>>;
 	type Mnemonic = impl fmt::Display;
 
 	#[auto_enums::auto_enum(Display)]
 	#[rustfmt::skip]
-	fn mnemonic<Ctx: DisplayCtx>(&self, ctx: &Ctx) -> Self::Mnemonic {
+	fn mnemonic<Ctx: DisplayCtx>(&'a self, ctx: &Ctx) -> Self::Mnemonic {
 		match self {
 			Inst::Alu  (inst) => inst.mnemonic(ctx),
 			Inst::Cond (inst) => inst.mnemonic(ctx),
@@ -161,7 +161,7 @@ impl InstDisplay for Inst {
 
 	#[auto_enums::auto_enum(Iterator)]
 	#[rustfmt::skip]
-	fn args<Ctx: DisplayCtx>(&self, ctx: &Ctx) -> Self::Args {
+	fn args<Ctx: DisplayCtx>(&'a self, ctx: &Ctx) -> Self::Args {
 		match self {
 			Inst::Alu  (inst) => inst.args(ctx),
 			Inst::Cond (inst) => inst.args(ctx),

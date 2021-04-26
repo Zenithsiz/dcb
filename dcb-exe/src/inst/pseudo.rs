@@ -12,7 +12,8 @@ pub mod nop;
 pub mod store;
 
 // Imports
-use super::{basic, InstFmt, InstSize};
+use super::{basic, DisplayCtx, InstDisplay, InstFmt, InstFmtArg, InstSize};
+use core::fmt;
 
 /// A pseudo instruction
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -56,6 +57,35 @@ impl Encodable for Inst {
 			Inst::MoveReg(inst) => inst.encode(),
 			Inst::Load(inst) => inst.encode(),
 			Inst::Store(inst) => inst.encode(),
+		}
+	}
+}
+
+impl<'a> InstDisplay<'a> for Inst {
+	type Args = impl Iterator<Item = InstFmtArg<'a>>;
+	type Mnemonic = impl fmt::Display;
+
+	#[auto_enums::auto_enum(Display)]
+	#[rustfmt::skip]
+	fn mnemonic<Ctx: DisplayCtx>(&'a self, ctx: &Ctx) -> Self::Mnemonic {
+		match self {
+			Inst::LoadImm(inst) => inst.mnemonic(ctx),
+			Inst::Nop    (inst) => inst.mnemonic(ctx),
+			Inst::MoveReg(inst) => inst.mnemonic(ctx),
+			Inst::Load   (inst) => inst.mnemonic(ctx),
+			Inst::Store  (inst) => inst.mnemonic(ctx),
+		}
+	}
+
+	#[auto_enums::auto_enum(Iterator)]
+	#[rustfmt::skip]
+	fn args<Ctx: DisplayCtx>(&'a self, ctx: &Ctx) -> Self::Args {
+		match self {
+			Inst::LoadImm(inst) => inst.args(ctx),
+			Inst::Nop    (inst) => inst.args(ctx),
+			Inst::MoveReg(inst) => inst.args(ctx),
+			Inst::Load   (inst) => inst.args(ctx),
+			Inst::Store  (inst) => inst.args(ctx),
 		}
 	}
 }

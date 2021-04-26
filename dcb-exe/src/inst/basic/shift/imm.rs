@@ -128,17 +128,17 @@ impl Parsable for Inst {
 	}
 }
 
-impl InstDisplay for Inst {
+impl<'a> InstDisplay<'a> for Inst {
 	type Mnemonic = &'static str;
 
-	type Args = impl IntoIterator<Item = InstFmtArg>;
+	type Args = impl IntoIterator<Item = InstFmtArg<'a>>;
 
-	fn mnemonic<Ctx: DisplayCtx>(&self, _ctx: &Ctx) -> Self::Mnemonic {
+	fn mnemonic<Ctx: DisplayCtx>(&'a self, _ctx: &Ctx) -> Self::Mnemonic {
 		self.kind.mnemonic()
 	}
 
 	#[auto_enums::auto_enum(Iterator)]
-	fn args<Ctx: DisplayCtx>(&self, _ctx: &Ctx) -> Self::Args {
+	fn args<Ctx: DisplayCtx>(&'a self, _ctx: &Ctx) -> Self::Args {
 		let &Self { dst, lhs, rhs, .. } = self;
 
 		// If `$dst` and `$lhs` are the same, only print one of them

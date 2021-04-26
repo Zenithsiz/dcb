@@ -2,8 +2,8 @@
 
 // Imports
 use super::{Decodable, Encodable};
-use crate::inst::{basic, InstFmt, InstSize, Register};
-use std::convert::TryInto;
+use crate::inst::{basic, DisplayCtx, InstDisplay, InstFmt, InstFmtArg, InstSize, Register};
+use std::{array, convert::TryInto};
 
 /// Move register instruction
 ///
@@ -45,6 +45,21 @@ impl Encodable for Inst {
 			rhs:  Register::Zr,
 			kind: basic::alu::reg::Kind::AddUnsigned,
 		})))
+	}
+}
+
+impl<'a> InstDisplay<'a> for Inst {
+	type Args = array::IntoIter<InstFmtArg<'a>, 2>;
+	type Mnemonic = &'static str;
+
+	fn mnemonic<Ctx: DisplayCtx>(&'a self, _ctx: &Ctx) -> Self::Mnemonic {
+		"move"
+	}
+
+	fn args<Ctx: DisplayCtx>(&'a self, _ctx: &Ctx) -> Self::Args {
+		let &Self { dst, src } = self;
+
+		array::IntoIter::new([InstFmtArg::Register(dst), InstFmtArg::Register(src)])
 	}
 }
 

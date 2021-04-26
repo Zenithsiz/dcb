@@ -2,7 +2,8 @@
 
 // Imports
 use super::{Decodable, Encodable};
-use crate::inst::{basic, InstFmt, InstSize, Register};
+use crate::inst::{basic, DisplayCtx, InstDisplay, InstFmt, InstFmtArg, InstSize, Register};
+use std::{array, convert::TryFrom};
 
 /// No-op
 ///
@@ -35,7 +36,6 @@ impl Decodable for Inst {
 	}
 }
 
-
 impl Encodable for Inst {
 	type Iterator = impl Iterator<Item = basic::Inst>;
 
@@ -44,6 +44,21 @@ impl Encodable for Inst {
 	}
 }
 
+impl<'a> InstDisplay<'a> for Inst {
+	type Args = array::IntoIter<InstFmtArg<'a>, 1>;
+	type Mnemonic = &'static str;
+
+	fn mnemonic<Ctx: DisplayCtx>(&'a self, _ctx: &Ctx) -> Self::Mnemonic {
+		"nop"
+	}
+
+	fn args<Ctx: DisplayCtx>(&'a self, _ctx: &Ctx) -> Self::Args {
+		let &Self { len } = self;
+
+		let len = i64::try_from(len).expect("Too many nops");
+		array::IntoIter::new([InstFmtArg::Literal(len)])
+	}
+}
 
 impl InstSize for Inst {
 	fn size(&self) -> usize {

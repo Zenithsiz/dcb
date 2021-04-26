@@ -127,15 +127,15 @@ impl Parsable for Inst {
 	}
 }
 
-impl InstDisplay for Inst {
-	type Args = array::IntoIter<InstFmtArg, 2>;
+impl<'a> InstDisplay<'a> for Inst {
+	type Args = array::IntoIter<InstFmtArg<'a>, 2>;
 	type Mnemonic = &'static str;
 
-	fn mnemonic<Ctx: DisplayCtx>(&self, _ctx: &Ctx) -> Self::Mnemonic {
+	fn mnemonic<Ctx: DisplayCtx>(&'a self, _ctx: &Ctx) -> Self::Mnemonic {
 		self.kind.mnemonic()
 	}
 
-	fn args<Ctx: DisplayCtx>(&self, _ctx: &Ctx) -> Self::Args {
+	fn args<Ctx: DisplayCtx>(&'a self, _ctx: &Ctx) -> Self::Args {
 		let &Self { value, addr, offset, .. } = self;
 
 		array::IntoIter::new([InstFmtArg::Register(value), InstFmtArg::register_offset(addr, offset)])

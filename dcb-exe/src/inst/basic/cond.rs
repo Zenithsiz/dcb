@@ -190,12 +190,12 @@ impl Parsable for Inst {
 /// `beq $zr, $zr, offset` => `b offset`
 /// `beq $arg, $zr, offset` => `beqz $arg, offset`
 /// `bne $arg, $zr, offset` => `bnez $arg, offset`
-impl InstDisplay for Inst {
+impl<'a> InstDisplay<'a> for Inst {
 	type Mnemonic = &'static str;
 
-	type Args = impl Iterator<Item = InstFmtArg>;
+	type Args = impl Iterator<Item = InstFmtArg<'a>>;
 
-	fn mnemonic<Ctx: DisplayCtx>(&self, _ctx: &Ctx) -> Self::Mnemonic {
+	fn mnemonic<Ctx: DisplayCtx>(&'a self, _ctx: &Ctx) -> Self::Mnemonic {
 		match self.kind {
 			Kind::Equal(Register::Zr) => match self.arg {
 				Register::Zr => "b",
@@ -215,7 +215,7 @@ impl InstDisplay for Inst {
 
 	#[auto_enums::auto_enum(Iterator)]
 	#[rustfmt::skip]
-	fn args<Ctx: DisplayCtx>(&self, ctx: &Ctx) -> Self::Args {
+	fn args<Ctx: DisplayCtx>(&'a self, ctx: &Ctx) -> Self::Args {
 		use InstFmtArg::Register as register;
 		let &Self { arg, offset, kind } = self;
 		let target = Self::target_of(offset, ctx.cur_pos());

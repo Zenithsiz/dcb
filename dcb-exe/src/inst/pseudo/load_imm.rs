@@ -3,12 +3,12 @@
 // Imports
 use super::{Decodable, Encodable};
 use crate::{
-	inst::{basic, InstFmt, InstSize, InstTargetFmt, Register},
+	inst::{basic, DisplayCtx, InstDisplay, InstFmt, InstFmtArg, InstSize, InstTargetFmt, Register},
 	Pos,
 };
 use dcb_util::SignedHex;
 use int_conv::{Join, SignExtended, Signed, Split};
-use std::convert::TryInto;
+use std::{array, convert::TryInto};
 
 /// Immediate kind
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -150,6 +150,27 @@ impl Encodable for Inst {
 				kind: basic::alu::imm::Kind::AddUnsigned(value),
 			}))),
 		}
+	}
+}
+
+impl<'a> InstDisplay<'a> for Inst {
+	type Args = array::IntoIter<InstFmtArg<'a>, 2>;
+	type Mnemonic = &'static str;
+
+	fn mnemonic<Ctx: DisplayCtx>(&'a self, _ctx: &Ctx) -> Self::Mnemonic {
+		self.kind.mnemonic()
+	}
+
+	fn args<Ctx: DisplayCtx>(&'a self, _ctx: &Ctx) -> Self::Args {
+		let &Self { dst, kind } = self;
+
+		let arg = match kind {
+			Kind::Address(pos) => InstFmtArg::Target(pos),
+			Kind::Word(value) => InstFmtArg::literal(value),
+			Kind::HalfWordUnsigned(value) => InstFmtArg::literal(value),
+			Kind::HalfWordSigned(value) => InstFmtArg::literal(value),
+		};
+		array::IntoIter::new([InstFmtArg::Register(dst), arg])
 	}
 }
 

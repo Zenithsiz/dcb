@@ -238,11 +238,11 @@ impl Parsable for Inst {
 	}
 }
 
-impl InstDisplay for Inst {
-	type Args = impl Iterator<Item = InstFmtArg>;
+impl<'a> InstDisplay<'a> for Inst {
+	type Args = impl Iterator<Item = InstFmtArg<'a>>;
 	type Mnemonic = impl fmt::Display;
 
-	fn mnemonic<Ctx: DisplayCtx>(&self, _ctx: &Ctx) -> Self::Mnemonic {
+	fn mnemonic<Ctx: DisplayCtx>(&'a self, _ctx: &Ctx) -> Self::Mnemonic {
 		/// Wrapper necessary for `impl Trait` to work without using `Ctx`.
 		fn wrapper(n: u32, kind: Kind) -> impl fmt::Display {
 			dcb_util::DisplayWrapper::new(move |f| match kind {
@@ -268,7 +268,7 @@ impl InstDisplay for Inst {
 	}
 
 	#[auto_enums::auto_enum(Iterator)]
-	fn args<Ctx: DisplayCtx>(&self, _ctx: &Ctx) -> Self::Args {
+	fn args<Ctx: DisplayCtx>(&'a self, _ctx: &Ctx) -> Self::Args {
 		let &Self { kind, .. } = self;
 		match kind {
 			Kind::CopN { imm } => array::IntoIter::new([InstFmtArg::literal(imm)]),
