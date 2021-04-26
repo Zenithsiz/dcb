@@ -9,7 +9,7 @@ use super::ModifiesReg;
 use crate::inst::{
 	basic::{Decode, Encode},
 	parse::LineArg,
-	InstFmt, Parsable, ParseCtx, ParseError,
+	DisplayCtx, InstDisplay, InstFmt, InstFmtArg, Parsable, ParseCtx, ParseError,
 };
 
 /// Alu register instructions
@@ -48,6 +48,28 @@ impl Parsable for Inst {
 		}
 	}
 }
+
+impl InstDisplay for Inst {
+	type Mnemonic = &'static str;
+
+	type Args = impl Iterator<Item = InstFmtArg>;
+
+	fn mnemonic<Ctx: DisplayCtx>(&self, ctx: &Ctx) -> Self::Mnemonic {
+		match self {
+			Inst::Imm(inst) => inst.mnemonic(ctx),
+			Inst::Reg(inst) => inst.mnemonic(ctx),
+		}
+	}
+
+	#[auto_enums::auto_enum(Iterator)]
+	fn args<Ctx: DisplayCtx>(&self, ctx: &Ctx) -> Self::Args {
+		match self {
+			Inst::Imm(inst) => inst.args(ctx).into_iter(),
+			Inst::Reg(inst) => inst.args(ctx).into_iter(),
+		}
+	}
+}
+
 
 impl InstFmt for Inst {
 	fn fmt(&self, pos: crate::Pos, f: &mut std::fmt::Formatter) -> std::fmt::Result {

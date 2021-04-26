@@ -4,11 +4,11 @@
 use crate::inst::{
 	basic::{Decode, Encode, ModifiesReg},
 	parse::LineArg,
-	InstFmt, Parsable, ParseCtx, ParseError, Register,
+	DisplayCtx, InstDisplay, InstFmt, InstFmtArg, Parsable, ParseCtx, ParseError, Register,
 };
 use dcb_util::SignedHex;
 use int_conv::{Signed, Truncated, ZeroExtended};
-use std::{convert::TryInto, fmt};
+use std::{array, convert::TryInto, fmt};
 
 /// Instruction kind
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -50,9 +50,18 @@ impl Kind {
 		}
 	}
 
+	/// Returns the value of this kind as a `i64`
+	#[must_use]
+	pub fn value(self) -> i64 {
+		match self {
+			Kind::Add(value) | Kind::AddUnsigned(value) | Kind::SetLessThan(value) => i64::from(value),
+			Kind::SetLessThanUnsigned(value) | Kind::And(value) | Kind::Or(value) | Kind::Xor(value) => i64::from(value),
+		}
+	}
+
 	/// Returns a displayable with the value of this kind
 	#[must_use]
-	pub fn value_fmt(self) -> impl fmt::Display {
+	fn value_fmt(self) -> impl fmt::Display {
 		dcb_util::DisplayWrapper::new(move |f| match self {
 			// Signed
 			Self::Add(rhs) | Self::AddUnsigned(rhs) | Self::SetLessThan(rhs) => write!(f, "{:#}", SignedHex(rhs)),
@@ -148,6 +157,29 @@ impl Parsable for Inst {
 				})
 			},
 			_ => Err(ParseError::InvalidArguments),
+		}
+	}
+}
+
+impl InstDisplay for Inst {
+	type Mnemonic = &'static str;
+
+	type Args = impl IntoIterator<Item = InstFmtArg>;
+
+	fn mnemonic<Ctx: DisplayCtx>(&self, _ctx: &Ctx) -> Self::Mnemonic {
+		self.kind.mnemonic()
+	}
+
+	#[auto_enums::auto_enum(Iterator)]
+	fn args<Ctx: DisplayCtx>(&self, _ctx: &Ctx) -> Self::Args {
+		let &Self { dst, lhs, kind } = self;
+		let value = kind.value();
+
+		// If we're not `slti[u]` and if `$dst` and `$lhs` are the same,
+		// only return one of them
+		match !matches!(kind, Kind::SetLessThan(_) | Kind::SetLessThanUnsigned(_)) && dst == lhs {
+			true => array::IntoIter::new([InstFmtArg::Register(dst), InstFmtArg::literal(value)]),
+			false => array::IntoIter::new([InstFmtArg::Register(dst), InstFmtArg::Register(lhs), InstFmtArg::literal(value)]),
 		}
 	}
 }

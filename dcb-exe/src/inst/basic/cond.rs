@@ -6,12 +6,12 @@ use crate::{
 	inst::{
 		basic::{Decode, Encode},
 		parse::LineArg,
-		InstTarget, InstTargetFmt, Parsable, ParseCtx, ParseError, Register,
+		DisplayCtx, InstDisplay, InstFmtArg, InstTarget, InstTargetFmt, Parsable, ParseCtx, ParseError, Register,
 	},
 	Pos,
 };
 use int_conv::{SignExtended, Signed, Truncated, ZeroExtended};
-use std::{convert::TryInto, fmt};
+use std::{array, convert::TryInto, fmt};
 
 /// Instruction kind
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -183,6 +183,59 @@ impl Parsable for Inst {
 		};
 
 		Ok(Self { arg, offset, kind })
+	}
+}
+
+/// Variants:
+/// `beq $zr, $zr, offset` => `b offset`
+/// `beq $arg, $zr, offset` => `beqz $arg, offset`
+/// `bne $arg, $zr, offset` => `bnez $arg, offset`
+impl InstDisplay for Inst {
+	type Mnemonic = &'static str;
+
+	type Args = impl Iterator<Item = InstFmtArg>;
+
+	fn mnemonic<Ctx: DisplayCtx>(&self, _ctx: &Ctx) -> Self::Mnemonic {
+		match self.kind {
+			Kind::Equal(Register::Zr) => match self.arg {
+				Register::Zr => "b",
+				_ => "beqz",
+			},
+			Kind::Equal(_) => "beq",
+			Kind::NotEqual(Register::Zr) => "bnez",
+			Kind::NotEqual(_) => "bne",
+			Kind::LessOrEqualZero => "blez",
+			Kind::GreaterThanZero => "bgtz",
+			Kind::LessThanZero => "bltz",
+			Kind::GreaterOrEqualZero => "bgez",
+			Kind::LessThanZeroLink => "bltzal",
+			Kind::GreaterOrEqualZeroLink => "bgezal",
+		}
+	}
+
+	#[auto_enums::auto_enum(Iterator)]
+	#[rustfmt::skip]
+	fn args<Ctx: DisplayCtx>(&self, ctx: &Ctx) -> Self::Args {
+		use InstFmtArg::Register as register;
+		let &Self { arg, offset, kind } = self;
+		let target = Self::target_of(offset, ctx.cur_pos());
+
+		match (arg, kind) {
+			(Register::Zr, Kind::Equal   (Register::Zr)) => array::IntoIter::new([                              InstFmtArg::Target(target)]),
+			(_           , Kind::Equal   (Register::Zr)) => array::IntoIter::new([register(arg),                InstFmtArg::Target(target)]),
+			(_           , Kind::Equal   (reg)         ) => array::IntoIter::new([register(arg), register(reg), InstFmtArg::Target(target)]),
+			(_           , Kind::NotEqual(Register::Zr)) => array::IntoIter::new([register(arg),                InstFmtArg::Target(target)]),
+			(_           , Kind::NotEqual(reg)         ) => array::IntoIter::new([register(arg), register(reg), InstFmtArg::Target(target)]),
+			(
+				_,
+				Kind::LessOrEqualZero |
+				Kind::GreaterThanZero |
+				Kind::LessThanZero |
+				Kind::GreaterOrEqualZero |
+				Kind::LessThanZeroLink |
+				Kind::GreaterOrEqualZeroLink,
+			) => array::IntoIter::new([register(arg), InstFmtArg::Target(target)]),
+		}
 	}
 }
 

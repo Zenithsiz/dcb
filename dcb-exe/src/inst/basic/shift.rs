@@ -8,7 +8,7 @@ pub mod reg;
 use crate::inst::{
 	basic::{Decode, Encode, ModifiesReg, TryEncode},
 	parse::LineArg,
-	InstFmt, Parsable, ParseCtx, ParseError, Register,
+	DisplayCtx, InstDisplay, InstFmt, InstFmtArg, Parsable, ParseCtx, ParseError, Register,
 };
 
 /// Alu register instructions
@@ -54,6 +54,27 @@ impl Parsable for Inst {
 			Ok(inst) => Ok(Self::Imm(inst)),
 			Err(ParseError::UnknownMnemonic) => reg::Inst::parse(mnemonic, args, ctx).map(Self::Reg),
 			Err(err) => Err(err),
+		}
+	}
+}
+
+impl InstDisplay for Inst {
+	type Mnemonic = &'static str;
+
+	type Args = impl Iterator<Item = InstFmtArg>;
+
+	fn mnemonic<Ctx: DisplayCtx>(&self, ctx: &Ctx) -> Self::Mnemonic {
+		match self {
+			Inst::Imm(inst) => inst.mnemonic(ctx),
+			Inst::Reg(inst) => inst.mnemonic(ctx),
+		}
+	}
+
+	#[auto_enums::auto_enum(Iterator)]
+	fn args<Ctx: DisplayCtx>(&self, ctx: &Ctx) -> Self::Args {
+		match self {
+			Inst::Imm(inst) => inst.args(ctx).into_iter(),
+			Inst::Reg(inst) => inst.args(ctx).into_iter(),
 		}
 	}
 }

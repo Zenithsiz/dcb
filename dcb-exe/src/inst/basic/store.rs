@@ -5,11 +5,11 @@ use super::ModifiesReg;
 use crate::inst::{
 	basic::{Decode, Encode},
 	parse::LineArg,
-	InstFmt, Parsable, ParseCtx, ParseError, Register,
+	DisplayCtx, InstDisplay, InstFmt, InstFmtArg, Parsable, ParseCtx, ParseError, Register,
 };
 use dcb_util::SignedHex;
 use int_conv::{Signed, Truncated, ZeroExtended};
-use std::convert::TryInto;
+use std::{array, convert::TryInto};
 
 /// Store instruction kind
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -124,6 +124,21 @@ impl Parsable for Inst {
 		};
 
 		Ok(Self { value, addr, offset, kind })
+	}
+}
+
+impl InstDisplay for Inst {
+	type Args = array::IntoIter<InstFmtArg, 2>;
+	type Mnemonic = &'static str;
+
+	fn mnemonic<Ctx: DisplayCtx>(&self, _ctx: &Ctx) -> Self::Mnemonic {
+		self.kind.mnemonic()
+	}
+
+	fn args<Ctx: DisplayCtx>(&self, _ctx: &Ctx) -> Self::Args {
+		let &Self { value, addr, offset, .. } = self;
+
+		array::IntoIter::new([InstFmtArg::Register(value), InstFmtArg::register_offset(addr, offset)])
 	}
 }
 

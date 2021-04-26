@@ -17,8 +17,12 @@ pub mod store;
 pub mod sys;
 
 // Imports
-use super::{parse::LineArg, InstSize, ParseCtx, ParseError, Register};
+use super::{
+	parse::{LineArg, Parsable},
+	DisplayCtx, InstDisplay, InstFmtArg, InstSize, ParseCtx, ParseError, Register,
+};
 use crate::inst::InstFmt;
+use std::fmt;
 
 /// All basic instructions
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -55,7 +59,6 @@ pub enum Inst {
 	Co(co::Inst),
 }
 
-
 impl Decode for Inst {
 	#[rustfmt::skip]
 	fn decode(raw: u32) -> Option<Self> {
@@ -72,7 +75,6 @@ impl Decode for Inst {
 			.or_else(|| co   ::Inst::decode(raw).map(Self::Co   ))
 	}
 }
-
 
 /// Encode error
 #[derive(PartialEq, Clone, Debug, thiserror::Error)]
@@ -106,7 +108,7 @@ impl TryEncode for Inst {
 	}
 }
 
-impl super::parse::Parsable for Inst {
+impl Parsable for Inst {
 	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &str, args: &[LineArg], ctx: &Ctx) -> Result<Self, ParseError> {
 		#[rustfmt::skip]
 		let parsers: &[&dyn Fn() -> Result<Self, ParseError>] = &[
@@ -133,6 +135,45 @@ impl super::parse::Parsable for Inst {
 		}
 
 		Err(ParseError::UnknownMnemonic)
+	}
+}
+
+impl InstDisplay for Inst {
+	type Args = impl Iterator<Item = InstFmtArg>;
+	type Mnemonic = impl fmt::Display;
+
+	#[auto_enums::auto_enum(Display)]
+	#[rustfmt::skip]
+	fn mnemonic<Ctx: DisplayCtx>(&self, ctx: &Ctx) -> Self::Mnemonic {
+		match self {
+			Inst::Alu  (inst) => inst.mnemonic(ctx),
+			Inst::Cond (inst) => inst.mnemonic(ctx),
+			Inst::Jmp  (inst) => inst.mnemonic(ctx),
+			Inst::Load (inst) => inst.mnemonic(ctx),
+			Inst::Lui  (inst) => inst.mnemonic(ctx),
+			Inst::Mult (inst) => inst.mnemonic(ctx),
+			Inst::Shift(inst) => inst.mnemonic(ctx),
+			Inst::Store(inst) => inst.mnemonic(ctx),
+			Inst::Sys  (inst) => inst.mnemonic(ctx),
+			Inst::Co   (inst) => inst.mnemonic(ctx),
+		}
+	}
+
+	#[auto_enums::auto_enum(Iterator)]
+	#[rustfmt::skip]
+	fn args<Ctx: DisplayCtx>(&self, ctx: &Ctx) -> Self::Args {
+		match self {
+			Inst::Alu  (inst) => inst.args(ctx),
+			Inst::Cond (inst) => inst.args(ctx),
+			Inst::Jmp  (inst) => inst.args(ctx),
+			Inst::Load (inst) => inst.args(ctx),
+			Inst::Lui  (inst) => inst.args(ctx),
+			Inst::Mult (inst) => inst.args(ctx),
+			Inst::Shift(inst) => inst.args(ctx),
+			Inst::Store(inst) => inst.args(ctx),
+			Inst::Sys  (inst) => inst.args(ctx),
+			Inst::Co   (inst) => inst.args(ctx),
+		}
 	}
 }
 

@@ -5,9 +5,9 @@ use super::ModifiesReg;
 use crate::inst::{
 	basic::{Decode, TryEncode},
 	parse::LineArg,
-	InstFmt, Parsable, ParseCtx, ParseError, Register,
+	DisplayCtx, InstDisplay, InstFmt, InstFmtArg, Parsable, ParseCtx, ParseError, Register,
 };
-use std::convert::TryInto;
+use std::{array, convert::TryInto};
 
 /// Sys instruction func
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -86,7 +86,6 @@ impl TryEncode for Inst {
 	}
 }
 
-
 impl Parsable for Inst {
 	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &str, args: &[LineArg], _ctx: &Ctx) -> Result<Self, ParseError> {
 		let kind = match mnemonic {
@@ -104,6 +103,18 @@ impl Parsable for Inst {
 	}
 }
 
+impl InstDisplay for Inst {
+	type Args = array::IntoIter<InstFmtArg, 1>;
+	type Mnemonic = &'static str;
+
+	fn mnemonic<Ctx: DisplayCtx>(&self, _ctx: &Ctx) -> Self::Mnemonic {
+		self.kind.mnemonic()
+	}
+
+	fn args<Ctx: DisplayCtx>(&self, _ctx: &Ctx) -> Self::Args {
+		array::IntoIter::new([InstFmtArg::literal(self.comment)])
+	}
+}
 
 impl InstFmt for Inst {
 	fn fmt(&self, _pos: crate::Pos, f: &mut std::fmt::Formatter) -> std::fmt::Result {

@@ -5,10 +5,11 @@ use crate::{
 	inst::{
 		basic::{Decode, Encode, ModifiesReg},
 		parse::LineArg,
-		InstTarget, InstTargetFmt, Parsable, ParseCtx, ParseError, Register,
+		DisplayCtx, InstDisplay, InstFmtArg, InstTarget, InstTargetFmt, Parsable, ParseCtx, ParseError, Register,
 	},
 	Pos,
 };
+use std::array;
 
 /// Jmp immediate instruction kind
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -108,6 +109,20 @@ impl Parsable for Inst {
 		Ok(Self { imm, kind })
 	}
 }
+
+impl InstDisplay for Inst {
+	type Args = array::IntoIter<InstFmtArg, 1>;
+	type Mnemonic = &'static str;
+
+	fn mnemonic<Ctx: DisplayCtx>(&self, _ctx: &Ctx) -> Self::Mnemonic {
+		self.kind.mnemonic()
+	}
+
+	fn args<Ctx: DisplayCtx>(&self, ctx: &Ctx) -> Self::Args {
+		array::IntoIter::new([InstFmtArg::Target(Self::target_of(self.imm, ctx.cur_pos()))])
+	}
+}
+
 
 impl InstTarget for Inst {
 	fn target(&self, pos: Pos) -> Pos {

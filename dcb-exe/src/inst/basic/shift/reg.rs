@@ -4,8 +4,9 @@
 use crate::inst::{
 	basic::{Decode, Encode, ModifiesReg},
 	parse::LineArg,
-	InstFmt, Parsable, ParseCtx, ParseError, Register,
+	DisplayCtx, InstDisplay, InstFmt, InstFmtArg, Parsable, ParseCtx, ParseError, Register,
 };
+use std::array;
 
 /// Shift register instruction kind
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -104,6 +105,27 @@ impl Parsable for Inst {
 				Ok(Self { dst, lhs, rhs, kind })
 			},
 			_ => Err(ParseError::InvalidArguments),
+		}
+	}
+}
+
+impl InstDisplay for Inst {
+	type Mnemonic = &'static str;
+
+	type Args = impl IntoIterator<Item = InstFmtArg>;
+
+	fn mnemonic<Ctx: DisplayCtx>(&self, _ctx: &Ctx) -> Self::Mnemonic {
+		self.kind.mnemonic()
+	}
+
+	#[auto_enums::auto_enum(Iterator)]
+	fn args<Ctx: DisplayCtx>(&self, _ctx: &Ctx) -> Self::Args {
+		let &Self { dst, lhs, rhs, .. } = self;
+
+		// If `$dst` and `$lhs` are the same, only print one of them
+		match dst == lhs {
+			true => array::IntoIter::new([InstFmtArg::Register(dst), InstFmtArg::Register(rhs)]),
+			false => array::IntoIter::new([InstFmtArg::Register(dst), InstFmtArg::Register(lhs), InstFmtArg::Register(rhs)]),
 		}
 	}
 }

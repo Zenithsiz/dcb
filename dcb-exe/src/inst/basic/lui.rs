@@ -5,10 +5,10 @@ use super::ModifiesReg;
 use crate::inst::{
 	basic::{Decode, Encode},
 	parse::LineArg,
-	InstFmt, Parsable, ParseCtx, ParseError, Register,
+	DisplayCtx, InstDisplay, InstFmt, InstFmtArg, Parsable, ParseCtx, ParseError, Register,
 };
 use int_conv::{Truncated, ZeroExtended};
-use std::convert::TryInto;
+use std::{array, convert::TryInto};
 
 /// Load instructions
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -59,6 +59,21 @@ impl Parsable for Inst {
 			}),
 			_ => Err(ParseError::InvalidArguments),
 		}
+	}
+}
+
+impl InstDisplay for Inst {
+	type Args = array::IntoIter<InstFmtArg, 2>;
+	type Mnemonic = &'static str;
+
+	fn mnemonic<Ctx: DisplayCtx>(&self, _ctx: &Ctx) -> Self::Mnemonic {
+		"lui"
+	}
+
+	fn args<Ctx: DisplayCtx>(&self, _ctx: &Ctx) -> Self::Args {
+		let &Self { dst, value } = self;
+
+		array::IntoIter::new([InstFmtArg::Register(dst), InstFmtArg::literal(value)])
 	}
 }
 

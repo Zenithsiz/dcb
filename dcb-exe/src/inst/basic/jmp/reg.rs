@@ -4,8 +4,9 @@
 use crate::inst::{
 	basic::{Decode, Encode, ModifiesReg},
 	parse::LineArg,
-	InstFmt, Parsable, ParseCtx, ParseError, Register,
+	DisplayCtx, InstDisplay, InstFmt, InstFmtArg, Parsable, ParseCtx, ParseError, Register,
 };
+use std::array;
 
 /// Jmp register instruction kind
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -89,6 +90,27 @@ impl Parsable for Inst {
 		};
 
 		Ok(Self { target, kind })
+	}
+}
+
+impl InstDisplay for Inst {
+	type Mnemonic = &'static str;
+
+	type Args = impl IntoIterator<Item = InstFmtArg>;
+
+	fn mnemonic<Ctx: DisplayCtx>(&self, _ctx: &Ctx) -> Self::Mnemonic {
+		self.kind.mnemonic()
+	}
+
+	#[auto_enums::auto_enum(Iterator)]
+	fn args<Ctx: DisplayCtx>(&self, _ctx: &Ctx) -> Self::Args {
+		let &Self { target, kind } = self;
+
+		match kind {
+			// If linking with `$ra`, don't output it
+			Kind::Jump | Kind::JumpLink(Register::Ra) => array::IntoIter::new([InstFmtArg::Register(target)]),
+			Kind::JumpLink(reg) => array::IntoIter::new([InstFmtArg::Register(target), InstFmtArg::Register(reg)]),
+		}
 	}
 }
 

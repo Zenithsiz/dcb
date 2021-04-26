@@ -15,7 +15,7 @@ pub mod target;
 // Exports
 pub use directive::Directive;
 pub use error::DecodeError;
-pub use fmt::{InstFmt, InstTargetFmt};
+pub use fmt::{DisplayCtx, InstDisplay, InstFmt, InstFmtArg, InstTargetFmt};
 pub use iter::ParseIter;
 pub use parse::{Parsable, ParseCtx, ParseError};
 pub use reg::Register;

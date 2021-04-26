@@ -5,11 +5,11 @@ use super::ModifiesReg;
 use crate::inst::{
 	basic::{Decode, Encode},
 	parse::LineArg,
-	InstFmt, Parsable, ParseCtx, ParseError, Register,
+	DisplayCtx, InstDisplay, InstFmt, InstFmtArg, Parsable, ParseCtx, ParseError, Register,
 };
 use dcb_util::SignedHex;
 use int_conv::{Signed, Truncated, ZeroExtended};
-use std::convert::TryInto;
+use std::{array, convert::TryInto, fmt};
 
 /// Co-processor register kind
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -238,9 +238,52 @@ impl Parsable for Inst {
 	}
 }
 
+impl InstDisplay for Inst {
+	type Args = impl Iterator<Item = InstFmtArg>;
+	type Mnemonic = impl fmt::Display;
+
+	fn mnemonic<Ctx: DisplayCtx>(&self, _ctx: &Ctx) -> Self::Mnemonic {
+		/// Wrapper necessary for `impl Trait` to work without using `Ctx`.
+		fn wrapper(n: u32, kind: Kind) -> impl fmt::Display {
+			dcb_util::DisplayWrapper::new(move |f| match kind {
+				Kind::CopN { .. } => write!(f, "cop{n}"),
+				Kind::MoveFrom { kind, .. } => match kind {
+					RegisterKind::Control => write!(f, "cfc{n}"),
+					RegisterKind::Data => write!(f, "mfc{n}"),
+				},
+				Kind::MoveTo { kind, .. } => match kind {
+					RegisterKind::Data => write!(f, "mtc{n}"),
+					RegisterKind::Control => write!(f, "ctc{n}"),
+				},
+				Kind::Branch { on, .. } => match on {
+					true => write!(f, "bc{n}f"),
+					false => write!(f, "bc{n}t"),
+				},
+				Kind::Load { .. } => write!(f, "lwc{n}"),
+				Kind::Store { .. } => write!(f, "swc{n}"),
+			})
+		}
+
+		wrapper(self.n, self.kind)
+	}
+
+	#[auto_enums::auto_enum(Iterator)]
+	fn args<Ctx: DisplayCtx>(&self, _ctx: &Ctx) -> Self::Args {
+		let &Self { kind, .. } = self;
+		match kind {
+			Kind::CopN { imm } => array::IntoIter::new([InstFmtArg::literal(imm)]),
+			Kind::MoveFrom { dst, src, .. } => array::IntoIter::new([InstFmtArg::Register(dst), InstFmtArg::literal(src)]),
+			Kind::MoveTo { dst, src, .. } => array::IntoIter::new([InstFmtArg::Register(src), InstFmtArg::literal(dst)]),
+			Kind::Branch { offset, .. } => array::IntoIter::new([InstFmtArg::literal(offset)]),
+			Kind::Load { dst, src, offset } => array::IntoIter::new([InstFmtArg::literal(dst), InstFmtArg::register_offset(src, offset)]),
+			Kind::Store { dst, src, offset } => array::IntoIter::new([InstFmtArg::literal(dst), InstFmtArg::register_offset(src, offset)]),
+		}
+	}
+}
+
 impl InstFmt for Inst {
 	#[rustfmt::skip]
-	fn fmt(&self, _pos: crate::Pos, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+	fn fmt(&self, _pos: crate::Pos, f: &mut fmt::Formatter) -> fmt::Result {
 		let Self { n, kind } = self;
 		match kind {
 			Kind::CopN     { imm } => write!(f, "cop{n} {imm:#x}"),
