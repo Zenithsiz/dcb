@@ -105,8 +105,8 @@ impl TryEncode for Inst {
 	}
 }
 
-impl Parsable for Inst {
-	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &str, args: &[LineArg], _ctx: &Ctx) -> Result<Self, ParseError> {
+impl<'a> Parsable<'a> for Inst {
+	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &'a str, args: &'a [LineArg], _ctx: &'a Ctx) -> Result<Self, ParseError> {
 		let kind = match mnemonic {
 			"sll" => Kind::LeftLogical,
 			"srl" => Kind::RightLogical,

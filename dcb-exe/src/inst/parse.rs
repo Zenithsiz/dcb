@@ -13,9 +13,9 @@ use crate::Pos;
 use std::convert::TryInto;
 
 /// Instruction parsing
-pub trait Parsable: Sized {
+pub trait Parsable<'a>: Sized + 'a {
 	/// Parses this instruction
-	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &str, args: &[LineArg], ctx: &Ctx) -> Result<Self, ParseError>;
+	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &'a str, args: &'a [LineArg], ctx: &'a Ctx) -> Result<Self, ParseError>;
 }
 
 /// Parsing context

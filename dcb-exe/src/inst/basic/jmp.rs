@@ -39,8 +39,8 @@ impl Encode for Inst {
 	}
 }
 
-impl Parsable for Inst {
-	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &str, args: &[LineArg], ctx: &Ctx) -> Result<Self, ParseError> {
+impl<'a> Parsable<'a> for Inst {
+	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &'a str, args: &'a [LineArg], ctx: &'a Ctx) -> Result<Self, ParseError> {
 		match imm::Inst::parse(mnemonic, args, ctx) {
 			Ok(inst) => Ok(Self::Imm(inst)),
 			Err(ParseError::UnknownMnemonic) => reg::Inst::parse(mnemonic, args, ctx).map(Self::Reg),

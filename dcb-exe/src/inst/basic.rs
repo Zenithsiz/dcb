@@ -107,8 +107,8 @@ impl TryEncode for Inst {
 	}
 }
 
-impl Parsable for Inst {
-	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &str, args: &[LineArg], ctx: &Ctx) -> Result<Self, ParseError> {
+impl<'a> Parsable<'a> for Inst {
+	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &'a str, args: &'a [LineArg], ctx: &'a Ctx) -> Result<Self, ParseError> {
 		#[rustfmt::skip]
 		let parsers: &[&dyn Fn() -> Result<Self, ParseError>] = &[
 			&|| alu  ::Inst::parse(mnemonic, args, ctx).map(Self::Alu  ),
