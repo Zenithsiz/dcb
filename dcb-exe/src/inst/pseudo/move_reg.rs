@@ -2,7 +2,7 @@
 
 // Imports
 use super::{Decodable, Encodable};
-use crate::inst::{basic, DisplayCtx, InstDisplay, InstFmtArg, InstSize, Register};
+use crate::inst::{basic, parse::LineArg, DisplayCtx, InstDisplay, InstFmtArg, InstSize, Parsable, ParseCtx, ParseError, Register};
 use std::{array, convert::TryInto};
 
 /// Move register instruction
@@ -45,6 +45,21 @@ impl Encodable for Inst {
 			rhs:  Register::Zr,
 			kind: basic::alu::reg::Kind::AddUnsigned,
 		})))
+	}
+}
+
+impl<'a> Parsable<'a> for Inst {
+	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &'a str, args: &'a [LineArg], _ctx: &'a Ctx) -> Result<Self, ParseError> {
+		if mnemonic != "move" {
+			return Err(ParseError::UnknownMnemonic);
+		}
+
+		let (dst, src) = match *args {
+			[LineArg::Register(dst), LineArg::Register(src)] => (dst, src),
+			_ => return Err(ParseError::InvalidArguments),
+		};
+
+		Ok(Self { dst, src })
 	}
 }
 

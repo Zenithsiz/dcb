@@ -26,4 +26,8 @@ pub enum ParseError {
 	/// Target is not properly aligned
 	#[error("Target is not properly aligned")]
 	TargetAlign,
+
+	/// String is non-ascii
+	#[error("String is non-ascii")]
+	NonAsciiString,
 }

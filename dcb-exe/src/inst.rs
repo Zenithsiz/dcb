@@ -21,7 +21,7 @@ pub use reg::Register;
 pub use size::InstSize;
 
 // Imports
-use self::{basic::Decode as _, pseudo::Decodable as _};
+use self::{basic::Decode as _, parse::LineArg, pseudo::Decodable as _};
 use crate::{DataTable, FuncTable, Pos};
 use std::{borrow::Borrow, ops::Deref};
 
@@ -93,6 +93,29 @@ impl<'a> Inst<'a> {
 
 		// Else read it as a directive
 		Directive::decode(pos, bytes).map(Self::Directive).ok_or(DecodeError::NoBytes)
+	}
+}
+
+impl<'a> Parsable<'a> for Inst<'a> {
+	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &'a str, args: &'a [LineArg], ctx: &'a Ctx) -> Result<Self, ParseError> {
+		#[rustfmt::skip]
+		let parsers: &[&dyn Fn() -> Result<Self, ParseError>] = &[
+			&|| basic    ::Inst::parse(mnemonic, args, ctx).map(Self::Basic),
+			&|| pseudo   ::Inst::parse(mnemonic, args, ctx).map(Self::Pseudo),
+			&||       Directive::parse(mnemonic, args, ctx).map(Self::Directive),
+		];
+
+		// Try to parse each one one by one.
+		// If we get an unknown mnemonic, try the next, else return the error.
+		for parser in parsers {
+			match parser() {
+				Ok(inst) => return Ok(inst),
+				Err(ParseError::UnknownMnemonic) => continue,
+				Err(err) => return Err(err),
+			}
+		}
+
+		Err(ParseError::UnknownMnemonic)
 	}
 }
 

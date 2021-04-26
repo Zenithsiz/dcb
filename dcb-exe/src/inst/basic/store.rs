@@ -41,6 +41,20 @@ impl Kind {
 			Self::WordRight => "swr",
 		}
 	}
+
+	/// Returns this kind from it's mnemonic
+	#[must_use]
+	pub fn from_mnemonic(mnemonic: &str) -> Option<Self> {
+		let kind = match mnemonic {
+			"sb" => Self::Byte,
+			"sh" => Self::HalfWord,
+			"swl" => Self::WordLeft,
+			"sw" => Self::Word,
+			"swr" => Self::WordRight,
+			_ => return None,
+		};
+		Some(kind)
+	}
 }
 
 /// Store instructions
@@ -106,14 +120,7 @@ impl Encode for Inst {
 
 impl<'a> Parsable<'a> for Inst {
 	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &'a str, args: &'a [LineArg], _ctx: &'a Ctx) -> Result<Self, ParseError> {
-		let kind = match mnemonic {
-			"sb" => Kind::Byte,
-			"sh" => Kind::HalfWord,
-			"swl" => Kind::WordLeft,
-			"sw" => Kind::Word,
-			"swr" => Kind::WordRight,
-			_ => return Err(ParseError::UnknownMnemonic),
-		};
+		let kind = Kind::from_mnemonic(mnemonic).ok_or(ParseError::UnknownMnemonic)?;
 
 		let (value, addr, offset) = match *args {
 			[LineArg::Register(value), LineArg::Register(addr)] => (value, addr, 0),

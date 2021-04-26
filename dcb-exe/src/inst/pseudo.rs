@@ -12,7 +12,7 @@ pub mod nop;
 pub mod store;
 
 // Imports
-use super::{basic, DisplayCtx, InstDisplay, InstFmtArg, InstSize};
+use super::{basic, parse::LineArg, DisplayCtx, InstDisplay, InstFmtArg, InstSize, Parsable, ParseCtx, ParseError};
 use core::fmt;
 
 /// A pseudo instruction
@@ -58,6 +58,31 @@ impl Encodable for Inst {
 			Inst::Load(inst) => inst.encode(),
 			Inst::Store(inst) => inst.encode(),
 		}
+	}
+}
+
+impl<'a> Parsable<'a> for Inst {
+	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &'a str, args: &'a [LineArg], ctx: &'a Ctx) -> Result<Self, ParseError> {
+		#[rustfmt::skip]
+		let parsers: &[&dyn Fn() -> Result<Self, ParseError>] = &[
+			&|| load_imm::Inst::parse(mnemonic, args, ctx).map(Self::LoadImm),
+			&|| nop     ::Inst::parse(mnemonic, args, ctx).map(Self::Nop),
+			&|| move_reg::Inst::parse(mnemonic, args, ctx).map(Self::MoveReg),
+			&|| load    ::Inst::parse(mnemonic, args, ctx).map(Self::Load),
+			&|| store   ::Inst::parse(mnemonic, args, ctx).map(Self::Store),
+		];
+
+		// Try to parse each one one by one.
+		// If we get an unknown mnemonic, try the next, else return the error.
+		for parser in parsers {
+			match parser() {
+				Ok(inst) => return Ok(inst),
+				Err(ParseError::UnknownMnemonic) => continue,
+				Err(err) => return Err(err),
+			}
+		}
+
+		Err(ParseError::UnknownMnemonic)
 	}
 }
 

@@ -3,7 +3,7 @@
 // Imports
 use super::{Decodable, Encodable};
 use crate::{
-	inst::{basic, DisplayCtx, InstDisplay, InstFmtArg, InstSize, Register},
+	inst::{basic, parse::LineArg, DisplayCtx, InstDisplay, InstFmtArg, InstSize, Parsable, ParseCtx, ParseError, Register},
 	Pos,
 };
 use int_conv::{Join, SignExtended, Signed, Split};
@@ -137,6 +137,37 @@ impl Encodable for Inst {
 				kind: basic::alu::imm::Kind::AddUnsigned(value),
 			}))),
 		}
+	}
+}
+
+impl<'a> Parsable<'a> for Inst {
+	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &'a str, args: &'a [LineArg], ctx: &'a Ctx) -> Result<Self, ParseError> {
+		let to_kind = match mnemonic {
+			"li" => |_ctx: &Ctx, arg: &LineArg| match *arg {
+				// Try `u16`, `i16` then `u32` for the literal
+				LineArg::Literal(value) => {
+					if let Ok(value) = value.try_into() {
+						Ok(Kind::HalfWordUnsigned(value))
+					} else if let Ok(value) = value.try_into() {
+						Ok(Kind::HalfWordSigned(value))
+					} else if let Ok(value) = value.try_into() {
+						Ok(Kind::Word(value))
+					} else {
+						Err(ParseError::LiteralOutOfRange)
+					}
+				},
+				_ => Err(ParseError::InvalidArguments),
+			},
+			"la" => |ctx: &Ctx, arg: &LineArg| ctx.arg_pos(arg).map(Kind::Address),
+			_ => return Err(ParseError::UnknownMnemonic),
+		};
+
+		let (dst, kind) = match *args {
+			[LineArg::Register(dst), ref arg] => (dst, to_kind(ctx, arg)?),
+			_ => return Err(ParseError::InvalidArguments),
+		};
+
+		Ok(Self { dst, kind })
 	}
 }
 

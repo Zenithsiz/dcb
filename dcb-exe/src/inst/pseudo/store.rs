@@ -3,7 +3,11 @@
 // Imports
 use super::{Decodable, Encodable};
 use crate::{
-	inst::{basic, DisplayCtx, InstDisplay, InstFmtArg, InstSize, Register},
+	inst::{
+		basic::{self, store::Kind},
+		parse::LineArg,
+		DisplayCtx, InstDisplay, InstFmtArg, InstSize, Parsable, ParseCtx, ParseError, Register,
+	},
 	Pos,
 };
 use int_conv::{Join, SignExtended, Signed, Split};
@@ -25,7 +29,7 @@ pub struct Inst {
 	pub target: Pos,
 
 	/// Kind
-	pub kind: basic::store::Kind,
+	pub kind: Kind,
 }
 
 impl Decodable for Inst {
@@ -68,6 +72,19 @@ impl Encodable for Inst {
 				kind:   self.kind,
 			}),
 		])
+	}
+}
+
+impl<'a> Parsable<'a> for Inst {
+	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &'a str, args: &'a [LineArg], ctx: &'a Ctx) -> Result<Self, ParseError> {
+		let kind = Kind::from_mnemonic(mnemonic).ok_or(ParseError::UnknownMnemonic)?;
+
+		let (value, target) = match *args {
+			[LineArg::Register(value), ref arg] => (value, ctx.arg_pos(arg)?),
+			_ => return Err(ParseError::InvalidArguments),
+		};
+
+		Ok(Self { value, target, kind })
 	}
 }
 

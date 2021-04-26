@@ -2,8 +2,11 @@
 
 // Imports
 use super::{Decodable, Encodable};
-use crate::inst::{basic, DisplayCtx, InstDisplay, InstFmtArg, InstSize, Register};
-use std::{array, convert::TryFrom};
+use crate::inst::{basic, parse::LineArg, DisplayCtx, InstDisplay, InstFmtArg, InstSize, Parsable, ParseCtx, ParseError, Register};
+use std::{
+	array,
+	convert::{TryFrom, TryInto},
+};
 
 /// No-op
 ///
@@ -41,6 +44,21 @@ impl Encodable for Inst {
 
 	fn encode(&self) -> Self::Iterator {
 		std::iter::repeat(Self::INST).take(self.len)
+	}
+}
+
+impl<'a> Parsable<'a> for Inst {
+	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &'a str, args: &'a [LineArg], _ctx: &'a Ctx) -> Result<Self, ParseError> {
+		if mnemonic != "nop" {
+			return Err(ParseError::UnknownMnemonic);
+		}
+
+		let len = match *args {
+			[LineArg::Literal(len)] => len.try_into().map_err(|_| ParseError::LiteralOutOfRange)?,
+			_ => return Err(ParseError::InvalidArguments),
+		};
+
+		Ok(Self { len })
 	}
 }
 

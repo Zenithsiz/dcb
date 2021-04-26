@@ -18,7 +18,7 @@ use anyhow::Context;
 use dcb_bytes::Bytes;
 use dcb_exe::{
 	inst::{
-		parse::{self, InstParser},
+		parse::{line::InstParser, LineArg},
 		Inst, Label, LabelName,
 	},
 	Data, Pos,
@@ -91,7 +91,7 @@ fn main() -> Result<(), anyhow::Error> {
 			if let Some(mut inst) = line.inst {
 				// Modify any local labels
 				for arg in &mut inst.args {
-					if let parse::Arg::Label(name) | parse::Arg::LabelOffset { label: name, .. } = arg {
+					if let LineArg::Label(name) | LineArg::LabelOffset { label: name, .. } = arg {
 						// If the label isn't local, continue
 						if !name.starts_with('.') {
 							continue;

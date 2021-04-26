@@ -1,12 +1,13 @@
 //! Directives
 
 // Imports
-use super::{DisplayCtx, InstDisplay, InstFmtArg, InstSize};
+use super::{parse::LineArg, DisplayCtx, InstDisplay, InstFmtArg, InstSize, Parsable, ParseCtx, ParseError};
 use crate::{DataType, Pos};
 use ascii::{AsciiChar, AsciiStr};
 use dcb_util::NextFromBytes;
 use std::{
 	array,
+	convert::TryInto,
 	io::{self, Write},
 };
 
@@ -152,6 +153,33 @@ impl<'a> Directive<'a> {
 				f.write_all(zeros)
 			},
 		}
+	}
+}
+
+impl<'a> Parsable<'a> for Directive<'a> {
+	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &'a str, args: &'a [LineArg], ctx: &'a Ctx) -> Result<Self, ParseError> {
+		let inst = match mnemonic {
+			"dw" => match *args {
+				[LineArg::Literal(value)] => Self::Dw(value.try_into().map_err(|_| ParseError::LiteralOutOfRange)?),
+				[ref arg] => Self::Dw(ctx.arg_pos(arg)?.0),
+				_ => return Err(ParseError::InvalidArguments),
+			},
+			"dh" => match *args {
+				[LineArg::Literal(value)] => Self::Dh(value.try_into().map_err(|_| ParseError::LiteralOutOfRange)?),
+				_ => return Err(ParseError::InvalidArguments),
+			},
+			"db" => match *args {
+				[LineArg::Literal(value)] => Self::Db(value.try_into().map_err(|_| ParseError::LiteralOutOfRange)?),
+				_ => return Err(ParseError::InvalidArguments),
+			},
+			".ascii" => match *args {
+				[LineArg::String(ref s)] => Self::Ascii(AsciiStr::from_ascii(s).map_err(|_| ParseError::NonAsciiString)?),
+				_ => return Err(ParseError::InvalidArguments),
+			},
+			_ => return Err(ParseError::UnknownMnemonic),
+		};
+
+		Ok(inst)
 	}
 }
 
