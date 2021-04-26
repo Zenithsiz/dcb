@@ -3,8 +3,8 @@
 // Imports
 use crate::{
 	inst::{
-		basic::{Decodable, Encodable, ModifiesReg},
-		InstTarget, InstTargetFmt, Register,
+		basic::{Decodable, Encodable, ModifiesReg, Parsable, ParseError},
+		parse, InstTarget, InstTargetFmt, ParseCtx, Register,
 	},
 	Pos,
 };
@@ -79,6 +79,34 @@ impl Encodable for Inst {
 		let i = self.imm;
 
 		bitpack!("00001p_iiiii_iiiii_iiiii_iiiii_iiiiii")
+	}
+}
+
+impl Parsable for Inst {
+	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &str, args: &[parse::Arg], ctx: &Ctx) -> Result<Self, ParseError> {
+		let (pos, kind) = match mnemonic {
+			"j" => match args {
+				[arg] => (ctx.arg_pos(arg)?, Kind::Jump),
+				_ => return Err(ParseError::InvalidArguments),
+			},
+
+			"jal" => match args {
+				[arg] => (ctx.arg_pos(arg)?, Kind::JumpLink),
+				_ => return Err(ParseError::InvalidArguments),
+			},
+
+			_ => return Err(ParseError::UnknownMnemonic),
+		};
+
+		// If the position isn't word aligned, return Err
+		if !pos.is_word_aligned() {
+			return Err(ParseError::TargetAlign);
+		}
+
+		// Else get our imm from it
+		let imm = (pos.0 & 0x0fff_ffff) / 4;
+
+		Ok(Self { imm, kind })
 	}
 }
 

@@ -24,7 +24,7 @@ pub use target::InstTarget;
 // Imports
 use self::{basic::Decodable as _, pseudo::Decodable as _};
 use crate::{DataTable, FuncTable, Pos};
-use std::{borrow::Borrow, ops::Deref};
+use std::{borrow::Borrow, convert::TryInto, ops::Deref};
 
 /// An assembler instruction.
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -746,6 +746,34 @@ impl<'a> InstFmt for Inst<'a> {
 			Self::Basic(inst) => inst.fmt(pos, f),
 			Self::Pseudo(inst) => inst.fmt(pos, f),
 			Self::Directive(directive) => <Directive as InstFmt>::fmt(directive, pos, f),
+		}
+	}
+}
+
+/// Parsing context
+pub trait ParseCtx {
+	/// Returns the current position
+	fn cur_pos(&self) -> Pos;
+
+	/// Returns the position of a label
+	fn label_pos(&self, label: &str) -> Option<Pos>;
+
+	/// Retrieves a position from an argument
+	fn arg_pos(&self, arg: &parse::Arg) -> Result<Pos, basic::ParseError> {
+		match *arg {
+			parse::Arg::Literal(pos) => pos.try_into().map(Pos).map_err(|_| basic::ParseError::LiteralOutOfRange),
+			parse::Arg::Label(ref label) => self.label_pos(label).ok_or(basic::ParseError::UnknownLabel),
+			_ => Err(basic::ParseError::InvalidArguments),
+		}
+	}
+
+	/// Retrieves a position and offset from an argument
+	fn arg_pos_offset(&self, arg: &parse::Arg) -> Result<(Pos, i64), basic::ParseError> {
+		match *arg {
+			parse::Arg::Literal(pos) => pos.try_into().map(|pos| (Pos(pos), 0)).map_err(|_| basic::ParseError::LiteralOutOfRange),
+			parse::Arg::Label(ref label) => self.label_pos(label).map(|pos| (pos, 0)).ok_or(basic::ParseError::UnknownLabel),
+			parse::Arg::LabelOffset { ref label, offset } => self.label_pos(label).map(|pos| (pos, offset)).ok_or(basic::ParseError::UnknownLabel),
+			_ => Err(basic::ParseError::InvalidArguments),
 		}
 	}
 }

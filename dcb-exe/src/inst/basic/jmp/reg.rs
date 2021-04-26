@@ -2,8 +2,8 @@
 
 // Imports
 use crate::inst::{
-	basic::{Decodable, Encodable, ModifiesReg},
-	InstFmt, Register,
+	basic::{Decodable, Encodable, ModifiesReg, Parsable, ParseError},
+	parse, InstFmt, ParseCtx, Register,
 };
 
 /// Jmp register instruction kind
@@ -71,6 +71,28 @@ impl Encodable for Inst {
 		bitpack!("000000_sssss_?????_ddddd_?????_00100f")
 	}
 }
+
+
+impl Parsable for Inst {
+	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &str, args: &[parse::Arg], _ctx: &Ctx) -> Result<Self, ParseError> {
+		let (target, kind) = match mnemonic {
+			"jr" => match *args {
+				[parse::Arg::Register(target)] => (target, Kind::Jump),
+				_ => return Err(ParseError::InvalidArguments),
+			},
+
+			"jalr" => match *args {
+				[parse::Arg::Register(target), parse::Arg::Register(reg)] => (target, Kind::JumpLink(reg)),
+				_ => return Err(ParseError::InvalidArguments),
+			},
+
+			_ => return Err(ParseError::UnknownMnemonic),
+		};
+
+		Ok(Self { target, kind })
+	}
+}
+
 
 impl InstFmt for Inst {
 	fn fmt(&self, _pos: crate::Pos, f: &mut std::fmt::Formatter) -> std::fmt::Result {

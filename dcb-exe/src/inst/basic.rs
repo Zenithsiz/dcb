@@ -17,7 +17,7 @@ pub mod store;
 pub mod sys;
 
 // Imports
-use super::{InstSize, Register};
+use super::{parse, InstSize, ParseCtx, Register};
 use crate::inst::InstFmt;
 
 /// All basic instructions
@@ -93,6 +93,36 @@ impl Encodable for Inst {
 	}
 }
 
+impl Parsable for Inst {
+	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &str, args: &[parse::Arg], ctx: &Ctx) -> Result<Self, ParseError> {
+		#[rustfmt::skip]
+		let parsers: &[&dyn Fn() -> Result<Self, ParseError>] = &[
+			&|| alu  ::Inst::parse(mnemonic, args, ctx).map(Self::Alu  ),
+			&|| cond ::Inst::parse(mnemonic, args, ctx).map(Self::Cond ),
+			&|| jmp  ::Inst::parse(mnemonic, args, ctx).map(Self::Jmp  ),
+			&|| load ::Inst::parse(mnemonic, args, ctx).map(Self::Load ),
+			&|| lui  ::Inst::parse(mnemonic, args, ctx).map(Self::Lui  ),
+			&|| mult ::Inst::parse(mnemonic, args, ctx).map(Self::Mult ),
+			&|| shift::Inst::parse(mnemonic, args, ctx).map(Self::Shift),
+			&|| store::Inst::parse(mnemonic, args, ctx).map(Self::Store),
+			&|| sys  ::Inst::parse(mnemonic, args, ctx).map(Self::Sys  ),
+			&|| co   ::Inst::parse(mnemonic, args, ctx).map(Self::Co   ),
+		];
+
+		// Try to parse each one one by one.
+		// If we get an unknown mnemonic, try the next, else return the error.
+		for parser in parsers {
+			match parser() {
+				Ok(inst) => return Ok(inst),
+				Err(ParseError::UnknownMnemonic) => continue,
+				Err(err) => return Err(err),
+			}
+		}
+
+		Err(ParseError::UnknownMnemonic)
+	}
+}
+
 impl ModifiesReg for Inst {
 	#[rustfmt::skip]
 	fn modifies_reg(&self, reg: Register) -> bool {
@@ -151,6 +181,40 @@ pub trait Encodable: Decodable {
 	/// Encodes this instruction
 	#[must_use]
 	fn encode(&self) -> Self::Raw;
+}
+
+/// Parsing error
+#[derive(PartialEq, Clone, Debug, thiserror::Error)]
+pub enum ParseError {
+	/// Unknown mnemonic
+	#[error("Unknown mnemonic")]
+	UnknownMnemonic,
+
+	/// Literal was out of range
+	#[error("Literal out of range")]
+	LiteralOutOfRange,
+
+	/// Invalid arguments
+	#[error("Invalid arguments")]
+	InvalidArguments,
+
+	/// Relative jump is too far
+	#[error("Relative jump is too far")]
+	RelativeJumpTooFar,
+
+	/// Unknown label
+	#[error("Unknown label")]
+	UnknownLabel,
+
+	/// Target is not properly aligned
+	#[error("Target is not properly aligned")]
+	TargetAlign,
+}
+
+/// Instruction parsing
+pub trait Parsable: Sized {
+	/// Parses this instruction
+	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &str, args: &[parse::Arg], ctx: &Ctx) -> Result<Self, ParseError>;
 }
 
 /// Register modifying instructions

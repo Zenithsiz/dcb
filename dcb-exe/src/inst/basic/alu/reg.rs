@@ -2,8 +2,8 @@
 
 // Imports
 use crate::inst::{
-	basic::{Decodable, Encodable, ModifiesReg},
-	InstFmt, Register,
+	basic::{Decodable, Encodable, ModifiesReg, Parsable, ParseError},
+	parse, InstFmt, ParseCtx, Register,
 };
 
 /// Alu register instruction kind
@@ -130,6 +130,36 @@ impl Encodable for Inst {
 		bitpack!("000000_sssss_ttttt_ddddd_?????_10ffff")
 	}
 }
+
+impl Parsable for Inst {
+	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &str, args: &[parse::Arg], _ctx: &Ctx) -> Result<Self, ParseError> {
+		#[rustfmt::skip]
+		let kind = match mnemonic {
+			"add"  => Kind::Add                ,
+			"addu" => Kind::AddUnsigned        ,
+			"sub"  => Kind::Sub                ,
+			"subu" => Kind::SubUnsigned        ,
+			"and"  => Kind::And                ,
+			"or"   => Kind::Or                 ,
+			"xor"  => Kind::Xor                ,
+			"nor"  => Kind::Nor                ,
+			"slt"  => Kind::SetLessThan        ,
+			"sltu" => Kind::SetLessThanUnsigned,
+			_ => return Err(ParseError::UnknownMnemonic),
+		};
+
+		match *args {
+			// Disallow `slt` and `sltu` in short form
+			[parse::Arg::Register(_), parse::Arg::Register(_)] if ["slt", "sltu"].contains(&mnemonic) => Err(ParseError::InvalidArguments),
+
+			// Else parse both `$dst, $lhs, $rhs` and `$dst, $rhs`.
+			[parse::Arg::Register(lhs @ dst), parse::Arg::Register(rhs)] |
+			[parse::Arg::Register(dst), parse::Arg::Register(lhs), parse::Arg::Register(rhs)] => Ok(Self { dst, lhs, rhs, kind }),
+			_ => Err(ParseError::InvalidArguments),
+		}
+	}
+}
+
 
 impl InstFmt for Inst {
 	fn fmt(&self, _pos: crate::Pos, f: &mut std::fmt::Formatter) -> std::fmt::Result {

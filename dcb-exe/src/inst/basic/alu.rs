@@ -5,10 +5,10 @@ pub mod imm;
 pub mod reg;
 
 // Imports
-use super::ModifiesReg;
+use super::{ModifiesReg, Parsable, ParseError};
 use crate::inst::{
 	basic::{Decodable, Encodable},
-	InstFmt,
+	parse, InstFmt, ParseCtx,
 };
 
 /// Alu register instructions
@@ -33,7 +33,20 @@ impl Decodable for Inst {
 
 impl Encodable for Inst {
 	fn encode(&self) -> Self::Raw {
-		todo!();
+		match self {
+			Inst::Imm(inst) => inst.encode(),
+			Inst::Reg(inst) => inst.encode(),
+		}
+	}
+}
+
+impl Parsable for Inst {
+	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &str, args: &[parse::Arg], ctx: &Ctx) -> Result<Self, ParseError> {
+		match imm::Inst::parse(mnemonic, args, ctx) {
+			Ok(inst) => Ok(Self::Imm(inst)),
+			Err(ParseError::UnknownMnemonic) => reg::Inst::parse(mnemonic, args, ctx).map(Self::Reg),
+			Err(err) => Err(err),
+		}
 	}
 }
 

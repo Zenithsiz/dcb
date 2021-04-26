@@ -1,10 +1,10 @@
 //! Multiplications
 
 // Imports
-use super::ModifiesReg;
+use super::{ModifiesReg, Parsable, ParseError};
 use crate::inst::{
 	basic::{Decodable, Encodable},
-	InstFmt, Register,
+	parse, InstFmt, ParseCtx, Register,
 };
 
 /// Operation kind
@@ -108,7 +108,7 @@ impl Decodable for Inst {
 			"000000_sssss_ttttt_ddddd_?????_01ffff" => [s, t, d, f],
 			_ => return None,
 		};
-		
+
 		Some(match f {
 			// 00x0
 			0x0 => Self::MoveFrom { dst: Register::new(d)?, src: MultReg::Hi },
@@ -130,41 +130,79 @@ impl Decodable for Inst {
 }
 
 impl Encodable for Inst {
+	#[rustfmt::skip]
 	#[bitmatch::bitmatch]
 	fn encode(&self) -> Self::Raw {
 		let [s, t, d, f] = match self {
-			Self::Mult { kind, mode, lhs, rhs } => [
-				lhs.idx(),
-				rhs.idx(),
-				0,
-				match (kind, mode) {
-					(MultKind::Mult, MultMode::Signed) => 0x8,
+			Self::Mult { kind, mode, lhs, rhs } => [lhs.idx(), rhs.idx(), 0, match (kind, mode) {
+					(MultKind::Mult, MultMode::Signed  ) => 0x8,
 					(MultKind::Mult, MultMode::Unsigned) => 0x9,
-					(MultKind::Div, MultMode::Signed) => 0xa,
-					(MultKind::Div, MultMode::Unsigned) => 0xb,
-				},
-			],
-			Self::MoveFrom { dst, src } => [
-				0,
-				0,
-				dst.idx(),
-				match src {
+					(MultKind::Div , MultMode::Signed  ) => 0xa,
+					(MultKind::Div , MultMode::Unsigned) => 0xb,
+			}],
+			Self::MoveFrom { dst, src } => [0, 0, dst.idx(), match src {
 					MultReg::Hi => 0x0,
 					MultReg::Lo => 0x2,
-				},
-			],
-			Self::MoveTo { dst, src } => [
-				src.idx(),
-				0,
-				0,
-				match dst {
+			}],
+			Self::MoveTo { dst, src } => [src.idx(), 0, 0, match dst {
 					MultReg::Hi => 0x1,
 					MultReg::Lo => 0x3,
-				},
-			],
+			}],
 		};
-		
+
 		bitpack!("000000_sssss_ttttt_ddddd_?????_01ffff")
+	}
+}
+
+impl Parsable for Inst {
+	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &str, args: &[parse::Arg], _ctx: &Ctx) -> Result<Self, ParseError> {
+		let inst = match mnemonic {
+			"mflo" | "mfhi" | "mtlo" | "mthi" => {
+				let reg = match *args {
+					[parse::Arg::Register(reg)] => reg,
+					_ => return Err(ParseError::InvalidArguments),
+				};
+
+				let mult_reg = match &mnemonic[2..=3] {
+					"lo" => MultReg::Lo,
+					"hi" => MultReg::Hi,
+					_ => unreachable!(),
+				};
+
+				match &mnemonic[1..=1] {
+					"f" => Inst::MoveFrom { dst: reg, src: mult_reg },
+					"t" => Inst::MoveTo { dst: mult_reg, src: reg },
+					_ => unreachable!(),
+				}
+			},
+
+			// Mult / Div
+			"mult" | "multu" | "div" | "divu" => {
+				let (lhs, rhs) = match *args {
+					[parse::Arg::Register(lhs), parse::Arg::Register(rhs)] => (lhs, rhs),
+					_ => return Err(ParseError::InvalidArguments),
+				};
+
+				Inst::Mult {
+					lhs,
+					rhs,
+					mode: match mnemonic {
+						"divu" | "multu" => MultMode::Unsigned,
+						"div" | "mult" => MultMode::Signed,
+						_ => unreachable!(),
+					},
+					kind: match mnemonic {
+						"mult" | "multu" => MultKind::Mult,
+						"div" | "divu" => MultKind::Div,
+						_ => unreachable!(),
+					},
+				}
+			},
+
+			_ => return Err(ParseError::UnknownMnemonic),
+		};
+
+		Ok(inst)
 	}
 }
 

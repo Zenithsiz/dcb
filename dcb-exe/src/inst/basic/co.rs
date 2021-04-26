@@ -1,13 +1,14 @@
 //! Co-processor instructions
 
 // Imports
-use super::ModifiesReg;
+use super::{ModifiesReg, Parsable, ParseError};
 use crate::inst::{
 	basic::{Decodable, Encodable},
-	InstFmt, Register,
+	parse, InstFmt, ParseCtx, Register,
 };
 use dcb_util::SignedHex;
 use int_conv::{Signed, Truncated, ZeroExtended};
+use std::convert::TryInto;
 
 /// Co-processor register kind
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -165,6 +166,76 @@ impl Encodable for Inst {
 				bitpack!("1110nn_sssss_ttttt_iiiii_iiiii_iiiiii")
 			},
 		}
+	}
+}
+
+impl Parsable for Inst {
+	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &str, args: &[parse::Arg], _ctx: &Ctx) -> Result<Self, ParseError> {
+		let inst = match mnemonic {
+			"cop0" | "cop1" | "cop2" | "cop3" => {
+				let n = mnemonic[3..].parse().expect("Unable to parse 0..=3");
+				let imm = match *args {
+					[parse::Arg::Literal(imm)] => imm.try_into().map_err(|_| ParseError::LiteralOutOfRange)?,
+					_ => return Err(ParseError::InvalidArguments),
+				};
+
+				Inst { n, kind: Kind::CopN { imm } }
+			},
+			"mfc0" | "mfc1" | "mfc2" | "mfc3" | "cfc0" | "cfc1" | "cfc2" | "cfc3" | "mtc0" | "mtc1" | "mtc2" | "mtc3" | "ctc0" | "ctc1" |
+			"ctc2" | "ctc3" => {
+				let n = mnemonic[3..].parse().expect("Unable to parse 0..=3");
+				let (reg, imm) = match *args {
+					[parse::Arg::Register(dst), parse::Arg::Literal(src)] => (dst, src.try_into().map_err(|_| ParseError::LiteralOutOfRange)?),
+					_ => return Err(ParseError::InvalidArguments),
+				};
+
+				let kind = match &mnemonic[0..=0] {
+					"m" => RegisterKind::Data,
+					"c" => RegisterKind::Control,
+					_ => unreachable!(),
+				};
+
+				match &mnemonic[1..=1] {
+					"f" => Inst {
+						n,
+						kind: Kind::MoveFrom { dst: reg, src: imm, kind },
+					},
+					"t" => Inst {
+						n,
+						kind: Kind::MoveTo { dst: imm, src: reg, kind },
+					},
+					_ => unreachable!(),
+				}
+			},
+			"lwc0" | "lwc1" | "lwc2" | "lwc3" | "swc0" | "swc1" | "swc2" | "swc3" => {
+				let n = mnemonic[3..].parse().expect("Unable to parse 0..=3");
+				let (dst, src, offset) = match *args {
+					[parse::Arg::Literal(dst), parse::Arg::RegisterOffset { register: src, offset }] => (
+						dst.try_into().map_err(|_| ParseError::LiteralOutOfRange)?,
+						src,
+						offset.try_into().map_err(|_| ParseError::LiteralOutOfRange)?,
+					),
+					_ => return Err(ParseError::InvalidArguments),
+				};
+
+				match &mnemonic[0..=0] {
+					"l" => Inst {
+						n,
+						kind: Kind::Load { dst, src, offset },
+					},
+					"s" => Inst {
+						n,
+						kind: Kind::Store { dst, src, offset },
+					},
+					_ => unreachable!(),
+				}
+			},
+
+			// TODO: bc{n}[f, t]
+			_ => return Err(ParseError::UnknownMnemonic),
+		};
+
+		Ok(inst)
 	}
 }
 

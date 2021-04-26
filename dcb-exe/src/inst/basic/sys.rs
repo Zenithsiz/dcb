@@ -1,11 +1,12 @@
 //! System calls
 
 // Imports
-use super::ModifiesReg;
+use super::{ModifiesReg, Parsable, ParseError};
 use crate::inst::{
 	basic::{Decodable, Encodable},
-	InstFmt, Register,
+	parse, InstFmt, ParseCtx, Register,
 };
+use std::convert::TryInto;
 
 /// Sys instruction func
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -62,6 +63,9 @@ impl Decodable for Inst {
 impl Encodable for Inst {
 	#[bitmatch::bitmatch]
 	fn encode(&self) -> Self::Raw {
+		// TODO: Maybe return Error?
+		assert!(self.comment < 0x100000);
+
 		let c = self.comment;
 		let f: u32 = match self.kind {
 			Kind::Sys => 0,
@@ -69,6 +73,24 @@ impl Encodable for Inst {
 		};
 
 		bitpack!("000000_ccccc_ccccc_ccccc_ccccc_00110f")
+	}
+}
+
+
+impl Parsable for Inst {
+	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &str, args: &[parse::Arg], _ctx: &Ctx) -> Result<Self, ParseError> {
+		let kind = match mnemonic {
+			"sys" => Kind::Sys,
+			"break" => Kind::Break,
+			_ => return Err(ParseError::UnknownMnemonic),
+		};
+
+		let comment = match *args {
+			[parse::Arg::Literal(comment)] => comment.try_into().map_err(|_| ParseError::LiteralOutOfRange)?,
+			_ => return Err(ParseError::InvalidArguments),
+		};
+
+		Ok(Self { comment, kind })
 	}
 }
 

@@ -2,10 +2,11 @@
 
 // Imports
 use crate::inst::{
-	basic::{Decodable, Encodable, ModifiesReg},
-	InstFmt, Register,
+	basic::{Decodable, Encodable, ModifiesReg, Parsable, ParseError},
+	parse, InstFmt, ParseCtx, Register,
 };
 use int_conv::{Truncated, ZeroExtended};
+use std::convert::TryInto;
 
 /// Shift immediate instruction kind
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -78,6 +79,9 @@ impl Decodable for Inst {
 impl Encodable for Inst {
 	#[bitmatch::bitmatch]
 	fn encode(&self) -> Self::Raw {
+		// TODO: Maybe return error?
+		assert!(self.rhs < 32);
+
 		let f: u32 = match self.kind {
 			Kind::LeftLogical => 0x0,
 			Kind::RightLogical => 0x2,
@@ -88,6 +92,28 @@ impl Encodable for Inst {
 		let i = self.rhs.zero_extended::<u32>();
 
 		bitpack!("000000_?????_ttttt_ddddd_iiiii_0000ff")
+	}
+}
+
+impl Parsable for Inst {
+	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &str, args: &[parse::Arg], _ctx: &Ctx) -> Result<Self, ParseError> {
+		let kind = match mnemonic {
+			"sll" => Kind::LeftLogical,
+			"srl" => Kind::RightLogical,
+			"sra" => Kind::RightArithmetic,
+			_ => return Err(ParseError::UnknownMnemonic),
+		};
+
+		match *args {
+			[parse::Arg::Register(lhs @ dst), parse::Arg::Literal(rhs)] |
+			[parse::Arg::Register(dst), parse::Arg::Register(lhs), parse::Arg::Literal(rhs)] => Ok(Self {
+				dst,
+				lhs,
+				rhs: rhs.try_into().map_err(|_| ParseError::LiteralOutOfRange)?,
+				kind,
+			}),
+			_ => Err(ParseError::InvalidArguments),
+		}
 	}
 }
 

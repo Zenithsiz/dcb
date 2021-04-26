@@ -1,13 +1,14 @@
 //! Load instructions
 
 // Imports
-use super::ModifiesReg;
+use super::{ModifiesReg, Parsable, ParseError};
 use crate::inst::{
 	basic::{Decodable, Encodable},
-	InstFmt, Register,
+	parse, InstFmt, ParseCtx, Register,
 };
 use dcb_util::SignedHex;
 use int_conv::{Signed, Truncated, ZeroExtended};
+use std::convert::TryInto;
 
 /// Instruction kind
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -115,12 +116,40 @@ impl Encodable for Inst {
 	}
 }
 
+impl Parsable for Inst {
+	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &str, args: &[parse::Arg], _ctx: &Ctx) -> Result<Self, ParseError> {
+		let kind = match mnemonic {
+			"lb" => Kind::Byte,
+			"lh" => Kind::HalfWord,
+			"lwl" => Kind::WordLeft,
+			"lw" => Kind::Word,
+			"lbu" => Kind::ByteUnsigned,
+			"lhu" => Kind::HalfWordUnsigned,
+			"lwr" => Kind::WordRight,
+			_ => return Err(ParseError::UnknownMnemonic),
+		};
+
+		let (value, addr, offset) = match *args {
+			[parse::Arg::Register(value), parse::Arg::Register(addr)] => (value, addr, 0),
+			[parse::Arg::Register(value), parse::Arg::RegisterOffset { register: addr, offset }] => {
+				(value, addr, offset.try_into().map_err(|_| ParseError::LiteralOutOfRange)?)
+			},
+			_ => return Err(ParseError::InvalidArguments),
+		};
+
+		Ok(Self { value, addr, offset, kind })
+	}
+}
+
 impl InstFmt for Inst {
 	fn fmt(&self, _pos: crate::Pos, f: &mut std::fmt::Formatter) -> std::fmt::Result {
 		let Self { addr, value, offset, kind } = self;
 		let mnemonic = kind.mnemonic();
 
-		write!(f, "{mnemonic} {value}, {:#}({addr})", SignedHex(offset))
+		match offset {
+			0 => write!(f, "{mnemonic} {value}, {addr}"),
+			_ => write!(f, "{mnemonic} {value}, {:#}({addr})", SignedHex(offset)),
+		}
 	}
 }
 
