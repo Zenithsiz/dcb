@@ -132,7 +132,10 @@ impl InstFmt for Inst {
 		let Self { addr, value, offset, kind } = self;
 		let mnemonic = kind.mnemonic();
 
-		write!(f, "{mnemonic} {value}, {:#}({addr})", SignedHex(offset))
+		match offset {
+			0 => write!(f, "{mnemonic} {value}, {addr}"),
+			_ => write!(f, "{mnemonic} {value}, {:#}({addr})", SignedHex(offset)),
+		}
 	}
 }
 
