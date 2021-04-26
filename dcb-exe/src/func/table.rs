@@ -17,7 +17,7 @@ pub use error::GetKnownError;
 // Imports
 use super::Func;
 use crate::{
-	inst::{basic, Directive, Inst, InstTarget, Register},
+	inst::{basic, Directive, Inst, Register},
 	DataTable, Pos,
 };
 use dcb_util::DiscardingSortedMergeIter;

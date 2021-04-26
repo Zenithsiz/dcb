@@ -5,7 +5,7 @@ use super::ModifiesReg;
 use crate::inst::{
 	basic::{Decode, TryEncode},
 	parse::LineArg,
-	DisplayCtx, InstDisplay, InstFmt, InstFmtArg, Parsable, ParseCtx, ParseError, Register,
+	DisplayCtx, InstDisplay, InstFmtArg, Parsable, ParseCtx, ParseError, Register,
 };
 use std::{array, convert::TryInto};
 
@@ -113,15 +113,6 @@ impl<'a> InstDisplay<'a> for Inst {
 
 	fn args<Ctx: DisplayCtx>(&'a self, _ctx: &Ctx) -> Self::Args {
 		array::IntoIter::new([InstFmtArg::literal(self.comment)])
-	}
-}
-
-impl InstFmt for Inst {
-	fn fmt(&self, _pos: crate::Pos, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-		let Self { comment, kind } = self;
-		let mnemonic = kind.mnemonic();
-
-		write!(f, "{mnemonic} {comment:#x}")
 	}
 }
 

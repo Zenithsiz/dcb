@@ -8,7 +8,7 @@ pub mod reg;
 use crate::inst::{
 	basic::{Decode, Encode, ModifiesReg, TryEncode},
 	parse::LineArg,
-	DisplayCtx, InstDisplay, InstFmt, InstFmtArg, Parsable, ParseCtx, ParseError, Register,
+	DisplayCtx, InstDisplay, InstFmtArg, Parsable, ParseCtx, ParseError, Register,
 };
 
 /// Alu register instructions
@@ -75,15 +75,6 @@ impl<'a> InstDisplay<'a> for Inst {
 		match self {
 			Inst::Imm(inst) => inst.args(ctx).into_iter(),
 			Inst::Reg(inst) => inst.args(ctx).into_iter(),
-		}
-	}
-}
-
-impl InstFmt for Inst {
-	fn fmt(&self, pos: crate::Pos, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-		match self {
-			Self::Imm(inst) => inst.fmt(pos, f),
-			Self::Reg(inst) => inst.fmt(pos, f),
 		}
 	}
 }

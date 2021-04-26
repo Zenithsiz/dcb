@@ -3,7 +3,7 @@
 // Imports
 use super::{Decodable, Encodable};
 use crate::{
-	inst::{basic, DisplayCtx, InstDisplay, InstFmtArg, InstSize, InstTarget, InstTargetFmt, Register},
+	inst::{basic, DisplayCtx, InstDisplay, InstFmtArg, InstSize, Register},
 	Pos,
 };
 use int_conv::{Join, SignExtended, Signed, Split};
@@ -89,20 +89,5 @@ impl<'a> InstDisplay<'a> for Inst {
 impl InstSize for Inst {
 	fn size(&self) -> usize {
 		8
-	}
-}
-
-impl InstTarget for Inst {
-	fn target(&self, _pos: Pos) -> Pos {
-		self.target
-	}
-}
-
-impl InstTargetFmt for Inst {
-	fn fmt(&self, _pos: crate::Pos, target: impl std::fmt::Display, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-		let Self { value, kind, .. } = self;
-		let mnemonic = kind.mnemonic();
-
-		write!(f, "{mnemonic} {value}, {target}")
 	}
 }

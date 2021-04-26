@@ -28,6 +28,7 @@ impl Decodable for Inst {
 		Some(Self { value: raw.i })
 	}
 }
+
 impl Encodable for Inst {
 	fn encode(&self) -> u32 {
 		Raw { i: self.value }

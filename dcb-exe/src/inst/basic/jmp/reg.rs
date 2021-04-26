@@ -4,7 +4,7 @@
 use crate::inst::{
 	basic::{Decode, Encode, ModifiesReg},
 	parse::LineArg,
-	DisplayCtx, InstDisplay, InstFmt, InstFmtArg, Parsable, ParseCtx, ParseError, Register,
+	DisplayCtx, InstDisplay, InstFmtArg, Parsable, ParseCtx, ParseError, Register,
 };
 use std::array;
 
@@ -110,23 +110,6 @@ impl<'a> InstDisplay<'a> for Inst {
 			// If linking with `$ra`, don't output it
 			Kind::Jump | Kind::JumpLink(Register::Ra) => array::IntoIter::new([InstFmtArg::Register(target)]),
 			Kind::JumpLink(reg) => array::IntoIter::new([InstFmtArg::Register(target), InstFmtArg::Register(reg)]),
-		}
-	}
-}
-
-
-impl InstFmt for Inst {
-	fn fmt(&self, _pos: crate::Pos, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-		let Self { target, kind } = self;
-		let mnemonic = kind.mnemonic();
-
-		match kind {
-			Kind::Jump => write!(f, "{mnemonic} {target}"),
-			Kind::JumpLink(reg) => match reg {
-				// If using `$ra`, don't output it.
-				Register::Ra => write!(f, "{mnemonic} {target}"),
-				reg => write!(f, "{mnemonic} {target}, {reg}"),
-			},
 		}
 	}
 }

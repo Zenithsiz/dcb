@@ -5,7 +5,7 @@ use super::ModifiesReg;
 use crate::inst::{
 	basic::{Decode, Encode},
 	parse::LineArg,
-	DisplayCtx, InstDisplay, InstFmt, InstFmtArg, Parsable, ParseCtx, ParseError, Register,
+	DisplayCtx, InstDisplay, InstFmtArg, Parsable, ParseCtx, ParseError, Register,
 };
 use std::array;
 
@@ -220,16 +220,6 @@ impl<'a> InstDisplay<'a> for Inst {
 		match *self {
 			Self::Mult { lhs, rhs, .. } => array::IntoIter::new([InstFmtArg::Register(lhs), InstFmtArg::Register(rhs)]),
 			Self::MoveFrom { dst: arg, .. } | Self::MoveTo { src: arg, .. } => array::IntoIter::new([InstFmtArg::Register(arg)]),
-		}
-	}
-}
-
-impl InstFmt for Inst {
-	fn fmt(&self, _pos: crate::Pos, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-		let mnemonic = Self::mnemonic(*self);
-		match self {
-			Self::Mult { lhs, rhs, .. } => write!(f, "{mnemonic} {lhs}, {rhs}"),
-			Self::MoveFrom { dst: arg, .. } | Self::MoveTo { src: arg, .. } => write!(f, "{mnemonic} {arg}"),
 		}
 	}
 }

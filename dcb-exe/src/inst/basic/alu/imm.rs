@@ -4,11 +4,10 @@
 use crate::inst::{
 	basic::{Decode, Encode, ModifiesReg},
 	parse::LineArg,
-	DisplayCtx, InstDisplay, InstFmt, InstFmtArg, Parsable, ParseCtx, ParseError, Register,
+	DisplayCtx, InstDisplay, InstFmtArg, Parsable, ParseCtx, ParseError, Register,
 };
-use dcb_util::SignedHex;
 use int_conv::{Signed, Truncated, ZeroExtended};
-use std::{array, convert::TryInto, fmt};
+use std::{array, convert::TryInto};
 
 /// Instruction kind
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -57,17 +56,6 @@ impl Kind {
 			Kind::Add(value) | Kind::AddUnsigned(value) | Kind::SetLessThan(value) => i64::from(value),
 			Kind::SetLessThanUnsigned(value) | Kind::And(value) | Kind::Or(value) | Kind::Xor(value) => i64::from(value),
 		}
-	}
-
-	/// Returns a displayable with the value of this kind
-	#[must_use]
-	fn value_fmt(self) -> impl fmt::Display {
-		dcb_util::DisplayWrapper::new(move |f| match self {
-			// Signed
-			Self::Add(rhs) | Self::AddUnsigned(rhs) | Self::SetLessThan(rhs) => write!(f, "{:#}", SignedHex(rhs)),
-			// Unsigned
-			Self::SetLessThanUnsigned(rhs) | Self::And(rhs) | Self::Or(rhs) | Self::Xor(rhs) => write!(f, "{rhs:#x}"),
-		})
 	}
 }
 
@@ -180,21 +168,6 @@ impl<'a> InstDisplay<'a> for Inst {
 		match !matches!(kind, Kind::SetLessThan(_) | Kind::SetLessThanUnsigned(_)) && dst == lhs {
 			true => array::IntoIter::new([InstFmtArg::Register(dst), InstFmtArg::literal(value)]),
 			false => array::IntoIter::new([InstFmtArg::Register(dst), InstFmtArg::Register(lhs), InstFmtArg::literal(value)]),
-		}
-	}
-}
-
-impl InstFmt for Inst {
-	fn fmt(&self, _pos: crate::Pos, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-		let Self { dst, lhs, kind } = self;
-		let mnemonic = kind.mnemonic();
-		let value = kind.value_fmt();
-
-		// If we're not `slti[u]` and if `$dst` and `$lhs` are the same,
-		// only print one of them
-		match !matches!(kind, Kind::SetLessThan(_) | Kind::SetLessThanUnsigned(_)) && dst == lhs {
-			true => write!(f, "{mnemonic} {dst}, {value}"),
-			false => write!(f, "{mnemonic} {dst}, {lhs}, {value}"),
 		}
 	}
 }

@@ -5,7 +5,7 @@ use crate::{
 	inst::{
 		basic::{Decode, Encode, ModifiesReg},
 		parse::LineArg,
-		DisplayCtx, InstDisplay, InstFmtArg, InstTarget, InstTargetFmt, Parsable, ParseCtx, ParseError, Register,
+		DisplayCtx, InstDisplay, InstFmtArg, Parsable, ParseCtx, ParseError, Register,
 	},
 	Pos,
 };
@@ -43,6 +43,12 @@ pub struct Inst {
 }
 
 impl Inst {
+	/// Returns this instruction's target
+	#[must_use]
+	pub fn target(self, pos: Pos) -> Pos {
+		Self::target_of(self.imm, pos)
+	}
+
 	/// Returns the target using an immediate
 	#[must_use]
 	pub fn target_of(imm: u32, pos: Pos) -> Pos {
@@ -120,21 +126,6 @@ impl<'a> InstDisplay<'a> for Inst {
 
 	fn args<Ctx: DisplayCtx>(&'a self, ctx: &Ctx) -> Self::Args {
 		array::IntoIter::new([InstFmtArg::Target(Self::target_of(self.imm, ctx.cur_pos()))])
-	}
-}
-
-
-impl InstTarget for Inst {
-	fn target(&self, pos: Pos) -> Pos {
-		Self::target_of(self.imm, pos)
-	}
-}
-
-impl InstTargetFmt for Inst {
-	fn fmt(&self, _pos: Pos, target: impl std::fmt::Display, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-		let mnemonic = self.kind.mnemonic();
-
-		write!(f, "{mnemonic} {target}")
 	}
 }
 

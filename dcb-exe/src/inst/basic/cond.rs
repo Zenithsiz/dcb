@@ -6,12 +6,12 @@ use crate::{
 	inst::{
 		basic::{Decode, Encode},
 		parse::LineArg,
-		DisplayCtx, InstDisplay, InstFmtArg, InstTarget, InstTargetFmt, Parsable, ParseCtx, ParseError, Register,
+		DisplayCtx, InstDisplay, InstFmtArg, Parsable, ParseCtx, ParseError, Register,
 	},
 	Pos,
 };
 use int_conv::{SignExtended, Signed, Truncated, ZeroExtended};
-use std::{array, convert::TryInto, fmt};
+use std::{array, convert::TryInto};
 
 /// Instruction kind
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -55,6 +55,12 @@ pub struct Inst {
 }
 
 impl Inst {
+	/// Returns this instruction's target
+	#[must_use]
+	pub fn target(self, pos: Pos) -> Pos {
+		Self::target_of(self.offset, pos)
+	}
+
 	/// Returns the target using an offset
 	#[must_use]
 	pub fn target_of(offset: i16, pos: Pos) -> Pos {
@@ -235,37 +241,6 @@ impl<'a> InstDisplay<'a> for Inst {
 				Kind::LessThanZeroLink |
 				Kind::GreaterOrEqualZeroLink,
 			) => array::IntoIter::new([register(arg), InstFmtArg::Target(target)]),
-		}
-	}
-}
-
-impl InstTarget for Inst {
-	fn target(&self, pos: Pos) -> Pos {
-		Self::target_of(self.offset, pos)
-	}
-}
-
-impl InstTargetFmt for Inst {
-	fn fmt(&self, _pos: Pos, target: impl fmt::Display, f: &mut fmt::Formatter) -> fmt::Result {
-		let Self { kind, arg, .. } = self;
-
-		// `beq $zr, $zr, offset` => `b offset`
-		// `beq $arg, $zr, offset` => `beqz $arg, offset`
-		// `bne $arg, $zr, offset` => `bnez $arg, offset`
-		match kind {
-			Kind::Equal(Register::Zr) => match arg {
-				Register::Zr => write!(f, "b {target}"),
-				arg => write!(f, "beqz {arg}, {target}"),
-			},
-			Kind::Equal(reg) => write!(f, "beq {arg}, {reg}, {target}"),
-			Kind::NotEqual(Register::Zr) => write!(f, "bnez {arg}, {target}"),
-			Kind::NotEqual(reg) => write!(f, "bne {arg}, {reg}, {target}"),
-			Kind::LessOrEqualZero => write!(f, "blez {arg}, {target}"),
-			Kind::GreaterThanZero => write!(f, "bgtz {arg}, {target}"),
-			Kind::LessThanZero => write!(f, "bltz {arg}, {target}"),
-			Kind::GreaterOrEqualZero => write!(f, "bgez {arg}, {target}"),
-			Kind::LessThanZeroLink => write!(f, "bltzal {arg}, {target}"),
-			Kind::GreaterOrEqualZeroLink => write!(f, "bgezal {arg}, {target}"),
 		}
 	}
 }

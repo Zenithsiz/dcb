@@ -5,9 +5,8 @@ use super::ModifiesReg;
 use crate::inst::{
 	basic::{Decode, Encode},
 	parse::LineArg,
-	DisplayCtx, InstDisplay, InstFmt, InstFmtArg, Parsable, ParseCtx, ParseError, Register,
+	DisplayCtx, InstDisplay, InstFmtArg, Parsable, ParseCtx, ParseError, Register,
 };
-use dcb_util::SignedHex;
 use int_conv::{Signed, Truncated, ZeroExtended};
 use std::{array, convert::TryInto, fmt};
 
@@ -122,6 +121,7 @@ impl Decode for Inst {
 		Some(Self { n, kind })
 	}
 }
+
 impl Encode for Inst {
 	#[bitmatch::bitmatch]
 	fn encode(&self) -> u32 {
@@ -277,30 +277,6 @@ impl<'a> InstDisplay<'a> for Inst {
 			Kind::Branch { offset, .. } => array::IntoIter::new([InstFmtArg::literal(offset)]),
 			Kind::Load { dst, src, offset } => array::IntoIter::new([InstFmtArg::literal(dst), InstFmtArg::register_offset(src, offset)]),
 			Kind::Store { dst, src, offset } => array::IntoIter::new([InstFmtArg::literal(dst), InstFmtArg::register_offset(src, offset)]),
-		}
-	}
-}
-
-impl InstFmt for Inst {
-	#[rustfmt::skip]
-	fn fmt(&self, _pos: crate::Pos, f: &mut fmt::Formatter) -> fmt::Result {
-		let Self { n, kind } = self;
-		match kind {
-			Kind::CopN     { imm } => write!(f, "cop{n} {imm:#x}"),
-			Kind::MoveFrom { dst, src, kind } => match kind {
-				RegisterKind::Control => write!(f, "cfc{n} {dst}, {src:#x}"),
-				RegisterKind::Data    => write!(f, "mfc{n} {dst}, {src:#x}"),
-			}
-			Kind::MoveTo   { dst, src, kind } => match kind {
-				RegisterKind::Data    => write!(f, "mtc{n} {src}, {dst:#x}"),
-				RegisterKind::Control => write!(f, "ctc{n} {src}, {dst:#x}"),
-			}
-			Kind::Branch   { offset, on } => match on {
-				true  => write!(f, "bc{n}f {:#}", SignedHex(offset)),
-				false => write!(f, "bc{n}t {:#}", SignedHex(offset)),
-			}
-			Kind::Load     { dst, src, offset } => write!(f, "lwc{n} {dst:#x}, {:#}({src})", SignedHex(offset)),
-			Kind::Store    { dst, src, offset } => write!(f, "swc{n} {dst:#x}, {:#}({src})", SignedHex(offset)),
 		}
 	}
 }

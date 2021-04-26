@@ -2,7 +2,7 @@
 
 // Imports
 use super::{Decodable, Encodable};
-use crate::inst::{basic, DisplayCtx, InstDisplay, InstFmt, InstFmtArg, InstSize, Register};
+use crate::inst::{basic, DisplayCtx, InstDisplay, InstFmtArg, InstSize, Register};
 use std::{array, convert::TryFrom};
 
 /// No-op
@@ -63,14 +63,5 @@ impl<'a> InstDisplay<'a> for Inst {
 impl InstSize for Inst {
 	fn size(&self) -> usize {
 		4 * self.len
-	}
-}
-
-impl InstFmt for Inst {
-	fn fmt(&self, _pos: crate::Pos, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-		match self.len {
-			1 => write!(f, "nop"),
-			len => write!(f, "nop {}", len),
-		}
 	}
 }

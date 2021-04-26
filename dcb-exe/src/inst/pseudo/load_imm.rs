@@ -3,10 +3,9 @@
 // Imports
 use super::{Decodable, Encodable};
 use crate::{
-	inst::{basic, DisplayCtx, InstDisplay, InstFmt, InstFmtArg, InstSize, InstTargetFmt, Register},
+	inst::{basic, DisplayCtx, InstDisplay, InstFmtArg, InstSize, Register},
 	Pos,
 };
-use dcb_util::SignedHex;
 use int_conv::{Join, SignExtended, Signed, Split};
 use std::{array, convert::TryInto};
 
@@ -43,18 +42,6 @@ impl Kind {
 			Self::Address(_) => "la",
 			Self::Word(_) | Self::HalfWordUnsigned(_) | Self::HalfWordSigned(_) => "li",
 		}
-	}
-
-	/// Returns a displayable with the value of this load kind formatted.
-	#[rustfmt::skip]
-	#[must_use]
-	pub fn value_fmt(self) -> impl std::fmt::Display {
-		dcb_util::DisplayWrapper::new(move |f| match self {
-			Self::Address(address)        => write!(f, "{address}"),
-			Self::Word(value)             => write!(f, "{value:#x}"),
-			Self::HalfWordUnsigned(value) => write!(f, "{value:#x}"),
-			Self::HalfWordSigned(value)   => write!(f, "{:#}", SignedHex(value)),
-		})
 	}
 }
 
@@ -180,20 +167,5 @@ impl InstSize for Inst {
 			Kind::Address(_) | Kind::Word(_) => 8,
 			Kind::HalfWordUnsigned(_) | Kind::HalfWordSigned(_) => 4,
 		}
-	}
-}
-
-impl InstTargetFmt for Inst {
-	fn fmt(&self, _pos: crate::Pos, target: impl std::fmt::Display, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-		let Self { dst, kind } = self;
-		let mnemonic = kind.mnemonic();
-
-		write!(f, "{mnemonic} {dst}, {target}")
-	}
-}
-
-impl InstFmt for Inst {
-	fn fmt(&self, pos: crate::Pos, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-		<Self as InstTargetFmt>::fmt(self, pos, self.kind.value_fmt(), f)
 	}
 }

@@ -4,7 +4,7 @@
 use crate::inst::{
 	basic::{Decode, Encode, ModifiesReg},
 	parse::LineArg,
-	DisplayCtx, InstDisplay, InstFmt, InstFmtArg, Parsable, ParseCtx, ParseError, Register,
+	DisplayCtx, InstDisplay, InstFmtArg, Parsable, ParseCtx, ParseError, Register,
 };
 use std::array;
 
@@ -126,19 +126,6 @@ impl<'a> InstDisplay<'a> for Inst {
 		match dst == lhs {
 			true => array::IntoIter::new([InstFmtArg::Register(dst), InstFmtArg::Register(rhs)]),
 			false => array::IntoIter::new([InstFmtArg::Register(dst), InstFmtArg::Register(lhs), InstFmtArg::Register(rhs)]),
-		}
-	}
-}
-
-impl InstFmt for Inst {
-	fn fmt(&self, _pos: crate::Pos, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-		let Self { dst, lhs, rhs, kind } = self;
-		let mnemonic = kind.mnemonic();
-
-		// If `$dst` and `$lhs` are the same, only print one of them
-		match dst == lhs {
-			true => write!(f, "{mnemonic} {dst}, {rhs}"),
-			false => write!(f, "{mnemonic} {dst}, {lhs}, {rhs}"),
 		}
 	}
 }

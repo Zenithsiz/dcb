@@ -1,7 +1,7 @@
 //! Directives
 
 // Imports
-use super::{DisplayCtx, InstDisplay, InstFmt, InstFmtArg, InstSize, InstTargetFmt};
+use super::{DisplayCtx, InstDisplay, InstFmtArg, InstSize};
 use crate::{DataType, Pos};
 use ascii::{AsciiChar, AsciiStr};
 use dcb_util::NextFromBytes;
@@ -191,30 +191,6 @@ impl<'a> InstSize for Directive<'a> {
 		}
 	}
 }
-
-impl<'a> InstFmt for Directive<'a> {
-	fn fmt(&self, _pos: Pos, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-		match self {
-			Self::Dw(value) => write!(f, "dw {value:#x}"),
-			Self::Dh(value) => write!(f, "dh {value:#x}"),
-			Self::Db(value) => write!(f, "db {value:#x}"),
-			Self::Ascii(string) => write!(f, ".ascii \"{}\"", string.as_str().escape_debug()),
-		}
-	}
-}
-
-
-impl<'a> InstTargetFmt for Directive<'a> {
-	fn fmt(&self, _pos: Pos, target: impl std::fmt::Display, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-		match self {
-			Self::Dw(_) => write!(f, "dw {target}"),
-			Self::Dh(_) => write!(f, "dh {target}"),
-			Self::Db(_) => write!(f, "db {target}"),
-			Self::Ascii(_) => write!(f, ".ascii {target}"),
-		}
-	}
-}
-
 
 /// Reads an ascii string from a byte slice until null, aligned to a word
 fn read_ascii_until_null(bytes: &[u8]) -> Option<&AsciiStr> {

@@ -21,7 +21,6 @@ use super::{
 	parse::{LineArg, Parsable},
 	DisplayCtx, InstDisplay, InstFmtArg, InstSize, ParseCtx, ParseError, Register,
 };
-use crate::inst::InstFmt;
 use std::fmt;
 
 /// All basic instructions
@@ -199,24 +198,6 @@ impl ModifiesReg for Inst {
 impl<T: Decode> InstSize for T {
 	fn size(&self) -> usize {
 		4
-	}
-}
-
-impl InstFmt for Inst {
-	#[rustfmt::skip]
-	fn fmt(&self, pos: crate::Pos, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-		match self {
-			Self::Alu  (inst) => inst.fmt(pos, f),
-			Self::Cond (inst) => inst.fmt(pos, f),
-			Self::Jmp  (inst) => inst.fmt(pos, f),
-			Self::Load (inst) => inst.fmt(pos, f),
-			Self::Lui  (inst) => inst.fmt(pos, f),
-			Self::Mult (inst) => inst.fmt(pos, f),
-			Self::Shift(inst) => inst.fmt(pos, f),
-			Self::Store(inst) => inst.fmt(pos, f),
-			Self::Sys  (inst) => inst.fmt(pos, f),
-			Self::Co   (inst) => inst.fmt(pos, f),
-		}
 	}
 }
 

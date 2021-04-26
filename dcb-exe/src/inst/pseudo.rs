@@ -12,7 +12,7 @@ pub mod nop;
 pub mod store;
 
 // Imports
-use super::{basic, DisplayCtx, InstDisplay, InstFmt, InstFmtArg, InstSize};
+use super::{basic, DisplayCtx, InstDisplay, InstFmtArg, InstSize};
 use core::fmt;
 
 /// A pseudo instruction
@@ -101,19 +101,6 @@ impl InstSize for Inst {
 		}
 	}
 }
-
-impl InstFmt for Inst {
-	fn fmt(&self, pos: crate::Pos, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-		match self {
-			Self::LoadImm(inst) => inst.fmt(pos, f),
-			Self::Nop(inst) => inst.fmt(pos, f),
-			Self::MoveReg(inst) => inst.fmt(pos, f),
-			Self::Load(inst) => inst.fmt(pos, f),
-			Self::Store(inst) => inst.fmt(pos, f),
-		}
-	}
-}
-
 /// A decodable pseudo instruction
 pub trait Decodable: InstSize + Sized {
 	/// Decodes this instruction

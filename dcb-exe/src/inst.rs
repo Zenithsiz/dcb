@@ -10,17 +10,15 @@ pub mod parse;
 pub mod pseudo;
 pub mod reg;
 pub mod size;
-pub mod target;
 
 // Exports
 pub use directive::Directive;
 pub use error::DecodeError;
-pub use fmt::{DisplayCtx, InstDisplay, InstFmt, InstFmtArg, InstTargetFmt};
+pub use fmt::{DisplayCtx, InstDisplay, InstFmtArg};
 pub use iter::ParseIter;
 pub use parse::{Parsable, ParseCtx, ParseError};
 pub use reg::Register;
 pub use size::InstSize;
-pub use target::InstTarget;
 
 // Imports
 use self::{basic::Decode as _, pseudo::Decodable as _};
@@ -129,16 +127,6 @@ impl<'a> InstSize for Inst<'a> {
 			Inst::Basic(inst) => inst.size(),
 			Inst::Pseudo(inst) => inst.size(),
 			Inst::Directive(directive) => directive.size(),
-		}
-	}
-}
-
-impl<'a> InstFmt for Inst<'a> {
-	fn fmt(&self, pos: Pos, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-		match self {
-			Self::Basic(inst) => inst.fmt(pos, f),
-			Self::Pseudo(inst) => inst.fmt(pos, f),
-			Self::Directive(directive) => <Directive as InstFmt>::fmt(directive, pos, f),
 		}
 	}
 }

@@ -5,7 +5,7 @@ use super::ModifiesReg;
 use crate::inst::{
 	basic::{Decode, Encode},
 	parse::LineArg,
-	DisplayCtx, InstDisplay, InstFmt, InstFmtArg, Parsable, ParseCtx, ParseError, Register,
+	DisplayCtx, InstDisplay, InstFmtArg, Parsable, ParseCtx, ParseError, Register,
 };
 use int_conv::{Truncated, ZeroExtended};
 use std::{array, convert::TryInto};
@@ -74,14 +74,6 @@ impl<'a> InstDisplay<'a> for Inst {
 		let &Self { dst, value } = self;
 
 		array::IntoIter::new([InstFmtArg::Register(dst), InstFmtArg::literal(value)])
-	}
-}
-
-impl InstFmt for Inst {
-	fn fmt(&self, _pos: crate::Pos, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-		let Self { dst, value } = self;
-
-		write!(f, "lui {dst}, {value:#x}")
 	}
 }
 

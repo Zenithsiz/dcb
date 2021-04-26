@@ -5,9 +5,8 @@ use super::ModifiesReg;
 use crate::inst::{
 	basic::{Decode, Encode},
 	parse::LineArg,
-	DisplayCtx, InstDisplay, InstFmt, InstFmtArg, Parsable, ParseCtx, ParseError, Register,
+	DisplayCtx, InstDisplay, InstFmtArg, Parsable, ParseCtx, ParseError, Register,
 };
-use dcb_util::SignedHex;
 use int_conv::{Signed, Truncated, ZeroExtended};
 use std::{array, convert::TryInto};
 
@@ -152,18 +151,6 @@ impl<'a> InstDisplay<'a> for Inst {
 		let &Self { value, addr, offset, .. } = self;
 
 		array::IntoIter::new([InstFmtArg::Register(value), InstFmtArg::register_offset(addr, offset)])
-	}
-}
-
-impl InstFmt for Inst {
-	fn fmt(&self, _pos: crate::Pos, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-		let Self { addr, value, offset, kind } = self;
-		let mnemonic = kind.mnemonic();
-
-		match offset {
-			0 => write!(f, "{mnemonic} {value}, {addr}"),
-			_ => write!(f, "{mnemonic} {value}, {:#}({addr})", SignedHex(offset)),
-		}
 	}
 }
 
