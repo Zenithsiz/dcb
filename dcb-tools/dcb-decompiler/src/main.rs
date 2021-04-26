@@ -16,10 +16,11 @@ mod cli;
 // Imports
 use anyhow::Context;
 use dcb_exe::{
-	inst::{basic, pseudo, Directive, Inst, InstFmt, InstTarget, InstTargetFmt},
+	inst::{DisplayCtx, Inst, InstDisplay},
 	reader::iter::ExeItem,
 	ExeReader, Func, Pos,
 };
+use itertools::{Itertools, Position};
 use std::{collections::BTreeMap, fmt, path::PathBuf};
 
 fn main() -> Result<(), anyhow::Error> {
@@ -209,71 +210,92 @@ fn main() -> Result<(), anyhow::Error> {
 #[must_use]
 pub fn inst_display<'a>(inst: &'a Inst, exe: &'a ExeReader, func: Option<&'a Func>, pos: Pos) -> impl fmt::Display + 'a {
 	// Overload the target of as many as possible using `inst_target`.
-	dcb_util::DisplayWrapper::new(move |f| match inst {
-		Inst::Basic(basic::Inst::Cond(inst)) => write!(f, "{}", self::inst_target_fmt(inst, pos, self::inst_target(exe, func, inst.target(pos)))),
-		Inst::Basic(basic::Inst::Jmp(basic::jmp::Inst::Imm(inst))) => {
-			write!(f, "{}", self::inst_target_fmt(inst, pos, self::inst_target(exe, func, inst.target(pos))))
-		},
-		Inst::Pseudo(pseudo::Inst::LoadImm(
-			inst @ pseudo::load_imm::Inst {
-				kind: pseudo::load_imm::Kind::Address(Pos(target)),
-				..
-			},
-		)) => write!(f, "{}", self::inst_target_fmt(inst, pos, self::inst_target(exe, func, Pos(*target)))),
-		Inst::Pseudo(pseudo::Inst::Load(inst)) => write!(f, "{}", self::inst_target_fmt(inst, pos, self::inst_target(exe, func, inst.target(pos)))),
-		Inst::Pseudo(pseudo::Inst::Store(inst)) => write!(f, "{}", self::inst_target_fmt(inst, pos, self::inst_target(exe, func, inst.target(pos)))),
-		Inst::Directive(directive @ Directive::Dw(target)) => {
-			write!(f, "{}", self::inst_target_fmt(directive, pos, self::inst_target(exe, func, Pos(*target))))
-		},
-		// TODO: Directive
-		inst => write!(f, "{}", self::inst_fmt(inst, pos)),
+	dcb_util::DisplayWrapper::new(move |f| {
+		// Build the context and get the mnemonic + args
+		let ctx = Ctx { exe, func, pos };
+		let mnemonic = inst.mnemonic(&ctx);
+		let args = inst.args(&ctx);
+
+		write!(f, "{mnemonic}")?;
+		for arg in args.with_position() {
+			// Write ',' if it's first, then a space
+			match &arg {
+				Position::First(_) | Position::Only(_) => write!(f, " "),
+				_ => write!(f, ", "),
+			}?;
+
+			// Then write the argument
+			let arg = arg.into_inner();
+			arg.write(f, &ctx)?;
+		}
+
+		Ok(())
 	})
 }
 
-/// Looks up a function, data or label, if possible, else returns the position.
-#[must_use]
-pub fn inst_target<'a>(exe: &'a ExeReader, func: Option<&'a Func>, pos: Pos) -> impl fmt::Display + 'a {
-	dcb_util::DisplayWrapper::new(move |f| {
+/// Display context
+struct Ctx<'a> {
+	/// Exe
+	exe: &'a ExeReader,
+
+	/// Function
+	func: Option<&'a Func>,
+
+	/// Current Position
+	pos: Pos,
+}
+
+/// Label display for `DisplayCtx::pos_label`
+enum LabelDisplay<'a> {
+	CurFuncLabel(&'a str),
+
+	OtherFuncLabel { func: &'a str, label: &'a str },
+
+	OtherFunc { func: &'a str },
+
+	Data { name: &'a str },
+}
+
+impl<'a> fmt::Display for LabelDisplay<'a> {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		match self {
+			LabelDisplay::CurFuncLabel(label) => write!(f, "{label}"),
+			LabelDisplay::OtherFuncLabel { func, label } => write!(f, "{func}.{label}"),
+			LabelDisplay::OtherFunc { func } => write!(f, "{func}"),
+			LabelDisplay::Data { name } => write!(f, "{name}"),
+		}
+	}
+}
+
+impl<'a> DisplayCtx for Ctx<'a> {
+	type Label = LabelDisplay<'a>;
+
+	fn cur_pos(&self) -> Pos {
+		self.pos
+	}
+
+	fn pos_label(&self, pos: Pos) -> Option<(Self::Label, i64)> {
 		// Try to get a label for the current function, if it exists
-		if let Some(label) = func.and_then(|func| func.labels.get(&pos)) {
-			return write!(f, ".{}", label);
+		if let Some(label) = self.func.and_then(|func| func.labels.get(&pos)) {
+			return Some((LabelDisplay::CurFuncLabel(label), 0));
 		}
 
 		// Try to get a function from it
-		if let Some(func) = exe.func_table().get_containing(pos) {
+		if let Some(func) = self.exe.func_table().get_containing(pos) {
 			// And then one of it's labels
 			if let Some(label) = func.labels.get(&pos) {
-				return write!(f, "{}.{}", func.name, label);
+				return Some((LabelDisplay::OtherFuncLabel { func: &func.name, label }, 0));
 			}
 
-			// Or just any position in it
-			return match func.start_pos == pos {
-				true => write!(f, "{}", func.name),
-				false => write!(f, "{}{:+#x}", func.name, pos - func.start_pos),
-			};
+			// Else just any position in it
+			return Some((LabelDisplay::OtherFunc { func: &func.name }, pos - func.start_pos));
 		}
 
 		// Else try a data
-		if let Some(data) = exe.data_table().get_containing(pos) {
-			return match data.start_pos() == pos {
-				true => write!(f, "{}", data.name()),
-				false => write!(f, "{}{:+#x}", data.name(), pos - data.start_pos()),
-			};
+		if let Some(data) = self.exe.data_table().get_containing(pos) {
+			return Some((LabelDisplay::Data { name: data.name() }, pos - data.start_pos()));
 		}
 
-		// Or just return the position itself
-		write!(f, "{}", pos)
-	})
-}
-
-/// Helper function to display an instruction using `InstFmt`
-#[must_use]
-pub fn inst_fmt(inst: &impl InstFmt, pos: Pos) -> impl fmt::Display + '_ {
-	dcb_util::DisplayWrapper::new(move |f| inst.fmt(pos, f))
-}
-
-/// Helper function to display an instruction using `InstTargetFmt`
-#[must_use]
-pub fn inst_target_fmt<'a>(inst: &'a impl InstTargetFmt, pos: Pos, target: impl fmt::Display + 'a) -> impl fmt::Display + 'a {
-	dcb_util::DisplayWrapper::new(move |f| inst.fmt(pos, &target, f))
+		None
+	}
 }

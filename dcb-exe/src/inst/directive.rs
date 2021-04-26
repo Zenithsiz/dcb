@@ -170,7 +170,7 @@ impl<'a> InstDisplay<'a> for Directive<'a> {
 
 	fn args<Ctx: DisplayCtx>(&'a self, _ctx: &Ctx) -> Self::Args {
 		let arg = match *self {
-			Directive::Dw(value) => InstFmtArg::literal(value),
+			Directive::Dw(value) => InstFmtArg::Target(Pos(value)),
 			Directive::Dh(value) => InstFmtArg::literal(value),
 			Directive::Db(value) => InstFmtArg::literal(value),
 			Directive::Ascii(s) => InstFmtArg::String(s.as_str()),

@@ -98,6 +98,31 @@ impl<'a> Inst<'a> {
 	}
 }
 
+impl<'a> InstDisplay<'a> for Inst<'a> {
+	type Args = impl Iterator<Item = InstFmtArg<'a>>;
+	type Mnemonic = impl std::fmt::Display;
+
+	#[auto_enums::auto_enum(Display)]
+	#[rustfmt::skip]
+	fn mnemonic<Ctx: DisplayCtx>(&'a self, ctx: &Ctx) -> Self::Mnemonic {
+		match self {
+			Inst::Basic    (inst) => inst.mnemonic(ctx),
+			Inst::Pseudo   (inst) => inst.mnemonic(ctx),
+			Inst::Directive(inst) => inst.mnemonic(ctx),
+		}
+	}
+
+	#[auto_enums::auto_enum(Iterator)]
+	#[rustfmt::skip]
+	fn args<Ctx: DisplayCtx>(&'a self, ctx: &Ctx) -> Self::Args {
+		match self {
+			Inst::Basic    (inst) => inst.args(ctx),
+			Inst::Pseudo   (inst) => inst.args(ctx),
+			Inst::Directive(inst) => inst.args(ctx),
+		}
+	}
+}
+
 impl<'a> InstSize for Inst<'a> {
 	fn size(&self) -> usize {
 		match self {

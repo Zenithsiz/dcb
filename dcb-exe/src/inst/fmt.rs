@@ -26,11 +26,14 @@ pub trait InstDisplay<'a> {
 
 /// Display context
 pub trait DisplayCtx {
+	/// Label type
+	type Label: fmt::Display;
+
 	/// Current position
 	fn cur_pos(&self) -> Pos;
 
 	/// Returns any label at `pos`, possibly with an offset
-	fn pos_label(&self, pos: Pos) -> Option<(&str, i64)>;
+	fn pos_label(&self, pos: Pos) -> Option<(Self::Label, i64)>;
 }
 
 /// An formattable argument
@@ -79,15 +82,15 @@ impl<'a> InstFmtArg<'a> {
 		match *self {
 			// Register offsets with 0 offset are formatted like normal registers
 			InstFmtArg::Register(register) | InstFmtArg::RegisterOffset { register, offset: 0 } => write!(f, "{register}"),
-			InstFmtArg::RegisterOffset { register, offset } => write!(f, "{}({register})", SignedHex(offset)),
+			InstFmtArg::RegisterOffset { register, offset } => write!(f, "{:#}({register})", SignedHex(offset)),
 			// Note: Literals do not go through label lookup
-			InstFmtArg::Literal(value) => write!(f, "{}", SignedHex(value)),
+			InstFmtArg::Literal(value) => write!(f, "{:#}", SignedHex(value)),
 			InstFmtArg::Target(pos) => match ctx.pos_label(pos) {
 				Some((label, 0)) => write!(f, "{label}"),
-				Some((label, offset)) => write!(f, "{label}+{}", SignedHex(offset)),
+				Some((label, offset)) => write!(f, "{label}+{:#}", SignedHex(offset)),
 				None => write!(f, "{pos}"),
 			},
-			InstFmtArg::String(s) => write!(f, "{}", s.escape_debug()),
+			InstFmtArg::String(s) => write!(f, "\"{}\"", s.escape_debug()),
 		}
 	}
 }
