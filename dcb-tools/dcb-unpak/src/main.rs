@@ -15,8 +15,12 @@ use std::{
 
 fn main() -> Result<(), anyhow::Error> {
 	// Initialize the logger
-	simplelog::TermLogger::init(log::LevelFilter::Info, simplelog::Config::default(), simplelog::TerminalMode::Stderr)
-		.expect("Unable to initialize logger");
+	simplelog::TermLogger::init(
+		log::LevelFilter::Info,
+		simplelog::Config::default(),
+		simplelog::TerminalMode::Stderr,
+	)
+	.expect("Unable to initialize logger");
 
 	// Get all data from cli
 	let cli_data = CliData::new();
@@ -50,7 +54,8 @@ fn extract_file(input_file_path: &Path, output_dir: &Path, cli_data: &CliData) -
 
 	// Try to create the output directory if we're not just listing
 	if !cli_data.only_list {
-		dcb_util::try_create_folder(output_dir).with_context(|| format!("Unable to create directory {}", output_dir.display()))?;
+		dcb_util::try_create_folder(output_dir)
+			.with_context(|| format!("Unable to create directory {}", output_dir.display()))?;
 	}
 
 	// Then read all entries
@@ -97,8 +102,10 @@ fn extract_file(input_file_path: &Path, output_dir: &Path, cli_data: &CliData) -
 			log::warn!("Overriding file {}", path.display());
 		}
 
-		let mut output_file = fs::File::create(&path).with_context(|| format!("Unable to create file {}", path.display()))?;
-		io::copy(&mut contents, &mut output_file).with_context(|| format!("Unable to write file {}", path.display()))?;
+		let mut output_file =
+			fs::File::create(&path).with_context(|| format!("Unable to create file {}", path.display()))?;
+		io::copy(&mut contents, &mut output_file)
+			.with_context(|| format!("Unable to write file {}", path.display()))?;
 	}
 
 	Ok(())

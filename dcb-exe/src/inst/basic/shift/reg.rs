@@ -92,7 +92,9 @@ impl Encode for Inst {
 }
 
 impl<'a> Parsable<'a> for Inst {
-	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &'a str, args: &'a [LineArg], _ctx: &'a Ctx) -> Result<Self, ParseError> {
+	fn parse<Ctx: ?Sized + ParseCtx>(
+		mnemonic: &'a str, args: &'a [LineArg], _ctx: &'a Ctx,
+	) -> Result<Self, ParseError> {
 		let kind = match mnemonic {
 			"sllv" => Kind::LeftLogical,
 			"srlv" => Kind::RightLogical,
@@ -100,12 +102,13 @@ impl<'a> Parsable<'a> for Inst {
 			_ => return Err(ParseError::UnknownMnemonic),
 		};
 
-		match *args {
-			[LineArg::Register(lhs @ dst), LineArg::Register(rhs)] | [LineArg::Register(dst), LineArg::Register(lhs), LineArg::Register(rhs)] => {
-				Ok(Self { dst, lhs, rhs, kind })
-			},
-			_ => Err(ParseError::InvalidArguments),
-		}
+		let inst = match *args {
+			[LineArg::Register(lhs @ dst), LineArg::Register(rhs)] |
+			[LineArg::Register(dst), LineArg::Register(lhs), LineArg::Register(rhs)] => Self { dst, lhs, rhs, kind },
+			_ => return Err(ParseError::InvalidArguments),
+		};
+
+		Ok(inst)
 	}
 }
 
@@ -125,7 +128,11 @@ impl<'a> InstDisplay<'a> for Inst {
 		// If `$dst` and `$lhs` are the same, only print one of them
 		match dst == lhs {
 			true => array::IntoIter::new([InstFmtArg::Register(dst), InstFmtArg::Register(rhs)]),
-			false => array::IntoIter::new([InstFmtArg::Register(dst), InstFmtArg::Register(lhs), InstFmtArg::Register(rhs)]),
+			false => array::IntoIter::new([
+				InstFmtArg::Register(dst),
+				InstFmtArg::Register(lhs),
+				InstFmtArg::Register(rhs),
+			]),
 		}
 	}
 }

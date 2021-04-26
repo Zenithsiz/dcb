@@ -109,20 +109,21 @@ impl Decode for Inst {
 			_ => return None,
 		};
 
+		let reg = Register::new;
 		Some(match f {
 			// 00x0
-			0x0 => Self::MoveFrom { dst: Register::new(d)?, src: MultReg::Hi },
-			0x2 => Self::MoveFrom { dst: Register::new(d)?, src: MultReg::Lo },
+			0x0 => Self::MoveFrom { dst: reg(d)?, src: MultReg::Hi },
+			0x2 => Self::MoveFrom { dst: reg(d)?, src: MultReg::Lo },
 
 			// 00x1
-			0x1 => Self::MoveTo { src: Register::new(s)?, dst: MultReg::Hi },
-			0x3 => Self::MoveTo { src: Register::new(s)?, dst: MultReg::Lo },
+			0x1 => Self::MoveTo { src: reg(s)?, dst: MultReg::Hi },
+			0x3 => Self::MoveTo { src: reg(s)?, dst: MultReg::Lo },
 
 			// 10xx
-			0x8 => Self::Mult { kind: MultKind::Mult, mode: MultMode::  Signed, lhs: Register::new(s)?, rhs: Register::new(t)? },
-			0x9 => Self::Mult { kind: MultKind::Mult, mode: MultMode::Unsigned, lhs: Register::new(s)?, rhs: Register::new(t)? },
-			0xa => Self::Mult { kind: MultKind::Div , mode: MultMode::  Signed, lhs: Register::new(s)?, rhs: Register::new(t)? },
-			0xb => Self::Mult { kind: MultKind::Div , mode: MultMode::Unsigned, lhs: Register::new(s)?, rhs: Register::new(t)? },
+			0x8 => Self::Mult { kind: MultKind::Mult, mode: MultMode::  Signed, lhs: reg(s)?, rhs: reg(t)? },
+			0x9 => Self::Mult { kind: MultKind::Mult, mode: MultMode::Unsigned, lhs: reg(s)?, rhs: reg(t)? },
+			0xa => Self::Mult { kind: MultKind::Div , mode: MultMode::  Signed, lhs: reg(s)?, rhs: reg(t)? },
+			0xb => Self::Mult { kind: MultKind::Div , mode: MultMode::Unsigned, lhs: reg(s)?, rhs: reg(t)? },
 
 			_ => return None,
 		})
@@ -155,7 +156,9 @@ impl Encode for Inst {
 }
 
 impl<'a> Parsable<'a> for Inst {
-	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &'a str, args: &'a [LineArg], _ctx: &'a Ctx) -> Result<Self, ParseError> {
+	fn parse<Ctx: ?Sized + ParseCtx>(
+		mnemonic: &'a str, args: &'a [LineArg], _ctx: &'a Ctx,
+	) -> Result<Self, ParseError> {
 		let inst = match mnemonic {
 			"mflo" | "mfhi" | "mtlo" | "mthi" => {
 				let reg = match *args {
@@ -170,8 +173,14 @@ impl<'a> Parsable<'a> for Inst {
 				};
 
 				match &mnemonic[1..=1] {
-					"f" => Inst::MoveFrom { dst: reg, src: mult_reg },
-					"t" => Inst::MoveTo { dst: mult_reg, src: reg },
+					"f" => Inst::MoveFrom {
+						dst: reg,
+						src: mult_reg,
+					},
+					"t" => Inst::MoveTo {
+						dst: mult_reg,
+						src: reg,
+					},
 					_ => unreachable!(),
 				}
 			},
@@ -219,7 +228,9 @@ impl<'a> InstDisplay<'a> for Inst {
 	fn args<Ctx: DisplayCtx>(&'a self, _ctx: &Ctx) -> Self::Args {
 		match *self {
 			Self::Mult { lhs, rhs, .. } => array::IntoIter::new([InstFmtArg::Register(lhs), InstFmtArg::Register(rhs)]),
-			Self::MoveFrom { dst: arg, .. } | Self::MoveTo { src: arg, .. } => array::IntoIter::new([InstFmtArg::Register(arg)]),
+			Self::MoveFrom { dst: arg, .. } | Self::MoveTo { src: arg, .. } => {
+				array::IntoIter::new([InstFmtArg::Register(arg)])
+			},
 		}
 	}
 }

@@ -16,8 +16,12 @@ use std::{fs, io, path::PathBuf};
 
 fn main() -> Result<(), anyhow::Error> {
 	// Initialize the logger
-	simplelog::TermLogger::init(log::LevelFilter::Info, simplelog::Config::default(), simplelog::TerminalMode::Stderr)
-		.expect("Unable to initialize logger");
+	simplelog::TermLogger::init(
+		log::LevelFilter::Info,
+		simplelog::Config::default(),
+		simplelog::TerminalMode::Stderr,
+	)
+	.expect("Unable to initialize logger");
 
 	// Get all data from cli
 	let cli_data = CliData::new();
@@ -32,7 +36,8 @@ fn main() -> Result<(), anyhow::Error> {
 	};
 
 	// Create output directory if it doesn't exist
-	dcb_util::try_create_folder(&output_dir).with_context(|| format!("Unable to create directory {}", output_dir.display()))?;
+	dcb_util::try_create_folder(&output_dir)
+		.with_context(|| format!("Unable to create directory {}", output_dir.display()))?;
 
 	// Open the file.
 	let input_file = fs::File::open(&cli_data.input_file).context("Unable to open input file")?;
@@ -51,7 +56,9 @@ fn main() -> Result<(), anyhow::Error> {
 		let date_time_to_string = |date_time: DecDateTime| {
 			let mut bytes = [0; 0x11];
 			date_time.to_bytes(&mut bytes).into_ok();
-			std::str::from_utf8(&bytes).expect("Date time was invalid utf8").to_owned()
+			std::str::from_utf8(&bytes)
+				.expect("Date time was invalid utf8")
+				.to_owned()
 		};
 
 		let volume = fs_reader.primary_volume_descriptor();

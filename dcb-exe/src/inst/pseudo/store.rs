@@ -38,7 +38,9 @@ impl Decodable for Inst {
 			basic::Inst::Lui(lui) if lui.dst == Register::At => match insts.next()? {
 				basic::Inst::Store(store) if store.addr == Register::At => Self {
 					value:  store.value,
-					target: Pos((u32::join(0, lui.value).as_signed() + store.offset.sign_extended::<i32>()).as_unsigned()),
+					target: Pos(
+						(u32::join(0, lui.value).as_signed() + store.offset.sign_extended::<i32>()).as_unsigned(),
+					),
 					kind:   store.kind,
 				},
 				_ => return None,

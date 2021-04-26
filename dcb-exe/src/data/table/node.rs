@@ -69,7 +69,10 @@ impl DataNode {
 			// If it contains it, check if we can insert it there
 			else if node.contains(&data) {
 				// If `data` is heuristics and `node`'s data is known and not a marker, return Err
-				if data.kind().is_heuristics() && node.data.kind().is_known() && !matches!(node.data.ty(), DataType::Marker { .. }) {
+				if data.kind().is_heuristics() &&
+					node.data.kind().is_known() &&
+					!matches!(node.data.ty(), DataType::Marker { .. })
+				{
 					return Err(InsertError::InsertHeuristicsIntoNonMarkerKnown {
 						data,
 						known: node.data.clone(),
@@ -105,7 +108,11 @@ impl DataNode {
 		}
 
 		// And insert it
-		assert_eq!(self.nodes.replace(Self::new(data)), None, "No node with this position should exist",);
+		assert_eq!(
+			self.nodes.replace(Self::new(data)),
+			None,
+			"No node with this position should exist",
+		);
 		Ok(())
 	}
 
@@ -126,7 +133,10 @@ impl DataNode {
 	pub fn get_containing(&self, pos: Pos) -> Option<&Self> {
 		// Note: We search backwards as the nodes will be sorted
 		//       by their start position
-		self.nodes.range(..=pos).next_back().filter(|node| node.data.contains_pos(pos))
+		self.nodes
+			.range(..=pos)
+			.next_back()
+			.filter(|node| node.data.contains_pos(pos))
 	}
 
 	/// Returns the deepest data node containing `pos`
@@ -226,7 +236,9 @@ fn range_intersect<T: Ord>(lhs: Range<T>, rhs: Range<T>) -> bool {
 ///
 /// It is a logical error to modify an element's order.
 /// This function *might* panic if the order is changed
-fn btree_set_modify<T: Ord + Borrow<Q>, Q: Ord, U>(set: &mut BTreeSet<T>, element: &Q, f: impl FnOnce(&mut T) -> U) -> U {
+fn btree_set_modify<T: Ord + Borrow<Q>, Q: Ord, U>(
+	set: &mut BTreeSet<T>, element: &Q, f: impl FnOnce(&mut T) -> U,
+) -> U {
 	// Take the element from the set
 	let mut node = set.take(element).expect("Element didn't exist");
 

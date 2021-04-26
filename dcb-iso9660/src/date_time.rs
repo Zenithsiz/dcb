@@ -61,9 +61,12 @@ impl Bytes for DecDateTime {
 		Ok(Self {
 			year:           self::parse_decimal_string(bytes.year, [b'0', b'0', b'0', b'0'], [b'9', b'9', b'9', b'9'])
 				.ok_or_else(|| FromBytesError::Year(*bytes.year))?,
-			month:          self::parse_decimal_string(bytes.month, [b'0', b'0'], [b'1', b'2']).ok_or_else(|| FromBytesError::Month(*bytes.month))?,
-			day:            self::parse_decimal_string(bytes.day, [b'0', b'0'], [b'3', b'1']).ok_or_else(|| FromBytesError::Day(*bytes.day))?,
-			hour:           self::parse_decimal_string(bytes.hour, [b'0', b'0'], [b'2', b'3']).ok_or_else(|| FromBytesError::Hour(*bytes.hour))?,
+			month:          self::parse_decimal_string(bytes.month, [b'0', b'0'], [b'1', b'2'])
+				.ok_or_else(|| FromBytesError::Month(*bytes.month))?,
+			day:            self::parse_decimal_string(bytes.day, [b'0', b'0'], [b'3', b'1'])
+				.ok_or_else(|| FromBytesError::Day(*bytes.day))?,
+			hour:           self::parse_decimal_string(bytes.hour, [b'0', b'0'], [b'2', b'3'])
+				.ok_or_else(|| FromBytesError::Hour(*bytes.hour))?,
 			minutes:        self::parse_decimal_string(bytes.minutes, [b'0', b'0'], [b'5', b'9'])
 				.ok_or_else(|| FromBytesError::Minute(*bytes.minutes))?,
 			seconds:        self::parse_decimal_string(bytes.seconds, [b'0', b'0'], [b'5', b'9'])
@@ -122,7 +125,8 @@ impl fmt::Debug for DecDateTime {
 
 		write!(
 			f,
-			"\"{year}-{month}-{day}T{hour}:{minutes}:{seconds}:{hundredths_sec}{time_zone_hours:+}:{time_zone_minutes}\""
+			"\"{year}-{month}-{day}T{hour}:{minutes}:{seconds}:{hundredths_sec}{time_zone_hours:+}:\
+			 {time_zone_minutes}\""
 		)
 	}
 }

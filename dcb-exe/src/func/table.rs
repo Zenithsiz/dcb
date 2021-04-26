@@ -79,8 +79,10 @@ impl FuncTable {
 
 	/// Creates a new list of functions from an iterator over insts
 	#[must_use]
+	#[allow(clippy::too_many_lines)] // TODO: Refactor
 	pub fn search_instructions<'a>(
-		insts_range: Range<Pos>, insts: impl Iterator<Item = (Pos, Inst<'a>)> + Clone, known_func_table: &Self, data_table: &DataTable,
+		insts_range: Range<Pos>, insts: impl Iterator<Item = (Pos, Inst<'a>)> + Clone, known_func_table: &Self,
+		data_table: &DataTable,
 	) -> Self {
 		// Get all returns
 		let returns: BTreeSet<Pos> = insts
@@ -159,7 +161,11 @@ impl FuncTable {
 
 			// If there's a function in between us and the return, use the last tailcall instead
 			if let Some(next_func_pos) = function_entries.range(func_pos + 4i32..end_pos).next() {
-				end_pos = tailcalls.range(..next_func_pos).next_back().copied().unwrap_or(func_pos) + 8i32;
+				end_pos = tailcalls
+					.range(..next_func_pos)
+					.next_back()
+					.copied()
+					.unwrap_or(func_pos) + 8i32;
 
 				// If we got a tailcall before this function, just end it 2 insts
 				if end_pos <= func_pos {
@@ -168,13 +174,22 @@ impl FuncTable {
 			}
 
 			// If this function would intersect any other, skip this one.
-			if cur_funcs.range(..=func_pos).next_back().map_or(false, |func| func.end_pos > func_pos) ||
-				cur_funcs.range(func_pos..).next().map_or(false, |func| func.start_pos < end_pos) ||
+			if cur_funcs
+				.range(..=func_pos)
+				.next_back()
+				.map_or(false, |func| func.end_pos > func_pos) ||
+				cur_funcs
+					.range(func_pos..)
+					.next()
+					.map_or(false, |func| func.start_pos < end_pos) ||
 				known_func_table
 					.range(..=func_pos)
 					.next_back()
 					.map_or(false, |func| func.end_pos > func_pos) ||
-				known_func_table.range(func_pos..).next().map_or(false, |func| func.start_pos < end_pos)
+				known_func_table
+					.range(func_pos..)
+					.next()
+					.map_or(false, |func| func.start_pos < end_pos)
 			{
 				continue;
 			}

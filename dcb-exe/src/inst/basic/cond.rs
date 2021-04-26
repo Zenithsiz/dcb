@@ -149,15 +149,21 @@ impl<'a> Parsable<'a> for Inst {
 				_ => return Err(ParseError::InvalidArguments),
 			},
 			"bnez" => match *args {
-				[LineArg::Register(arg), ref target] => (arg, target_arg_to_offset(target)?, Kind::NotEqual(Register::Zr)),
+				[LineArg::Register(arg), ref target] => {
+					(arg, target_arg_to_offset(target)?, Kind::NotEqual(Register::Zr))
+				},
 				_ => return Err(ParseError::InvalidArguments),
 			},
 			"beq" => match *args {
-				[LineArg::Register(arg), LineArg::Register(reg), ref target] => (arg, target_arg_to_offset(target)?, Kind::Equal(reg)),
+				[LineArg::Register(arg), LineArg::Register(reg), ref target] => {
+					(arg, target_arg_to_offset(target)?, Kind::Equal(reg))
+				},
 				_ => return Err(ParseError::InvalidArguments),
 			},
 			"bne" => match *args {
-				[LineArg::Register(arg), LineArg::Register(reg), ref target] => (arg, target_arg_to_offset(target)?, Kind::NotEqual(reg)),
+				[LineArg::Register(arg), LineArg::Register(reg), ref target] => {
+					(arg, target_arg_to_offset(target)?, Kind::NotEqual(reg))
+				},
 				_ => return Err(ParseError::InvalidArguments),
 			},
 			"blez" => match *args {
@@ -181,7 +187,9 @@ impl<'a> Parsable<'a> for Inst {
 				_ => return Err(ParseError::InvalidArguments),
 			},
 			"bgezal" => match *args {
-				[LineArg::Register(arg), ref target] => (arg, target_arg_to_offset(target)?, Kind::GreaterOrEqualZeroLink),
+				[LineArg::Register(arg), ref target] => {
+					(arg, target_arg_to_offset(target)?, Kind::GreaterOrEqualZeroLink)
+				},
 				_ => return Err(ParseError::InvalidArguments),
 			},
 
@@ -220,18 +228,28 @@ impl<'a> InstDisplay<'a> for Inst {
 	}
 
 	#[auto_enums::auto_enum(Iterator)]
-	#[rustfmt::skip]
 	fn args<Ctx: DisplayCtx>(&'a self, ctx: &Ctx) -> Self::Args {
-		use InstFmtArg::Register as register;
 		let &Self { arg, offset, kind } = self;
 		let target = Self::target_of(offset, ctx.cur_pos());
 
 		match (arg, kind) {
-			(Register::Zr, Kind::Equal   (Register::Zr)) => array::IntoIter::new([                              InstFmtArg::Target(target)]),
-			(_           , Kind::Equal   (Register::Zr)) => array::IntoIter::new([register(arg),                InstFmtArg::Target(target)]),
-			(_           , Kind::Equal   (reg)         ) => array::IntoIter::new([register(arg), register(reg), InstFmtArg::Target(target)]),
-			(_           , Kind::NotEqual(Register::Zr)) => array::IntoIter::new([register(arg),                InstFmtArg::Target(target)]),
-			(_           , Kind::NotEqual(reg)         ) => array::IntoIter::new([register(arg), register(reg), InstFmtArg::Target(target)]),
+			(Register::Zr, Kind::Equal(Register::Zr)) => array::IntoIter::new([InstFmtArg::Target(target)]),
+			(_, Kind::Equal(Register::Zr)) => {
+				array::IntoIter::new([InstFmtArg::Register(arg), InstFmtArg::Target(target)])
+			},
+			(_, Kind::Equal(reg)) => array::IntoIter::new([
+				InstFmtArg::Register(arg),
+				InstFmtArg::Register(reg),
+				InstFmtArg::Target(target),
+			]),
+			(_, Kind::NotEqual(Register::Zr)) => {
+				array::IntoIter::new([InstFmtArg::Register(arg), InstFmtArg::Target(target)])
+			},
+			(_, Kind::NotEqual(reg)) => array::IntoIter::new([
+				InstFmtArg::Register(arg),
+				InstFmtArg::Register(reg),
+				InstFmtArg::Target(target),
+			]),
 			(
 				_,
 				Kind::LessOrEqualZero |
@@ -240,7 +258,7 @@ impl<'a> InstDisplay<'a> for Inst {
 				Kind::GreaterOrEqualZero |
 				Kind::LessThanZeroLink |
 				Kind::GreaterOrEqualZeroLink,
-			) => array::IntoIter::new([register(arg), InstFmtArg::Target(target)]),
+			) => array::IntoIter::new([InstFmtArg::Register(arg), InstFmtArg::Target(target)]),
 		}
 	}
 }

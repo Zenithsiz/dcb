@@ -18,11 +18,18 @@ use std::{
 
 fn main() -> Result<(), anyhow::Error> {
 	// Initialize the logger
-	simplelog::TermLogger::init(log::LevelFilter::Info, simplelog::Config::default(), simplelog::TerminalMode::Stderr)
-		.expect("Unable to initialize logger");
+	simplelog::TermLogger::init(
+		log::LevelFilter::Info,
+		simplelog::Config::default(),
+		simplelog::TerminalMode::Stderr,
+	)
+	.expect("Unable to initialize logger");
 
 	// Get all data from cli
-	let cli::CliData { input_file, output_file } = cli::CliData::new();
+	let cli::CliData {
+		input_file,
+		output_file,
+	} = cli::CliData::new();
 
 	// Try to pack it into a `CdRom/XA`
 	self::pack_cdrom_xa(&input_file, &output_file).context("Unable to pack file")?;

@@ -52,7 +52,9 @@ impl DirReader {
 			}
 
 			// And parse it
-			DirEntryReader::from_bytes(&entry_bytes).map_err(ReadEntryError::ParseEntry).transpose()
+			DirEntryReader::from_bytes(&entry_bytes)
+				.map_err(ReadEntryError::ParseEntry)
+				.transpose()
 		});
 
 		Ok(iter)

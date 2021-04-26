@@ -11,11 +11,18 @@ use std::{fs, io::Write, path::Path};
 
 fn main() -> Result<(), anyhow::Error> {
 	// Initialize the logger
-	simplelog::TermLogger::init(log::LevelFilter::Info, simplelog::Config::default(), simplelog::TerminalMode::Stderr)
-		.expect("Unable to initialize logger");
+	simplelog::TermLogger::init(
+		log::LevelFilter::Info,
+		simplelog::Config::default(),
+		simplelog::TerminalMode::Stderr,
+	)
+	.expect("Unable to initialize logger");
 
 	// Get all data from cli
-	let cli::CliData { input_file, output_file } = cli::CliData::new();
+	let cli::CliData {
+		input_file,
+		output_file,
+	} = cli::CliData::new();
 
 	// Try to extract it into a `iso`
 	self::extract_cdrom_xa(&input_file, &output_file).context("Unable to extract file")?;
@@ -36,7 +43,9 @@ fn extract_cdrom_xa(input_file: &Path, output_file: &Path) -> Result<(), anyhow:
 	for sector in input_file.read_sectors() {
 		let sector = sector.context("Unable to read sector")?;
 
-		output_file.write_all(sector.data.as_ref()).context("Unable to write data")?;
+		output_file
+			.write_all(sector.data.as_ref())
+			.context("Unable to write data")?;
 	}
 
 	Ok(())

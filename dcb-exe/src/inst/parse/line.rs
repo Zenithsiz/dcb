@@ -41,7 +41,10 @@ impl<R: io::BufRead> InstParser<R> {
 
 		// If it starts with a comment or it's empty, return an empty line
 		if line.starts_with('#') || line.is_empty() {
-			return Ok(Line { label: None, inst: None });
+			return Ok(Line {
+				label: None,
+				inst:  None,
+			});
 		}
 
 		// Name character validator
@@ -146,7 +149,10 @@ impl<R: io::BufRead> InstParser<R> {
 
 				// Find the first non-escaped '"'
 				// Note: The `+2` can never panic.
-				let string = match args[1..].find(find_first_non_escaped_quotes).map(|idx| args.split_at(idx + 2)) {
+				let string = match args[1..]
+					.find(find_first_non_escaped_quotes)
+					.map(|idx| args.split_at(idx + 2))
+				{
 					Some((string, rest)) => {
 						args = rest.trim_start();
 						string

@@ -1,7 +1,9 @@
 #![doc(include = "item.md")]
 
 // Imports
-use crate::card::property::{self, ArrowColor, Effect, EffectCondition, MaybeArrowColor, MaybeEffect, MaybeEffectCondition};
+use crate::card::property::{
+	self, ArrowColor, Effect, EffectCondition, MaybeArrowColor, MaybeEffect, MaybeEffectCondition,
+};
 use byteorder::{ByteOrder, LittleEndian};
 use dcb_bytes::Bytes;
 use dcb_util::{
@@ -146,9 +148,15 @@ impl Bytes for Item {
 			],
 
 			effects: [
-				MaybeEffect::from_bytes(bytes.effect_first).map_err(FromBytesError::EffectFirst)?.into(),
-				MaybeEffect::from_bytes(bytes.effect_second).map_err(FromBytesError::EffectSecond)?.into(),
-				MaybeEffect::from_bytes(bytes.effect_third).map_err(FromBytesError::EffectThird)?.into(),
+				MaybeEffect::from_bytes(bytes.effect_first)
+					.map_err(FromBytesError::EffectFirst)?
+					.into(),
+				MaybeEffect::from_bytes(bytes.effect_second)
+					.map_err(FromBytesError::EffectSecond)?
+					.into(),
+				MaybeEffect::from_bytes(bytes.effect_third)
+					.map_err(FromBytesError::EffectThird)?
+					.into(),
 			],
 
 			effect_arrow_color: MaybeArrowColor::from_bytes(bytes.effect_arrow_color)
@@ -156,10 +164,22 @@ impl Bytes for Item {
 				.into(),
 
 			effect_description: [
-				bytes.effect_description_0.read_string().map_err(FromBytesError::EffectDescription1)?,
-				bytes.effect_description_1.read_string().map_err(FromBytesError::EffectDescription2)?,
-				bytes.effect_description_2.read_string().map_err(FromBytesError::EffectDescription3)?,
-				bytes.effect_description_3.read_string().map_err(FromBytesError::EffectDescription4)?,
+				bytes
+					.effect_description_0
+					.read_string()
+					.map_err(FromBytesError::EffectDescription1)?,
+				bytes
+					.effect_description_1
+					.read_string()
+					.map_err(FromBytesError::EffectDescription2)?,
+				bytes
+					.effect_description_2
+					.read_string()
+					.map_err(FromBytesError::EffectDescription3)?,
+				bytes
+					.effect_description_3
+					.read_string()
+					.map_err(FromBytesError::EffectDescription4)?,
 			],
 
 			// Unknown

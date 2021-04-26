@@ -26,7 +26,13 @@ pub fn proxy_sentinel_derive(input: proc_macro::TokenStream) -> proc_macro::Toke
 	let mut wrapper_type = None;
 	for attr in &input.attrs {
 		match attr.parse_meta() {
-			Ok(syn::Meta::List(list)) if list.path.get_ident().map(|ident| ident == "proxy_sentinel").unwrap_or(false) => {
+			Ok(syn::Meta::List(list))
+				if list
+					.path
+					.get_ident()
+					.map(|ident| ident == "proxy_sentinel")
+					.unwrap_or(false) =>
+			{
 				for nested_attr in &list.nested {
 					match nested_attr {
 						syn::NestedMeta::Meta(syn::Meta::NameValue(name_value)) => match name_value.path.get_ident() {
@@ -46,7 +52,8 @@ pub fn proxy_sentinel_derive(input: proc_macro::TokenStream) -> proc_macro::Toke
 	let sentinel_value = sentinel_value.expect("You must supply a sentinel value via `proxy_sentinel(value = ...)`");
 	let wrapper_type = wrapper_type.expect("You must supply the wrapper type via `proxy_sentinel(wrapper_type = ...)`");
 	// TODO: Do this better, it's awful
-	let wrapper_type: syn::TypePath = syn::parse_str(&wrapper_type.to_token_stream().to_string().trim_matches('"')).expect("");
+	let wrapper_type: syn::TypePath =
+		syn::parse_str(&wrapper_type.to_token_stream().to_string().trim_matches('"')).expect("");
 	//let wrapper_type = syn::parse_macro_input!(wrapper_type_token_stream as );
 
 	let struct_name = input.ident;

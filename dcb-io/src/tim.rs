@@ -53,7 +53,9 @@ impl TimFile {
 	pub fn deserialize<R: io::Read + io::Seek>(reader: &mut R) -> Result<Self, DeserializeError> {
 		// Read the whole header
 		let mut header_bytes = [0u8; Self::HEADER_SIZE];
-		reader.read_exact(&mut header_bytes).map_err(DeserializeError::ReadHeader)?;
+		reader
+			.read_exact(&mut header_bytes)
+			.map_err(DeserializeError::ReadHeader)?;
 
 		let header_bytes = array_split!(&header_bytes,
 			magic  :  0x1,

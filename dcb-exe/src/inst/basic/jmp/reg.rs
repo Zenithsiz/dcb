@@ -74,7 +74,9 @@ impl Encode for Inst {
 
 
 impl<'a> Parsable<'a> for Inst {
-	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &'a str, args: &'a [LineArg], _ctx: &'a Ctx) -> Result<Self, ParseError> {
+	fn parse<Ctx: ?Sized + ParseCtx>(
+		mnemonic: &'a str, args: &'a [LineArg], _ctx: &'a Ctx,
+	) -> Result<Self, ParseError> {
 		let (target, kind) = match mnemonic {
 			"jr" => match *args {
 				[LineArg::Register(target)] => (target, Kind::Jump),

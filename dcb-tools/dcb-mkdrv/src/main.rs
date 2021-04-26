@@ -15,8 +15,12 @@ use std::{fs, path::Path};
 
 fn main() -> Result<(), anyhow::Error> {
 	// Initialize the logger
-	simplelog::TermLogger::init(log::LevelFilter::Info, simplelog::Config::default(), simplelog::TerminalMode::Stderr)
-		.expect("Unable to initialize logger");
+	simplelog::TermLogger::init(
+		log::LevelFilter::Info,
+		simplelog::Config::default(),
+		simplelog::TerminalMode::Stderr,
+	)
+	.expect("Unable to initialize logger");
 
 	// Get all data from cli
 	let cli::CliData { input_dir, output_file } = cli::CliData::new();
@@ -33,13 +37,19 @@ fn pack_filesystem(input_dir: &Path, output_file: &Path) -> Result<(), anyhow::E
 	let mut output_file = fs::File::create(output_file).context("Unable to create output file")?;
 
 	// Create the filesystem writer
-	let root_entries = dir_lister::DirLister::new(input_dir).context("Unable to create new dir lister for root directory")?;
+	let root_entries =
+		dir_lister::DirLister::new(input_dir).context("Unable to create new dir lister for root directory")?;
 	DrvFsWriter::write_fs(&mut output_file, root_entries).context("Unable to write filesystem")?;
 
 	// Then pad the file to a sector `2048` if it isn't already
-	let len = output_file.metadata().context("Unable to get output file metadata")?.len();
+	let len = output_file
+		.metadata()
+		.context("Unable to get output file metadata")?
+		.len();
 	if len % 2048 != 0 {
-		output_file.set_len(2048 * ((len + 2047) / 2048)).context("Unable to set file length")?;
+		output_file
+			.set_len(2048 * ((len + 2047) / 2048))
+			.context("Unable to set file length")?;
 	}
 
 	Ok(())

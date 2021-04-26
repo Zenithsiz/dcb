@@ -22,7 +22,11 @@ impl FileReader {
 	/// Creates a new file reader from it's extension, sector position and size.
 	#[must_use]
 	pub const fn new(extension: AsciiStrArr<0x3>, sector_pos: u32, size: u32) -> Self {
-		Self { extension, sector_pos, size }
+		Self {
+			extension,
+			sector_pos,
+			size,
+		}
 	}
 
 	/// Returns this file's extension
@@ -75,7 +79,11 @@ pub struct FileWriter<R: io::Read> {
 impl<R: io::Read> FileWriter<R> {
 	/// Creates a new file writer from it's extension and reader.
 	pub fn new(extension: AsciiStrArr<0x3>, reader: R, size: u32) -> Self {
-		Self { extension, reader, size }
+		Self {
+			extension,
+			reader,
+			size,
+		}
 	}
 
 	/// Returns this file's extension

@@ -33,7 +33,9 @@ impl TmdModel {
 	pub fn from_reader<R: io::Read + io::Seek>(reader: &mut R) -> Result<Self, FromReaderError> {
 		// Read the header
 		let mut header_bytes = [0; Self::HEADER_SIZE];
-		reader.read_exact(&mut header_bytes).map_err(FromReaderError::ReadHeader)?;
+		reader
+			.read_exact(&mut header_bytes)
+			.map_err(FromReaderError::ReadHeader)?;
 		let header_bytes = array_split!(&header_bytes,
 			magic   : [0x4],
 			flags   : [0x4],
@@ -51,7 +53,8 @@ impl TmdModel {
 			todo!("Flags other than `0x0` ({:#x}) are not supported", flags);
 		}
 
-		let objs_len = usize::try_from(LittleEndian::read_u32(header_bytes.objs_len)).expect("Unable to get object number as `usize`");
+		let objs_len = usize::try_from(LittleEndian::read_u32(header_bytes.objs_len))
+			.expect("Unable to get object number as `usize`");
 
 		// TODO: Support more than 1 object
 		if objs_len != 1 {

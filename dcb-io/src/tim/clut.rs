@@ -41,7 +41,9 @@ impl Clut {
 	pub fn deserialize<R: io::Read>(reader: &mut R) -> Result<Self, DeserializeError> {
 		// Read the whole header
 		let mut header_bytes = [0u8; Self::HEADER_SIZE];
-		reader.read_exact(&mut header_bytes).map_err(DeserializeError::ReadHeader)?;
+		reader
+			.read_exact(&mut header_bytes)
+			.map_err(DeserializeError::ReadHeader)?;
 
 		let header_bytes = array_split!(&header_bytes,
 			length: [0x4],
@@ -65,10 +67,18 @@ impl Clut {
 
 		let mut colors = Vec::with_capacity(colors_len);
 		for _ in 0..colors_len {
-			let color = reader.read_u16::<LittleEndian>().map_err(DeserializeError::ReadColors)?;
+			let color = reader
+				.read_u16::<LittleEndian>()
+				.map_err(DeserializeError::ReadColors)?;
 			colors.push(color);
 		}
 
-		Ok(Self { x, y, width, height, colors })
+		Ok(Self {
+			x,
+			y,
+			width,
+			height,
+			colors,
+		})
 	}
 }

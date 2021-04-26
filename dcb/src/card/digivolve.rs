@@ -72,10 +72,22 @@ impl Bytes for Digivolve {
 
 			// Effect
 			effect_description: [
-				bytes.effect_description_0.read_string().map_err(FromBytesError::EffectDescription1)?,
-				bytes.effect_description_1.read_string().map_err(FromBytesError::EffectDescription2)?,
-				bytes.effect_description_2.read_string().map_err(FromBytesError::EffectDescription3)?,
-				bytes.effect_description_3.read_string().map_err(FromBytesError::EffectDescription4)?,
+				bytes
+					.effect_description_0
+					.read_string()
+					.map_err(FromBytesError::EffectDescription1)?,
+				bytes
+					.effect_description_1
+					.read_string()
+					.map_err(FromBytesError::EffectDescription2)?,
+				bytes
+					.effect_description_2
+					.read_string()
+					.map_err(FromBytesError::EffectDescription3)?,
+				bytes
+					.effect_description_3
+					.read_string()
+					.map_err(FromBytesError::EffectDescription4)?,
 			],
 
 			// Unknown

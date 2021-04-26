@@ -8,8 +8,8 @@ pub use error::{FromBytesError, ToBytesError};
 
 // Imports
 use crate::card::property::{
-	ArrowColor, CrossMoveEffect, Effect, EffectCondition, Level, MaybeArrowColor, MaybeCrossMoveEffect, MaybeEffect, MaybeEffectCondition, Move,
-	Speciality,
+	ArrowColor, CrossMoveEffect, Effect, EffectCondition, Level, MaybeArrowColor, MaybeCrossMoveEffect, MaybeEffect,
+	MaybeEffectCondition, Move, Speciality,
 };
 use byteorder::{ByteOrder, LittleEndian};
 use dcb_bytes::Bytes;
@@ -124,7 +124,8 @@ impl Bytes for Digimon {
 		Ok(Self {
 			name: NullAsciiString::read_string(bytes.name).map_err(FromBytesError::Name)?,
 
-			speciality: Speciality::from_bytes(&((bytes.speciality_level & 0xF0) >> 4u8)).map_err(FromBytesError::Speciality)?,
+			speciality: Speciality::from_bytes(&((bytes.speciality_level & 0xF0) >> 4u8))
+				.map_err(FromBytesError::Speciality)?,
 
 			level: Level::from_bytes(&(bytes.speciality_level & 0x0F)).map_err(FromBytesError::Level)?,
 
@@ -149,9 +150,15 @@ impl Bytes for Digimon {
 			],
 
 			effects: [
-				MaybeEffect::from_bytes(bytes.effect_first).map_err(FromBytesError::EffectFirst)?.into(),
-				MaybeEffect::from_bytes(bytes.effect_second).map_err(FromBytesError::EffectSecond)?.into(),
-				MaybeEffect::from_bytes(bytes.effect_third).map_err(FromBytesError::EffectThird)?.into(),
+				MaybeEffect::from_bytes(bytes.effect_first)
+					.map_err(FromBytesError::EffectFirst)?
+					.into(),
+				MaybeEffect::from_bytes(bytes.effect_second)
+					.map_err(FromBytesError::EffectSecond)?
+					.into(),
+				MaybeEffect::from_bytes(bytes.effect_third)
+					.map_err(FromBytesError::EffectThird)?
+					.into(),
 			],
 
 			cross_move_effect: MaybeCrossMoveEffect::from_bytes(bytes.cross_move_effect)
@@ -163,10 +170,22 @@ impl Bytes for Digimon {
 				.into(),
 
 			effect_description: [
-				bytes.effect_description_0.read_string().map_err(FromBytesError::EffectDescription1)?,
-				bytes.effect_description_1.read_string().map_err(FromBytesError::EffectDescription2)?,
-				bytes.effect_description_2.read_string().map_err(FromBytesError::EffectDescription3)?,
-				bytes.effect_description_3.read_string().map_err(FromBytesError::EffectDescription4)?,
+				bytes
+					.effect_description_0
+					.read_string()
+					.map_err(FromBytesError::EffectDescription1)?,
+				bytes
+					.effect_description_1
+					.read_string()
+					.map_err(FromBytesError::EffectDescription2)?,
+				bytes
+					.effect_description_2
+					.read_string()
+					.map_err(FromBytesError::EffectDescription3)?,
+				bytes
+					.effect_description_3
+					.read_string()
+					.map_err(FromBytesError::EffectDescription4)?,
 			],
 
 			// Unknown

@@ -33,14 +33,19 @@ use std::{
 
 fn main() -> Result<(), anyhow::Error> {
 	// Initialize the logger
-	simplelog::TermLogger::init(log::LevelFilter::Info, simplelog::Config::default(), simplelog::TerminalMode::Stderr)
-		.expect("Unable to initialize logger");
+	simplelog::TermLogger::init(
+		log::LevelFilter::Info,
+		simplelog::Config::default(),
+		simplelog::TerminalMode::Stderr,
+	)
+	.expect("Unable to initialize logger");
 
 	// Get all data from cli
 	let cli = cli::CliData::new();
 
 	// Get the header
-	let header_file = fs::File::open(&cli.header_path).with_context(|| format!("Unable to open header file {}", cli.header_path.display()))?;
+	let header_file = fs::File::open(&cli.header_path)
+		.with_context(|| format!("Unable to open header file {}", cli.header_path.display()))?;
 	let header: Header = serde_yaml::from_reader(header_file).context("Unable to read header file")?;
 
 	// Open the input and output file
@@ -70,7 +75,12 @@ fn main() -> Result<(), anyhow::Error> {
 							.range(..=cur_pos)
 							.filter_map(|(_, label)| label.as_global())
 							.next_back()
-							.ok_or_else(|| (n, anyhow::anyhow!("Cannot define a local label before any global labels")))?;
+							.ok_or_else(|| {
+								(
+									n,
+									anyhow::anyhow!("Cannot define a local label before any global labels"),
+								)
+							})?;
 
 						// Then insert it
 						let mut name = label.name;
@@ -79,7 +89,9 @@ fn main() -> Result<(), anyhow::Error> {
 						Label::Local { name: LabelName(name) }
 					},
 					// It's global
-					false => Label::Global { name: LabelName(label.name) },
+					false => Label::Global {
+						name: LabelName(label.name),
+					},
 				};
 
 
@@ -102,7 +114,12 @@ fn main() -> Result<(), anyhow::Error> {
 							.range(..=cur_pos)
 							.filter_map(|(_, label)| label.as_global())
 							.next_back()
-							.ok_or_else(|| (n, anyhow::anyhow!("Cannot define a local label before any global labels")))?;
+							.ok_or_else(|| {
+								(
+									n,
+									anyhow::anyhow!("Cannot define a local label before any global labels"),
+								)
+							})?;
 
 						// Then insert it
 						name.insert_str(0, prev_label_name);
@@ -129,8 +146,10 @@ fn main() -> Result<(), anyhow::Error> {
 	};
 
 	// Read all foreign data as labels.
-	let foreign_data_file = std::fs::File::open("resources/foreign_data.yaml").context("Unable to open foreign data file")?;
-	let foreign_data: Vec<Data> = serde_yaml::from_reader(foreign_data_file).context("Unable to read foreign data file")?;
+	let foreign_data_file =
+		std::fs::File::open("resources/foreign_data.yaml").context("Unable to open foreign data file")?;
+	let foreign_data: Vec<Data> =
+		serde_yaml::from_reader(foreign_data_file).context("Unable to read foreign data file")?;
 	for data in foreign_data {
 		let (pos, name) = data.into_label();
 		labels_by_name.insert(name, pos);
@@ -149,8 +168,8 @@ fn main() -> Result<(), anyhow::Error> {
 			labels_by_name: &labels_by_name,
 		};
 
-		let inst =
-			Inst::parse(&inst.mnemonic, &inst.args, &ctx).with_context(|| format!("Unable to compile instruction at {} in line {}", pos, n + 1))?;
+		let inst = Inst::parse(&inst.mnemonic, &inst.args, &ctx)
+			.with_context(|| format!("Unable to compile instruction at {} in line {}", pos, n + 1))?;
 
 		inst.write(&mut output_file).context("Unable to write to file")?;
 	}
@@ -172,10 +191,14 @@ fn main() -> Result<(), anyhow::Error> {
 		initial_sp_offset: header.initial_sp_offset,
 		marker: header.marker,
 	};
-	output_file.seek(SeekFrom::Start(0)).context("Unable to seek stream to beginning")?;
+	output_file
+		.seek(SeekFrom::Start(0))
+		.context("Unable to seek stream to beginning")?;
 	let mut header_bytes = [0; 0x800];
 	header.to_bytes(&mut header_bytes).into_ok();
-	output_file.write_all(&header_bytes).context("Unable to write header to output file")?;
+	output_file
+		.write_all(&header_bytes)
+		.context("Unable to write header to output file")?;
 
 	Ok(())
 }

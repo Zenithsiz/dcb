@@ -22,11 +22,19 @@ impl CliData {
 			.version("0.1")
 			.author("Filipe [...] <[...]@gmail.com>")
 			.about("Coverts an ISO 9660 filesystem file to a `.bin` file in the CdRom/XA format")
-			.arg(ClapArg::with_name("INPUT_FILE").help("The input file to use").required(true).index(1))
+			.arg(
+				ClapArg::with_name("INPUT_FILE")
+					.help("The input file to use")
+					.required(true)
+					.index(1),
+			)
 			.arg(
 				ClapArg::with_name("OUTPUT")
 					.help("The file to output to")
-					.long_help("The file to output to. If not specified, a file with the input's name appended by `.bin` will be used")
+					.long_help(
+						"The file to output to. If not specified, a file with the input's name appended by `.bin` \
+						 will be used",
+					)
 					.short("o")
 					.long("output")
 					.takes_value(true)
@@ -56,6 +64,9 @@ impl CliData {
 		};
 
 		// Return the data
-		Self { input_file, output_file }
+		Self {
+			input_file,
+			output_file,
+		}
 	}
 }

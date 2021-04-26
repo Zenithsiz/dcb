@@ -58,7 +58,9 @@ impl Animation2d {
 	pub fn deserialize<R: io::Read>(reader: &mut R) -> Result<Self, DeserializeError> {
 		// Read the header
 		let mut header_bytes = [0; Self::HEADER_SIZE];
-		reader.read_exact(&mut header_bytes).map_err(DeserializeError::ReadHeader)?;
+		reader
+			.read_exact(&mut header_bytes)
+			.map_err(DeserializeError::ReadHeader)?;
 
 		let header_bytes = array_split!(&header_bytes,
 			file_name : [0xc],
@@ -72,13 +74,18 @@ impl Animation2d {
 			unknown6  : [0x4],
 		);
 
-		let file_name = header_bytes.file_name.read_string().map_err(DeserializeError::ParseName)?;
+		let file_name = header_bytes
+			.file_name
+			.read_string()
+			.map_err(DeserializeError::ParseName)?;
 		let frames_len = LittleEndian::read_u32(header_bytes.frames_len);
 
 		let mut frames = vec![];
 		for _ in 0..frames_len {
 			let mut frame_bytes = [0; 0x14];
-			reader.read_exact(&mut frame_bytes).map_err(DeserializeError::ReadFrame)?;
+			reader
+				.read_exact(&mut frame_bytes)
+				.map_err(DeserializeError::ReadFrame)?;
 			let frame = Frame::from_bytes(&frame_bytes).into_ok();
 
 			frames.push(frame);

@@ -103,18 +103,28 @@ impl FilesystemReader {
 		let mut sectors = cdrom.read_sectors();
 		let primary_volume_descriptor = loop {
 			match sectors.next() {
-				Some(Ok(sector)) => match VolumeDescriptor::from_bytes(sector.data.as_form1().ok_or(NewError::PrimaryFormatWrongForm)?) {
-					Ok(VolumeDescriptor::Primary(primary)) => break primary,
-					Ok(VolumeDescriptor::SetTerminator) => return Err(NewError::MissingPrimaryVolumeBeforeSetTerminator),
-					Ok(volume_descriptor) => log::debug!("Skipping {:?} volume descriptor before primary", volume_descriptor.kind()),
-					Err(err) => return Err(NewError::InvalidVolumeDescriptor(err)),
+				Some(Ok(sector)) => {
+					match VolumeDescriptor::from_bytes(sector.data.as_form1().ok_or(NewError::PrimaryFormatWrongForm)?)
+					{
+						Ok(VolumeDescriptor::Primary(primary)) => break primary,
+						Ok(VolumeDescriptor::SetTerminator) => {
+							return Err(NewError::MissingPrimaryVolumeBeforeSetTerminator)
+						},
+						Ok(volume_descriptor) => log::debug!(
+							"Skipping {:?} volume descriptor before primary",
+							volume_descriptor.kind()
+						),
+						Err(err) => return Err(NewError::InvalidVolumeDescriptor(err)),
+					}
 				},
 				Some(Err(err)) => return Err(NewError::InvalidSectorBeforeSetTerminator(err)),
 				None => return Err(NewError::EofBeforeSetTerminator),
 			}
 		};
 
-		Ok(Self { primary_volume_descriptor })
+		Ok(Self {
+			primary_volume_descriptor,
+		})
 	}
 
 	/// Returns the primary volume descriptor

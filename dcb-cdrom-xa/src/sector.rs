@@ -40,7 +40,10 @@ impl Sector {
 			subheader,
 		};
 
-		Ok(Self { header, data: data.into() })
+		Ok(Self {
+			header,
+			data: data.into(),
+		})
 	}
 }
 

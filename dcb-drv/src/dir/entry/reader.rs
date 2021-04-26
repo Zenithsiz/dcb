@@ -70,7 +70,10 @@ impl DirEntryReader {
 		#[allow(clippy::single_match)] // We might add more matches in the future
 		match bytes.name {
 			[0x83, 0x52, 0x83, 0x53, 0x81, 0x5B, 0x20, 0x81, 0x60, 0x20, 0x43, 0x41, 0x52, 0x44, 0x32, 0x00] => {
-				log::warn!("Ignoring special directory entry: {:?}", String::from_utf8_lossy(bytes.name));
+				log::warn!(
+					"Ignoring special directory entry: {:?}",
+					String::from_utf8_lossy(bytes.name)
+				);
 				return Ok(None);
 			},
 			_ => (),

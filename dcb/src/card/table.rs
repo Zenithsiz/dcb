@@ -49,7 +49,9 @@ impl Table {
 	pub fn deserialize<R: io::Read>(reader: &mut R) -> Result<Self, DeserializeError> {
 		// Read header
 		let mut header_bytes = <Header as Bytes>::ByteArray::default();
-		reader.read_exact(&mut header_bytes).map_err(DeserializeError::ReadHeader)?;
+		reader
+			.read_exact(&mut header_bytes)
+			.map_err(DeserializeError::ReadHeader)?;
 		let header = Header::from_bytes(&header_bytes).map_err(DeserializeError::ParseHeader)?;
 
 		// Then check the number of each card
@@ -75,7 +77,8 @@ impl Table {
 				.map_err(|err| DeserializeError::ReadCardHeader { id: card_id, err })?;
 
 			// Read the header
-			let card_header = CardHeader::from_bytes(&card_header_bytes).map_err(|err| DeserializeError::ParseCardHeader { id: card_id, err })?;
+			let card_header = CardHeader::from_bytes(&card_header_bytes)
+				.map_err(|err| DeserializeError::ParseCardHeader { id: card_id, err })?;
 
 			log::trace!("Found #{}: {}", card_id, card_header.ty);
 
@@ -87,33 +90,41 @@ impl Table {
 			match card_header.ty {
 				CardType::Digimon => {
 					let mut digimon_bytes = [0; std::mem::size_of::<<Digimon as Bytes>::ByteArray>()];
-					reader.read_exact(&mut digimon_bytes).map_err(|err| DeserializeError::ReadCard {
-						id: card_id,
-						card_type: card_header.ty,
-						err,
-					})?;
-					let digimon = Digimon::from_bytes(&digimon_bytes).map_err(|err| DeserializeError::ParseDigimonCard { id: card_id, err })?;
+					reader
+						.read_exact(&mut digimon_bytes)
+						.map_err(|err| DeserializeError::ReadCard {
+							id: card_id,
+							card_type: card_header.ty,
+							err,
+						})?;
+					let digimon = Digimon::from_bytes(&digimon_bytes)
+						.map_err(|err| DeserializeError::ParseDigimonCard { id: card_id, err })?;
 					digimons.push(digimon);
 				},
 				CardType::Item => {
 					let mut item_bytes = [0; std::mem::size_of::<<Item as Bytes>::ByteArray>()];
-					reader.read_exact(&mut item_bytes).map_err(|err| DeserializeError::ReadCard {
-						id: card_id,
-						card_type: card_header.ty,
-						err,
-					})?;
-					let item = Item::from_bytes(&item_bytes).map_err(|err| DeserializeError::ParseItemCard { id: card_id, err })?;
+					reader
+						.read_exact(&mut item_bytes)
+						.map_err(|err| DeserializeError::ReadCard {
+							id: card_id,
+							card_type: card_header.ty,
+							err,
+						})?;
+					let item = Item::from_bytes(&item_bytes)
+						.map_err(|err| DeserializeError::ParseItemCard { id: card_id, err })?;
 					items.push(item);
 				},
 				CardType::Digivolve => {
 					let mut digivolve_bytes = [0; std::mem::size_of::<<Digivolve as Bytes>::ByteArray>()];
-					reader.read_exact(&mut digivolve_bytes).map_err(|err| DeserializeError::ReadCard {
-						id: card_id,
-						card_type: card_header.ty,
-						err,
-					})?;
-					let digivolve =
-						Digivolve::from_bytes(&digivolve_bytes).map_err(|err| DeserializeError::ParseDigivolveCard { id: card_id, err })?;
+					reader
+						.read_exact(&mut digivolve_bytes)
+						.map_err(|err| DeserializeError::ReadCard {
+							id: card_id,
+							card_type: card_header.ty,
+							err,
+						})?;
+					let digivolve = Digivolve::from_bytes(&digivolve_bytes)
+						.map_err(|err| DeserializeError::ParseDigivolveCard { id: card_id, err })?;
 					digivolves.push(digivolve);
 				},
 			}
@@ -124,12 +135,20 @@ impl Table {
 				.read_exact(&mut null_terminator)
 				.map_err(|err| DeserializeError::ReadCardFooter { id: card_id, err })?;
 			if null_terminator[0] != 0 {
-				log::warn!("Card with id {}'s null terminator was {} instead of 0", card_id, null_terminator[0]);
+				log::warn!(
+					"Card with id {}'s null terminator was {} instead of 0",
+					card_id,
+					null_terminator[0]
+				);
 			}
 		}
 
 		// Return the table
-		Ok(Self { digimons, items, digivolves })
+		Ok(Self {
+			digimons,
+			items,
+			digivolves,
+		})
 	}
 
 	/// Serializes this card table to a file

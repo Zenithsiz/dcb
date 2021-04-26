@@ -45,7 +45,9 @@ pub enum Inst<'a> {
 
 impl<'a> Inst<'a> {
 	/// Decodes an instruction from bytes and it's position.
-	pub fn decode(pos: Pos, bytes: &'a [u8], data_table: &'a DataTable, func_table: &'a FuncTable) -> Result<Self, DecodeError<'a>> {
+	pub fn decode(
+		pos: Pos, bytes: &'a [u8], data_table: &'a DataTable, func_table: &'a FuncTable,
+	) -> Result<Self, DecodeError<'a>> {
 		// If `bytes` is empty, return Err
 		if bytes.is_empty() {
 			return Err(DecodeError::NoBytes);
@@ -96,7 +98,9 @@ impl<'a> Inst<'a> {
 		}
 
 		// Else read it as a directive
-		Directive::decode(pos, bytes).map(Self::Directive).ok_or(DecodeError::NoBytes)
+		Directive::decode(pos, bytes)
+			.map(Self::Directive)
+			.ok_or(DecodeError::NoBytes)
 	}
 
 	/// Writes an instruction

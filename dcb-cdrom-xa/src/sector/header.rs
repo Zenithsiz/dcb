@@ -84,8 +84,12 @@ impl Bytes for Header {
 		*bytes.sync = Self::SYNC;
 		self.address.to_bytes(bytes.address).map_err(ToBytesError::Address)?;
 		*bytes.mode = 2;
-		self.subheader.to_bytes(bytes.subheader1).map_err(ToBytesError::SubHeader)?;
-		self.subheader.to_bytes(bytes.subheader2).map_err(ToBytesError::SubHeader)?;
+		self.subheader
+			.to_bytes(bytes.subheader1)
+			.map_err(ToBytesError::SubHeader)?;
+		self.subheader
+			.to_bytes(bytes.subheader2)
+			.map_err(ToBytesError::SubHeader)?;
 
 		Ok(())
 	}

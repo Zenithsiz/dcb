@@ -72,9 +72,10 @@ pub struct AlphabetA;
 impl OnlyValidCharsAlphabet for AlphabetA {
 	fn valid_chars() -> &'static [u8] {
 		&[
-			b'A', b'B', b'C', b'D', b'E', b'F', b'G', b'H', b'I', b'J', b'K', b'L', b'M', b'N', b'O', b'P', b'Q', b'R', b'S', b'T', b'U', b'V', b'W',
-			b'X', b'Y', b'Z', b'0', b'1', b'2', b'3', b'4', b'5', b'6', b'7', b'8', b'9', b'_', b'!', b'"', b'%', b'&', b'\'', b'(', b')', b'*',
-			b'+', b',', b'-', b'.', b'/', b':', b';', b'<', b'=', b'>', b'?',
+			b'A', b'B', b'C', b'D', b'E', b'F', b'G', b'H', b'I', b'J', b'K', b'L', b'M', b'N', b'O', b'P', b'Q', b'R',
+			b'S', b'T', b'U', b'V', b'W', b'X', b'Y', b'Z', b'0', b'1', b'2', b'3', b'4', b'5', b'6', b'7', b'8', b'9',
+			b'_', b'!', b'"', b'%', b'&', b'\'', b'(', b')', b'*', b'+', b',', b'-', b'.', b'/', b':', b';', b'<',
+			b'=', b'>', b'?',
 		]
 	}
 
@@ -92,8 +93,9 @@ pub struct AlphabetD;
 impl OnlyValidCharsAlphabet for AlphabetD {
 	fn valid_chars() -> &'static [u8] {
 		&[
-			b'A', b'B', b'C', b'D', b'E', b'F', b'G', b'H', b'I', b'J', b'K', b'L', b'M', b'N', b'O', b'P', b'Q', b'R', b'S', b'T', b'U', b'V', b'W',
-			b'X', b'Y', b'Z', b'0', b'1', b'2', b'3', b'4', b'5', b'6', b'7', b'8', b'9', b'_',
+			b'A', b'B', b'C', b'D', b'E', b'F', b'G', b'H', b'I', b'J', b'K', b'L', b'M', b'N', b'O', b'P', b'Q', b'R',
+			b'S', b'T', b'U', b'V', b'W', b'X', b'Y', b'Z', b'0', b'1', b'2', b'3', b'4', b'5', b'6', b'7', b'8', b'9',
+			b'_',
 		]
 	}
 
@@ -129,12 +131,18 @@ impl Alphabet for FileAlphabet {
 		// Separate into `<name>.<extension>;<version>`
 		let (name, extension, version) = {
 			// Separate into `<name>.<rest>` and ignore the `.` in `<rest>`
-			let dot_idx = bytes.iter().position(|&b| b == b'.').ok_or(ValidateFileAlphabetError::MissingExtension)?;
+			let dot_idx = bytes
+				.iter()
+				.position(|&b| b == b'.')
+				.ok_or(ValidateFileAlphabetError::MissingExtension)?;
 			let (name, rest) = bytes.split_at(dot_idx);
 			let rest = &rest[1..];
 
 			// Then split at `<extension>;<version>` and ignore the `;`
-			let version_idx = rest.iter().position(|&b| b == b';').ok_or(ValidateFileAlphabetError::MissingVersion)?;
+			let version_idx = rest
+				.iter()
+				.position(|&b| b == b';')
+				.ok_or(ValidateFileAlphabetError::MissingVersion)?;
 			let (extension, version) = rest.split_at(version_idx);
 			let version = &version[1..];
 

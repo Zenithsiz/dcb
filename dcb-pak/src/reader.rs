@@ -42,7 +42,9 @@ impl<R: io::Read + io::Seek> PakFileReader<R> {
 	/// Returns the next entry
 	pub fn next_entry(&mut self) -> Result<Option<PakEntryReader<R>>, NextEntryError> {
 		// Seek to our current position
-		self.reader.seek(SeekFrom::Start(self.cur_pos)).map_err(NextEntryError::SeekNextEntry)?;
+		self.reader
+			.seek(SeekFrom::Start(self.cur_pos))
+			.map_err(NextEntryError::SeekNextEntry)?;
 
 		// Try to read an entry
 		let entry = match PakEntryReader::from_reader(&mut self.reader).map_err(NextEntryError::ReadEntry)? {

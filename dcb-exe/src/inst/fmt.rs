@@ -80,7 +80,9 @@ impl<'a> InstFmtArg<'a> {
 	pub fn write<Ctx: DisplayCtx>(&self, f: &mut fmt::Formatter, ctx: &Ctx) -> Result<(), fmt::Error> {
 		match *self {
 			// Register offsets with 0 offset are formatted like normal registers
-			InstFmtArg::Register(register) | InstFmtArg::RegisterOffset { register, offset: 0 } => write!(f, "{register}"),
+			InstFmtArg::Register(register) | InstFmtArg::RegisterOffset { register, offset: 0 } => {
+				write!(f, "{register}")
+			},
 			InstFmtArg::RegisterOffset { register, offset } => write!(f, "{:#}({register})", SignedHex(offset)),
 			// Note: Literals do not go through label lookup
 			InstFmtArg::Literal(value) => write!(f, "{:#}", SignedHex(value)),

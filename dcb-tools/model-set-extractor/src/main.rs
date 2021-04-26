@@ -33,7 +33,8 @@ fn extract_file(input_file: &Path, output_dir: &Path) -> Result<(), anyhow::Erro
 
 	let model_set = Model3dSet::from_reader(&mut input_file).context("Unable to parse file")?;
 
-	dcb_util::try_create_folder(output_dir).with_context(|| format!("Unable to create directory {}", output_dir.display()))?;
+	dcb_util::try_create_folder(output_dir)
+		.with_context(|| format!("Unable to create directory {}", output_dir.display()))?;
 	for (idx, (pos, size, ..)) in model_set.models.iter().enumerate() {
 		// Get the filename
 		let path = output_dir.join(format!("{}.TMD", idx));
@@ -50,8 +51,10 @@ fn extract_file(input_file: &Path, output_dir: &Path) -> Result<(), anyhow::Erro
 		if path.exists() {
 			log::warn!("Overriding file {}", path.display());
 		}
-		let mut output_file = std::fs::File::create(&path).with_context(|| format!("Unable to create file {}", path.display()))?;
-		std::io::copy(&mut input_file, &mut output_file).with_context(|| format!("Unable to write file {}", path.display()))?;
+		let mut output_file =
+			std::fs::File::create(&path).with_context(|| format!("Unable to create file {}", path.display()))?;
+		std::io::copy(&mut input_file, &mut output_file)
+			.with_context(|| format!("Unable to write file {}", path.display()))?;
 	}
 
 	Ok(())

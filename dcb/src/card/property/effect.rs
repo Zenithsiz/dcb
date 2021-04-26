@@ -253,7 +253,8 @@ impl Bytes for Effect {
 
 		// Attack type
 		// Lower byte of `y`
-		let get_attack_type = || AttackType::from_bytes(&y.to_le_bytes()[0]).map_err(FromBytesError::UseAttackAttackType);
+		let get_attack_type =
+			|| AttackType::from_bytes(&y.to_le_bytes()[0]).map_err(FromBytesError::UseAttackAttackType);
 
 		// The operation argument
 		let get_op = || EffectOperation::from_bytes(bytes.op).map_err(FromBytesError::Operation);

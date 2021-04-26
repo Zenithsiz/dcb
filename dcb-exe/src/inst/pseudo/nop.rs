@@ -2,7 +2,9 @@
 
 // Imports
 use super::{Decodable, Encodable};
-use crate::inst::{basic, parse::LineArg, DisplayCtx, InstDisplay, InstFmtArg, InstSize, Parsable, ParseCtx, ParseError, Register};
+use crate::inst::{
+	basic, parse::LineArg, DisplayCtx, InstDisplay, InstFmtArg, InstSize, Parsable, ParseCtx, ParseError, Register,
+};
 use std::{
 	array,
 	convert::{TryFrom, TryInto},
@@ -48,7 +50,9 @@ impl Encodable for Inst {
 }
 
 impl<'a> Parsable<'a> for Inst {
-	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &'a str, args: &'a [LineArg], _ctx: &'a Ctx) -> Result<Self, ParseError> {
+	fn parse<Ctx: ?Sized + ParseCtx>(
+		mnemonic: &'a str, args: &'a [LineArg], _ctx: &'a Ctx,
+	) -> Result<Self, ParseError> {
 		if mnemonic != "nop" {
 			return Err(ParseError::UnknownMnemonic);
 		}

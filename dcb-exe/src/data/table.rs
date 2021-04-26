@@ -107,7 +107,14 @@ impl DataTable {
 				},
 
 				// If we can't go any deeper, go as deep as we can at the start of `next_node`
-				None => return Some(next_node.get_containing_deepest(next_node.data().start_pos()).unwrap_or(next_node).data()),
+				None => {
+					return Some(
+						next_node
+							.get_containing_deepest(next_node.data().start_pos())
+							.unwrap_or(next_node)
+							.data(),
+					)
+				},
 			}
 		}
 

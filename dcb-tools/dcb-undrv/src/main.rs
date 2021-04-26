@@ -14,8 +14,12 @@ use std::{
 
 fn main() -> Result<(), anyhow::Error> {
 	// Initialize the logger
-	simplelog::TermLogger::init(log::LevelFilter::Info, simplelog::Config::default(), simplelog::TerminalMode::Stderr)
-		.expect("Unable to initialize logger");
+	simplelog::TermLogger::init(
+		log::LevelFilter::Info,
+		simplelog::Config::default(),
+		simplelog::TerminalMode::Stderr,
+	)
+	.expect("Unable to initialize logger");
 
 	// Get all data from cli
 	let cli_data = CliData::new();
@@ -37,7 +41,8 @@ fn main() -> Result<(), anyhow::Error> {
 		let mut input_file = io::BufReader::new(input_file);
 
 		// Create output directory if it doesn't exist
-		dcb_util::try_create_folder(&output_dir).with_context(|| format!("Unable to create directory {}", output_dir.display()))?;
+		dcb_util::try_create_folder(&output_dir)
+			.with_context(|| format!("Unable to create directory {}", output_dir.display()))?;
 
 		// Then extract the tree
 		if let Err(err) = self::extract_tree(&mut input_file, &DrvFsReader::root(), &output_dir, &cli_data) {
@@ -59,7 +64,9 @@ fn main() -> Result<(), anyhow::Error> {
 }
 
 /// Extracts a `.drv` file from a reader and starting directory
-fn extract_tree<R: io::Read + io::Seek>(reader: &mut R, dir: &DirReader, path: &Path, cli_data: &CliData) -> Result<(), anyhow::Error> {
+fn extract_tree<R: io::Read + io::Seek>(
+	reader: &mut R, dir: &DirReader, path: &Path, cli_data: &CliData,
+) -> Result<(), anyhow::Error> {
 	// Get all entries
 	// Note: We need to collect to free the reader so it can seek to the next files.
 	let entries: Vec<_> = dir
@@ -89,7 +96,11 @@ fn extract_tree<R: io::Read + io::Seek>(reader: &mut R, dir: &DirReader, path: &
 			DirEntryReaderKind::File(file) => {
 				// Log the file and it's size
 				if !cli_data.quiet {
-					println!("{} ({}B)", path.display(), size_format::SizeFormatterSI::new(u64::from(file.size())));
+					println!(
+						"{} ({}B)",
+						path.display(),
+						size_format::SizeFormatterSI::new(u64::from(file.size()))
+					);
 				}
 
 				// If the output file already exists, log a warning
@@ -98,15 +109,23 @@ fn extract_tree<R: io::Read + io::Seek>(reader: &mut R, dir: &DirReader, path: &
 				}
 
 				// Get the file's reader.
-				let mut file_reader = file.reader(reader).with_context(|| format!("Unable to read file {}", path.display()))?;
+				let mut file_reader = file
+					.reader(reader)
+					.with_context(|| format!("Unable to read file {}", path.display()))?;
 
 				// Then create the output file and copy.
-				let mut output_file = fs::File::create(&path).with_context(|| format!("Unable to create file {}", path.display()))?;
-				std::io::copy(&mut file_reader, &mut output_file).with_context(|| format!("Unable to write file {}", path.display()))?;
+				let mut output_file =
+					fs::File::create(&path).with_context(|| format!("Unable to create file {}", path.display()))?;
+				std::io::copy(&mut file_reader, &mut output_file)
+					.with_context(|| format!("Unable to write file {}", path.display()))?;
 
 				// And set the file's modification time
 				if let Err(err) = filetime::set_file_handle_times(&output_file, None, Some(time)) {
-					log::warn!("Unable to write date for file {}: {}", path.display(), dcb_util::fmt_err_wrapper(&err));
+					log::warn!(
+						"Unable to write date for file {}: {}",
+						path.display(),
+						dcb_util::fmt_err_wrapper(&err)
+					);
 				}
 			},
 
@@ -118,8 +137,10 @@ fn extract_tree<R: io::Read + io::Seek>(reader: &mut R, dir: &DirReader, path: &
 				}
 
 				// Create the directory and recurse over it
-				dcb_util::try_create_folder(&path).with_context(|| format!("Unable to create directory {}", path.display()))?;
-				self::extract_tree(reader, dir, &path, &cli_data).with_context(|| format!("Unable to extract directory {}", path.display()))?;
+				dcb_util::try_create_folder(&path)
+					.with_context(|| format!("Unable to create directory {}", path.display()))?;
+				self::extract_tree(reader, dir, &path, &cli_data)
+					.with_context(|| format!("Unable to extract directory {}", path.display()))?;
 
 				// Then set it's date
 				// Note: We must do this *after* extracting the tree, else the time

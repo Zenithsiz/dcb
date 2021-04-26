@@ -54,7 +54,9 @@ impl Kind {
 	pub fn value(self) -> i64 {
 		match self {
 			Kind::Add(value) | Kind::AddUnsigned(value) | Kind::SetLessThan(value) => i64::from(value),
-			Kind::SetLessThanUnsigned(value) | Kind::And(value) | Kind::Or(value) | Kind::Xor(value) => i64::from(value),
+			Kind::SetLessThanUnsigned(value) | Kind::And(value) | Kind::Or(value) | Kind::Xor(value) => {
+				i64::from(value)
+			},
 		}
 	}
 }
@@ -119,7 +121,9 @@ impl Encode for Inst {
 }
 
 impl<'a> Parsable<'a> for Inst {
-	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &'a str, args: &'a [LineArg], _ctx: &'a Ctx) -> Result<Self, ParseError> {
+	fn parse<Ctx: ?Sized + ParseCtx>(
+		mnemonic: &'a str, args: &'a [LineArg], _ctx: &'a Ctx,
+	) -> Result<Self, ParseError> {
 		#[rustfmt::skip]
 		let to_kind = match mnemonic {
 			"addi"  => |value: i64| value.try_into().map(Kind::Add                ),
@@ -134,16 +138,17 @@ impl<'a> Parsable<'a> for Inst {
 
 		match *args {
 			// Disallow `slti` and `sltiu` in short form
-			[LineArg::Register(_), LineArg::Literal(_)] if ["slti", "sltiu"].contains(&mnemonic) => Err(ParseError::InvalidArguments),
+			[LineArg::Register(_), LineArg::Literal(_)] if ["slti", "sltiu"].contains(&mnemonic) => {
+				Err(ParseError::InvalidArguments)
+			},
 
 			// Else parse both `$dst, $lhs, value` and `$dst, value`.
-			[LineArg::Register(lhs @ dst), LineArg::Literal(value)] | [LineArg::Register(dst), LineArg::Register(lhs), LineArg::Literal(value)] => {
-				Ok(Self {
-					dst,
-					lhs,
-					kind: to_kind(value).map_err(|_| ParseError::LiteralOutOfRange)?,
-				})
-			},
+			[LineArg::Register(lhs @ dst), LineArg::Literal(value)] |
+			[LineArg::Register(dst), LineArg::Register(lhs), LineArg::Literal(value)] => Ok(Self {
+				dst,
+				lhs,
+				kind: to_kind(value).map_err(|_| ParseError::LiteralOutOfRange)?,
+			}),
 			_ => Err(ParseError::InvalidArguments),
 		}
 	}
@@ -167,7 +172,11 @@ impl<'a> InstDisplay<'a> for Inst {
 		// only return one of them
 		match !matches!(kind, Kind::SetLessThan(_) | Kind::SetLessThanUnsigned(_)) && dst == lhs {
 			true => array::IntoIter::new([InstFmtArg::Register(dst), InstFmtArg::literal(value)]),
-			false => array::IntoIter::new([InstFmtArg::Register(dst), InstFmtArg::Register(lhs), InstFmtArg::literal(value)]),
+			false => array::IntoIter::new([
+				InstFmtArg::Register(dst),
+				InstFmtArg::Register(lhs),
+				InstFmtArg::literal(value),
+			]),
 		}
 	}
 }

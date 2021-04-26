@@ -76,7 +76,9 @@ where
 			(None, Some((key, right))) => Some((key, ParIterValue::Right(right))),
 
 			// If we got both with equal keys, return them both
-			(Some((left_key, left)), Some((right_key, right))) if left_key == right_key => Some((left_key, ParIterValue::Both(left, right))),
+			(Some((left_key, left)), Some((right_key, right))) if left_key == right_key => {
+				Some((left_key, ParIterValue::Both(left, right)))
+			},
 
 			// If we got both, but without equal keys, emit the first and store the other.
 			// Note: In all of these branches, `self.value` is empty, as we call both `self.next_{left, right}` functions.

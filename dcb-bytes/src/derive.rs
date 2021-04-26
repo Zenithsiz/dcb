@@ -13,7 +13,9 @@ macro_rules! derive_bytes_split {
 
 			#[allow(clippy::ptr_offset_with_cast)] // `arrayref` does it
 			impl $crate::Bytes for $T {
-				type ByteArray = [u8; {0 $( + <<$U as ByteOrderExt<$crate::byteorder::$BYTEORDER>>::ByteArray as ByteArray>::SIZE )*}];
+				type ByteArray = [u8;
+					{0 $( + <<$U as ByteOrderExt<$crate::byteorder::$BYTEORDER>>::ByteArray as ByteArray>::SIZE )*}
+				];
 
 				type FromError = !;
 				type ToError   = !;

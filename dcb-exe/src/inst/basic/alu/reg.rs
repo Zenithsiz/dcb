@@ -133,7 +133,9 @@ impl Encode for Inst {
 }
 
 impl<'a> Parsable<'a> for Inst {
-	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &'a str, args: &'a [LineArg], _ctx: &'a Ctx) -> Result<Self, ParseError> {
+	fn parse<Ctx: ?Sized + ParseCtx>(
+		mnemonic: &'a str, args: &'a [LineArg], _ctx: &'a Ctx,
+	) -> Result<Self, ParseError> {
 		#[rustfmt::skip]
 		let kind = match mnemonic {
 			"add"  => Kind::Add                ,
@@ -149,16 +151,19 @@ impl<'a> Parsable<'a> for Inst {
 			_ => return Err(ParseError::UnknownMnemonic),
 		};
 
-		match *args {
+		let inst = match *args {
 			// Disallow `slt` and `sltu` in short form
-			[LineArg::Register(_), LineArg::Register(_)] if ["slt", "sltu"].contains(&mnemonic) => Err(ParseError::InvalidArguments),
+			[LineArg::Register(_), LineArg::Register(_)] if ["slt", "sltu"].contains(&mnemonic) => {
+				return Err(ParseError::InvalidArguments)
+			},
 
 			// Else parse both `$dst, $lhs, $rhs` and `$dst, $rhs`.
-			[LineArg::Register(lhs @ dst), LineArg::Register(rhs)] | [LineArg::Register(dst), LineArg::Register(lhs), LineArg::Register(rhs)] => {
-				Ok(Self { dst, lhs, rhs, kind })
-			},
-			_ => Err(ParseError::InvalidArguments),
-		}
+			[LineArg::Register(lhs @ dst), LineArg::Register(rhs)] |
+			[LineArg::Register(dst), LineArg::Register(lhs), LineArg::Register(rhs)] => Self { dst, lhs, rhs, kind },
+			_ => return Err(ParseError::InvalidArguments),
+		};
+
+		Ok(inst)
 	}
 }
 
@@ -179,7 +184,11 @@ impl<'a> InstDisplay<'a> for Inst {
 		// only return one of them
 		match !matches!(kind, Kind::SetLessThan | Kind::SetLessThanUnsigned) && dst == lhs {
 			true => array::IntoIter::new([InstFmtArg::Register(dst), InstFmtArg::Register(rhs)]),
-			false => array::IntoIter::new([InstFmtArg::Register(dst), InstFmtArg::Register(lhs), InstFmtArg::Register(rhs)]),
+			false => array::IntoIter::new([
+				InstFmtArg::Register(dst),
+				InstFmtArg::Register(lhs),
+				InstFmtArg::Register(rhs),
+			]),
 		}
 	}
 }

@@ -49,7 +49,11 @@ impl<'a, R: io::Read + io::Seek> GameFile<'a, R> {
 		'a: 'b,
 	{
 		// Read the root directory
-		let root_dir = self.filesystem.root_dir().read_dir(self.cdrom).map_err(ReadDrvError::ReadRoot)?;
+		let root_dir = self
+			.filesystem
+			.root_dir()
+			.read_dir(self.cdrom)
+			.map_err(ReadDrvError::ReadRoot)?;
 
 		// Get the file
 		let entry = root_dir.find(name).ok_or(ReadDrvError::FindFile)?;

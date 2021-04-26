@@ -131,18 +131,27 @@ impl Encode for Inst {
 }
 
 impl<'a> Parsable<'a> for Inst {
-	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &'a str, args: &'a [LineArg], _ctx: &'a Ctx) -> Result<Self, ParseError> {
+	fn parse<Ctx: ?Sized + ParseCtx>(
+		mnemonic: &'a str, args: &'a [LineArg], _ctx: &'a Ctx,
+	) -> Result<Self, ParseError> {
 		let kind = Kind::from_mnemonic(mnemonic).ok_or(ParseError::UnknownMnemonic)?;
 
 		let (value, addr, offset) = match *args {
 			[LineArg::Register(value), LineArg::Register(addr)] => (value, addr, 0),
-			[LineArg::Register(value), LineArg::RegisterOffset { register: addr, offset }] => {
-				(value, addr, offset.try_into().map_err(|_| ParseError::LiteralOutOfRange)?)
-			},
+			[LineArg::Register(value), LineArg::RegisterOffset { register: addr, offset }] => (
+				value,
+				addr,
+				offset.try_into().map_err(|_| ParseError::LiteralOutOfRange)?,
+			),
 			_ => return Err(ParseError::InvalidArguments),
 		};
 
-		Ok(Self { value, addr, offset, kind })
+		Ok(Self {
+			value,
+			addr,
+			offset,
+			kind,
+		})
 	}
 }
 
@@ -155,7 +164,9 @@ impl<'a> InstDisplay<'a> for Inst {
 	}
 
 	fn args<Ctx: DisplayCtx>(&'a self, _ctx: &Ctx) -> Self::Args {
-		let &Self { value, addr, offset, .. } = self;
+		let &Self {
+			value, addr, offset, ..
+		} = self;
 
 		array::IntoIter::new([InstFmtArg::Register(value), InstFmtArg::register_offset(addr, offset)])
 	}

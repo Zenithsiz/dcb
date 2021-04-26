@@ -1,6 +1,13 @@
 #![doc(include = "lib.md")]
 // Features
-#![feature(never_type, stmt_expr_attributes, unwrap_infallible, format_args_capture, array_methods, external_doc)]
+#![feature(
+	never_type,
+	stmt_expr_attributes,
+	unwrap_infallible,
+	format_args_capture,
+	array_methods,
+	external_doc
+)]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]
 // We'll disable the ones we don't need

@@ -131,7 +131,10 @@ impl<const N: usize> AsciiStrArr<N> {
 			*uninit = ascii;
 		}
 
-		Ok(Self { chars, len: ascii.len() })
+		Ok(Self {
+			chars,
+			len: ascii.len(),
+		})
 	}
 
 	/// Creates a string from bytes
@@ -312,7 +315,10 @@ impl<const N: usize> TryFrom<&[u8; N]> for AsciiStrArr<N> {
 			*ascii = AsciiChar::from_ascii(byte).map_err(|_err| NotAsciiError { pos })?;
 		}
 
-		Ok(Self { chars, len: byte_str.len() })
+		Ok(Self {
+			chars,
+			len: byte_str.len(),
+		})
 	}
 }
 

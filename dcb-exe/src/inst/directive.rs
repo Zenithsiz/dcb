@@ -57,7 +57,9 @@ pub enum DecodeWithDataError {
 
 impl<'a> Directive<'a> {
 	/// Decodes a directive with some data
-	pub fn decode_with_data(pos: Pos, bytes: &'a [u8], ty: &DataType, data_pos: Pos) -> Result<Self, DecodeWithDataError> {
+	pub fn decode_with_data(
+		pos: Pos, bytes: &'a [u8], ty: &DataType, data_pos: Pos,
+	) -> Result<Self, DecodeWithDataError> {
 		// Make sure that this function is only called when the data contains `pos`
 		assert!((data_pos..data_pos + ty.size()).contains(&pos));
 
@@ -84,7 +86,9 @@ impl<'a> Directive<'a> {
 
 				// Then make sure there's nulls padding the string
 				let nulls_len = 4 - len % 4;
-				let nulls = bytes.get(len..len + nulls_len).ok_or(DecodeWithDataError::StrNullTerminator)?;
+				let nulls = bytes
+					.get(len..len + nulls_len)
+					.ok_or(DecodeWithDataError::StrNullTerminator)?;
 				if !nulls.iter().all(|&ch| ch == 0) {
 					return Err(DecodeWithDataError::StrNullTerminator);
 				}
@@ -173,7 +177,9 @@ impl<'a> Parsable<'a> for Directive<'a> {
 				_ => return Err(ParseError::InvalidArguments),
 			},
 			".ascii" => match *args {
-				[LineArg::String(ref s)] => Self::Ascii(AsciiStr::from_ascii(s).map_err(|_| ParseError::NonAsciiString)?),
+				[LineArg::String(ref s)] => {
+					Self::Ascii(AsciiStr::from_ascii(s).map_err(|_| ParseError::NonAsciiString)?)
+				},
 				_ => return Err(ParseError::InvalidArguments),
 			},
 			_ => return Err(ParseError::UnknownMnemonic),

@@ -118,7 +118,9 @@ impl Bytes for EffectCondition {
 		self.property_cmp.to_bytes(bytes.property_cmp).into_ok();
 
 		// Arguments
-		MaybeDigimonProperty::ref_cast(&self.arg_property).to_bytes(bytes.arg_property).into_ok();
+		MaybeDigimonProperty::ref_cast(&self.arg_property)
+			.to_bytes(bytes.arg_property)
+			.into_ok();
 		LittleEndian::write_u16(bytes.arg_num, self.arg_num);
 		self.operation.to_bytes(bytes.operation).into_ok();
 

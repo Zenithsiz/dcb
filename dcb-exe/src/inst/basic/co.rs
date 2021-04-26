@@ -169,7 +169,9 @@ impl Encode for Inst {
 }
 
 impl<'a> Parsable<'a> for Inst {
-	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &'a str, args: &'a [LineArg], _ctx: &'a Ctx) -> Result<Self, ParseError> {
+	fn parse<Ctx: ?Sized + ParseCtx>(
+		mnemonic: &'a str, args: &'a [LineArg], _ctx: &'a Ctx,
+	) -> Result<Self, ParseError> {
 		let inst = match mnemonic {
 			"cop0" | "cop1" | "cop2" | "cop3" => {
 				let n = mnemonic[3..].parse().expect("Unable to parse 0..=3");
@@ -178,13 +180,18 @@ impl<'a> Parsable<'a> for Inst {
 					_ => return Err(ParseError::InvalidArguments),
 				};
 
-				Inst { n, kind: Kind::CopN { imm } }
+				Inst {
+					n,
+					kind: Kind::CopN { imm },
+				}
 			},
-			"mfc0" | "mfc1" | "mfc2" | "mfc3" | "cfc0" | "cfc1" | "cfc2" | "cfc3" | "mtc0" | "mtc1" | "mtc2" | "mtc3" | "ctc0" | "ctc1" |
-			"ctc2" | "ctc3" => {
+			"mfc0" | "mfc1" | "mfc2" | "mfc3" | "cfc0" | "cfc1" | "cfc2" | "cfc3" | "mtc0" | "mtc1" | "mtc2" |
+			"mtc3" | "ctc0" | "ctc1" | "ctc2" | "ctc3" => {
 				let n = mnemonic[3..].parse().expect("Unable to parse 0..=3");
 				let (reg, imm) = match *args {
-					[LineArg::Register(dst), LineArg::Literal(src)] => (dst, src.try_into().map_err(|_| ParseError::LiteralOutOfRange)?),
+					[LineArg::Register(dst), LineArg::Literal(src)] => {
+						(dst, src.try_into().map_err(|_| ParseError::LiteralOutOfRange)?)
+					},
 					_ => return Err(ParseError::InvalidArguments),
 				};
 
@@ -197,11 +204,19 @@ impl<'a> Parsable<'a> for Inst {
 				match &mnemonic[1..=1] {
 					"f" => Inst {
 						n,
-						kind: Kind::MoveFrom { dst: reg, src: imm, kind },
+						kind: Kind::MoveFrom {
+							dst: reg,
+							src: imm,
+							kind,
+						},
 					},
 					"t" => Inst {
 						n,
-						kind: Kind::MoveTo { dst: imm, src: reg, kind },
+						kind: Kind::MoveTo {
+							dst: imm,
+							src: reg,
+							kind,
+						},
 					},
 					_ => unreachable!(),
 				}
@@ -209,7 +224,9 @@ impl<'a> Parsable<'a> for Inst {
 			"lwc0" | "lwc1" | "lwc2" | "lwc3" | "swc0" | "swc1" | "swc2" | "swc3" => {
 				let n = mnemonic[3..].parse().expect("Unable to parse 0..=3");
 				let (dst, src, offset) = match *args {
-					[LineArg::Literal(dst), LineArg::Register(src)] => (dst.try_into().map_err(|_| ParseError::LiteralOutOfRange)?, src, 0),
+					[LineArg::Literal(dst), LineArg::Register(src)] => {
+						(dst.try_into().map_err(|_| ParseError::LiteralOutOfRange)?, src, 0)
+					},
 					[LineArg::Literal(dst), LineArg::RegisterOffset { register: src, offset }] => (
 						dst.try_into().map_err(|_| ParseError::LiteralOutOfRange)?,
 						src,
@@ -273,11 +290,19 @@ impl<'a> InstDisplay<'a> for Inst {
 		let &Self { kind, .. } = self;
 		match kind {
 			Kind::CopN { imm } => array::IntoIter::new([InstFmtArg::literal(imm)]),
-			Kind::MoveFrom { dst, src, .. } => array::IntoIter::new([InstFmtArg::Register(dst), InstFmtArg::literal(src)]),
-			Kind::MoveTo { dst, src, .. } => array::IntoIter::new([InstFmtArg::Register(src), InstFmtArg::literal(dst)]),
+			Kind::MoveFrom { dst, src, .. } => {
+				array::IntoIter::new([InstFmtArg::Register(dst), InstFmtArg::literal(src)])
+			},
+			Kind::MoveTo { dst, src, .. } => {
+				array::IntoIter::new([InstFmtArg::Register(src), InstFmtArg::literal(dst)])
+			},
 			Kind::Branch { offset, .. } => array::IntoIter::new([InstFmtArg::literal(offset)]),
-			Kind::Load { dst, src, offset } => array::IntoIter::new([InstFmtArg::literal(dst), InstFmtArg::register_offset(src, offset)]),
-			Kind::Store { dst, src, offset } => array::IntoIter::new([InstFmtArg::literal(dst), InstFmtArg::register_offset(src, offset)]),
+			Kind::Load { dst, src, offset } => {
+				array::IntoIter::new([InstFmtArg::literal(dst), InstFmtArg::register_offset(src, offset)])
+			},
+			Kind::Store { dst, src, offset } => {
+				array::IntoIter::new([InstFmtArg::literal(dst), InstFmtArg::register_offset(src, offset)])
+			},
 		}
 	}
 }
@@ -286,7 +311,9 @@ impl ModifiesReg for Inst {
 	fn modifies_reg(&self, reg: Register) -> bool {
 		match self.kind {
 			Kind::MoveFrom { dst, .. } => dst == reg,
-			Kind::CopN { .. } | Kind::MoveTo { .. } | Kind::Branch { .. } | Kind::Load { .. } | Kind::Store { .. } => false,
+			Kind::CopN { .. } | Kind::MoveTo { .. } | Kind::Branch { .. } | Kind::Load { .. } | Kind::Store { .. } => {
+				false
+			},
 		}
 	}
 }

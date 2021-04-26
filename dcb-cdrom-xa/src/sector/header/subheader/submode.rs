@@ -78,7 +78,14 @@ impl SubMode {
 	/// Validates this submode
 	fn validate(self) -> Result<(), BytesError> {
 		// If more than 1 of `Audio`, `Video` or `Data` are set, return Err
-		if self.bitand(Self::AUDIO).bitand(Self::VIDEO).bitand(Self::DATA).bits().count_ones() > 1 {
+		if self
+			.bitand(Self::AUDIO)
+			.bitand(Self::VIDEO)
+			.bitand(Self::DATA)
+			.bits()
+			.count_ones() >
+			1
+		{
 			return Err(BytesError::MoreThan1VideoAudioDataSet);
 		}
 

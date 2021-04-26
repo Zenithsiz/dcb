@@ -69,7 +69,8 @@ impl<'a, R: io::Read> FileReader<'a, R> {
 impl<'a, R: io::Read> io::Read for FileReader<'a, R> {
 	fn read(&mut self, mut buf: &mut [u8]) -> io::Result<usize> {
 		// If buffer would go past the end of the file, cut it.
-		let remaining_file_bytes = usize::try_from(self.remaining()).expect("Unable to get remaining file bytes as `usize`");
+		let remaining_file_bytes =
+			usize::try_from(self.remaining()).expect("Unable to get remaining file bytes as `usize`");
 		if buf.len() > remaining_file_bytes {
 			buf = &mut buf[..remaining_file_bytes];
 		}
@@ -119,7 +120,9 @@ impl<'a, R: io::Seek> io::Seek for FileReader<'a, R> {
 		// If we don't end up in the same sector, flush our sector and seek to the next sector
 		if next_pos / 2048 != self.cur_pos / 2048 {
 			self.cached = None;
-			self.cdrom.seek_sector(self.sector_pos + next_pos / 2048).map_err(|err| err.err)?;
+			self.cdrom
+				.seek_sector(self.sector_pos + next_pos / 2048)
+				.map_err(|err| err.err)?;
 		}
 
 		// And set our position

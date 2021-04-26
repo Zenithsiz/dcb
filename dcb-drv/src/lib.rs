@@ -97,7 +97,9 @@ pub struct DrvFsWriter;
 
 impl DrvFsWriter {
 	/// Creates a `.DRV` filesystem
-	pub fn write_fs<W: io::Write + io::Seek, L: DirWriterLister>(writer: &mut W, root_entries: L) -> Result<(), WriteFsError<L::Error>> {
+	pub fn write_fs<W: io::Write + io::Seek, L: DirWriterLister>(
+		writer: &mut W, root_entries: L,
+	) -> Result<(), WriteFsError<L::Error>> {
 		// Get the root and write it
 		let root = DirWriter::new(root_entries);
 		root.write_entries(writer).map_err(WriteFsError::RootDir)?;

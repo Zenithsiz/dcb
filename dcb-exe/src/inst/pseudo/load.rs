@@ -39,7 +39,9 @@ impl Decodable for Inst {
 			basic::Inst::Lui(lui) => match insts.next()? {
 				basic::Inst::Load(load) if load.value == lui.dst && load.addr == load.value => Self {
 					value:  load.value,
-					target: Pos((u32::join(0, lui.value).as_signed() + load.offset.sign_extended::<i32>()).as_unsigned()),
+					target: Pos(
+						(u32::join(0, lui.value).as_signed() + load.offset.sign_extended::<i32>()).as_unsigned(),
+					),
 					kind:   load.kind,
 				},
 				_ => return None,

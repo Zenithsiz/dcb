@@ -42,7 +42,10 @@ fn valid_bytes() {
 
 	for (mov, bytes) in valid_moves {
 		// Check that we can create the move from bytes
-		assert_eq!(&Move::from_bytes(bytes).expect("Unable to convert move from bytes"), mov);
+		assert_eq!(
+			&Move::from_bytes(bytes).expect("Unable to convert move from bytes"),
+			mov
+		);
 
 		// Make sure the validation succeeds
 		let validation = mov.validate();

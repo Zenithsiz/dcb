@@ -25,8 +25,12 @@ use std::{collections::BTreeMap, fmt, path::PathBuf};
 
 fn main() -> Result<(), anyhow::Error> {
 	// Initialize the logger
-	simplelog::TermLogger::init(log::LevelFilter::Info, simplelog::Config::default(), simplelog::TerminalMode::Stderr)
-		.expect("Unable to initialize logger");
+	simplelog::TermLogger::init(
+		log::LevelFilter::Info,
+		simplelog::Config::default(),
+		simplelog::TerminalMode::Stderr,
+	)
+	.expect("Unable to initialize logger");
 
 	// Get all data from cli
 	let cli = cli::CliData::new();
@@ -208,7 +212,9 @@ fn main() -> Result<(), anyhow::Error> {
 
 /// Returns a display-able for an instruction inside a possible function
 #[must_use]
-pub fn inst_display<'a>(inst: &'a Inst, exe: &'a ExeReader, func: Option<&'a Func>, pos: Pos) -> impl fmt::Display + 'a {
+pub fn inst_display<'a>(
+	inst: &'a Inst, exe: &'a ExeReader, func: Option<&'a Func>, pos: Pos,
+) -> impl fmt::Display + 'a {
 	// Overload the target of as many as possible using `inst_target`.
 	dcb_util::DisplayWrapper::new(move |f| {
 		// Build the context and get the mnemonic + args
@@ -284,7 +290,13 @@ impl<'a> DisplayCtx for Ctx<'a> {
 		if let Some(func) = self.exe.func_table().get_containing(pos) {
 			// And then one of it's labels
 			if let Some(label) = func.labels.get(&pos) {
-				return Some((LabelDisplay::OtherFuncLabel { func: &func.name, label }, 0));
+				return Some((
+					LabelDisplay::OtherFuncLabel {
+						func: &func.name,
+						label,
+					},
+					0,
+				));
 			}
 
 			// Else just any position in it

@@ -89,7 +89,8 @@ impl ExeReader {
 	pub fn deserialize<R: io::Read + io::Seek>(file: &mut R) -> Result<Self, DeserializeError> {
 		// Read header
 		let mut header_bytes = [0u8; <<Header as Bytes>::ByteArray as ByteArray>::SIZE];
-		file.read_exact(&mut header_bytes).map_err(DeserializeError::ReadHeader)?;
+		file.read_exact(&mut header_bytes)
+			.map_err(DeserializeError::ReadHeader)?;
 		let header = Header::from_bytes(&header_bytes).map_err(DeserializeError::ParseHeader)?;
 
 		// Get the instruction range
@@ -100,7 +101,8 @@ impl ExeReader {
 		};
 
 		// Read all of the bytes
-		let mut bytes = vec![0u8; usize::try_from(header.size).expect("Len didn't fit into `usize`")].into_boxed_slice();
+		let mut bytes =
+			vec![0u8; usize::try_from(header.size).expect("Len didn't fit into `usize`")].into_boxed_slice();
 		file.read_exact(bytes.as_mut()).map_err(DeserializeError::ReadData)?;
 
 		// Read the known data and func table
@@ -112,7 +114,8 @@ impl ExeReader {
 
 		// Then parse all heuristic tables
 		let heuristics_data = Data::search_instructions(insts_range.clone(), insts.clone());
-		let heuristics_func_table = FuncTable::search_instructions(insts_range, insts, &known_func_table, &known_data_table);
+		let heuristics_func_table =
+			FuncTable::search_instructions(insts_range, insts, &known_func_table, &known_data_table);
 		known_data_table.extend(heuristics_data);
 		let func_table = known_func_table.merge_with(heuristics_func_table);
 

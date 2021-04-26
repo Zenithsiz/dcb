@@ -60,7 +60,9 @@ impl DirEntry {
 	}
 
 	/// Reads a file from this entry
-	pub fn read_file<'a, R: io::Read + io::Seek>(&self, cdrom: &'a mut CdRomReader<R>) -> Result<FileReader<'a, R>, ReadFileError> {
+	pub fn read_file<'a, R: io::Read + io::Seek>(
+		&self, cdrom: &'a mut CdRomReader<R>,
+	) -> Result<FileReader<'a, R>, ReadFileError> {
 		// If this isn't a file, return Err
 		if !self.is_file() {
 			return Err(ReadFileError::NotAFile);
@@ -121,7 +123,9 @@ impl DirEntry {
 	pub fn from_reader<R: io::Read>(reader: &mut R) -> Result<Self, FromReaderError> {
 		// Get the header
 		let mut header_bytes = [0; 0x21];
-		reader.read_exact(&mut header_bytes).map_err(FromReaderError::ReadHeader)?;
+		reader
+			.read_exact(&mut header_bytes)
+			.map_err(FromReaderError::ReadHeader)?;
 
 		let header_bytes = array_split!(&header_bytes,
 			record_size                  :  0x1,
@@ -157,7 +161,9 @@ impl DirEntry {
 
 		// Then skip the remaining bytes
 		let mut remaining = vec![0; usize::from(header_bytes.record_size - 0x21 - header_bytes.name_len)];
-		reader.read_exact(&mut remaining).map_err(FromReaderError::ReadRemaining)?;
+		reader
+			.read_exact(&mut remaining)
+			.map_err(FromReaderError::ReadRemaining)?;
 
 		Ok(Self {
 			name,
@@ -203,7 +209,9 @@ impl DirEntry {
 		writer.write_all(&header_bytes).map_err(ToWriterError::WriteHeader)?;
 
 		// Then write the name
-		writer.write_all(self.name.as_bytes()).map_err(ToWriterError::WriteName)?;
+		writer
+			.write_all(self.name.as_bytes())
+			.map_err(ToWriterError::WriteName)?;
 
 		Ok(())
 	}

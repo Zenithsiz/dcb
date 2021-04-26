@@ -145,21 +145,28 @@ impl Data {
 	/// Searches all instructions for references to
 	/// executable data using certain heuristics.
 	#[must_use]
-	pub fn search_instructions<'a>(insts_range: Range<Pos>, insts: impl Iterator<Item = (Pos, Inst<'a>)> + Clone) -> Vec<Self> {
+	pub fn search_instructions<'a>(
+		insts_range: Range<Pos>, insts: impl Iterator<Item = (Pos, Inst<'a>)> + Clone,
+	) -> Vec<Self> {
 		// Get all possible references to data
 		let references: BTreeSet<Pos> = insts
 			.clone()
 			.filter_map(|(pos, inst)| match inst {
-				Inst::Basic(basic::Inst::Load(basic::load::Inst { offset, .. }) | basic::Inst::Store(basic::store::Inst { offset, .. })) => {
-					Some(pos + offset.sign_extended::<i32>())
-				},
+				Inst::Basic(
+					basic::Inst::Load(basic::load::Inst { offset, .. }) |
+					basic::Inst::Store(basic::store::Inst { offset, .. }),
+				) => Some(pos + offset.sign_extended::<i32>()),
 				Inst::Pseudo(
 					pseudo::Inst::LoadImm(pseudo::load_imm::Inst {
 						kind: pseudo::load_imm::Kind::Address(Pos(address)) | pseudo::load_imm::Kind::Word(address),
 						..
 					}) |
-					pseudo::Inst::Load(pseudo::load::Inst { target: Pos(address), .. }) |
-					pseudo::Inst::Store(pseudo::store::Inst { target: Pos(address), .. }),
+					pseudo::Inst::Load(pseudo::load::Inst {
+						target: Pos(address), ..
+					}) |
+					pseudo::Inst::Store(pseudo::store::Inst {
+						target: Pos(address), ..
+					}),
 				) |
 				Inst::Directive(Directive::Dw(address)) => Some(Pos(address)),
 				_ => None,

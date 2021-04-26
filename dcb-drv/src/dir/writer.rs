@@ -52,7 +52,8 @@ impl<L: DirWriterLister> DirWriter<L> {
 		if start_pos % 2048 != 0 {
 			return Err(WriteEntriesError::WriterNotAtSectorStart);
 		}
-		let start_sector_pos = u32::try_from(start_pos / 2048).map_err(|_err| WriteEntriesError::WriterSectorPastMax)?;
+		let start_sector_pos =
+			u32::try_from(start_pos / 2048).map_err(|_err| WriteEntriesError::WriterSectorPastMax)?;
 
 		// Get the starting sector position for the first entry.
 		// Note: We start right after this directory
@@ -84,7 +85,9 @@ impl<L: DirWriterLister> DirWriter<L> {
 					file.write(writer).map_err(WriteEntriesError::WriteFile)?;
 					(size + 2047) / 2048
 				},
-				DirEntryWriterKind::Dir(dir) => dir.write_entries(writer).map_err(|err| WriteEntriesError::WriteDir(Box::new(err)))?,
+				DirEntryWriterKind::Dir(dir) => dir
+					.write_entries(writer)
+					.map_err(|err| WriteEntriesError::WriteDir(Box::new(err)))?,
 			};
 
 			// Update our sector pos
@@ -95,7 +98,9 @@ impl<L: DirWriterLister> DirWriter<L> {
 		writer
 			.seek(SeekFrom::Start(u64::from(start_sector_pos) * 2048))
 			.map_err(WriteEntriesError::SeekEntries)?;
-		writer.write_all(&entries_bytes).map_err(WriteEntriesError::WriteEntries)?;
+		writer
+			.write_all(&entries_bytes)
+			.map_err(WriteEntriesError::WriteEntries)?;
 
 		// And return the number of sectors we wrote.
 		Ok(cur_sector_pos - start_sector_pos)

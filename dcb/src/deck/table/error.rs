@@ -16,7 +16,11 @@ pub enum DeserializeError {
 	ReadHeader(#[source] std::io::Error),
 
 	/// The magic of the table was wrong
-	#[error("Found wrong table header magic (expected {:#}, found {:#x})", Table::HEADER_MAGIC, magic)]
+	#[error(
+		"Found wrong table header magic (expected {:#}, found {:#x})",
+		Table::HEADER_MAGIC,
+		magic
+	)]
 	HeaderMagic {
 		/// Magic we found
 		magic: u32,

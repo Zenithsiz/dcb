@@ -131,13 +131,20 @@ impl Bytes for PrimaryVolumeDescriptor {
 			path_table_opt_location:       LittleEndian::read_u32(bytes.path_table_lsb_opt_location),
 			root_dir_entry:                DirEntry::from_reader(&mut std::io::Cursor::new(bytes.root_dir_entry))
 				.map_err(FromBytesError::RootDirEntry)?,
-			volume_set_id:                 StrArrD::from_bytes(bytes.volume_set_id).map_err(FromBytesError::VolumeSetId)?,
-			publisher_id:                  StrArrA::from_bytes(bytes.publisher_id).map_err(FromBytesError::PublisherId)?,
-			data_preparer_id:              StrArrA::from_bytes(bytes.data_preparer_id).map_err(FromBytesError::DataPreparerId)?,
-			application_id:                StrArrA::from_bytes(bytes.application_id).map_err(FromBytesError::ApplicationId)?,
-			copyright_file_id:             StrArrD::from_bytes(bytes.copyright_file_id).map_err(FromBytesError::CopyrightFileId)?,
-			abstract_file_id:              StrArrD::from_bytes(bytes.abstract_file_id).map_err(FromBytesError::AbstractFileId)?,
-			bibliographic_file_id:         StrArrD::from_bytes(bytes.bibliographic_file_id).map_err(FromBytesError::BibliographicFileId)?,
+			volume_set_id:                 StrArrD::from_bytes(bytes.volume_set_id)
+				.map_err(FromBytesError::VolumeSetId)?,
+			publisher_id:                  StrArrA::from_bytes(bytes.publisher_id)
+				.map_err(FromBytesError::PublisherId)?,
+			data_preparer_id:              StrArrA::from_bytes(bytes.data_preparer_id)
+				.map_err(FromBytesError::DataPreparerId)?,
+			application_id:                StrArrA::from_bytes(bytes.application_id)
+				.map_err(FromBytesError::ApplicationId)?,
+			copyright_file_id:             StrArrD::from_bytes(bytes.copyright_file_id)
+				.map_err(FromBytesError::CopyrightFileId)?,
+			abstract_file_id:              StrArrD::from_bytes(bytes.abstract_file_id)
+				.map_err(FromBytesError::AbstractFileId)?,
+			bibliographic_file_id:         StrArrD::from_bytes(bytes.bibliographic_file_id)
+				.map_err(FromBytesError::BibliographicFileId)?,
 			volume_creation_date_time:     DecDateTime::from_bytes(bytes.volume_creation_date_time)
 				.map_err(FromBytesError::VolumeCreationDateTime)?,
 			volume_modification_date_time: DecDateTime::from_bytes(bytes.volume_modification_date_time)
@@ -206,10 +213,18 @@ impl Bytes for PrimaryVolumeDescriptor {
 		self.copyright_file_id.to_bytes(bytes.copyright_file_id);
 		self.abstract_file_id.to_bytes(bytes.abstract_file_id);
 		self.bibliographic_file_id.to_bytes(bytes.bibliographic_file_id);
-		self.volume_creation_date_time.to_bytes(bytes.volume_creation_date_time).into_ok();
-		self.volume_modification_date_time.to_bytes(bytes.volume_modification_date_time).into_ok();
-		self.volume_expiration_date_time.to_bytes(bytes.volume_expiration_date_time).into_ok();
-		self.volume_effective_date_time.to_bytes(bytes.volume_effective_date_time).into_ok();
+		self.volume_creation_date_time
+			.to_bytes(bytes.volume_creation_date_time)
+			.into_ok();
+		self.volume_modification_date_time
+			.to_bytes(bytes.volume_modification_date_time)
+			.into_ok();
+		self.volume_expiration_date_time
+			.to_bytes(bytes.volume_expiration_date_time)
+			.into_ok();
+		self.volume_effective_date_time
+			.to_bytes(bytes.volume_effective_date_time)
+			.into_ok();
 
 		Ok(())
 	}

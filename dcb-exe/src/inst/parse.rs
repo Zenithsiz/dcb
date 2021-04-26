@@ -31,7 +31,10 @@ pub trait ParseCtx {
 		match *arg {
 			LineArg::Literal(pos) => pos.try_into().map(Pos).map_err(|_| ParseError::LiteralOutOfRange),
 			LineArg::Label(ref label) => self.label_pos(label).ok_or(ParseError::UnknownLabel),
-			LineArg::LabelOffset { ref label, offset } => self.label_pos(label).map(|pos| pos + offset).ok_or(ParseError::UnknownLabel),
+			LineArg::LabelOffset { ref label, offset } => self
+				.label_pos(label)
+				.map(|pos| pos + offset)
+				.ok_or(ParseError::UnknownLabel),
 			_ => Err(ParseError::InvalidArguments),
 		}
 	}
@@ -39,9 +42,18 @@ pub trait ParseCtx {
 	/// Retrieves a position and offset from an argument
 	fn arg_pos_offset(&self, arg: &LineArg) -> Result<(Pos, i64), ParseError> {
 		match *arg {
-			LineArg::Literal(pos) => pos.try_into().map(|pos| (Pos(pos), 0)).map_err(|_| ParseError::LiteralOutOfRange),
-			LineArg::Label(ref label) => self.label_pos(label).map(|pos| (pos, 0)).ok_or(ParseError::UnknownLabel),
-			LineArg::LabelOffset { ref label, offset } => self.label_pos(label).map(|pos| (pos, offset)).ok_or(ParseError::UnknownLabel),
+			LineArg::Literal(pos) => pos
+				.try_into()
+				.map(|pos| (Pos(pos), 0))
+				.map_err(|_| ParseError::LiteralOutOfRange),
+			LineArg::Label(ref label) => self
+				.label_pos(label)
+				.map(|pos| (pos, 0))
+				.ok_or(ParseError::UnknownLabel),
+			LineArg::LabelOffset { ref label, offset } => self
+				.label_pos(label)
+				.map(|pos| (pos, offset))
+				.ok_or(ParseError::UnknownLabel),
 			_ => Err(ParseError::InvalidArguments),
 		}
 	}

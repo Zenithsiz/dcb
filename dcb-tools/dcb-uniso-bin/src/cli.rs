@@ -36,8 +36,8 @@ impl CliData {
 				ClapArg::with_name(OUTPUT_DIR_STR)
 					.help("The directory to output to")
 					.long_help(
-						"The directory to output to. If not specified, the parent of the input file is used. If it doesn't exist, the current \
-						 directory is used",
+						"The directory to output to. If not specified, the parent of the input file is used. If it \
+						 doesn't exist, the current directory is used",
 					)
 					.short("o")
 					.long("output-dir")

@@ -57,9 +57,15 @@ impl dcb_bytes::Bytes for Address {
 			block: 0x1,
 		);
 
-		let min = BcdU8(*bytes.min).to_u8().ok_or(FromBytesError::InvalidMinute(*bytes.min))?;
-		let sec = BcdU8(*bytes.sec).to_u8().ok_or(FromBytesError::InvalidSecond(*bytes.sec))?;
-		let block = BcdU8(*bytes.block).to_u8().ok_or(FromBytesError::InvalidBlock(*bytes.block))?;
+		let min = BcdU8(*bytes.min)
+			.to_u8()
+			.ok_or(FromBytesError::InvalidMinute(*bytes.min))?;
+		let sec = BcdU8(*bytes.sec)
+			.to_u8()
+			.ok_or(FromBytesError::InvalidSecond(*bytes.sec))?;
+		let block = BcdU8(*bytes.block)
+			.to_u8()
+			.ok_or(FromBytesError::InvalidBlock(*bytes.block))?;
 
 		if !Self::SECS_RANGE.contains(&sec) {
 			return Err(FromBytesError::OutOfRangeSecond(sec));
@@ -85,9 +91,15 @@ impl dcb_bytes::Bytes for Address {
 			return Err(ToBytesError::OutOfRangeBlock(self.block));
 		}
 
-		let min = BcdU8::from_u8(self.min).ok_or(ToBytesError::OutOfRangeMinute(self.min))?.0;
-		let sec = BcdU8::from_u8(self.sec).ok_or(ToBytesError::OutOfRangeSecond(self.sec))?.0;
-		let block = BcdU8::from_u8(self.block).ok_or(ToBytesError::OutOfRangeBlock(self.block))?.0;
+		let min = BcdU8::from_u8(self.min)
+			.ok_or(ToBytesError::OutOfRangeMinute(self.min))?
+			.0;
+		let sec = BcdU8::from_u8(self.sec)
+			.ok_or(ToBytesError::OutOfRangeSecond(self.sec))?
+			.0;
+		let block = BcdU8::from_u8(self.block)
+			.ok_or(ToBytesError::OutOfRangeBlock(self.block))?
+			.0;
 
 		*bytes.min = min;
 		*bytes.sec = sec;

@@ -22,11 +22,19 @@ impl CliData {
 			.version("0.1")
 			.author("Filipe [...] <[...]@gmail.com>")
 			.about("Packs a folder into a `.drv` file")
-			.arg(ClapArg::with_name("INPUT_DIR").help("The input directory to use").required(true).index(1))
+			.arg(
+				ClapArg::with_name("INPUT_DIR")
+					.help("The input directory to use")
+					.required(true)
+					.index(1),
+			)
 			.arg(
 				ClapArg::with_name("OUTPUT")
 					.help("The file to output to")
-					.long_help("The file to output to. If not specified, a file with the directory's name appended by `.drv` will be used")
+					.long_help(
+						"The file to output to. If not specified, a file with the directory's name appended by `.drv` \
+						 will be used",
+					)
 					.short("o")
 					.long("output")
 					.takes_value(true)

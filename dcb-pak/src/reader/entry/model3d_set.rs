@@ -36,7 +36,9 @@ impl Model3dSet {
 	pub fn from_reader<R: io::Read + io::Seek>(reader: &mut R) -> Result<Self, FromReaderError> {
 		// Read the header
 		let mut header_bytes = [0; Self::HEADER_SIZE];
-		reader.read_exact(&mut header_bytes).map_err(FromReaderError::ReadHeader)?;
+		reader
+			.read_exact(&mut header_bytes)
+			.map_err(FromReaderError::ReadHeader)?;
 
 		let header_bytes = array_split!(&header_bytes,
 			file_name : [0x10],
@@ -44,12 +46,18 @@ impl Model3dSet {
 			unknown0  : [0x20],
 		);
 
-		let file_name = header_bytes.file_name.read_string().map_err(FromReaderError::ParseName)?;
-		let models_len = usize::try_from(LittleEndian::read_u32(header_bytes.models_len)).expect("Model length didn't fit into `usize`");
+		let file_name = header_bytes
+			.file_name
+			.read_string()
+			.map_err(FromReaderError::ParseName)?;
+		let models_len = usize::try_from(LittleEndian::read_u32(header_bytes.models_len))
+			.expect("Model length didn't fit into `usize`");
 
 		// Read the unknown 1
 		let mut unknown1_bytes = vec![0; models_len * 3 * 4];
-		reader.read_exact(&mut unknown1_bytes).map_err(FromReaderError::ReadUnknown1)?;
+		reader
+			.read_exact(&mut unknown1_bytes)
+			.map_err(FromReaderError::ReadUnknown1)?;
 
 		// Read the models
 		let mut models = vec![];

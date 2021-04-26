@@ -111,9 +111,15 @@ impl Bytes for Deck {
 			owner:         bytes.owner.read_string().map_err(FromBytesError::Owner)?,
 			cards:         cards.map(CardId),
 			city:          MaybeCity::from_bytes(bytes.city).map_err(FromBytesError::City)?.into(),
-			armor_evo:     MaybeArmorEvo::from_bytes(bytes.armor_evo).map_err(FromBytesError::ArmorEvo)?.into(),
-			battle_music:  MaybeMusic::from_bytes(bytes.battle_music).map_err(FromBytesError::BattleMusic)?.into(),
-			polygon_music: MaybeMusic::from_bytes(bytes.polygon_music).map_err(FromBytesError::PolygonMusic)?.into(),
+			armor_evo:     MaybeArmorEvo::from_bytes(bytes.armor_evo)
+				.map_err(FromBytesError::ArmorEvo)?
+				.into(),
+			battle_music:  MaybeMusic::from_bytes(bytes.battle_music)
+				.map_err(FromBytesError::BattleMusic)?
+				.into(),
+			polygon_music: MaybeMusic::from_bytes(bytes.polygon_music)
+				.map_err(FromBytesError::PolygonMusic)?
+				.into(),
 			experience:    *bytes.experience,
 			unknown_64:    *bytes.unknown_64,
 			unknown_6a:    *bytes.unknown_6a,
@@ -151,11 +157,17 @@ impl Bytes for Deck {
 		MaybeCity::ref_cast(&self.city).to_bytes(bytes.city).into_ok();
 
 		// Armor evo
-		MaybeArmorEvo::ref_cast(&self.armor_evo).to_bytes(bytes.armor_evo).into_ok();
+		MaybeArmorEvo::ref_cast(&self.armor_evo)
+			.to_bytes(bytes.armor_evo)
+			.into_ok();
 
 		// Music
-		MaybeMusic::ref_cast(&self.battle_music).to_bytes(bytes.battle_music).into_ok();
-		MaybeMusic::ref_cast(&self.polygon_music).to_bytes(bytes.polygon_music).into_ok();
+		MaybeMusic::ref_cast(&self.battle_music)
+			.to_bytes(bytes.battle_music)
+			.into_ok();
+		MaybeMusic::ref_cast(&self.polygon_music)
+			.to_bytes(bytes.polygon_music)
+			.into_ok();
 
 		// Unknown
 		*bytes.unknown_64 = self.unknown_64;

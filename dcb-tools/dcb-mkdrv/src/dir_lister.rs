@@ -107,7 +107,10 @@ impl IntoIterator for DirLister {
 				.duration_since(SystemTime::UNIX_EPOCH)
 				.map_err(NextError::EntryDateSinceEpoch)?
 				.as_secs();
-			let date = chrono::NaiveDateTime::from_timestamp(i64::try_from(secs_since_epoch).map_err(|_err| NextError::EntryDateI64Secs)?, 0);
+			let date = chrono::NaiveDateTime::from_timestamp(
+				i64::try_from(secs_since_epoch).map_err(|_err| NextError::EntryDateI64Secs)?,
+				0,
+			);
 
 			// Check if it's a directory or file
 			let kind = match entry.metadata.is_dir() {

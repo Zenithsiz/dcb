@@ -3,7 +3,9 @@
 // Imports
 use super::{Decodable, Encodable};
 use crate::{
-	inst::{basic, parse::LineArg, DisplayCtx, InstDisplay, InstFmtArg, InstSize, Parsable, ParseCtx, ParseError, Register},
+	inst::{
+		basic, parse::LineArg, DisplayCtx, InstDisplay, InstFmtArg, InstSize, Parsable, ParseCtx, ParseError, Register,
+	},
 	Pos,
 };
 use int_conv::{Join, SignExtended, Signed, Split};
@@ -66,7 +68,9 @@ impl Decodable for Inst {
 					dst:  lui.dst,
 					kind: match alu.kind {
 						// lui << 16 + rhs
-						AddUnsigned(rhs) => Kind::Address(Pos((u32::join(0, lui.value).as_signed() + rhs.sign_extended::<i32>()).as_unsigned())),
+						AddUnsigned(rhs) => Kind::Address(Pos((u32::join(0, lui.value).as_signed() +
+							rhs.sign_extended::<i32>())
+						.as_unsigned())),
 						Or(rhs) => Kind::Word(u32::join(rhs, lui.value)),
 						_ => return None,
 					},
@@ -105,7 +109,10 @@ impl Encodable for Inst {
 				};
 
 				std::array::IntoIter::new([
-					basic::Inst::Lui(basic::lui::Inst { dst: self.dst, value: hi }),
+					basic::Inst::Lui(basic::lui::Inst {
+						dst:   self.dst,
+						value: hi,
+					}),
 					basic::Inst::Alu(basic::alu::Inst::Imm(basic::alu::imm::Inst {
 						dst:  self.dst,
 						lhs:  self.dst,
@@ -117,7 +124,10 @@ impl Encodable for Inst {
 				let (lo, hi) = value.lo_hi();
 
 				std::array::IntoIter::new([
-					basic::Inst::Lui(basic::lui::Inst { dst: self.dst, value: hi }),
+					basic::Inst::Lui(basic::lui::Inst {
+						dst:   self.dst,
+						value: hi,
+					}),
 					basic::Inst::Alu(basic::alu::Inst::Imm(basic::alu::imm::Inst {
 						dst:  self.dst,
 						lhs:  self.dst,
@@ -125,17 +135,21 @@ impl Encodable for Inst {
 					})),
 				])
 			},
-			Kind::HalfWordUnsigned(value) => std::iter::once(basic::Inst::Alu(basic::alu::Inst::Imm(basic::alu::imm::Inst {
-				dst:  self.dst,
-				lhs:  Register::Zr,
-				kind: basic::alu::imm::Kind::Or(value),
-			}))),
+			Kind::HalfWordUnsigned(value) => {
+				std::iter::once(basic::Inst::Alu(basic::alu::Inst::Imm(basic::alu::imm::Inst {
+					dst:  self.dst,
+					lhs:  Register::Zr,
+					kind: basic::alu::imm::Kind::Or(value),
+				})))
+			},
 
-			Kind::HalfWordSigned(value) => std::iter::once(basic::Inst::Alu(basic::alu::Inst::Imm(basic::alu::imm::Inst {
-				dst:  self.dst,
-				lhs:  Register::Zr,
-				kind: basic::alu::imm::Kind::AddUnsigned(value),
-			}))),
+			Kind::HalfWordSigned(value) => {
+				std::iter::once(basic::Inst::Alu(basic::alu::Inst::Imm(basic::alu::imm::Inst {
+					dst:  self.dst,
+					lhs:  Register::Zr,
+					kind: basic::alu::imm::Kind::AddUnsigned(value),
+				})))
+			},
 		}
 	}
 }

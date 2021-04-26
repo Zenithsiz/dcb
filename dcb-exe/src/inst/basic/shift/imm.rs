@@ -106,7 +106,9 @@ impl TryEncode for Inst {
 }
 
 impl<'a> Parsable<'a> for Inst {
-	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &'a str, args: &'a [LineArg], _ctx: &'a Ctx) -> Result<Self, ParseError> {
+	fn parse<Ctx: ?Sized + ParseCtx>(
+		mnemonic: &'a str, args: &'a [LineArg], _ctx: &'a Ctx,
+	) -> Result<Self, ParseError> {
 		let kind = match mnemonic {
 			"sll" => Kind::LeftLogical,
 			"srl" => Kind::RightLogical,
@@ -115,14 +117,13 @@ impl<'a> Parsable<'a> for Inst {
 		};
 
 		match *args {
-			[LineArg::Register(lhs @ dst), LineArg::Literal(rhs)] | [LineArg::Register(dst), LineArg::Register(lhs), LineArg::Literal(rhs)] => {
-				Ok(Self {
-					dst,
-					lhs,
-					rhs: rhs.try_into().map_err(|_| ParseError::LiteralOutOfRange)?,
-					kind,
-				})
-			},
+			[LineArg::Register(lhs @ dst), LineArg::Literal(rhs)] |
+			[LineArg::Register(dst), LineArg::Register(lhs), LineArg::Literal(rhs)] => Ok(Self {
+				dst,
+				lhs,
+				rhs: rhs.try_into().map_err(|_| ParseError::LiteralOutOfRange)?,
+				kind,
+			}),
 			_ => Err(ParseError::InvalidArguments),
 		}
 	}
@@ -144,7 +145,11 @@ impl<'a> InstDisplay<'a> for Inst {
 		// If `$dst` and `$lhs` are the same, only print one of them
 		match dst == lhs {
 			true => array::IntoIter::new([InstFmtArg::Register(dst), InstFmtArg::literal(rhs)]),
-			false => array::IntoIter::new([InstFmtArg::Register(dst), InstFmtArg::Register(lhs), InstFmtArg::literal(rhs)]),
+			false => array::IntoIter::new([
+				InstFmtArg::Register(dst),
+				InstFmtArg::Register(lhs),
+				InstFmtArg::literal(rhs),
+			]),
 		}
 	}
 }
