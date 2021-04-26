@@ -57,10 +57,8 @@ pub enum Inst {
 
 
 impl Decodable for Inst {
-	type Raw = u32;
-
 	#[rustfmt::skip]
-	fn decode(raw: Self::Raw) -> Option<Self> {
+	fn decode(raw: u32) -> Option<Self> {
 		None
 			.or_else(|| alu  ::Inst::decode(raw).map(Self::Alu  ))
 			.or_else(|| cond ::Inst::decode(raw).map(Self::Cond ))
@@ -77,7 +75,7 @@ impl Decodable for Inst {
 
 impl Encodable for Inst {
 	#[rustfmt::skip]
-	fn encode(&self) -> Self::Raw {
+	fn encode(&self) -> u32 {
 		match self {
 			Self::Alu  (inst) => inst.encode(),
 			Self::Cond (inst) => inst.encode(),
@@ -168,20 +166,19 @@ impl InstFmt for Inst {
 
 /// A decodable basic instruction
 pub trait Decodable: Sized {
-	/// 'Raw' type to parse from
-	type Raw;
-
 	/// Decodes this instruction
 	#[must_use]
-	fn decode(raw: Self::Raw) -> Option<Self>;
+	fn decode(raw: u32) -> Option<Self>;
 }
 
 /// An encodable basic instruction
-pub trait Encodable: Decodable {
+pub trait Encodable {
 	/// Encodes this instruction
 	#[must_use]
-	fn encode(&self) -> Self::Raw;
+	fn encode(&self) -> u32;
 }
+
+// TODO: TryEncode?
 
 /// Register modifying instructions
 pub trait ModifiesReg: Decodable {

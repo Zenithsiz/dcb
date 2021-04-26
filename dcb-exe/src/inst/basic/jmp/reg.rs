@@ -39,10 +39,8 @@ pub struct Inst {
 }
 
 impl Decodable for Inst {
-	type Raw = u32;
-
 	#[bitmatch::bitmatch]
-	fn decode(raw: Self::Raw) -> Option<Self> {
+	fn decode(raw: u32) -> Option<Self> {
 		let [s, d, f] = #[bitmatch]
 		match raw {
 			"000000_sssss_?????_ddddd_?????_00100f" => [s, d, f],
@@ -62,7 +60,7 @@ impl Decodable for Inst {
 
 impl Encodable for Inst {
 	#[bitmatch::bitmatch]
-	fn encode(&self) -> Self::Raw {
+	fn encode(&self) -> u32 {
 		let (f, d): (u32, u32) = match self.kind {
 			Kind::Jump => (0, 0),
 			Kind::JumpLink(reg) => (1, reg.idx()),

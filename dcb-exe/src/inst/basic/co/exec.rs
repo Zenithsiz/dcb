@@ -24,12 +24,12 @@ pub struct Inst {
 impl Decodable for Inst {
 	type Raw = Raw;
 
-	fn decode(raw: Self::Raw) -> Option<Self> {
+	fn decode(raw: u32) -> Option<Self> {
 		Some(Self { value: raw.i })
 	}
 }
 impl Encodable for Inst {
-	fn encode(&self) -> Self::Raw {
+	fn encode(&self) -> u32 {
 		Raw { i: self.value }
 	}
 }

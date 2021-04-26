@@ -24,16 +24,14 @@ pub enum Inst {
 }
 
 impl Decodable for Inst {
-	type Raw = u32;
-
-	fn decode(raw: Self::Raw) -> Option<Self> {
+	fn decode(raw: u32) -> Option<Self> {
 		None.or_else(|| imm::Inst::decode(raw).map(Self::Imm))
 			.or_else(|| reg::Inst::decode(raw).map(Self::Reg))
 	}
 }
 
 impl Encodable for Inst {
-	fn encode(&self) -> Self::Raw {
+	fn encode(&self) -> u32 {
 		match self {
 			Self::Imm(inst) => inst.encode(),
 			Self::Reg(inst) => inst.encode(),

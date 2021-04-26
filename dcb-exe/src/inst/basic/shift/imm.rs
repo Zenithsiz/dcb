@@ -51,10 +51,8 @@ pub struct Inst {
 }
 
 impl Decodable for Inst {
-	type Raw = u32;
-
 	#[bitmatch::bitmatch]
-	fn decode(raw: Self::Raw) -> Option<Self> {
+	fn decode(raw: u32) -> Option<Self> {
 		let [t, d, i, f] = #[bitmatch]
 		match raw {
 			"000000_?????_ttttt_ddddd_iiiii_0000ff" => [t, d, i, f],
@@ -79,7 +77,7 @@ impl Decodable for Inst {
 
 impl Encodable for Inst {
 	#[bitmatch::bitmatch]
-	fn encode(&self) -> Self::Raw {
+	fn encode(&self) -> u32 {
 		// TODO: Maybe return error?
 		assert!(self.rhs < 32);
 

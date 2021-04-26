@@ -100,11 +100,9 @@ impl Inst {
 }
 
 impl Decodable for Inst {
-	type Raw = u32;
-
 	#[rustfmt::skip]
 	#[bitmatch::bitmatch]
-	fn decode(raw: Self::Raw) -> Option<Self> {
+	fn decode(raw: u32) -> Option<Self> {
 		let [s, t, d, f] = #[bitmatch] match raw {
 			"000000_sssss_ttttt_ddddd_?????_01ffff" => [s, t, d, f],
 			_ => return None,
@@ -133,7 +131,7 @@ impl Decodable for Inst {
 impl Encodable for Inst {
 	#[rustfmt::skip]
 	#[bitmatch::bitmatch]
-	fn encode(&self) -> Self::Raw {
+	fn encode(&self) -> u32 {
 		let [s, t, d, f] = match self {
 			Self::Mult { kind, mode, lhs, rhs } => [lhs.idx(), rhs.idx(), 0, match (kind, mode) {
 					(MultKind::Mult, MultMode::Signed  ) => 0x8,
