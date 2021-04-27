@@ -67,18 +67,23 @@ impl<'a> Parsable<'a> for Inst {
 }
 
 impl<'a> InstDisplay<'a> for Inst {
-	type Args = array::IntoIter<InstFmtArg<'a>, 1>;
 	type Mnemonic = &'static str;
+
+	type Args = impl Iterator<Item = InstFmtArg<'a>>;
 
 	fn mnemonic<Ctx: DisplayCtx>(&'a self, _ctx: &Ctx) -> Self::Mnemonic {
 		"nop"
 	}
 
+	#[auto_enums::auto_enum(Iterator)]
 	fn args<Ctx: DisplayCtx>(&'a self, _ctx: &Ctx) -> Self::Args {
 		let &Self { len } = self;
 
 		let len = i64::try_from(len).expect("Too many nops");
-		array::IntoIter::new([InstFmtArg::Literal(len)])
+		match len {
+			1 => array::IntoIter::new([]),
+			_ => array::IntoIter::new([InstFmtArg::Literal(len)]),
+		}
 	}
 }
 

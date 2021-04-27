@@ -128,32 +128,32 @@
   ty: u32
   kind: Known
 
-- name: func_0x800142d0_data1
+- name: something11_data1
   pos: 0x80077a1a
   ty: u16
   kind: Known
 
-- name: func_0x800142d0_data2
+- name: something11_data2
   pos: 0x80077a14
   ty: u32
   kind: Known
 
-- name: func_0x800142d0_data3
+- name: something11_data3
   pos: 0x80077a1c
   ty: u16
   kind: Known
 
-- name: func_0x800142d0_data4
+- name: something11_data4
   pos: 0x80077a10
   ty: u32
   kind: Known
 
-- name: func_0x800142d0_data5
+- name: something11_data5
   pos: 0x80077a0c
   ty: u32
   kind: Known
 
-- name: func_0x800142d0_data6
+- name: something11_data6
   pos: 0x80077a18
   ty: u16
   kind: Known

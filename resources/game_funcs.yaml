@@ -260,17 +260,125 @@
   start_pos: 0x8004b478
   end_pos: 0x8004b4d4
 
-- name: func_0x80013fa4
+- name: something9
   start_pos: 0x80013fa4
   end_pos: 0x800141b8
 
-- name: func_0x800141b8
+- name: something10
   start_pos: 0x800141b8
   end_pos: 0x800142d0
 
-- name: func_0x800142d0
+- name: something11
   start_pos: 0x800142d0
   end_pos: 0x80014364
+
+- name: something12
+  start_pos: 0x80015328
+  end_pos: 0x800157b0
+
+- name: something13
+  start_pos: 0x800148f8
+  end_pos: 0x80014970
+
+- name: something14
+  start_pos: 0x80014b94
+  end_pos: 0x80014c08
+
+- name: something15
+  start_pos: 0x8002a7cc
+  end_pos: 0x8002ab5c
+
+- name: something16
+  start_pos: 0x8001b358
+  end_pos: 0x8001b438
+
+- name: something17
+  start_pos: 0x8002c1c0
+  end_pos: 0x8002cc44
+
+- name: something18
+  start_pos: 0x80015a3c
+  end_pos: 0x80015ad8
+
+- name: something19
+  start_pos: 0x800162f0
+  end_pos: 0x80016878
+
+- name: something20
+  start_pos: 0x8001963c
+  end_pos: 0x80019ea4
+
+- name: something21
+  start_pos: 0x8001a1d8
+  end_pos: 0x8001a600
+
+- name: something22
+  start_pos: 0x8001a870
+  end_pos: 0x8001a9b0
+
+- name: something23
+  start_pos: 0x8001b088
+  end_pos: 0x8001b10c
+
+- name: something24
+  start_pos: 0x8001b734
+  end_pos: 0x8001b90c
+
+- name: something25
+  start_pos: 0x8001bb44
+  end_pos: 0x8001bb94
+
+- name: something26
+  start_pos: 0x8001bc38
+  end_pos: 0x8001bca4
+
+- name: something27
+  start_pos: 0x8001c0a8
+  end_pos: 0x8001c1e0
+
+- name: something28
+  start_pos: 0x8001c220
+  end_pos: 0x8001d900
+
+- name: something29
+  start_pos: 0x8001da24
+  end_pos: 0x8001dfe0
+
+- name: something30
+  start_pos: 0x8001e180
+  end_pos: 0x8001e53c
+
+- name: something31
+  start_pos: 0x8001e850
+  end_pos: 0x8001e894
+
+- name: something32
+  start_pos: 0x8001f094
+  end_pos: 0x8001f3c0
+
+- name: something33
+  start_pos: 0x8001f5cc
+  end_pos: 0x8001f5fc
+
+- name: something34
+  start_pos: 0x8001f630
+  end_pos: 0x8001f660
+
+- name: something35
+  start_pos: 0x8001f6c4
+  end_pos: 0x8001f768
+
+- name: something36
+  start_pos: 0x8001f768
+  end_pos: 0x8001f824
+
+- name: something37
+  start_pos: 0x8001f824
+  end_pos: 0x8001f8b0
+
+- name: something38
+  start_pos: 0x8001f8b0
+  end_pos: 0x8001f94c
 
 # A functions
 - name: InitHeap
