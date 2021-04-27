@@ -1,6 +1,89 @@
 ? pos: 0x8001414c
   arg: 1
-: "something10 >> 16"
+: "something10@hi"
 ? pos: 0x80014154
   arg: 1
-: "something10 & 0xffff"
+: "something10@lo"
+
+? pos: 0x80013f1c
+  arg: 1
+: "ZeroStart@hi"
+? pos: 0x80013f20
+  arg: 1
+: "ZeroStart@lo"
+? pos: 0x80013f30
+  arg: 1
+: "ZeroStart@lo"
+
+? pos: 0x80013f34
+  arg: 1
+: "data_w686@hi"
+? pos: 0x80013f38
+  arg: 2
+: "data_w686@lo"
+? pos: 0x80013f3c
+  arg: 1
+: "data_w686@lo"
+
+? pos: 0x80013f60
+  arg: 1
+: "main_loop_data1@hi"
+? pos: 0x80013f68
+  arg: 1
+: "main_loop_data1@lo"
+
+? pos: 0x80013f6c
+  arg: 1
+: "ZeroStart@lo"
+? pos: 0x80013f7c
+  arg: 1
+: "ZeroStart@lo"
+
+? pos: 0x80013f78
+  arg: 1
+: "data_w686@hi"
+? pos: 0x80013f84
+  arg: 1
+: "data_w686@lo"
+
+? pos: 0x80013f80
+  arg: 1
+: "main_loop_data1@hi"
+? pos: 0x80013f88
+  arg: 1
+: "main_loop_data1@lo"
+
+? pos: 0x80013fd0
+  arg: 1
+: "ZeroStart@hi"
+? pos: 0x80013fd4
+  arg: 1
+: "ZeroStart@lo"
+
+? pos: 0x80013ff4
+  arg: 1
+: "something11_data6@hi"
+? pos: 0x8001400c
+  arg: 1
+: "something11_data6@lo"
+
+? pos: 0x80013ff8
+  arg: 1
+: "something11_data1@hi"
+? pos: 0x80014008
+  arg: 1
+: "something11_data1@lo"
+
+? pos: 0x80013ffc
+  arg: 1
+: "something11_data3@hi"
+? pos: 0x80014004
+  arg: 1
+: "something11_data3@lo"
+
+? pos: 0x80014010
+  arg: 1
+: "something11_data5@hi"
+? pos: 0x8001401c
+  arg: 1
+: "something11_data5@lo"

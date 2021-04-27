@@ -94,4 +94,14 @@ impl<'a> InstFmtArg<'a> {
 			InstFmtArg::String(s) => write!(f, "\"{}\"", s.escape_debug()),
 		}
 	}
+
+	/// Writes this argument, overriding any literals with `value`
+	pub fn write_override(&self, f: &mut fmt::Formatter, value: impl fmt::Display) -> Result<(), fmt::Error> {
+		match *self {
+			InstFmtArg::Register(register) => write!(f, "{register}"),
+			InstFmtArg::RegisterOffset { register, .. } => write!(f, "{value}({register})"),
+			InstFmtArg::Literal(_) | InstFmtArg::Target(_) => write!(f, "{value}"),
+			InstFmtArg::String(s) => write!(f, "\"{}\"", s.escape_debug()),
+		}
+	}
 }

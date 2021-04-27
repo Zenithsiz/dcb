@@ -157,3 +157,8 @@
   pos: 0x80077a18
   ty: u16
   kind: Known
+
+- name: main_loop_data1
+  pos: 0x80077aec
+  ty: u16
+  kind: Known

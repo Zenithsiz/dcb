@@ -239,12 +239,13 @@ pub fn inst_display<'a>(
 				Position::First(_) | Position::Only(_) => write!(f, " "),
 				_ => write!(f, ", "),
 			}?;
+			let arg = arg.into_inner();
 
 			// If we have an override for this argument, use it
 			match inst_arg_overrides.get(&ArgPos { pos, arg: idx }) {
-				Some(arg) => write!(f, "{arg}")?,
+				Some(value) => arg.write_override(f, value)?,
 				// Else just write it
-				None => arg.into_inner().write(f, &ctx)?,
+				None => arg.write(f, &ctx)?,
 			}
 		}
 
