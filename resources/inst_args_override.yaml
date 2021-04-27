@@ -1,0 +1,6 @@
+? pos: 0x8001414c
+  arg: 1
+: "something10 >> 16"
+? pos: 0x80014154
+  arg: 1
+: "something10 & 0xffff"

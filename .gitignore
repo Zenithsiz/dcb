@@ -3,6 +3,7 @@
 !/resources/foreign_data.yaml
 !/resources/game_data.yaml
 !/resources/game_funcs.yaml
+!/resources/inst_args_override.yaml
 
 # Cargo
 /target

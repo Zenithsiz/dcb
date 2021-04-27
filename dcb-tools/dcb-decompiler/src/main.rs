@@ -52,7 +52,13 @@ fn main() -> Result<(), anyhow::Error> {
 		serde_yaml::to_writer(header_file, exe.header()).context("Unable to write header to file")?;
 	}
 
-	// Instruction buffers
+	// Read all arg overrides
+	let inst_arg_overrides_file = std::fs::File::open("resources/inst_args_override.yaml")
+		.context("Unable to open instruction args override file")?;
+	let inst_arg_overrides: BTreeMap<ArgPos, String> =
+		serde_yaml::from_reader(inst_arg_overrides_file).context("Unable to parse instruction args override file")?;
+
+	// Instruction buffer
 	let mut inst_buffers: BTreeMap<Pos, String> = BTreeMap::new();
 
 	// If currently in an inline-comment alignment
@@ -111,9 +117,9 @@ fn main() -> Result<(), anyhow::Error> {
 
 								// Then build the instruction
 								let inst = &insts.get(cur_n + n)?.1;
-								let inst = inst_buffers
-									.entry(pos)
-									.or_insert_with(|| self::inst_display(inst, &exe, Some(func), pos).to_string());
+								let inst = inst_buffers.entry(pos).or_insert_with(|| {
+									self::inst_display(inst, &exe, Some(func), &inst_arg_overrides, pos).to_string()
+								});
 								let inst_len = inst.len();
 
 								Some(inst_len)
@@ -132,7 +138,10 @@ fn main() -> Result<(), anyhow::Error> {
 					// If we have the instruction buffer, pop it and use it
 					match inst_buffers.get(&pos) {
 						Some(inst) => print!("\t{inst}"),
-						None => print!("\t{}", self::inst_display(&inst, &exe, Some(func), *pos)),
+						None => print!(
+							"\t{}",
+							self::inst_display(&inst, &exe, Some(func), &inst_arg_overrides, *pos)
+						),
 					}
 
 					// If there's an inline comment, print it
@@ -179,7 +188,7 @@ fn main() -> Result<(), anyhow::Error> {
 					}
 
 					// Write the instruction
-					print!("\t{}", self::inst_display(&inst, &exe, None, pos));
+					print!("\t{}", self::inst_display(&inst, &exe, None, &inst_arg_overrides, pos));
 
 					println!();
 				}
@@ -195,7 +204,7 @@ fn main() -> Result<(), anyhow::Error> {
 					}
 
 					// Write the instruction
-					print!("{}", self::inst_display(&inst, &exe, None, pos));
+					print!("{}", self::inst_display(&inst, &exe, None, &inst_arg_overrides, pos));
 
 					println!();
 				}
@@ -213,7 +222,8 @@ fn main() -> Result<(), anyhow::Error> {
 /// Returns a display-able for an instruction inside a possible function
 #[must_use]
 pub fn inst_display<'a>(
-	inst: &'a Inst, exe: &'a ExeReader, func: Option<&'a Func>, pos: Pos,
+	inst: &'a Inst, exe: &'a ExeReader, func: Option<&'a Func>, inst_arg_overrides: &'a BTreeMap<ArgPos, String>,
+	pos: Pos,
 ) -> impl fmt::Display + 'a {
 	// Overload the target of as many as possible using `inst_target`.
 	dcb_util::DisplayWrapper::new(move |f| {
@@ -223,16 +233,19 @@ pub fn inst_display<'a>(
 		let args = inst.args(&ctx);
 
 		write!(f, "{mnemonic}")?;
-		for arg in args.with_position() {
+		for (idx, arg) in args.with_position().enumerate() {
 			// Write ',' if it's first, then a space
 			match &arg {
 				Position::First(_) | Position::Only(_) => write!(f, " "),
 				_ => write!(f, ", "),
 			}?;
 
-			// Then write the argument
-			let arg = arg.into_inner();
-			arg.write(f, &ctx)?;
+			// If we have an override for this argument, use it
+			match inst_arg_overrides.get(&ArgPos { pos, arg: idx }) {
+				Some(arg) => write!(f, "{arg}")?,
+				// Else just write it
+				None => arg.into_inner().write(f, &ctx)?,
+			}
 		}
 
 		Ok(())
@@ -310,4 +323,15 @@ impl<'a> DisplayCtx for Ctx<'a> {
 
 		None
 	}
+}
+
+/// Argument position
+#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Debug)]
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct ArgPos {
+	/// Position
+	pos: Pos,
+
+	/// Argument
+	arg: usize,
 }
