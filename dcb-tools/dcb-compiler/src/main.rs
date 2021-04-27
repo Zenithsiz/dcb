@@ -18,7 +18,7 @@ use anyhow::Context;
 use dcb_bytes::Bytes;
 use dcb_exe::{
 	inst::{
-		parse::{line::InstParser, LineArg},
+		parse::line2::{Line, LineArg},
 		Inst, InstSize, Label, LabelName, Parsable, ParseCtx,
 	},
 	Data, Pos,
@@ -28,7 +28,7 @@ use std::{
 	collections::{BTreeMap, HashMap},
 	convert::TryInto,
 	fs,
-	io::{BufReader, Seek, SeekFrom, Write},
+	io::{BufRead, BufReader, Seek, SeekFrom, Write},
 };
 
 fn main() -> Result<(), anyhow::Error> {
@@ -54,9 +54,13 @@ fn main() -> Result<(), anyhow::Error> {
 	let mut output_file = fs::File::create(&cli.output_file_path).context("Unable to open output file")?;
 
 	// Read the input
-	let lines = InstParser::new(input_file)
+	let lines = input_file.lines().map(|line| {
+		line.context("Unable to read line")
+			.and_then(|line| Line::parse(&line).context("Unable to parse line"))
+	});
+	let lines = lines
 		.zip(0..)
-		.map(|(res, n)| res.map(|line| (n, line)).map_err(|err| (n, anyhow::Error::from(err))));
+		.map(|(res, n)| res.map(|line| (n, line)).map_err(|err| (n, err)));
 	let mut cur_pos = header.start_pos;
 	let res = itertools::process_results(lines, |lines| {
 		let mut labels_by_name = HashMap::new();
@@ -65,7 +69,7 @@ fn main() -> Result<(), anyhow::Error> {
 		let mut insts = BTreeMap::new();
 
 		for (n, line) in lines {
-			if let Some(label) = line.label {
+			for label in line.labels {
 				// Convert the label to ours
 				let label = match label.name.starts_with('.') {
 					// It's local
@@ -94,12 +98,12 @@ fn main() -> Result<(), anyhow::Error> {
 					},
 				};
 
-
 				// Insert the label
 				let name = label.name().clone();
 				assert!(labels_by_pos.insert(cur_pos, label.clone()).is_none());
 				assert!(labels_by_name.insert(name, cur_pos).is_none());
 			}
+
 			if let Some(mut inst) = line.inst {
 				// Modify any local labels
 				for arg in &mut inst.args {

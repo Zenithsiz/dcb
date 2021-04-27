@@ -3,10 +3,12 @@
 // Modules
 pub mod error;
 pub mod line;
+pub mod line2;
 
 // Exports
 pub use error::ParseError;
-pub use line::{Line, LineArg, LineInst, LineLabel};
+//pub use line::{Line, LineArg, LineInst, LineLabel};
+pub use line2::{Line, LineArg};
 
 // Imports
 use crate::Pos;

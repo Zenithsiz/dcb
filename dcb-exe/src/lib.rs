@@ -20,6 +20,7 @@
 	unwrap_infallible,
 	min_type_alias_impl_trait,
 	external_doc,
+	assert_matches,
 )]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]
