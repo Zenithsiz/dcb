@@ -1,339 +1,141 @@
 //! Line parsing
 
-// # TODO: Refactor this whole module.
-
 // Modules
 pub mod error;
 
+use std::str::FromStr;
+
 // Exports
-pub use error::ParseError;
+pub use error::{ParseLineError, ReadArgError, ReadLiteralError, ReadNameError};
 
 // Imports
 use crate::inst::Register;
-use std::{
-	borrow::Borrow,
-	io::{self, Lines},
-	str::FromStr,
-};
 
-/// Instruction parser
-#[derive(Debug)]
-pub struct InstParser<R: io::BufRead> {
-	/// Bytes
-	lines: Lines<R>,
-}
-
-impl<R: io::BufRead> InstParser<R> {
-	/// Creates a new instruction parser
-	pub fn new(reader: R) -> Self {
-		let lines = reader.lines();
-		Self { lines }
-	}
-
-	/// Parses an instruction from a line
-	// TODO: Avoid allocations where possible
-	// TODO: Remove everything around this, make it just this function
-	#[allow(clippy::too_many_lines)] // TODO: Refactor this
-	#[allow(clippy::shadow_unrelated)] // We can't do this in only one place, fix naming instead
-	pub fn parse_from_line(line: &str) -> Result<Line, ParseError> {
-		// Trim the line we read
-		let line = line.trim();
-
-		// If it starts with a comment or it's empty, return an empty line
-		if line.starts_with('#') || line.is_empty() {
-			return Ok(Line {
-				label: None,
-				inst:  None,
-			});
-		}
-
-		// Name character validator
-		let is_valid_name_char = |c: char| c.is_alphanumeric() || ['.', '_'].contains(&c);
-
-		// Literal first character validator
-		let is_valid_literal_first_char = |c: char| ('0'..='9').contains(&c) || ['+', '-'].contains(&c);
-
-		// Read a name
-		let (name, rest) = match line.find(|c| !is_valid_name_char(c)).map(|idx| line.split_at(idx)) {
-			// If we got it, remove any whitespace from rest.
-			Some((name, rest)) => (name, rest.trim_start()),
-			// If the whole line was a name, return a 0-argument instruction
-			None => {
-				return Ok(Line {
-					label: None,
-					inst:  Some(LineInst {
-						mnemonic: line.to_owned(),
-						args:     vec![],
-					}),
-				});
-			},
-		};
-
-		// If the rest was a comment, or empty, return a 0-argument instruction
-		if rest.starts_with('#') || rest.is_empty() {
-			return Ok(Line {
-				label: None,
-				inst:  Some(LineInst {
-					mnemonic: name.to_owned(),
-					args:     vec![],
-				}),
-			});
-		}
-
-		// Check if we have a label
-		let (label_name, mnemonic, mut args) = match rest.strip_prefix(':').map(str::trim_start) {
-			// If it started with `:`, read a name after it and return it.
-			Some(rest) => {
-				let label = name;
-
-				// If it starts with a comment or it's empty, return only the label
-				if rest.starts_with('#') || rest.is_empty() {
-					return Ok(Line {
-						label: Some(LineLabel { name: label.to_owned() }),
-						inst:  None,
-					});
-				}
-
-				// Ge the mnemonic and arguments
-				let (mnemonic, args) = match rest.find(|c| !is_valid_name_char(c)).map(|idx| rest.split_at(idx)) {
-					// If we got it, remove any whitespace from rest.
-					Some((mnemonic, rest)) => (mnemonic, rest.trim_start()),
-					// If everything after the label was a name, return a 0-argument label
-					None => {
-						return Ok(Line {
-							label: Some(LineLabel { name: label.to_owned() }),
-							inst:  Some(LineInst {
-								mnemonic: rest.to_owned(),
-								args:     vec![],
-							}),
-						});
-					},
-				};
-
-				(Some(label), mnemonic, args)
-			},
-			// Else we have no label
-			None => (None, name, rest),
-		};
-
-		// Else read arguments
-		let mut parsed_args = vec![];
-		loop {
-			// If the remaining arguments were a comment, or empty, break
-			if args.starts_with('#') || args.is_empty() {
-				break;
-			}
-			// Else if it starts with a '"', read a string
-			else if args.starts_with('"') {
-				// Returns `true` for the first non-escaped '"' in a string
-				let mut escaping = false;
-				let find_first_non_escaped_quotes = move |c| match c {
-					// If we found an escaping character, toggle escape
-					// Note: If we weren't escaping, it's the start of an escape,
-					//       else it's the '\\' escape.
-					'\\' => {
-						escaping ^= true;
-						false
-					},
-					// If we found a '"' while not escaping, finish
-					'"' if !escaping => true,
-
-					// Else set us as not escaping and return
-					// Note: This is fine even for multi-character escapes, as
-					//       '"' must be escaped with a single character.
-					_ => {
-						escaping = false;
-						false
-					},
-				};
-
-				// Find the first non-escaped '"'
-				// Note: The `+2` can never panic.
-				let string = match args[1..]
-					.find(find_first_non_escaped_quotes)
-					.map(|idx| args.split_at(idx + 2))
-				{
-					Some((string, rest)) => {
-						args = rest.trim_start();
-						string
-					},
-					None => return Err(ParseError::UnterminatedString),
-				};
-
-				// Create the string and push it
-				// Note: For whatever reason 'snailquote' requires the quotes to be included in `string`
-				let string = snailquote::unescape(string).map_err(ParseError::StringUnescape)?;
-				parsed_args.push(LineArg::String(string));
-			}
-			// Else if it starts with a number (possibly negative), read a literal
-			else if args.starts_with(is_valid_literal_first_char) {
-				// Try to parse a number
-				let (num, rest) = self::parse_literal(args)?;
-				args = rest.trim_start();
-
-				// If we got a '(' after this literal, read a RegisterOffset instead
-				if args.starts_with('(') {
-					// Trim the '(' and whitespace
-					args = args[1..].trim_start();
-
-					// Then make sure it's a register
-					if !args.starts_with('$') {
-						return Err(ParseError::ExpectedRegister);
-					}
-
-					// Read it and update the arguments
-					let reg = args.get(0..=2).ok_or(ParseError::ExpectedRegister)?;
-					args = args[3..].trim_start();
-
-					// If it doesn't end with a ')', return Err
-					match args.strip_prefix(')') {
-						Some(rest) => args = rest.trim_start(),
-						None => return Err(ParseError::UnterminatedRegisterOffset),
-					}
-
-					// Then parse it and push the offset
-					let register = Register::from_str(reg).map_err(|()| ParseError::UnknownRegister)?;
-					parsed_args.push(LineArg::RegisterOffset { register, offset: num });
-				}
-				// Else simply add the literal
-				else {
-					parsed_args.push(LineArg::Literal(num));
-				}
-			}
-			// Else if it starts with '$', it's a register
-			else if args.starts_with('$') {
-				// Try to get the 3 characters forming the register and update the remaining args
-				let reg = args.get(0..=2).ok_or(ParseError::ExpectedRegister)?;
-				args = args[3..].trim_start();
-
-				// Then parse it and add it
-				let reg = Register::from_str(reg).map_err(|()| ParseError::UnknownRegister)?;
-				parsed_args.push(LineArg::Register(reg));
-			}
-			// Else try to read it as a label with a possible offset
-			else {
-				// Read a label name
-				let (label, offset) = match args.find(|c| !is_valid_name_char(c)).map(|idx| args.split_at(idx)) {
-					Some((name, rest)) => {
-						// If the next character is '+'
-						args = rest.trim_start();
-						match args.strip_prefix('+') {
-							Some(rest) => {
-								// Try to parse a number
-								let (num, rest) = self::parse_literal(rest)?;
-								args = rest.trim_start();
-
-								// And return the offset
-								(name, Some(num))
-							},
-							None => (name, None),
-						}
-					},
-					// Else the whole rest was just the label
-					// Note: This can't be empty
-					None => {
-						let label = args;
-						args = "";
-						(label, None)
-					},
-				};
-
-				// And add it
-				let label = match offset {
-					Some(offset) => LineArg::LabelOffset {
-						label: label.to_owned(),
-						offset,
-					},
-					None => LineArg::Label(label.to_owned()),
-				};
-				parsed_args.push(label);
-			}
-
-			// If we find a ',', consume and try out the next argument,
-			// else make sure there are no arguments after this
-			match args.strip_prefix(',') {
-				Some(rest) => args = rest.trim_start(),
-				None => {
-					// If there's anything remaining, return Err
-					if !args.starts_with('#') && !args.is_empty() {
-						return Err(ParseError::ExpectedCommaBetweenArgs);
-					}
-
-					// Else break, we're done
-					break;
-				},
-			}
-		}
-
-
-		Ok(Line {
-			label: label_name.map(|name| LineLabel { name: name.to_owned() }),
-			inst:  Some(LineInst {
-				mnemonic: mnemonic.to_owned(),
-				args:     parsed_args,
-			}),
-		})
-	}
-}
-
-impl<R: io::BufRead> Iterator for InstParser<R> {
-	type Item = Result<Line, ParseError>;
-
-	fn next(&mut self) -> Option<Self::Item> {
-		// Get the next line
-		let line = match self.lines.next()? {
-			Ok(line) => line,
-			Err(err) => return Some(Err(ParseError::ReadLine(err))),
-		};
-
-		// Then parse it
-		Self::parse_from_line(&line).map(Some).transpose()
-	}
-}
-
-/// An instruction line
+/// A line
 #[derive(PartialEq, Clone, Debug)]
 pub struct Line {
-	/// Label
-	pub label: Option<LineLabel>,
+	/// Labels
+	pub labels: Vec<LineLabel>,
 
 	/// Instruction
 	pub inst: Option<LineInst>,
 }
 
-/// A label
-#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Hash, Debug)]
+impl Line {
+	/// Parses a line from a string
+	pub fn parse(line: &str) -> Result<Self, ParseLineError> {
+		let mut line = line.trim();
+
+		// Read all labels and then the mnemonic
+		let mut labels = vec![];
+		let mnemonic = loop {
+			// If the line starts with a comment or is empty, return all labels
+			if line.starts_with('#') || line.is_empty() {
+				return Ok(Self { labels, inst: None });
+			}
+
+			// Read a name
+			let (name, rest) = self::read_name(line)?;
+
+			// Check the character after the name
+			let mut rest = rest.chars();
+			match rest.next() {
+				// If we got ':', add a label and continue
+				Some(':') => {
+					line = rest.as_str().trim_start();
+					let label = LineLabel { name: name.to_owned() };
+					labels.push(label);
+					continue;
+				},
+
+				// If we got '#', we got a mnemonic with no arguments
+				Some('#') => {
+					return Ok(Self {
+						labels,
+						inst: Some(LineInst {
+							mnemonic: name.to_owned(),
+							args:     vec![],
+						}),
+					});
+				},
+
+				// If we got a space or eof, we got a mnemonic
+				Some(' ') | None => {
+					line = rest.as_str().trim_start();
+					break name.to_owned();
+				},
+
+				_ => return Err(ParseLineError::InvalidNameSuffix),
+			}
+		};
+
+		// Then read all arguments
+		let mut args = vec![];
+		loop {
+			// If the line starts with a comment, there are no arguments
+			if line.starts_with('#') {
+				return Ok(Self {
+					labels: vec![],
+					inst:   Some(LineInst { mnemonic, args }),
+				});
+			}
+
+			// Read an argument
+			let (arg, rest) = self::read_arg(line)?;
+			args.push(arg);
+
+			// Check the character after the argument
+			let rest = rest.trim_start();
+			let mut rest = rest.chars();
+			match rest.next() {
+				// If we got ',', continue reading
+				Some(',') => {
+					line = rest.as_str().trim_start();
+					continue;
+				},
+
+				// If we got eof or a comment, return
+				Some('#') | None => {
+					let inst = Some(LineInst { mnemonic, args });
+					return Ok(Self { labels, inst });
+				},
+
+				_ => return Err(ParseLineError::InvalidArgSuffix),
+			}
+		}
+	}
+}
+
+/// Line label
+#[derive(PartialEq, Clone, Debug)]
 pub struct LineLabel {
 	/// Name
 	pub name: String,
 }
 
-impl Borrow<String> for LineLabel {
-	fn borrow(&self) -> &String {
-		&self.name
-	}
-}
-
-/// An instructions
+/// Line instruction
 #[derive(PartialEq, Clone, Debug)]
 pub struct LineInst {
 	/// Mnemonic
 	pub mnemonic: String,
 
-	/// Components
+	/// Args
 	pub args: Vec<LineArg>,
 }
 
-/// An argument
+/// Line argument
 #[derive(PartialEq, Clone, Debug)]
 pub enum LineArg {
 	/// String
+	/// `"<string>"`
 	String(String),
 
 	/// Register
+	/// `<reg>`
 	Register(Register),
 
 	/// Register offset
+	/// `<offset>(<reg>)`
 	RegisterOffset {
 		/// The register
 		register: Register,
@@ -343,12 +145,15 @@ pub enum LineArg {
 	},
 
 	/// Literal
+	/// `<literal>`
 	Literal(i64),
 
 	/// Label
+	/// `<name>`
 	Label(String),
 
 	/// LabelOffset
+	/// `<name>+<offset>`
 	LabelOffset {
 		/// The label
 		label: String,
@@ -356,67 +161,167 @@ pub enum LineArg {
 		/// The offset
 		offset: i64,
 	},
+
+	/// Mnemonic
+	/// `^<mnemonic>`
+	Mnemonic(String),
 }
 
-impl LineArg {
-	/// Returns this argument as a string
-	#[must_use]
-	pub fn as_string(&self) -> Option<&str> {
-		match self {
-			Self::String(string) => Some(string),
-			_ => None,
-		}
+/// Reads a name
+fn read_name(s: &str) -> Result<(&str, &str), ReadNameError> {
+	// Make sure the first character is valid
+	let mut chars = s.char_indices();
+	match chars.next() {
+		Some((_, c)) if self::is_valid_first_name_char(c) => (),
+		Some(_) => return Err(ReadNameError::StartChar),
+		None => return Err(ReadNameError::Empty),
 	}
 
-	/// Returns this argument as a register
-	#[must_use]
-	pub const fn as_register(&self) -> Option<Register> {
-		match *self {
-			Self::Register(reg) => Some(reg),
-			_ => None,
-		}
-	}
+	// Then keep consuming until we get a non-valid continuation character
+	let idx = loop {
+		match chars.next() {
+			Some((_, c)) if self::is_valid_cont_name_char(c) => continue,
+			Some((idx, _)) => break idx,
+			None => break s.len(),
+		};
+	};
 
-	/// Returns this argument as a register offset
-	#[must_use]
-	pub const fn as_register_offset(&self) -> Option<(Register, i64)> {
-		match *self {
-			Self::RegisterOffset { register, offset } => Some((register, offset)),
-			_ => None,
-		}
-	}
+	Ok((&s[..idx], &s[idx..]))
+}
 
-	/// Returns this argument as a literal
-	#[must_use]
-	pub const fn as_literal(&self) -> Option<i64> {
-		match *self {
-			Self::Literal(literal) => Some(literal),
-			_ => None,
-		}
-	}
+/// Reads an argument
+fn read_arg(s: &str) -> Result<(LineArg, &str), ReadArgError> {
+	let mut chars = s.char_indices();
+	match chars.next() {
+		// If we got '$', it's a register
+		Some((_, '$')) => self::read_reg(s).map(|(reg, rest)| (LineArg::Register(reg), rest)),
 
-	/// Returns this argument as a label
-	#[must_use]
-	pub fn as_label(&self) -> Option<&str> {
-		match self {
-			Self::Label(label) => Some(label),
-			_ => None,
-		}
-	}
+		// If we got '"', it's a string
+		Some((_, '"')) => self::read_string(s).map(|(string, rest)| (LineArg::String(string), rest)),
 
-	/// Returns this argument as a label offset
-	#[must_use]
-	pub fn as_label_offset(&self) -> Option<(&str, i64)> {
-		match self {
-			Self::LabelOffset { label, offset } => Some((label, *offset)),
-			_ => None,
-		}
+		// If we got '^', it's a mnemonic
+		Some((_, '^')) => self::read_name(chars.as_str())
+			.map(|(name, rest)| (LineArg::Label(name.to_owned()), rest))
+			.map_err(ReadArgError::ReadLabel),
+
+		// If it's numeric, 0..9 or '+' / '-', it's a literal
+		Some((_, '0'..='9' | '+' | '-')) => {
+			// Read the number
+			let (num, rest) = self::read_literal(s).map_err(ReadArgError::ReadLiteral)?;
+
+			match rest.strip_prefix('(') {
+				// If the rest starts with '(', read it as a register offset
+				Some(rest) => match rest.split_once(')') {
+					Some((reg, rest)) => {
+						// Parse the register
+						// If we have leftover tokens after reading it, return Err
+						let reg = reg.trim();
+						let (reg, reg_rest) = self::read_reg(reg)?;
+						if !reg_rest.is_empty() {
+							return Err(ReadArgError::RegisterOffsetLeftoverTokens);
+						}
+
+						Ok((
+							LineArg::RegisterOffset {
+								register: reg,
+								offset:   num,
+							},
+							rest,
+						))
+					},
+					None => Err(ReadArgError::MissingRegisterOffsetDelimiter),
+				},
+				None => Ok((LineArg::Literal(num), rest)),
+			}
+		},
+
+		// If it starts with a label char, it's a label
+		Some((_, c)) if self::is_valid_first_name_char(c) => {
+			// Read the label
+			let (label, rest) = self::read_name(s).map_err(ReadArgError::ReadLabel)?;
+
+			// If there's a '+' after, read an offset too
+			match rest.strip_prefix('+') {
+				Some(rest) => {
+					// Read the offset
+					let (offset, rest) = self::read_literal(rest).map_err(ReadArgError::ReadLabelOffset)?;
+
+					Ok((
+						LineArg::LabelOffset {
+							label: label.to_owned(),
+							offset,
+						},
+						rest,
+					))
+				},
+				None => Ok((LineArg::Label(label.to_owned()), rest)),
+			}
+		},
+
+		// Else it's an invalid char
+		Some(_) => Err(ReadArgError::InvalidStartChar),
+
+		None => Err(ReadArgError::Empty),
 	}
 }
 
+/// Reads a register
+fn read_reg(s: &str) -> Result<(Register, &str), ReadArgError> {
+	match s.get(..3) {
+		Some(reg) => match Register::from_str(reg) {
+			Ok(reg) => Ok((reg, &s[3..])),
+			Err(()) => Err(ReadArgError::UnknownRegister),
+		},
+		None => Err(ReadArgError::ExpectedRegister),
+	}
+}
 
-/// Parses a literal from a string and returns the rest
-fn parse_literal(s: &str) -> Result<(i64, &str), ParseError> {
+/// Reads a string
+fn read_string(s: &str) -> Result<(String, &str), ReadArgError> {
+	let mut is_escaping = false;
+	let mut in_multi_escape = false;
+	let mut chars = s.char_indices();
+	assert_matches!(chars.next(), Some((_, '"')));
+	loop {
+		match chars.next() {
+			// If we get '\', start escaping
+			Some((_, '\\')) if !is_escaping => is_escaping = true,
+
+			// If we get '{' while escaping, start multi-escaping
+			Some((_, '{')) if is_escaping => in_multi_escape = true,
+
+			// During multi escape, ignore everything except '}'
+			Some(_) if in_multi_escape => (),
+
+			// If we get '}' during multi-escape, stop escaping and multi escaping
+			Some((_, '}')) if in_multi_escape => {
+				in_multi_escape = false;
+				is_escaping = false;
+			},
+
+			// Else if we get anything during single escape, stop escaping
+			Some(_) if is_escaping => is_escaping = false,
+
+			// If we get '"' while not escaping, return
+			Some((idx, '"')) if !is_escaping => {
+				let (string, rest) = s.split_at(idx + 1);
+
+				// Note: For whatever reason 'snailquote' requires the quotes to be included in `string`
+				let string = snailquote::unescape(string).map_err(ReadArgError::UnescapeString)?;
+
+				break Ok((string, rest));
+			},
+
+			// Else just continue
+			Some(_) => continue,
+
+			None => break Err(ReadArgError::MissingClosingDelimiterString),
+		};
+	}
+}
+
+/// Reads a literal from a string and returns the rest
+fn read_literal(s: &str) -> Result<(i64, &str), ReadLiteralError> {
 	// Check if it's negative
 	let (is_neg, num) = match s.chars().next() {
 		Some('+') => (false, &s[1..]),
@@ -448,11 +353,21 @@ fn parse_literal(s: &str) -> Result<(i64, &str), ParseError> {
 	};
 
 	// Parse it
-	let num = i64::from_str_radix(num, base).map_err(ParseError::ParseLiteral)?;
+	let num = i64::from_str_radix(num, base).map_err(ReadLiteralError::Parse)?;
 	let num = match is_neg {
 		true => -num,
 		false => num,
 	};
 
 	Ok((num, rest))
+}
+
+/// Returns if `c` is a valid mnemonic first character
+fn is_valid_first_name_char(c: char) -> bool {
+	c.is_ascii_alphabetic() || ['.', '_'].contains(&c)
+}
+
+/// Returns if `c` is a valid mnemonic continuation character
+fn is_valid_cont_name_char(c: char) -> bool {
+	c.is_ascii_alphanumeric() || ['.', '_'].contains(&c)
 }

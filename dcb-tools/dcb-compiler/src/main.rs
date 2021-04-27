@@ -18,7 +18,7 @@ use anyhow::Context;
 use dcb_bytes::Bytes;
 use dcb_exe::{
 	inst::{
-		parse::line2::{Line, LineArg},
+		parse::{Line, LineArg},
 		Inst, InstSize, Label, LabelName, Parsable, ParseCtx,
 	},
 	Data, Pos,
