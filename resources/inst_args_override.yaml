@@ -17,13 +17,13 @@
 
 ? pos: 0x80013f34
   arg: 1
-: "data_w686@addr_hi"
+: "unknown3@addr_hi"
 ? pos: 0x80013f38
   arg: 2
-: "data_w686@addr_lo"
+: "unknown3@addr_lo"
 ? pos: 0x80013f3c
   arg: 1
-: "data_w686@addr_lo"
+: "unknown3@addr_lo"
 
 ? pos: 0x80013f60
   arg: 1
@@ -41,10 +41,10 @@
 
 ? pos: 0x80013f78
   arg: 1
-: "data_w686@addr_hi"
+: "unknown3@addr_hi"
 ? pos: 0x80013f84
   arg: 1
-: "data_w686@addr_lo"
+: "unknown3@addr_lo"
 
 ? pos: 0x80013f80
   arg: 1
@@ -87,3 +87,34 @@
 ? pos: 0x8001401c
   arg: 1
 : "something11_data5@addr_lo"
+
+? pos: 0x80014020
+  arg: 1
+: "unknown4@addr_hi"
+? pos: 0x80014024
+  arg: 2
+: "unknown4@addr_lo"
+? pos: 0x80014030
+  arg: 1
+: "unknown4@addr_lo"
+
+? pos: 0x8001404c
+  arg: 1
+: "main_loop_data1@addr_hi"
+? pos: 0x80014060
+  arg: 1
+: "main_loop_data1@addr_lo"
+
+? pos: 0x80014064
+  arg: 1
+: "unknown1@addr_hi"
+? pos: 0x8001406c
+  arg: 1
+: "unknown1@addr_lo"
+
+? pos: 0x80014074
+  arg: 1
+: "unknown5@addr_hi"
+? pos: 0x80014080
+  arg: 1
+: "unknown5@addr_lo"

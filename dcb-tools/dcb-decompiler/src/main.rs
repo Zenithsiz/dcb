@@ -420,6 +420,14 @@ impl ParseCtx for OverrideParseCtx<'_> {
 
 		// If a data has the same name, return it
 		if let Some(data) = self.exe.data_table().search_name(label) {
+			// If we're asked for a heuristically found data, warn
+			if data.kind().is_heuristics() {
+				log::warn!(
+					"Override parsing context was queried for a heuristically found data: {}",
+					data
+				);
+			}
+
 			return Some(data.start_pos());
 		}
 

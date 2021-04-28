@@ -162,3 +162,24 @@
   pos: 0x80077aec
   ty: u16
   kind: Known
+
+- name: unknown1
+  pos: 0x80077af4
+  ty: u32
+  kind: Known
+- name: unknown2
+  pos: 0x80077bc0
+  ty: u32
+  kind: Known
+- name: unknown3
+  pos: 0x80077ba0
+  ty: u32
+  kind: Known
+- name: unknown4
+  pos: 0x80077ae0
+  ty: u32
+  kind: Known
+- name: unknown5
+  pos: 0x80077adc
+  ty: u32
+  kind: Known
