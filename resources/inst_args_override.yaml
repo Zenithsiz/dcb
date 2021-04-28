@@ -118,3 +118,93 @@
 ? pos: 0x80014080
   arg: 1
 : "unknown5@addr_lo"
+
+? pos: 0x80014088
+  arg: 1
+: "unknown2@addr_hi"
+? pos: 0x8001408c
+  arg: 2
+: "unknown2@addr_lo"
+
+? pos: 0x800140b0
+  arg: 1
+: "unknown3@addr_hi"
+? pos: 0x800140b4
+  arg: 2
+: "unknown3@addr_lo"
+? pos: 0x800140bc
+  arg: 1
+: "unknown3@addr_lo"
+
+? pos: 0x80014184
+  arg: 1
+: "unknown6@addr_hi"
+? pos: 0x8001418c
+  arg: 1
+: "unknown6@addr_lo"
+
+? pos: 0x800141c4
+  arg: 1
+: "something11_data5@addr_hi"
+? pos: 0x800141c8
+  arg: 1
+: "something11_data5@addr_lo"
+
+? pos: 0x80014218
+  arg: 1
+: "something11_data1@addr_hi"
+? pos: 0x80014228
+  arg: 1
+: "something11_data1@addr_lo"
+
+? pos: 0x80014234
+  arg: 1
+: "something11_data4@addr_hi"
+? pos: 0x80014268
+  arg: 1
+: "something11_data4@addr_lo"
+
+? pos: 0x8001424c
+  arg: 1
+: "something11_data2@addr_hi"
+? pos: 0x80014258
+  arg: 1
+: "something11_data2@addr_lo"
+
+? pos: 0x8001425c
+  arg: 1
+: "something11_data3@addr_hi"
+? pos: 0x80014264
+  arg: 1
+: "something11_data3@addr_lo"
+
+? pos: 0x8001426c
+  arg: 1
+: "unknown3@addr_hi"
+? pos: 0x80014270
+  arg: 2
+: "unknown3@addr_lo"
+? pos: 0x80014280
+  arg: 1
+: "unknown3@addr_lo"
+
+? pos: 0x80014274
+  arg: 1
+: "something11_data5@addr_hi"
+? pos: 0x80014278
+  arg: 1
+: "something11_data5@addr_lo"
+
+? pos: 0x8001427c
+  arg: 1
+: "something11_data6@addr_hi"
+? pos: 0x80014288
+  arg: 1
+: "something11_data6@addr_lo"
+
+? pos: 0x8005a88c
+  arg: 1
+: "something39@signed_addr_hi"
+? pos: 0x8005a894
+  arg: 1
+: "something39@signed_addr_lo"

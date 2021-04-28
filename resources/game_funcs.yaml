@@ -274,6 +274,11 @@
 - name: something10
   start_pos: 0x800141b8
   end_pos: 0x800142d0
+  labels:
+    0x800141ec: "0"
+    0x80014268: "1"
+    0x800142a4: "2"
+    0x800142c0: "3"
 
 - name: something11
   start_pos: 0x800142d0
@@ -386,6 +391,10 @@
 - name: something38
   start_pos: 0x8001f8b0
   end_pos: 0x8001f94c
+
+- name: something39
+  start_pos: 0x8005aa7c
+  end_pos: 0x8005ab4c
 
 # A functions
 - name: InitHeap

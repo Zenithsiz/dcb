@@ -165,13 +165,20 @@ pub enum LineArgExpr {
 }
 
 /// Line label functions
+#[allow(clippy::pub_enum_variant_names)] // We'll have other functions eventually
 #[derive(PartialEq, Clone, Debug)]
 pub enum LineLabelFunc {
-	/// Lower 16 bits of address
+	/// Address lower 16-bits
 	AddrLo,
 
-	/// Higher 16 bits of address
+	/// Address higher 16-bits
 	AddrHi,
+
+	/// Address lower signed 16-bits
+	AddrSignedLo,
+
+	/// Address higher signed 16-bits
+	AddrSignedHi,
 }
 
 /// Reads a name
@@ -306,9 +313,12 @@ fn read_reg(s: &str) -> Result<(Register, &str), ReadArgError> {
 }
 
 /// Reads a func
+#[rustfmt::skip]
 fn read_func(s: &str) -> Result<(LineLabelFunc, &str), ReadFuncError> {
-	None.or_else(|| s.strip_prefix("addr_hi").map(|rest| (LineLabelFunc::AddrHi, rest)))
-		.or_else(|| s.strip_prefix("addr_lo").map(|rest| (LineLabelFunc::AddrLo, rest)))
+	None.or_else(|| s.strip_prefix("addr_hi"       ).map(|rest| (LineLabelFunc::AddrHi      , rest)))
+		.or_else(|| s.strip_prefix("addr_lo"       ).map(|rest| (LineLabelFunc::AddrLo      , rest)))
+		.or_else(|| s.strip_prefix("signed_addr_hi").map(|rest| (LineLabelFunc::AddrSignedHi, rest)))
+		.or_else(|| s.strip_prefix("signed_addr_lo").map(|rest| (LineLabelFunc::AddrSignedLo, rest)))
 		.ok_or(ReadFuncError::Unknown)
 }
 

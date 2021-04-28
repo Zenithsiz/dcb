@@ -10,6 +10,7 @@ pub use line::{Line, LineArg, LineArgExpr, LineLabelFunc};
 
 // Imports
 use crate::Pos;
+use int_conv::{Signed, Split};
 use std::convert::{TryFrom, TryInto};
 
 /// Instruction parsing
@@ -63,10 +64,22 @@ pub trait ParseCtx {
 		// Converts a value into a position
 		let to_pos = |value: i64| value.try_into().map(Pos).map_err(|_| ParseError::LiteralOutOfRange);
 
+		// Returns the signed lo-hi values of a position
+		let signed_addr_lo_hi = |addr: Pos| -> (i16, u16) {
+			let (lo, hi) = match addr.0.lo().as_signed() < 0 {
+				true => (addr.0.lo(), addr.0.hi().wrapping_add(1)),
+				false => addr.0.lo_hi(),
+			};
+
+			(lo.as_signed(), hi)
+		};
+
 		let value = match func {
 			// For address, first get the value as a position to make sure it's within range
 			LineLabelFunc::AddrLo => i64::from(to_pos(value)?.0 & 0xFFFF),
 			LineLabelFunc::AddrHi => i64::from(to_pos(value)?.0 >> 16u32),
+			LineLabelFunc::AddrSignedLo => i64::from(signed_addr_lo_hi(to_pos(value)?).0),
+			LineLabelFunc::AddrSignedHi => i64::from(signed_addr_lo_hi(to_pos(value)?).1),
 		};
 
 		Ok(value)

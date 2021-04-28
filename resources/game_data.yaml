@@ -183,3 +183,7 @@
   pos: 0x80077adc
   ty: u32
   kind: Known
+- name: unknown6
+  pos: 0x80077ad8
+  ty: u32
+  kind: Known
