@@ -156,6 +156,26 @@ impl DataNode {
 		self.nodes.range((Bound::Excluded(pos), Bound::Unbounded)).next()
 	}
 
+	/// Searches for a data with name 'name'
+	///
+	/// Note: This has `O(N)` complexity where `N` is the number of data
+	#[must_use]
+	pub fn search_name(&self, name: &str) -> Option<&Self> {
+		// Search each node
+		for node in &self.nodes {
+			// If the name is equal, return it
+			if node.data.name == name {
+				return Some(node);
+			}
+			// Else recurse into it to check
+			else if let Some(data) = node.search_name(name) {
+				return Some(data);
+			}
+		}
+
+		None
+	}
+
 	/// Formats this node with a depth
 	fn fmt_with_depth(&self, depth: usize, f: &mut fmt::Formatter) -> fmt::Result {
 		for _ in 0..depth {

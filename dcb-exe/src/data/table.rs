@@ -121,6 +121,13 @@ impl DataTable {
 		// If we got any next node, return it
 		cur_next_node.map(DataNode::data)
 	}
+
+	/// Searches for a data with name 'name'
+	///
+	/// Note: This has `O(N)` complexity where `N` is the number of data
+	pub fn search_name(&self, name: &str) -> Option<&Data> {
+		self.root.search_name(name).map(DataNode::data)
+	}
 }
 
 impl fmt::Display for DataTable {

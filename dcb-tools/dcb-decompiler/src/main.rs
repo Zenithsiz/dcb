@@ -7,7 +7,8 @@
 	array_chunks,
 	format_args_capture,
 	bindings_after_at,
-	iter_map_while
+	iter_map_while,
+	bool_to_option
 )]
 
 // Modules
@@ -16,7 +17,7 @@ mod cli;
 // Imports
 use anyhow::Context;
 use dcb_exe::{
-	inst::{DisplayCtx, Inst, InstDisplay},
+	inst::{parse::line, DisplayCtx, Inst, InstDisplay, InstFmtArg, ParseCtx},
 	reader::iter::ExeItem,
 	ExeReader, Func, Pos,
 };
@@ -243,7 +244,55 @@ pub fn inst_display<'a>(
 
 			// If we have an override for this argument, use it
 			match inst_arg_overrides.get(&ArgPos { pos, arg: idx }) {
-				Some(value) => arg.write_override(f, value)?,
+				Some(value) => {
+					// Validator
+					let validate = || -> Result<(), anyhow::Error> {
+						// Parse the override
+						let (expr, rest) = line::read_expr(&value).context("Unable to parse override")?;
+
+						let rest = rest.trim_start();
+						if !rest.is_empty() {
+							anyhow::bail!("Leftover tokens after parsing override: {:?}", rest);
+						}
+
+						// Then evaluate it
+						let parse_ctx = OverrideParseCtx { pos, exe };
+						let expected_value = parse_ctx.eval_expr(&expr).context("Unable to evaluate override")?;
+
+						// And make sure it's the same as the original
+						let actual_value = match arg {
+							InstFmtArg::Register(_) => {
+								anyhow::bail!("Cannot override register argument");
+							},
+							InstFmtArg::RegisterOffset { offset, .. } => offset,
+							InstFmtArg::Literal(value) => value,
+							InstFmtArg::Target(target) => i64::from(target.0),
+							InstFmtArg::String(_) => {
+								anyhow::bail!("Cannot override string argument");
+							},
+						};
+
+						if actual_value != expected_value {
+							anyhow::bail!(
+								"Override \"{}\" was different from value \"{}\"",
+								expected_value,
+								actual_value
+							);
+						}
+
+						Ok(())
+					};
+
+					if let Err(err) = validate() {
+						log::warn!("Override for {}/{} failed validation:\n{:?}", pos, idx, err);
+					}
+
+					match arg {
+						InstFmtArg::RegisterOffset { register, .. } => write!(f, "{value}({register})")?,
+						InstFmtArg::Literal(_) | InstFmtArg::Target(_) => write!(f, "{value}")?,
+						_ => unreachable!(),
+					}
+				},
 				// Else just write it
 				None => arg.write(f, &ctx)?,
 			}
@@ -335,4 +384,45 @@ pub struct ArgPos {
 
 	/// Argument
 	arg: usize,
+}
+
+/// Parsing context for overrides
+pub struct OverrideParseCtx<'a> {
+	/// Position
+	pos: Pos,
+
+	/// Executable
+	exe: &'a ExeReader,
+}
+
+impl ParseCtx for OverrideParseCtx<'_> {
+	fn cur_pos(&self) -> Pos {
+		self.pos
+	}
+
+	fn label_pos(&self, label: &str) -> Option<Pos> {
+		// If a function has the same name, or one of it's labels matches, return it
+		if let Some(pos) = self.exe.func_table().range(..).find_map(|func| {
+			if func.name == label {
+				return Some(func.start_pos);
+			}
+
+			match label.split_once('.') {
+				Some((func_name, func_label)) if func_name == func.name => func
+					.labels
+					.range(..)
+					.find_map(|(&pos, label_name)| (label_name == func_label).then_some(pos)),
+				_ => None,
+			}
+		}) {
+			return Some(pos);
+		}
+
+		// If a data has the same name, return it
+		if let Some(data) = self.exe.data_table().search_name(label) {
+			return Some(data.start_pos());
+		}
+
+		None
+	}
 }

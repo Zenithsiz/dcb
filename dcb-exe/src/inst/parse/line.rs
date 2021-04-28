@@ -249,7 +249,7 @@ fn read_arg(s: &str) -> Result<(LineArg, &str), ReadArgError> {
 }
 
 /// Reads an expression
-fn read_expr(s: &str) -> Result<(LineArgExpr, &str), ReadArgError> {
+pub fn read_expr(s: &str) -> Result<(LineArgExpr, &str), ReadArgError> {
 	let mut chars = s.char_indices();
 	match chars.next() {
 		// If it's numeric, 0..9 or '+' / '-', it's a simple literal
