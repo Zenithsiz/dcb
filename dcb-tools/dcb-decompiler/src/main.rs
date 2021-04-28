@@ -273,11 +273,7 @@ pub fn inst_display<'a>(
 						};
 
 						if actual_value != expected_value {
-							anyhow::bail!(
-								"Override \"{}\" was different from value \"{}\"",
-								expected_value,
-								actual_value
-							);
+							anyhow::bail!("Original value is {}, override is {}", actual_value, expected_value);
 						}
 
 						Ok(())
@@ -290,7 +286,7 @@ pub fn inst_display<'a>(
 					match arg {
 						InstFmtArg::RegisterOffset { register, .. } => write!(f, "{value}({register})")?,
 						InstFmtArg::Literal(_) | InstFmtArg::Target(_) => write!(f, "{value}")?,
-						_ => unreachable!(),
+						_ => arg.write(f, &ctx)?,
 					}
 				},
 				// Else just write it
@@ -403,15 +399,32 @@ impl ParseCtx for OverrideParseCtx<'_> {
 	fn label_pos(&self, label: &str) -> Option<Pos> {
 		// If a function has the same name, or one of it's labels matches, return it
 		if let Some(pos) = self.exe.func_table().range(..).find_map(|func| {
+			let warn_on_heuristic = || {
+				// If we're asked for a heuristically found function, warn
+				// TODO: Better way of checking if it's heuristically found?
+				if func.name.starts_with("func_") {
+					log::warn!(
+						"Override parsing context was queried for a heuristically found func: {} @ {}",
+						func.name,
+						func.start_pos,
+					);
+				}
+			};
+
 			if func.name == label {
+				warn_on_heuristic();
 				return Some(func.start_pos);
 			}
 
 			match label.split_once('.') {
-				Some((func_name, func_label)) if func_name == func.name => func
-					.labels
-					.range(..)
-					.find_map(|(&pos, label_name)| (label_name == func_label).then_some(pos)),
+				Some((func_name, func_label)) if func_name == func.name => {
+					func.labels.range(..).find_map(|(&pos, label_name)| {
+						(label_name == func_label).then(|| {
+							warn_on_heuristic();
+							pos
+						})
+					})
+				},
 				_ => None,
 			}
 		}) {
