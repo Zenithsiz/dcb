@@ -208,3 +208,38 @@
 ? pos: 0x8005a894
   arg: 1
 : "something39@signed_addr_lo"
+
+? pos: 0x8005aa20
+  arg: 1
+: "something40@signed_addr_hi"
+? pos: 0x8005aa28
+  arg: 1
+: "something40@signed_addr_lo"
+
+? pos: 0x8005ab04
+  arg: 1
+: "something40@signed_addr_hi"
+? pos: 0x8005ab0c
+  arg: 1
+: "something40@signed_addr_lo"
+
+? pos: 0x8005ace4
+  arg: 1
+: "something39@signed_addr_hi"
+? pos: 0x8005acec
+  arg: 1
+: "something39@signed_addr_lo"
+
+? pos: 0x8005ae48
+  arg: 1
+: "something40@signed_addr_hi"
+? pos: 0x8005ae50
+  arg: 1
+: "something40@signed_addr_lo"
+
+? pos: 0x8004a208
+  arg: 1
+: "something41@signed_addr_hi"
+? pos: 0x8004a210
+  arg: 1
+: "something41@signed_addr_lo"

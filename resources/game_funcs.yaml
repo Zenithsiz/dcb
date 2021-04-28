@@ -396,6 +396,14 @@
   start_pos: 0x8005aa7c
   end_pos: 0x8005ab4c
 
+- name: something40
+  start_pos: 0x8005a7d4
+  end_pos: 0x8005a808
+
+- name: something41
+  start_pos: 0x80049e80
+  end_pos: 0x80049ef8
+
 # A functions
 - name: InitHeap
   signature: "fn(addr: *u32, size: u32)"
