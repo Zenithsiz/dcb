@@ -2,20 +2,20 @@
 
 // Modules
 pub mod basic;
+pub mod decode;
 pub mod directive;
 pub mod error;
 pub mod fmt;
-pub mod iter;
 pub mod parse;
 pub mod pseudo;
 pub mod reg;
 pub mod size;
 
 // Exports
+pub use decode::DecodeIter;
 pub use directive::Directive;
 pub use error::DecodeError;
 pub use fmt::{DisplayCtx, InstDisplay, InstFmtArg};
-pub use iter::ParseIter;
 pub use parse::{Parsable, ParseCtx, ParseError};
 pub use reg::Register;
 pub use size::InstSize;

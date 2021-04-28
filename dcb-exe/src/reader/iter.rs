@@ -1,7 +1,7 @@
 //! Executable iterator
 
 // Imports
-use crate::{inst::ParseIter, Data, ExeReader, Func, Pos};
+use crate::{inst::DecodeIter, Data, ExeReader, Func, Pos};
 
 /// Iterator over the executable's data locations, functions and others.
 #[derive(Clone, Debug)]
@@ -32,7 +32,7 @@ pub enum ExeItem<'a> {
 		func: &'a Func,
 
 		/// The instructions for this function
-		insts: ParseIter<'a>,
+		insts: DecodeIter<'a>,
 	},
 
 	/// A data
@@ -41,13 +41,13 @@ pub enum ExeItem<'a> {
 		data: &'a Data,
 
 		/// The instructions for this data
-		insts: ParseIter<'a>,
+		insts: DecodeIter<'a>,
 	},
 
 	/// Unknown
 	Unknown {
 		/// Instruction in this unknown section
-		insts: ParseIter<'a>,
+		insts: DecodeIter<'a>,
 	},
 }
 

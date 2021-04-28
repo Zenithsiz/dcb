@@ -1,16 +1,15 @@
-//! Parsing iterator
+//! Decoding iterator
 
 // Imports
 use super::{DecodeError, Inst, InstSize};
 use crate::{DataTable, FuncTable, Pos};
 
-/// Parsing iterator.
+/// Decoding iterator
 ///
-/// Parses instruction from a byte slice, along with it's memory position.
-/// It also references the data and function table, force-decoding certain
-/// instructions if inside a data location or function table.
+/// Decodes instructions from a byte slice with an initial memory position.
+/// References the data and function tables too.
 #[derive(Clone, Debug)]
-pub struct ParseIter<'a> {
+pub struct DecodeIter<'a> {
 	/// Remaining bytes
 	bytes: &'a [u8],
 
@@ -24,8 +23,8 @@ pub struct ParseIter<'a> {
 	func_table: &'a FuncTable,
 }
 
-impl<'a> ParseIter<'a> {
-	/// Creates a new parsing iterator
+impl<'a> DecodeIter<'a> {
+	/// Creates a new decoding iterator
 	#[must_use]
 	pub const fn new(bytes: &'a [u8], data_table: &'a DataTable, func_table: &'a FuncTable, start_pos: Pos) -> Self {
 		Self {
@@ -43,7 +42,7 @@ impl<'a> ParseIter<'a> {
 	}
 }
 
-impl<'a> Iterator for ParseIter<'a> {
+impl<'a> Iterator for DecodeIter<'a> {
 	type Item = (Pos, Inst<'a>);
 
 	fn next(&mut self) -> Option<Self::Item> {

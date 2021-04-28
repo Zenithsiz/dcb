@@ -69,18 +69,18 @@ impl ExeReader {
 
 	/// Returns a parsing iterator for all instructions
 	#[must_use]
-	pub fn parse_iter(&self) -> inst::ParseIter {
+	pub fn parse_iter(&self) -> inst::DecodeIter {
 		self.parse_iter_from(self.insts_range())
 	}
 
 	/// Returns a parsing iterator starting from a range
 	#[must_use]
-	pub fn parse_iter_from(&self, range: Range<Pos>) -> inst::ParseIter {
+	pub fn parse_iter_from(&self, range: Range<Pos>) -> inst::DecodeIter {
 		let start = range.start.offset_from(self.header.start_pos);
 		let end = range.end.offset_from(self.header.start_pos);
 		let bytes = &self.bytes[start..end];
 
-		inst::ParseIter::new(bytes, &self.data_table, &self.func_table, range.start)
+		inst::DecodeIter::new(bytes, &self.data_table, &self.func_table, range.start)
 	}
 }
 
@@ -110,7 +110,7 @@ impl ExeReader {
 		let known_func_table = FuncTable::get_known().map_err(DeserializeError::KnownFuncTable)?;
 
 		// Parse all instructions
-		let insts = inst::ParseIter::new(&*bytes, &known_data_table, &known_func_table, header.start_pos);
+		let insts = inst::DecodeIter::new(&*bytes, &known_data_table, &known_func_table, header.start_pos);
 
 		// Then parse all heuristic tables
 		let heuristics_data = Data::search_instructions(insts_range.clone(), insts.clone());
