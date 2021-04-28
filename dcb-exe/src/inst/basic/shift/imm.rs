@@ -7,7 +7,7 @@ use crate::inst::{
 	DisplayCtx, InstDisplay, InstFmtArg, Parsable, ParseCtx, ParseError, Register,
 };
 use int_conv::{Truncated, ZeroExtended};
-use std::{array, convert::TryInto};
+use std::array;
 
 /// Shift immediate instruction kind
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -106,9 +106,7 @@ impl TryEncode for Inst {
 }
 
 impl<'a> Parsable<'a> for Inst {
-	fn parse<Ctx: ?Sized + ParseCtx>(
-		mnemonic: &'a str, args: &'a [LineArg], _ctx: &'a Ctx,
-	) -> Result<Self, ParseError> {
+	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &'a str, args: &'a [LineArg], ctx: &'a Ctx) -> Result<Self, ParseError> {
 		let kind = match mnemonic {
 			"sll" => Kind::LeftLogical,
 			"srl" => Kind::RightLogical,
@@ -117,11 +115,11 @@ impl<'a> Parsable<'a> for Inst {
 		};
 
 		match *args {
-			[LineArg::Register(lhs @ dst), LineArg::Literal(rhs)] |
-			[LineArg::Register(dst), LineArg::Register(lhs), LineArg::Literal(rhs)] => Ok(Self {
+			[LineArg::Register(lhs @ dst), LineArg::Expr(ref rhs)] |
+			[LineArg::Register(dst), LineArg::Register(lhs), LineArg::Expr(ref rhs)] => Ok(Self {
 				dst,
 				lhs,
-				rhs: rhs.try_into().map_err(|_| ParseError::LiteralOutOfRange)?,
+				rhs: ctx.eval_expr_as(rhs)?,
 				kind,
 			}),
 			_ => Err(ParseError::InvalidArguments),

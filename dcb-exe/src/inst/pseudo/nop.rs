@@ -5,10 +5,7 @@ use super::{Decodable, Encodable};
 use crate::inst::{
 	basic, parse::LineArg, DisplayCtx, InstDisplay, InstFmtArg, InstSize, Parsable, ParseCtx, ParseError, Register,
 };
-use std::{
-	array,
-	convert::{TryFrom, TryInto},
-};
+use std::{array, convert::TryFrom};
 
 /// No-op
 ///
@@ -50,15 +47,14 @@ impl Encodable for Inst {
 }
 
 impl<'a> Parsable<'a> for Inst {
-	fn parse<Ctx: ?Sized + ParseCtx>(
-		mnemonic: &'a str, args: &'a [LineArg], _ctx: &'a Ctx,
-	) -> Result<Self, ParseError> {
+	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &'a str, args: &'a [LineArg], ctx: &'a Ctx) -> Result<Self, ParseError> {
 		if mnemonic != "nop" {
 			return Err(ParseError::UnknownMnemonic);
 		}
 
-		let len = match *args {
-			[LineArg::Literal(len)] => len.try_into().map_err(|_| ParseError::LiteralOutOfRange)?,
+		let len = match args {
+			[] => 1,
+			[LineArg::Expr(len)] => ctx.eval_expr_as(len)?,
 			_ => return Err(ParseError::InvalidArguments),
 		};
 

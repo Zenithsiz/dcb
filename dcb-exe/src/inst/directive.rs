@@ -7,7 +7,6 @@ use ascii::{AsciiChar, AsciiStr};
 use dcb_util::NextFromBytes;
 use std::{
 	array,
-	convert::TryInto,
 	io::{self, Write},
 };
 
@@ -163,23 +162,21 @@ impl<'a> Directive<'a> {
 impl<'a> Parsable<'a> for Directive<'a> {
 	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &'a str, args: &'a [LineArg], ctx: &'a Ctx) -> Result<Self, ParseError> {
 		let inst = match mnemonic {
-			"dw" => match *args {
-				[LineArg::Literal(value)] => Self::Dw(value.try_into().map_err(|_| ParseError::LiteralOutOfRange)?),
+			"dw" => match args {
+				[LineArg::Expr(expr)] => Self::Dw(ctx.eval_expr_as(expr)?),
 				[ref arg] => Self::Dw(ctx.arg_pos(arg)?.0),
 				_ => return Err(ParseError::InvalidArguments),
 			},
-			"dh" => match *args {
-				[LineArg::Literal(value)] => Self::Dh(value.try_into().map_err(|_| ParseError::LiteralOutOfRange)?),
+			"dh" => match args {
+				[LineArg::Expr(expr)] => Self::Dh(ctx.eval_expr_as(expr)?),
 				_ => return Err(ParseError::InvalidArguments),
 			},
-			"db" => match *args {
-				[LineArg::Literal(value)] => Self::Db(value.try_into().map_err(|_| ParseError::LiteralOutOfRange)?),
+			"db" => match args {
+				[LineArg::Expr(expr)] => Self::Db(ctx.eval_expr_as(expr)?),
 				_ => return Err(ParseError::InvalidArguments),
 			},
-			".ascii" => match *args {
-				[LineArg::String(ref s)] => {
-					Self::Ascii(AsciiStr::from_ascii(s).map_err(|_| ParseError::NonAsciiString)?)
-				},
+			".ascii" => match args {
+				[LineArg::String(s)] => Self::Ascii(AsciiStr::from_ascii(s).map_err(|_| ParseError::NonAsciiString)?),
 				_ => return Err(ParseError::InvalidArguments),
 			},
 			_ => return Err(ParseError::UnknownMnemonic),

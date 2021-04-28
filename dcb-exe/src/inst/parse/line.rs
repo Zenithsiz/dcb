@@ -6,7 +6,7 @@ pub mod error;
 use std::str::FromStr;
 
 // Exports
-pub use error::{ParseLineError, ReadArgError, ReadLiteralError, ReadNameError};
+pub use error::{ParseLineError, ReadArgError, ReadFuncError, ReadLiteralError, ReadNameError};
 
 // Imports
 use crate::inst::Register;
@@ -48,8 +48,8 @@ impl Line {
 					continue;
 				},
 
-				// If we got '#', we got a mnemonic with no arguments
-				Some('#') => {
+				// If we got '#' or eof, we got a mnemonic with no arguments
+				Some('#') | None => {
 					return Ok(Self {
 						labels,
 						inst: Some(LineInst {
@@ -59,12 +59,12 @@ impl Line {
 					});
 				},
 
-				// If we got a space or eof, we got a mnemonic
-				Some(' ') | None => {
+				// If we got a space or eof, we found the mnemonic.
+				// On a space, break and read arguments
+				Some(' ') => {
 					line = rest.as_str().trim_start();
 					break name.to_owned();
 				},
-
 				_ => return Err(ParseLineError::InvalidNameSuffix),
 			}
 		};
@@ -72,14 +72,6 @@ impl Line {
 		// Then read all arguments
 		let mut args = vec![];
 		loop {
-			// If the line starts with a comment, there are no arguments
-			if line.starts_with('#') {
-				return Ok(Self {
-					labels: vec![],
-					inst:   Some(LineInst { mnemonic, args }),
-				});
-			}
-
 			// Read an argument
 			let (arg, rest) = self::read_arg(line)?;
 			args.push(arg);
@@ -134,6 +126,10 @@ pub enum LineArg {
 	/// `<reg>`
 	Register(Register),
 
+	/// Mnemonic
+	/// `^<mnemonic>`
+	Mnemonic(String),
+
 	/// Register offset
 	/// `<offset>(<reg>)`
 	RegisterOffset {
@@ -141,30 +137,41 @@ pub enum LineArg {
 		register: Register,
 
 		/// The offset
-		offset: i64,
+		offset: LineArgExpr,
 	},
 
+	/// Expression
+	Expr(LineArgExpr),
+}
+
+/// Line argument expression
+#[derive(PartialEq, Clone, Debug)]
+pub enum LineArgExpr {
 	/// Literal
-	/// `<literal>`
 	Literal(i64),
 
 	/// Label
-	/// `<name>`
-	Label(String),
-
-	/// LabelOffset
-	/// `<name>+<offset>`
-	LabelOffset {
+	/// `<name>(`+<offset>`)?(@<func>)?`
+	Label {
 		/// The label
 		label: String,
 
 		/// The offset
-		offset: i64,
-	},
+		offset: Option<i64>,
 
-	/// Mnemonic
-	/// `^<mnemonic>`
-	Mnemonic(String),
+		/// The function
+		func: Option<LineLabelFunc>,
+	},
+}
+
+/// Line label functions
+#[derive(PartialEq, Clone, Debug)]
+pub enum LineLabelFunc {
+	/// Lower 16 bits of address
+	AddrLo,
+
+	/// Higher 16 bits of address
+	AddrHi,
 }
 
 /// Reads a name
@@ -201,14 +208,16 @@ fn read_arg(s: &str) -> Result<(LineArg, &str), ReadArgError> {
 
 		// If we got '^', it's a mnemonic
 		Some((_, '^')) => self::read_name(chars.as_str())
-			.map(|(name, rest)| (LineArg::Label(name.to_owned()), rest))
+			.map(|(name, rest)| (LineArg::Mnemonic(name.to_owned()), rest))
 			.map_err(ReadArgError::ReadLabel),
 
-		// If it's numeric, 0..9 or '+' / '-', it's a literal
-		Some((_, '0'..='9' | '+' | '-')) => {
-			// Read the number
-			let (num, rest) = self::read_literal(s).map_err(ReadArgError::ReadLiteral)?;
+		// Else try to read an expression
+		Some(_) => {
+			// Read the expression
+			let (expr, rest) = self::read_expr(s)?;
 
+			// Then check if we have a register
+			let rest = rest.trim_start();
 			match rest.strip_prefix('(') {
 				// If the rest starts with '(', read it as a register offset
 				Some(rest) => match rest.split_once(')') {
@@ -224,16 +233,29 @@ fn read_arg(s: &str) -> Result<(LineArg, &str), ReadArgError> {
 						Ok((
 							LineArg::RegisterOffset {
 								register: reg,
-								offset:   num,
+								offset:   expr,
 							},
 							rest,
 						))
 					},
 					None => Err(ReadArgError::MissingRegisterOffsetDelimiter),
 				},
-				None => Ok((LineArg::Literal(num), rest)),
+				None => Ok((LineArg::Expr(expr), rest)),
 			}
 		},
+
+		None => Err(ReadArgError::Empty),
+	}
+}
+
+/// Reads an expression
+fn read_expr(s: &str) -> Result<(LineArgExpr, &str), ReadArgError> {
+	let mut chars = s.char_indices();
+	match chars.next() {
+		// If it's numeric, 0..9 or '+' / '-', it's a simple literal
+		Some((_, '0'..='9' | '+' | '-')) => self::read_literal(s)
+			.map(|(num, rest)| (LineArgExpr::Literal(num), rest))
+			.map_err(ReadArgError::ReadLiteral),
 
 		// If it starts with a label char, it's a label
 		Some((_, c)) if self::is_valid_first_name_char(c) => {
@@ -241,21 +263,28 @@ fn read_arg(s: &str) -> Result<(LineArg, &str), ReadArgError> {
 			let (label, rest) = self::read_name(s).map_err(ReadArgError::ReadLabel)?;
 
 			// If there's a '+' after, read an offset too
-			match rest.strip_prefix('+') {
-				Some(rest) => {
-					// Read the offset
-					let (offset, rest) = self::read_literal(rest).map_err(ReadArgError::ReadLabelOffset)?;
+			let (offset, rest) = match rest.strip_prefix('+') {
+				Some(rest) => self::read_literal(rest)
+					.map(|(num, rest)| (Some(num), rest))
+					.map_err(ReadArgError::ReadLabelOffset)?,
+				None => (None, rest),
+			};
 
-					Ok((
-						LineArg::LabelOffset {
-							label: label.to_owned(),
-							offset,
-						},
-						rest,
-					))
-				},
-				None => Ok((LineArg::Label(label.to_owned()), rest)),
-			}
+			// If there's a '@' after, read a function too
+			let (func, rest) = match rest.strip_prefix('@') {
+				Some(rest) => self::read_func(rest)
+					.map(|(func, rest)| (Some(func), rest))
+					.map_err(ReadArgError::ReadLabelFunc)?,
+				None => (None, rest),
+			};
+
+			let label = LineArgExpr::Label {
+				label: label.to_owned(),
+				offset,
+				func,
+			};
+
+			Ok((label, rest))
 		},
 
 		// Else it's an invalid char
@@ -274,6 +303,13 @@ fn read_reg(s: &str) -> Result<(Register, &str), ReadArgError> {
 		},
 		None => Err(ReadArgError::ExpectedRegister),
 	}
+}
+
+/// Reads a func
+fn read_func(s: &str) -> Result<(LineLabelFunc, &str), ReadFuncError> {
+	None.or_else(|| s.strip_prefix("addr_hi").map(|rest| (LineLabelFunc::AddrHi, rest)))
+		.or_else(|| s.strip_prefix("addr_lo").map(|rest| (LineLabelFunc::AddrLo, rest)))
+		.ok_or(ReadFuncError::Unknown)
 }
 
 /// Reads a string

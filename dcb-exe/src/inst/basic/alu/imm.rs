@@ -121,9 +121,7 @@ impl Encode for Inst {
 }
 
 impl<'a> Parsable<'a> for Inst {
-	fn parse<Ctx: ?Sized + ParseCtx>(
-		mnemonic: &'a str, args: &'a [LineArg], _ctx: &'a Ctx,
-	) -> Result<Self, ParseError> {
+	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &'a str, args: &'a [LineArg], ctx: &'a Ctx) -> Result<Self, ParseError> {
 		#[rustfmt::skip]
 		let to_kind = match mnemonic {
 			"addi"  => |value: i64| value.try_into().map(Kind::Add                ),
@@ -138,16 +136,16 @@ impl<'a> Parsable<'a> for Inst {
 
 		match *args {
 			// Disallow `slti` and `sltiu` in short form
-			[LineArg::Register(_), LineArg::Literal(_)] if ["slti", "sltiu"].contains(&mnemonic) => {
+			[LineArg::Register(_), LineArg::Expr(_)] if ["slti", "sltiu"].contains(&mnemonic) => {
 				Err(ParseError::InvalidArguments)
 			},
 
 			// Else parse both `$dst, $lhs, value` and `$dst, value`.
-			[LineArg::Register(lhs @ dst), LineArg::Literal(value)] |
-			[LineArg::Register(dst), LineArg::Register(lhs), LineArg::Literal(value)] => Ok(Self {
+			[LineArg::Register(lhs @ dst), LineArg::Expr(ref expr)] |
+			[LineArg::Register(dst), LineArg::Register(lhs), LineArg::Expr(ref expr)] => Ok(Self {
 				dst,
 				lhs,
-				kind: to_kind(value).map_err(|_| ParseError::LiteralOutOfRange)?,
+				kind: to_kind(ctx.eval_expr(expr)?).map_err(|_| ParseError::LiteralOutOfRange)?,
 			}),
 			_ => Err(ParseError::InvalidArguments),
 		}

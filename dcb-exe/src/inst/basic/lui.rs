@@ -8,7 +8,7 @@ use crate::inst::{
 	DisplayCtx, InstDisplay, InstFmtArg, Parsable, ParseCtx, ParseError, Register,
 };
 use int_conv::{Truncated, ZeroExtended};
-use std::{array, convert::TryInto};
+use std::array;
 
 /// Load instructions
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -47,17 +47,15 @@ impl Encode for Inst {
 }
 
 impl<'a> Parsable<'a> for Inst {
-	fn parse<Ctx: ?Sized + ParseCtx>(
-		mnemonic: &'a str, args: &'a [LineArg], _ctx: &'a Ctx,
-	) -> Result<Self, ParseError> {
+	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &'a str, args: &'a [LineArg], ctx: &'a Ctx) -> Result<Self, ParseError> {
 		if mnemonic != "lui" {
 			return Err(ParseError::UnknownMnemonic);
 		}
 
 		match *args {
-			[LineArg::Register(dst), LineArg::Literal(value)] => Ok(Self {
+			[LineArg::Register(dst), LineArg::Expr(ref expr)] => Ok(Self {
 				dst,
-				value: value.try_into().map_err(|_| ParseError::LiteralOutOfRange)?,
+				value: ctx.eval_expr_as(expr)?,
 			}),
 			_ => Err(ParseError::InvalidArguments),
 		}

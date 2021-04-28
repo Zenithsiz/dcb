@@ -124,20 +124,16 @@ impl<'a> Parsable<'a> for Inst {
 	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &'a str, args: &'a [LineArg], ctx: &'a Ctx) -> Result<Self, ParseError> {
 		// Note: Literals are absolute, not relative
 
-		// Calculates the offset between a position and the current one
-		// with a possible offset
-		let offset_of = |pos: Pos, offset: i64| -> Result<i16, ParseError> {
-			use std::ops::{Add, Div, Sub};
-			pos.sub(ctx.cur_pos())
-				.add(offset)
+		// Calculates the offset between an argument's position and the current one
+		let target_arg_to_offset = |arg| -> Result<i16, ParseError> {
+			use std::ops::{Div, Sub};
+			ctx.arg_pos(arg)?
+				.sub(ctx.cur_pos())
 				.div(4)
 				.sub(1)
 				.try_into()
 				.map_err(|_| ParseError::RelativeJumpTooFar)
 		};
-
-		// Calculates the offset of a literal/label/label offset argument
-		let target_arg_to_offset = |arg| ctx.arg_pos_offset(arg).and_then(|(pos, offset)| offset_of(pos, offset));
 
 		let (arg, offset, kind) = match mnemonic {
 			"b" => match args {

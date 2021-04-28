@@ -7,7 +7,7 @@ use crate::inst::{
 	parse::LineArg,
 	DisplayCtx, InstDisplay, InstFmtArg, Parsable, ParseCtx, ParseError, Register,
 };
-use std::{array, convert::TryInto};
+use std::array;
 
 /// Sys instruction func
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -87,17 +87,15 @@ impl TryEncode for Inst {
 }
 
 impl<'a> Parsable<'a> for Inst {
-	fn parse<Ctx: ?Sized + ParseCtx>(
-		mnemonic: &'a str, args: &'a [LineArg], _ctx: &'a Ctx,
-	) -> Result<Self, ParseError> {
+	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &'a str, args: &'a [LineArg], ctx: &'a Ctx) -> Result<Self, ParseError> {
 		let kind = match mnemonic {
 			"sys" => Kind::Sys,
 			"break" => Kind::Break,
 			_ => return Err(ParseError::UnknownMnemonic),
 		};
 
-		let comment = match *args {
-			[LineArg::Literal(comment)] => comment.try_into().map_err(|_| ParseError::LiteralOutOfRange)?,
+		let comment = match args {
+			[LineArg::Expr(comment)] => ctx.eval_expr_as(comment)?,
 			_ => return Err(ParseError::InvalidArguments),
 		};
 

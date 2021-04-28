@@ -8,7 +8,7 @@ use crate::inst::{
 	DisplayCtx, InstDisplay, InstFmtArg, Parsable, ParseCtx, ParseError, Register,
 };
 use int_conv::{Signed, Truncated, ZeroExtended};
-use std::{array, convert::TryInto};
+use std::array;
 
 /// Instruction kind
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -131,18 +131,15 @@ impl Encode for Inst {
 }
 
 impl<'a> Parsable<'a> for Inst {
-	fn parse<Ctx: ?Sized + ParseCtx>(
-		mnemonic: &'a str, args: &'a [LineArg], _ctx: &'a Ctx,
-	) -> Result<Self, ParseError> {
+	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &'a str, args: &'a [LineArg], ctx: &'a Ctx) -> Result<Self, ParseError> {
 		let kind = Kind::from_mnemonic(mnemonic).ok_or(ParseError::UnknownMnemonic)?;
 
 		let (value, addr, offset) = match *args {
 			[LineArg::Register(value), LineArg::Register(addr)] => (value, addr, 0),
-			[LineArg::Register(value), LineArg::RegisterOffset { register: addr, offset }] => (
-				value,
-				addr,
-				offset.try_into().map_err(|_| ParseError::LiteralOutOfRange)?,
-			),
+			[LineArg::Register(value), LineArg::RegisterOffset {
+				register: addr,
+				ref offset,
+			}] => (value, addr, ctx.eval_expr_as(offset)?),
 			_ => return Err(ParseError::InvalidArguments),
 		};
 

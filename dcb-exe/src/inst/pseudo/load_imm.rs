@@ -157,9 +157,10 @@ impl Encodable for Inst {
 impl<'a> Parsable<'a> for Inst {
 	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &'a str, args: &'a [LineArg], ctx: &'a Ctx) -> Result<Self, ParseError> {
 		let to_kind = match mnemonic {
-			"li" => |_ctx: &Ctx, arg: &LineArg| match *arg {
+			"li" => |ctx: &Ctx, arg: &LineArg| match arg {
 				// Try `i16`, `u16` then `u32` for the literal
-				LineArg::Literal(value) => {
+				LineArg::Expr(expr) => {
+					let value = ctx.eval_expr(expr)?;
 					if let Ok(value) = value.try_into() {
 						Ok(Kind::HalfWordSigned(value))
 					} else if let Ok(value) = value.try_into() {

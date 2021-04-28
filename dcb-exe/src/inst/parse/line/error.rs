@@ -43,6 +43,14 @@ pub enum ReadLiteralError {
 	Parse(#[from] std::num::ParseIntError),
 }
 
+/// Func reading error
+#[derive(Debug, thiserror::Error)]
+pub enum ReadFuncError {
+	/// Parse
+	#[error("Unknown functions")]
+	Unknown,
+}
+
 /// Argument reading error
 #[derive(Debug, thiserror::Error)]
 pub enum ReadArgError {
@@ -69,6 +77,10 @@ pub enum ReadArgError {
 	/// Read label offset
 	#[error("Unable to read label offset")]
 	ReadLabelOffset(#[source] ReadLiteralError),
+
+	/// Read label func
+	#[error("Unable to read label func")]
+	ReadLabelFunc(#[source] ReadFuncError),
 
 	/// Expected register
 	#[error("Expected register")]

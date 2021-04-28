@@ -169,14 +169,15 @@ impl Encode for Inst {
 }
 
 impl<'a> Parsable<'a> for Inst {
-	fn parse<Ctx: ?Sized + ParseCtx>(
-		mnemonic: &'a str, args: &'a [LineArg], _ctx: &'a Ctx,
-	) -> Result<Self, ParseError> {
+	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &'a str, args: &'a [LineArg], ctx: &'a Ctx) -> Result<Self, ParseError> {
 		let inst = match mnemonic {
 			"cop0" | "cop1" | "cop2" | "cop3" => {
 				let n = mnemonic[3..].parse().expect("Unable to parse 0..=3");
-				let imm = match *args {
-					[LineArg::Literal(imm)] => imm.try_into().map_err(|_| ParseError::LiteralOutOfRange)?,
+				let imm = match args {
+					[LineArg::Expr(imm)] => ctx
+						.eval_expr(imm)?
+						.try_into()
+						.map_err(|_| ParseError::LiteralOutOfRange)?,
 					_ => return Err(ParseError::InvalidArguments),
 				};
 
@@ -189,9 +190,12 @@ impl<'a> Parsable<'a> for Inst {
 			"mtc3" | "ctc0" | "ctc1" | "ctc2" | "ctc3" => {
 				let n = mnemonic[3..].parse().expect("Unable to parse 0..=3");
 				let (reg, imm) = match *args {
-					[LineArg::Register(dst), LineArg::Literal(src)] => {
-						(dst, src.try_into().map_err(|_| ParseError::LiteralOutOfRange)?)
-					},
+					[LineArg::Register(dst), LineArg::Expr(ref imm)] => (
+						dst,
+						ctx.eval_expr(imm)?
+							.try_into()
+							.map_err(|_| ParseError::LiteralOutOfRange)?,
+					),
 					_ => return Err(ParseError::InvalidArguments),
 				};
 
@@ -224,14 +228,11 @@ impl<'a> Parsable<'a> for Inst {
 			"lwc0" | "lwc1" | "lwc2" | "lwc3" | "swc0" | "swc1" | "swc2" | "swc3" => {
 				let n = mnemonic[3..].parse().expect("Unable to parse 0..=3");
 				let (dst, src, offset) = match *args {
-					[LineArg::Literal(dst), LineArg::Register(src)] => {
-						(dst.try_into().map_err(|_| ParseError::LiteralOutOfRange)?, src, 0)
-					},
-					[LineArg::Literal(dst), LineArg::RegisterOffset { register: src, offset }] => (
-						dst.try_into().map_err(|_| ParseError::LiteralOutOfRange)?,
-						src,
-						offset.try_into().map_err(|_| ParseError::LiteralOutOfRange)?,
-					),
+					[LineArg::Expr(ref dst), LineArg::Register(src)] => (ctx.eval_expr_as(dst)?, src, 0),
+					[LineArg::Expr(ref dst), LineArg::RegisterOffset {
+						register: src,
+						ref offset,
+					}] => (ctx.eval_expr_as(dst)?, src, ctx.eval_expr_as(offset)?),
 					_ => return Err(ParseError::InvalidArguments),
 				};
 
