@@ -1,245 +1,245 @@
 ? pos: 0x8001414c
   arg: 1
-: "something10@signed_addr_hi"
+: "something10@addr_hi"
 ? pos: 0x80014154
   arg: 1
-: "something10@signed_addr_lo"
+: "something10@addr_lo"
 
 ? pos: 0x80013f1c
   arg: 1
-: "ZeroStart@signed_addr_hi"
+: "ZeroStart@addr_hi"
 ? pos: 0x80013f20
   arg: 1
-: "ZeroStart@signed_addr_lo"
+: "ZeroStart@addr_lo"
 ? pos: 0x80013f30
   arg: 1
-: "ZeroStart@signed_addr_lo"
+: "ZeroStart@addr_lo"
 
 ? pos: 0x80013f34
   arg: 1
-: "unknown3@signed_addr_hi"
+: "unknown3@addr_hi"
 ? pos: 0x80013f38
   arg: 2
-: "unknown3@signed_addr_lo"
+: "unknown3@addr_lo"
 ? pos: 0x80013f3c
   arg: 1
-: "unknown3@signed_addr_lo"
+: "unknown3@addr_lo"
 
 ? pos: 0x80013f60
   arg: 1
-: "main_loop_data1@signed_addr_hi"
+: "main_loop_data1@addr_hi"
 ? pos: 0x80013f68
   arg: 1
-: "main_loop_data1@signed_addr_lo"
+: "main_loop_data1@addr_lo"
 
 ? pos: 0x80013f6c
   arg: 1
-: "ZeroStart@signed_addr_lo"
+: "ZeroStart@addr_lo"
 ? pos: 0x80013f7c
   arg: 1
-: "ZeroStart@signed_addr_lo"
+: "ZeroStart@addr_lo"
 
 ? pos: 0x80013f78
   arg: 1
-: "unknown3@signed_addr_hi"
+: "unknown3@addr_hi"
 ? pos: 0x80013f84
   arg: 1
-: "unknown3@signed_addr_lo"
+: "unknown3@addr_lo"
 
 ? pos: 0x80013f80
   arg: 1
-: "main_loop_data1@signed_addr_hi"
+: "main_loop_data1@addr_hi"
 ? pos: 0x80013f88
   arg: 1
-: "main_loop_data1@signed_addr_lo"
+: "main_loop_data1@addr_lo"
 
 ? pos: 0x80013fd0
   arg: 1
-: "ZeroStart@signed_addr_hi"
+: "ZeroStart@addr_hi"
 ? pos: 0x80013fd4
   arg: 1
-: "ZeroStart@signed_addr_lo"
+: "ZeroStart@addr_lo"
 
 ? pos: 0x80013ff4
   arg: 1
-: "something11_data6@signed_addr_hi"
+: "something11_data6@addr_hi"
 ? pos: 0x8001400c
   arg: 1
-: "something11_data6@signed_addr_lo"
+: "something11_data6@addr_lo"
 
 ? pos: 0x80013ff8
   arg: 1
-: "something11_data1@signed_addr_hi"
+: "something11_data1@addr_hi"
 ? pos: 0x80014008
   arg: 1
-: "something11_data1@signed_addr_lo"
+: "something11_data1@addr_lo"
 
 ? pos: 0x80013ffc
   arg: 1
-: "something11_data3@signed_addr_hi"
+: "something11_data3@addr_hi"
 ? pos: 0x80014004
   arg: 1
-: "something11_data3@signed_addr_lo"
+: "something11_data3@addr_lo"
 
 ? pos: 0x80014010
   arg: 1
-: "something11_data5@signed_addr_hi"
+: "something11_data5@addr_hi"
 ? pos: 0x8001401c
   arg: 1
-: "something11_data5@signed_addr_lo"
+: "something11_data5@addr_lo"
 
 ? pos: 0x80014020
   arg: 1
-: "unknown4@signed_addr_hi"
+: "unknown4@addr_hi"
 ? pos: 0x80014024
   arg: 2
-: "unknown4@signed_addr_lo"
+: "unknown4@addr_lo"
 ? pos: 0x80014030
   arg: 1
-: "unknown4@signed_addr_lo"
+: "unknown4@addr_lo"
 
 ? pos: 0x8001404c
   arg: 1
-: "main_loop_data1@signed_addr_hi"
+: "main_loop_data1@addr_hi"
 ? pos: 0x80014060
   arg: 1
-: "main_loop_data1@signed_addr_lo"
+: "main_loop_data1@addr_lo"
 
 ? pos: 0x80014064
   arg: 1
-: "unknown1@signed_addr_hi"
+: "unknown1@addr_hi"
 ? pos: 0x8001406c
   arg: 1
-: "unknown1@signed_addr_lo"
+: "unknown1@addr_lo"
 
 ? pos: 0x80014074
   arg: 1
-: "unknown5@signed_addr_hi"
+: "unknown5@addr_hi"
 ? pos: 0x80014080
   arg: 1
-: "unknown5@signed_addr_lo"
+: "unknown5@addr_lo"
 
 ? pos: 0x80014088
   arg: 1
-: "unknown2@signed_addr_hi"
+: "unknown2@addr_hi"
 ? pos: 0x8001408c
   arg: 2
-: "unknown2@signed_addr_lo"
+: "unknown2@addr_lo"
 
 ? pos: 0x800140b0
   arg: 1
-: "unknown3@signed_addr_hi"
+: "unknown3@addr_hi"
 ? pos: 0x800140b4
   arg: 2
-: "unknown3@signed_addr_lo"
+: "unknown3@addr_lo"
 ? pos: 0x800140bc
   arg: 1
-: "unknown3@signed_addr_lo"
+: "unknown3@addr_lo"
 
 ? pos: 0x80014184
   arg: 1
-: "unknown6@signed_addr_hi"
+: "unknown6@addr_hi"
 ? pos: 0x8001418c
   arg: 1
-: "unknown6@signed_addr_lo"
+: "unknown6@addr_lo"
 
 ? pos: 0x800141c4
   arg: 1
-: "something11_data5@signed_addr_hi"
+: "something11_data5@addr_hi"
 ? pos: 0x800141c8
   arg: 1
-: "something11_data5@signed_addr_lo"
+: "something11_data5@addr_lo"
 
 ? pos: 0x80014218
   arg: 1
-: "something11_data1@signed_addr_hi"
+: "something11_data1@addr_hi"
 ? pos: 0x80014228
   arg: 1
-: "something11_data1@signed_addr_lo"
+: "something11_data1@addr_lo"
 
 ? pos: 0x80014234
   arg: 1
-: "something11_data4@signed_addr_hi"
+: "something11_data4@addr_hi"
 ? pos: 0x80014268
   arg: 1
-: "something11_data4@signed_addr_lo"
+: "something11_data4@addr_lo"
 
 ? pos: 0x8001424c
   arg: 1
-: "something11_data2@signed_addr_hi"
+: "something11_data2@addr_hi"
 ? pos: 0x80014258
   arg: 1
-: "something11_data2@signed_addr_lo"
+: "something11_data2@addr_lo"
 
 ? pos: 0x8001425c
   arg: 1
-: "something11_data3@signed_addr_hi"
+: "something11_data3@addr_hi"
 ? pos: 0x80014264
   arg: 1
-: "something11_data3@signed_addr_lo"
+: "something11_data3@addr_lo"
 
 ? pos: 0x8001426c
   arg: 1
-: "unknown3@signed_addr_hi"
+: "unknown3@addr_hi"
 ? pos: 0x80014270
   arg: 2
-: "unknown3@signed_addr_lo"
+: "unknown3@addr_lo"
 ? pos: 0x80014280
   arg: 1
-: "unknown3@signed_addr_lo"
+: "unknown3@addr_lo"
 
 ? pos: 0x80014274
   arg: 1
-: "something11_data5@signed_addr_hi"
+: "something11_data5@addr_hi"
 ? pos: 0x80014278
   arg: 1
-: "something11_data5@signed_addr_lo"
+: "something11_data5@addr_lo"
 
 ? pos: 0x8001427c
   arg: 1
-: "something11_data6@signed_addr_hi"
+: "something11_data6@addr_hi"
 ? pos: 0x80014288
   arg: 1
-: "something11_data6@signed_addr_lo"
+: "something11_data6@addr_lo"
 
 ? pos: 0x8005a88c
   arg: 1
-: "something39@signed_addr_hi"
+: "something39@addr_hi"
 ? pos: 0x8005a894
   arg: 1
-: "something39@signed_addr_lo"
+: "something39@addr_lo"
 
 ? pos: 0x8005aa20
   arg: 1
-: "something40@signed_addr_hi"
+: "something40@addr_hi"
 ? pos: 0x8005aa28
   arg: 1
-: "something40@signed_addr_lo"
+: "something40@addr_lo"
 
 ? pos: 0x8005ab04
   arg: 1
-: "something40@signed_addr_hi"
+: "something40@addr_hi"
 ? pos: 0x8005ab0c
   arg: 1
-: "something40@signed_addr_lo"
+: "something40@addr_lo"
 
 ? pos: 0x8005ace4
   arg: 1
-: "something39@signed_addr_hi"
+: "something39@addr_hi"
 ? pos: 0x8005acec
   arg: 1
-: "something39@signed_addr_lo"
+: "something39@addr_lo"
 
 ? pos: 0x8005ae48
   arg: 1
-: "something40@signed_addr_hi"
+: "something40@addr_hi"
 ? pos: 0x8005ae50
   arg: 1
-: "something40@signed_addr_lo"
+: "something40@addr_lo"
 
 ? pos: 0x8004a208
   arg: 1
-: "something41@signed_addr_hi"
+: "something41@addr_hi"
 ? pos: 0x8004a210
   arg: 1
-: "something41@signed_addr_lo"
+: "something41@addr_lo"

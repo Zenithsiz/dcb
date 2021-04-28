@@ -173,12 +173,6 @@ pub enum LineLabelFunc {
 
 	/// Address higher 16-bits
 	AddrHi,
-
-	/// Address lower signed 16-bits
-	AddrSignedLo,
-
-	/// Address higher signed 16-bits
-	AddrSignedHi,
 }
 
 /// Reads a name
@@ -313,12 +307,9 @@ fn read_reg(s: &str) -> Result<(Register, &str), ReadArgError> {
 }
 
 /// Reads a func
-#[rustfmt::skip]
 fn read_func(s: &str) -> Result<(LineLabelFunc, &str), ReadFuncError> {
-	None.or_else(|| s.strip_prefix("addr_hi"       ).map(|rest| (LineLabelFunc::AddrHi      , rest)))
-		.or_else(|| s.strip_prefix("addr_lo"       ).map(|rest| (LineLabelFunc::AddrLo      , rest)))
-		.or_else(|| s.strip_prefix("signed_addr_hi").map(|rest| (LineLabelFunc::AddrSignedHi, rest)))
-		.or_else(|| s.strip_prefix("signed_addr_lo").map(|rest| (LineLabelFunc::AddrSignedLo, rest)))
+	None.or_else(|| s.strip_prefix("addr_hi").map(|rest| (LineLabelFunc::AddrHi, rest)))
+		.or_else(|| s.strip_prefix("addr_lo").map(|rest| (LineLabelFunc::AddrLo, rest)))
 		.ok_or(ReadFuncError::Unknown)
 }
 

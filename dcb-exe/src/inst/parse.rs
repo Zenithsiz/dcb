@@ -76,10 +76,8 @@ pub trait ParseCtx {
 
 		let value = match func {
 			// For address, first get the value as a position to make sure it's within range
-			LineLabelFunc::AddrLo => i64::from(to_pos(value)?.0 & 0xFFFF),
-			LineLabelFunc::AddrHi => i64::from(to_pos(value)?.0 >> 16u32),
-			LineLabelFunc::AddrSignedLo => i64::from(signed_addr_lo_hi(to_pos(value)?).0),
-			LineLabelFunc::AddrSignedHi => i64::from(signed_addr_lo_hi(to_pos(value)?).1),
+			LineLabelFunc::AddrLo => i64::from(signed_addr_lo_hi(to_pos(value)?).0),
+			LineLabelFunc::AddrHi => i64::from(signed_addr_lo_hi(to_pos(value)?).1),
 		};
 
 		Ok(value)
