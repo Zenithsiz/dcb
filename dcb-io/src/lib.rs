@@ -4,17 +4,7 @@
 //! including the custom filesystem used by the game with the `.DRV` files.
 
 // Features
-#![feature(
-	stmt_expr_attributes,
-	format_args_capture,
-	exclusive_range_pattern,
-	never_type,
-	unwrap_infallible,
-	array_methods,
-	array_chunks,
-	iter_map_while,
-	external_doc
-)]
+#![feature()]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]
 // We'll disable the ones we don't need

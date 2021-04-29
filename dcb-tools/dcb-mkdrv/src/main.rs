@@ -1,7 +1,7 @@
 //! `.DRV` packer
 
 // Features
-#![feature(try_blocks, seek_stream_len, min_type_alias_impl_trait)]
+#![feature(seek_stream_len, min_type_alias_impl_trait)]
 
 // Modules
 mod cli;

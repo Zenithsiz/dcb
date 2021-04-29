@@ -1,15 +1,6 @@
 //! Decompiler
 
-#![feature(
-	box_syntax,
-	backtrace,
-	panic_info_message,
-	array_chunks,
-	format_args_capture,
-	bindings_after_at,
-	iter_map_while,
-	bool_to_option
-)]
+#![feature(format_args_capture, iter_map_while)]
 
 // Modules
 mod cli;

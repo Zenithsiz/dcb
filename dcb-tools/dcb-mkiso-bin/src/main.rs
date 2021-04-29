@@ -1,7 +1,7 @@
 //! Iso extractor from `.bin` files.
 
 // Features
-#![feature(unwrap_infallible)]
+#![feature()]
 
 // Modules
 mod cli;

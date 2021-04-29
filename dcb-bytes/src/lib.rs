@@ -1,7 +1,7 @@
 //! Byte conversions
 
 // Features
-#![feature(never_type)]
+#![feature()]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]
 // We'll disable the ones we don't need

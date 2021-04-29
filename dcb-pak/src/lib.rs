@@ -1,15 +1,7 @@
 //! `.PAK` files
 
 // Features
-#![feature(
-	stmt_expr_attributes,
-	exclusive_range_pattern,
-	never_type,
-	unwrap_infallible,
-	array_methods,
-	array_chunks,
-	iter_map_while
-)]
+#![feature(never_type, unwrap_infallible, array_chunks)]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]
 // We'll disable the ones we don't need

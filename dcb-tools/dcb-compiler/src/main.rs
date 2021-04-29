@@ -1,14 +1,6 @@
 //! Compiler
 
-#![feature(
-	box_syntax,
-	backtrace,
-	panic_info_message,
-	array_chunks,
-	format_args_capture,
-	bindings_after_at,
-	unwrap_infallible
-)]
+#![feature(unwrap_infallible)]
 
 // Modules
 mod cli;

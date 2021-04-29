@@ -3,24 +3,11 @@
 // Features
 #![feature(
 	never_type,
-	bool_to_option,
-	decl_macro,
 	stmt_expr_attributes,
 	unwrap_infallible,
 	external_doc,
 	format_args_capture,
-	const_fn,
-	const_panic,
-	exclusive_range_pattern,
-	maybe_uninit_uninit_array,
-	maybe_uninit_slice,
-	array_map,
-	const_mut_refs,
-	core_intrinsics,
-	const_assume,
-	bindings_after_at,
-	once_cell,
-	box_syntax
+	array_map
 )]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]

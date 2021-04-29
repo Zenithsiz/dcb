@@ -8,10 +8,8 @@
 
 // Features
 #![feature(
-	//unsafe_block_in_unsafe_fn,
 	format_args_capture,
 	never_type,
-	associated_type_bounds,
 	bindings_after_at,
 	iter_map_while,
 	array_chunks,
@@ -20,7 +18,7 @@
 	unwrap_infallible,
 	min_type_alias_impl_trait,
 	external_doc,
-	assert_matches,
+	assert_matches
 )]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]

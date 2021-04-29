@@ -2,7 +2,6 @@
 // Features
 #![feature(
 	never_type,
-	stmt_expr_attributes,
 	unwrap_infallible,
 	format_args_capture,
 	array_methods,
