@@ -14,6 +14,13 @@ pub enum FromBytesError {
 		magic: [u8; 8],
 	},
 
+	/// Size wasn't a multiple of 0x800
+	#[error("Size {size} wasn't a multiple of 0x800")]
+	SizeAlignment {
+		/// Size
+		size: u32,
+	},
+
 	/// Unable to read region marker
 	#[error("Unable to read the region marker")]
 	Name(#[source] null_ascii_string::ReadError),

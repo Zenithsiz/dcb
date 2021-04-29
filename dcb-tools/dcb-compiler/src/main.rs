@@ -179,8 +179,6 @@ fn main() -> Result<(), anyhow::Error> {
 		gp0: header.gp0,
 		start_pos: header.start_pos,
 		size,
-		unknown20: header.unknown20,
-		unknown24: header.unknown24,
 		memfill_start: header.memfill_start,
 		memfill_size: header.memfill_size,
 		initial_sp_base: header.initial_sp_base,
@@ -243,12 +241,6 @@ struct Header {
 
 	/// Starting position, in memory, of the executable.
 	pub start_pos: Pos,
-
-	/// Unknown at `0x20`
-	pub unknown20: u32,
-
-	/// Unknown at `0x24`
-	pub unknown24: u32,
 
 	/// Where to start mem filling
 	pub memfill_start: u32,
