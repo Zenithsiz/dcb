@@ -404,6 +404,12 @@
   start_pos: 0x80049e80
   end_pos: 0x80049ef8
 
+- name: something42
+  start_pos: 0x8004b2f0
+  end_pos: 0x8004b394
+  inline_comments:
+    0x8004b2f0: "Division by 0"
+
 # A functions
 - name: InitHeap
   signature: "fn(addr: *u32, size: u32)"

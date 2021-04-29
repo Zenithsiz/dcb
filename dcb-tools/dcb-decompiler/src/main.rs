@@ -17,7 +17,7 @@ mod cli;
 // Imports
 use anyhow::Context;
 use dcb_exe::{
-	inst::{parse::line, DisplayCtx, Inst, InstDisplay, InstFmtArg, ParseCtx},
+	inst::{parse::LineArgExpr, DisplayCtx, Inst, InstDisplay, InstFmtArg, ParseCtx},
 	reader::iter::ExeItem,
 	ExeReader, Func, Pos,
 };
@@ -248,7 +248,7 @@ pub fn inst_display<'a>(
 					// Validator
 					let validate = || -> Result<(), anyhow::Error> {
 						// Parse the override
-						let (expr, rest) = line::read_expr(&value).context("Unable to parse override")?;
+						let (expr, rest) = LineArgExpr::parse(&value).context("Unable to parse override")?;
 
 						let rest = rest.trim_start();
 						if !rest.is_empty() {

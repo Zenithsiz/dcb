@@ -4,28 +4,28 @@ use snailquote::UnescapeError;
 
 
 /// Error for [`Line::parse`](super::Line::parse)
-#[derive(Debug, thiserror::Error)]
+#[derive(PartialEq, Debug, thiserror::Error)]
 pub enum ParseLineError {
-	/// Unable to read name
+	/// Unable to parse name
 	#[error("Expected name")]
-	ReadName(#[from] ReadNameError),
+	ParseName(#[from] ParseNameError),
 
 	/// Invalid name suffix
 	#[error("Invalid name suffix")]
 	InvalidNameSuffix,
 
-	/// Unable to read argument
+	/// Unable to parse argument
 	#[error("Expected argument")]
-	ReadArg(#[from] ReadArgError),
+	ParseArg(#[from] ParseArgError),
 
 	/// Invalid argument suffix
 	#[error("Invalid argument suffix")]
 	InvalidArgSuffix,
 }
 
-/// Name reading error
-#[derive(Debug, thiserror::Error)]
-pub enum ReadNameError {
+/// Name parsing error
+#[derive(PartialEq, Clone, Debug, thiserror::Error)]
+pub enum ParseNameError {
 	/// Name was empty
 	#[error("Name was empty")]
 	Empty,
@@ -35,25 +35,25 @@ pub enum ReadNameError {
 	StartChar,
 }
 
-/// Literal reading error
-#[derive(Debug, thiserror::Error)]
-pub enum ReadLiteralError {
+/// Literal parsing error
+#[derive(PartialEq, Clone, Debug, thiserror::Error)]
+pub enum ParseLiteralError {
 	/// Parse
 	#[error("Unable to parse literal")]
 	Parse(#[from] std::num::ParseIntError),
 }
 
-/// Func reading error
-#[derive(Debug, thiserror::Error)]
-pub enum ReadFuncError {
+/// Func parsing error
+#[derive(PartialEq, Clone, Debug, thiserror::Error)]
+pub enum ParseFuncError {
 	/// Parse
 	#[error("Unknown functions")]
 	Unknown,
 }
 
-/// Argument reading error
-#[derive(Debug, thiserror::Error)]
-pub enum ReadArgError {
+/// Argument parsing error
+#[derive(PartialEq, Debug, thiserror::Error)]
+pub enum ParseArgError {
 	/// Empty
 	#[error("Argument was empty")]
 	Empty,
@@ -62,25 +62,25 @@ pub enum ReadArgError {
 	#[error("Invalid starting char")]
 	InvalidStartChar,
 
-	/// Read Literal
-	#[error("Unable to read literal")]
-	ReadLiteral(#[source] ReadLiteralError),
+	/// Parse Literal
+	#[error("Unable to parse literal")]
+	Literal(#[source] ParseLiteralError),
 
-	/// Read mnemonic
-	#[error("Unable to read mnemonic")]
-	ReadMnemonic(#[source] ReadNameError),
+	/// Parse mnemonic
+	#[error("Unable to parse mnemonic")]
+	ParseMnemonic(#[source] ParseNameError),
 
-	/// Read label
-	#[error("Unable to read label")]
-	ReadLabel(#[source] ReadNameError),
+	/// Parse label
+	#[error("Unable to parse label")]
+	Label(#[source] ParseNameError),
 
-	/// Read label offset
-	#[error("Unable to read label offset")]
-	ReadLabelOffset(#[source] ReadLiteralError),
+	/// Parse label offset
+	#[error("Unable to parse label offset")]
+	LabelOffset(#[source] ParseLiteralError),
 
-	/// Read label func
-	#[error("Unable to read label func")]
-	ReadLabelFunc(#[source] ReadFuncError),
+	/// Parse label func
+	#[error("Unable to parse label func")]
+	LabelFunc(#[source] ParseFuncError),
 
 	/// Expected register
 	#[error("Expected register")]
