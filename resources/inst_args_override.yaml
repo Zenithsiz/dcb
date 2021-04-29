@@ -355,3 +355,16 @@
 ? pos: 0x80014698
   arg: 2
 : "unknown4@addr_lo"
+
+? pos: 0x800146a8
+  arg: 1
+: "something11_data1@addr_hi"
+? pos: 0x800146b0
+  arg: 1
+: "something11_data1@addr_hi"
+? pos: 0x800146b4
+  arg: 1
+: "something11_data1@addr_lo"
+? pos: 0x800146e0
+  arg: 1
+: "something11_data1@addr_lo"

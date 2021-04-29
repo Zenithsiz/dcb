@@ -65,7 +65,7 @@ fn main() -> Result<(), anyhow::Error> {
 			.context("Unable to open instruction args override file")?;
 		serde_yaml::from_reader(file).context("Unable to parse instruction args override file")?
 	};
-	let inst_arg_overrides: BTreeMap<ArgPos, String> = inst_arg_overrides.unwrap_or_else(|err: anyhow::Error| {
+	let mut inst_arg_overrides: BTreeMap<ArgPos, String> = inst_arg_overrides.unwrap_or_else(|err: anyhow::Error| {
 		log::warn!("Unable to load instruction overrides:\n{:?}", err);
 		BTreeMap::new()
 	});
@@ -148,7 +148,7 @@ fn main() -> Result<(), anyhow::Error> {
 								// Then build the instruction
 								let inst = &insts.get(&pos)?;
 								let inst = inst_buffers.entry(pos).or_insert_with(|| {
-									self::inst_display(inst, &exe, Some(func), &inst_arg_overrides, pos).to_string()
+									self::inst_display(inst, &exe, Some(func), &mut inst_arg_overrides, pos).to_string()
 								});
 								let inst_len = inst.len();
 
@@ -182,7 +182,7 @@ fn main() -> Result<(), anyhow::Error> {
 						Some(inst) => print!("{inst}"),
 						None => print!(
 							"{}",
-							self::inst_display(&inst, &exe, Some(func), &inst_arg_overrides, *pos)
+							self::inst_display(&inst, &exe, Some(func), &mut inst_arg_overrides, *pos)
 						),
 					}
 
@@ -230,7 +230,10 @@ fn main() -> Result<(), anyhow::Error> {
 					}
 
 					// Write the instruction
-					print!("\t{}", self::inst_display(&inst, &exe, None, &inst_arg_overrides, pos));
+					print!(
+						"\t{}",
+						self::inst_display(&inst, &exe, None, &mut inst_arg_overrides, pos)
+					);
 
 					println!();
 				}
@@ -246,7 +249,10 @@ fn main() -> Result<(), anyhow::Error> {
 					}
 
 					// Write the instruction
-					print!("{}", self::inst_display(&inst, &exe, None, &inst_arg_overrides, pos));
+					print!(
+						"{}",
+						self::inst_display(&inst, &exe, None, &mut inst_arg_overrides, pos)
+					);
 
 					println!();
 				}
@@ -258,13 +264,18 @@ fn main() -> Result<(), anyhow::Error> {
 		println!("Data Table:\n{}", exe.data_table());
 	}
 
+	// If there are any leftover overrides, warn
+	for (pos, _) in inst_arg_overrides {
+		log::warn!("Ignoring override at {}/{}", pos.pos, pos.arg);
+	}
+
 	Ok(())
 }
 
 /// Returns a display-able for an instruction inside a possible function
 #[must_use]
 pub fn inst_display<'a>(
-	inst: &'a Inst, exe: &'a ExeReader, func: Option<&'a Func>, inst_arg_overrides: &'a BTreeMap<ArgPos, String>,
+	inst: &'a Inst, exe: &'a ExeReader, func: Option<&'a Func>, inst_arg_overrides: &'a mut BTreeMap<ArgPos, String>,
 	pos: Pos,
 ) -> impl fmt::Display + 'a {
 	// Overload the target of as many as possible using `inst_target`.
@@ -284,7 +295,7 @@ pub fn inst_display<'a>(
 			let arg = arg.into_inner();
 
 			// If we have an override for this argument, use it
-			match inst_arg_overrides.get(&ArgPos { pos, arg: idx }) {
+			match inst_arg_overrides.remove(&ArgPos { pos, arg: idx }) {
 				Some(value) => {
 					// Validator
 					let validate = || -> Result<(), anyhow::Error> {
