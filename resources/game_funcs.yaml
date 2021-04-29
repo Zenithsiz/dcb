@@ -53,7 +53,8 @@
   end_pos: 0x80056388
 
 - name: call_func_arr
-  desc: Calls all functions from `start` to `end` (exclusive).
+  desc: |-
+    Calls all functions from `start` to `end` (exclusive).
     Since it's only called from `start` and `something1` with no
     functions, it seems that this is never used.
     After running the game for a bit it doesn't seem to be triggered,
@@ -283,6 +284,10 @@
 - name: something11
   start_pos: 0x800142d0
   end_pos: 0x80014364
+  labels:
+    0x8001431c: "0"
+    0x80014320: "1"
+    0x8001434c: "2"
 
 - name: something12
   start_pos: 0x80015328

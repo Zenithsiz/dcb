@@ -8,7 +8,7 @@ mod cli;
 // Imports
 use anyhow::Context;
 use dcb_exe::{
-	inst::{parse::LineArgExpr, DisplayCtx, Inst, InstDisplay, InstFmtArg, ParseCtx},
+	inst::{basic, parse::LineArgExpr, DisplayCtx, Inst, InstDisplay, InstFmtArg, ParseCtx},
 	reader::{iter::ExeItem, DeserializeOpts},
 	Data, ExeReader, Func, Pos,
 };
@@ -110,8 +110,8 @@ fn main() -> Result<(), anyhow::Error> {
 					println!("# {description}");
 				}
 
-				let insts: Vec<_> = insts.collect();
-				for (cur_n, (pos, inst)) in insts.iter().enumerate() {
+				let insts: BTreeMap<_, _> = insts.collect();
+				for (pos, inst) in &insts {
 					// If there's a comment, print it
 					if let Some(comment) = func.comments.get(pos) {
 						// Iterate over the lines in the comment
@@ -146,7 +146,7 @@ fn main() -> Result<(), anyhow::Error> {
 								}
 
 								// Then build the instruction
-								let inst = &insts.get(cur_n + n)?.1;
+								let inst = &insts.get(&pos)?;
 								let inst = inst_buffers.entry(pos).or_insert_with(|| {
 									self::inst_display(inst, &exe, Some(func), &inst_arg_overrides, pos).to_string()
 								});
@@ -165,11 +165,23 @@ fn main() -> Result<(), anyhow::Error> {
 						print!("{pos}:");
 					}
 
+					// Add a tab before any instruction in a function
+					print!("\t");
+
+					// If we had a branch / jump instruction before this one, add a "+ "
+					// TODO: Move this check to a method on main `Inst`
+					if matches!(
+						insts.get(&(pos - 4)),
+						Some(Inst::Basic(basic::Inst::Jmp(_) | basic::Inst::Cond(_)))
+					) {
+						print!("+ ");
+					}
+
 					// If we have the instruction buffer, pop it and use it
 					match inst_buffers.get(&pos) {
-						Some(inst) => print!("\t{inst}"),
+						Some(inst) => print!("{inst}"),
 						None => print!(
-							"\t{}",
+							"{}",
 							self::inst_display(&inst, &exe, Some(func), &inst_arg_overrides, *pos)
 						),
 					}
