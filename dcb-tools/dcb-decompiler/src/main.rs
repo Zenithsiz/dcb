@@ -1,6 +1,6 @@
 //! Decompiler
 
-#![feature(format_args_capture, iter_map_while)]
+#![feature(try_blocks, format_args_capture, iter_map_while)]
 
 // Modules
 mod cli;
@@ -9,11 +9,11 @@ mod cli;
 use anyhow::Context;
 use dcb_exe::{
 	inst::{parse::LineArgExpr, DisplayCtx, Inst, InstDisplay, InstFmtArg, ParseCtx},
-	reader::iter::ExeItem,
-	ExeReader, Func, Pos,
+	reader::{iter::ExeItem, DeserializeOpts},
+	Data, ExeReader, Func, Pos,
 };
 use itertools::{Itertools, Position};
-use std::{collections::BTreeMap, fmt, path::PathBuf};
+use std::{collections::BTreeMap, fmt, fs, path::PathBuf};
 
 fn main() -> Result<(), anyhow::Error> {
 	// Initialize the logger
@@ -28,11 +28,55 @@ fn main() -> Result<(), anyhow::Error> {
 	let cli = cli::CliData::new();
 
 	// Open the input file
-	let mut input_file = std::fs::File::open(&cli.input_path).context("Unable to open input file")?;
+	let mut input_file = fs::File::open(&cli.input_path).context("Unable to open input file")?;
+
+	// Load the known and foreign data / func tables
+	let known_data: Result<Vec<Data>, _> = try {
+		let file = fs::File::open("resources/game_data.yaml").context("Unable to open game data file")?;
+		serde_yaml::from_reader(file).context("Unable to parse game data file")?
+	};
+	let known_data = known_data.unwrap_or_else(|err: anyhow::Error| {
+		log::warn!("Unable to load game data:\n{:?}", err);
+		vec![]
+	});
+	let foreign_data: Result<Vec<Data>, _> = try {
+		let file = fs::File::open("resources/foreign_data.yaml").context("Unable to open foreign data file")?;
+		serde_yaml::from_reader(file).context("Unable to parse foreign data file")?
+	};
+	let foreign_data = foreign_data.unwrap_or_else(|err: anyhow::Error| {
+		log::warn!("Unable to load foreign data:\n{:?}", err);
+		vec![]
+	});
+	let data_table = known_data.into_iter().chain(foreign_data).collect();
+
+	let func_table: Result<Vec<Func>, _> = try {
+		let file = fs::File::open("resources/game_funcs.yaml").context("Unable to open functions file")?;
+		serde_yaml::from_reader(file).context("Unable to parse functions file")?
+	};
+	let func_table = func_table.unwrap_or_else(|err: anyhow::Error| {
+		log::warn!("Unable to load functions:\n{:?}", err);
+		vec![]
+	});
+	let func_table = func_table.into_iter().collect();
+
+	// Read all arg overrides
+	let inst_arg_overrides: Result<_, _> = try {
+		let file = fs::File::open("resources/inst_args_override.yaml")
+			.context("Unable to open instruction args override file")?;
+		serde_yaml::from_reader(file).context("Unable to parse instruction args override file")?
+	};
+	let inst_arg_overrides: BTreeMap<ArgPos, String> = inst_arg_overrides.unwrap_or_else(|err: anyhow::Error| {
+		log::warn!("Unable to load instruction overrides:\n{:?}", err);
+		BTreeMap::new()
+	});
 
 	// Read the executable
 	log::debug!("Deserializing executable");
-	let exe = ExeReader::deserialize(&mut input_file).context("Unable to parse game executable")?;
+	let exe = ExeReader::deserialize(&mut input_file, DeserializeOpts {
+		data_table: Some(data_table),
+		func_table: Some(func_table),
+	})
+	.context("Unable to parse game executable")?;
 
 	if cli.print_header {
 		let header_file_path = {
@@ -40,15 +84,9 @@ fn main() -> Result<(), anyhow::Error> {
 			path.push(".header");
 			PathBuf::from(path)
 		};
-		let header_file = std::fs::File::create(header_file_path).context("Unable to create header file")?;
+		let header_file = fs::File::create(header_file_path).context("Unable to create header file")?;
 		serde_yaml::to_writer(header_file, exe.header()).context("Unable to write header to file")?;
 	}
-
-	// Read all arg overrides
-	let inst_arg_overrides_file = std::fs::File::open("resources/inst_args_override.yaml")
-		.context("Unable to open instruction args override file")?;
-	let inst_arg_overrides: BTreeMap<ArgPos, String> =
-		serde_yaml::from_reader(inst_arg_overrides_file).context("Unable to parse instruction args override file")?;
 
 	// Instruction buffer
 	let mut inst_buffers: BTreeMap<Pos, String> = BTreeMap::new();

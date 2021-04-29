@@ -13,6 +13,9 @@ pub struct Pos(pub u32);
 
 impl Pos {
 	/// Calculated the offset between two positions
+	///
+	/// # Panics
+	/// Panics if the result would be negative.
 	#[must_use]
 	pub fn offset_from(self, start_pos: Self) -> usize {
 		usize::try_from(self - start_pos).expect("Negative offset")

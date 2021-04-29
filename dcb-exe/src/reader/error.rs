@@ -1,7 +1,7 @@
 //! Errors
 
 // Imports
-use crate::{func, header};
+use crate::header;
 
 /// Error type for [`ExeReader::deserialize`](super::ExeReader::deserialize)
 #[derive(Debug, thiserror::Error)]
@@ -21,32 +21,4 @@ pub enum DeserializeError {
 	/// Unable to read data
 	#[error("Unable to read data")]
 	ReadData(#[source] std::io::Error),
-
-	/// Unable to get known data
-	#[error("Unable to get known data table")]
-	KnownDataTable(#[source] GetKnownError),
-
-	/// Unable to get known data
-	#[error("Unable to get known func table")]
-	KnownFuncTable(#[source] func::table::GetKnownError),
-}
-
-/// Error type for getting the known function table
-#[derive(Debug, thiserror::Error)]
-pub enum GetKnownError {
-	/// Unable to open game data file
-	#[error("Unable to open game data file")]
-	OpenGame(#[source] std::io::Error),
-
-	/// Unable to parse game data file
-	#[error("Unable to parse game data file")]
-	ParseGame(#[source] serde_yaml::Error),
-
-	/// Unable to open foreign data file
-	#[error("Unable to open foreign data file")]
-	OpenForeign(#[source] std::io::Error),
-
-	/// Unable to parse foreign data file
-	#[error("Unable to parse foreign data file")]
-	ParseForeign(#[source] serde_yaml::Error),
 }

@@ -75,7 +75,7 @@ impl<'a> Iterator for Iter<'a> {
 
 			return Some(ExeItem::Data {
 				data,
-				insts: self.exe.parse_iter_from(cur_pos..end_pos),
+				insts: self.exe.decode_iter(cur_pos..end_pos),
 			});
 		}
 
@@ -84,7 +84,7 @@ impl<'a> Iterator for Iter<'a> {
 			self.cur_pos = func.end_pos;
 			return Some(ExeItem::Func {
 				func,
-				insts: self.exe.parse_iter_from(cur_pos..func.end_pos),
+				insts: self.exe.decode_iter(cur_pos..func.end_pos),
 			});
 		}
 
@@ -108,7 +108,7 @@ impl<'a> Iterator for Iter<'a> {
 
 
 		Some(ExeItem::Unknown {
-			insts: self.exe.parse_iter_from(cur_pos..end_pos),
+			insts: self.exe.decode_iter(cur_pos..end_pos),
 		})
 	}
 }

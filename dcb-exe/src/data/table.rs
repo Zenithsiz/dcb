@@ -15,7 +15,7 @@ pub use node::DataNode;
 // Imports
 use super::{Data, DataKind};
 use crate::Pos;
-use std::fmt;
+use std::{fmt, iter::FromIterator};
 
 /// Data table
 ///
@@ -46,37 +46,9 @@ pub struct DataTable {
 impl DataTable {
 	/// Creates an empty data table
 	#[must_use]
-	pub fn empty() -> Self {
+	pub fn new() -> Self {
 		let root = DataNode::new(Data::dummy());
 		Self { root }
-	}
-
-	/// Creates a data table from data locations
-	pub fn new(data: impl IntoIterator<Item = Data>) -> Self {
-		let mut table = Self::empty();
-		table.extend(data);
-		table
-	}
-
-	/// Extends this data table with data locations.
-	///
-	/// Any data that cannot be inserted is discarded, see [`DataNode::insert`] for
-	/// more information.
-	pub fn extend(&mut self, data: impl IntoIterator<Item = Data>) {
-		for data in data {
-			// Try to insert and log if we get an error.
-			if let Err(err) = self.root.insert(data) {
-				let log_level = match err.data().kind() {
-					DataKind::Known | DataKind::Foreign => log::Level::Warn,
-					DataKind::Heuristics => log::Level::Trace,
-				};
-				log::log!(
-					log_level,
-					"Unable to add data:\n{:#}",
-					dcb_util::DisplayWrapper::new(|f| dcb_util::fmt_err(&err, f))
-				);
-			}
-		}
 	}
 
 	/// Retrieves the smallest data location containing `pos`
@@ -127,6 +99,43 @@ impl DataTable {
 	/// Note: This has `O(N)` complexity where `N` is the number of data
 	pub fn search_name(&self, name: &str) -> Option<&Data> {
 		self.root.search_name(name).map(DataNode::data)
+	}
+}
+
+impl Default for DataTable {
+	fn default() -> Self {
+		Self::new()
+	}
+}
+
+impl Extend<Data> for DataTable {
+	fn extend<T: IntoIterator<Item = Data>>(&mut self, data: T) {
+		for data in data {
+			self.extend_one(data);
+		}
+	}
+
+	fn extend_one(&mut self, data: Data) {
+		// Try to insert and log if we get an error.
+		if let Err(err) = self.root.insert(data) {
+			let log_level = match err.data().kind() {
+				DataKind::Known | DataKind::Foreign => log::Level::Warn,
+				DataKind::Heuristics => log::Level::Trace,
+			};
+			log::log!(
+				log_level,
+				"Unable to add data:\n{:#}",
+				dcb_util::DisplayWrapper::new(|f| dcb_util::fmt_err(&err, f))
+			);
+		}
+	}
+}
+
+impl FromIterator<Data> for DataTable {
+	fn from_iter<T: IntoIterator<Item = Data>>(data: T) -> Self {
+		let mut table = Self::new();
+		table.extend(data);
+		table
 	}
 }
 
