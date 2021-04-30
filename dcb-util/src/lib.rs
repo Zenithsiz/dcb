@@ -83,7 +83,32 @@ pub use btree_map_par_iter::BTreeMapParIter;
 pub use signed_hex::SignedHex;
 
 // Imports
-use std::fmt;
+use std::{error, fmt, fs, io, path::Path};
+
+/// Error for [`parse_from_file`]
+#[derive(Debug, thiserror::Error)]
+pub enum ParseFromFileError<E: fmt::Debug + error::Error + 'static> {
+	/// Unable to open file
+	#[error("Unable to open file")]
+	Open(#[source] io::Error),
+
+	/// Unable to parse the file
+	#[error("Unable to parse file")]
+	Parse(#[source] E),
+}
+
+/// Opens and parses a value from a file
+pub fn parse_from_file<
+	'de,
+	T: serde::Deserialize<'de>,
+	E: fmt::Debug + error::Error + 'static,
+	P: ?Sized + AsRef<Path>,
+>(
+	path: &P, parser: fn(fs::File) -> Result<T, E>,
+) -> Result<T, ParseFromFileError<E>> {
+	let file = fs::File::open(path).map_err(ParseFromFileError::Open)?;
+	parser(file).map_err(ParseFromFileError::Parse)
+}
 
 /// Returns the absolute different between `a` and `b`, `a - b` as a `i64`.
 ///
@@ -127,7 +152,7 @@ pub const fn saturating_signed_offset(a: u64, b: i64) -> u64 {
 }
 
 /// Prints an error
-pub fn fmt_err(err: &(dyn std::error::Error + '_), f: &mut fmt::Formatter) -> fmt::Result {
+pub fn fmt_err(err: &(dyn error::Error + '_), f: &mut fmt::Formatter) -> fmt::Result {
 	writeln!(f, "{err}")?;
 
 	match err.source() {
@@ -141,7 +166,7 @@ pub fn fmt_err(err: &(dyn std::error::Error + '_), f: &mut fmt::Formatter) -> fm
 }
 
 /// Returns a wrapper that prints an error
-pub fn fmt_err_wrapper<'a>(err: &'a (dyn std::error::Error + 'a)) -> impl fmt::Display + 'a {
+pub fn fmt_err_wrapper<'a>(err: &'a (dyn error::Error + 'a)) -> impl fmt::Display + 'a {
 	DisplayWrapper::new(move |f| self::fmt_err(err, f))
 }
 
