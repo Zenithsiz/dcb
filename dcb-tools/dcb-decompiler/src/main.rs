@@ -19,18 +19,6 @@ use dcb_exe::{
 use itertools::{Itertools, Position};
 use std::{collections::BTreeMap, fmt, fs, path::PathBuf};
 
-/// Known data path
-pub const KNOWN_DATA_PATH: &str = "resources/game_data.yaml";
-
-/// Foreign data path
-pub const FOREIGN_DATA_PATH: &str = "resources/foreign_data.yaml";
-
-/// Known functions path
-pub const KNOWN_FUNCS_PATH: &str = "resources/game_funcs.yaml";
-
-/// Instruction overrides path
-pub const INST_ARG_OVERRIDES_PATH: &str = "resources/inst_args_override.yaml";
-
 fn main() -> Result<(), anyhow::Error> {
 	// Initialize the logger
 	simplelog::TermLogger::init(
@@ -47,23 +35,28 @@ fn main() -> Result<(), anyhow::Error> {
 	let mut input_file = fs::File::open(&cli.input_path).context("Unable to open input file")?;
 
 	// Load the known and foreign data / func tables
-	let known_data: Vec<_> = dcb_util::parse_from_file(KNOWN_DATA_PATH, serde_yaml::from_reader)
+	let known_data_path = cli.known_data_path;
+	let foreign_data_path = cli.foreign_data_path;
+	let known_funcs_path = cli.known_funcs_path;
+	let inst_arg_overrides_path = cli.inst_arg_overrides_path;
+
+	let known_data: Vec<_> = dcb_util::parse_from_file(&known_data_path, serde_yaml::from_reader)
 		.map_err(dcb_util::fmt_err_wrapper_owned)
-		.map_err(|err| log::warn!("Unable to load game data from {KNOWN_DATA_PATH}:\n{err}"))
+		.map_err(|err| log::warn!("Unable to load game data from {known_data_path:?}:\n{err}"))
 		.unwrap_or_default();
-	let foreign_data: Vec<_> = dcb_util::parse_from_file(FOREIGN_DATA_PATH, serde_yaml::from_reader)
+	let foreign_data: Vec<_> = dcb_util::parse_from_file(&foreign_data_path, serde_yaml::from_reader)
 		.map_err(dcb_util::fmt_err_wrapper_owned)
-		.map_err(|err| log::warn!("Unable to load foreign data from {FOREIGN_DATA_PATH}:\n{err}"))
+		.map_err(|err| log::warn!("Unable to load foreign data from {foreign_data_path:?}:\n{err}"))
 		.unwrap_or_default();
 	let data_table = known_data.into_iter().chain(foreign_data).collect();
 
-	let func_table = dcb_util::parse_from_file(KNOWN_FUNCS_PATH, serde_yaml::from_reader)
+	let func_table = dcb_util::parse_from_file(&known_funcs_path, serde_yaml::from_reader)
 		.map_err(dcb_util::fmt_err_wrapper_owned)
-		.map_err(|err| log::warn!("Unable to load functions from {KNOWN_FUNCS_PATH}:\n{err}"))
+		.map_err(|err| log::warn!("Unable to load functions from {known_funcs_path:?}:\n{err}"))
 		.unwrap_or_default();
-	let mut inst_arg_overrides = dcb_util::parse_from_file(INST_ARG_OVERRIDES_PATH, serde_yaml::from_reader)
+	let mut inst_arg_overrides = dcb_util::parse_from_file(&inst_arg_overrides_path, serde_yaml::from_reader)
 		.map_err(dcb_util::fmt_err_wrapper_owned)
-		.map_err(|err| log::warn!("Unable to load instruction overrides from {INST_ARG_OVERRIDES_PATH}:\n{err}"))
+		.map_err(|err| log::warn!("Unable to load instruction overrides from {inst_arg_overrides_path:?}:\n{err}"))
 		.unwrap_or_default();
 
 	// Read the executable
