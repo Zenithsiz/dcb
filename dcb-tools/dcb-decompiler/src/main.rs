@@ -4,11 +4,15 @@
 
 // Modules
 mod cli;
+mod display_ctx;
+
+// Exports
+use display_ctx::DisplayCtx;
 
 // Imports
 use anyhow::Context;
 use dcb_exe::{
-	inst::{basic, parse::LineArgExpr, DisplayCtx, Inst, InstDisplay, InstFmtArg, ParseCtx},
+	inst::{basic, parse::LineArgExpr, Inst, InstDisplay, InstFmtArg, ParseCtx},
 	reader::{iter::ExeItem, DeserializeOpts},
 	Data, ExeReader, Func, Pos,
 };
@@ -281,7 +285,7 @@ pub fn inst_display<'a>(
 	// Overload the target of as many as possible using `inst_target`.
 	dcb_util::DisplayWrapper::new(move |f| {
 		// Build the context and get the mnemonic + args
-		let ctx = Ctx { exe, func, pos };
+		let ctx = DisplayCtx::new(exe, func, pos);
 		let mnemonic = inst.mnemonic(&ctx);
 		let args = inst.args(&ctx);
 
@@ -348,79 +352,6 @@ pub fn inst_display<'a>(
 
 		Ok(())
 	})
-}
-
-/// Display context
-struct Ctx<'a> {
-	/// Exe
-	exe: &'a ExeReader,
-
-	/// Function
-	func: Option<&'a Func>,
-
-	/// Current Position
-	pos: Pos,
-}
-
-/// Label display for `DisplayCtx::pos_label`
-enum LabelDisplay<'a> {
-	CurFuncLabel(&'a str),
-
-	OtherFuncLabel { func: &'a str, label: &'a str },
-
-	OtherFunc { func: &'a str },
-
-	Data { name: &'a str },
-}
-
-impl<'a> fmt::Display for LabelDisplay<'a> {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-		match self {
-			LabelDisplay::CurFuncLabel(label) => write!(f, ".{label}"),
-			LabelDisplay::OtherFuncLabel { func, label } => write!(f, "{func}.{label}"),
-			LabelDisplay::OtherFunc { func } => write!(f, "{func}"),
-			LabelDisplay::Data { name } => write!(f, "{name}"),
-		}
-	}
-}
-
-impl<'a> DisplayCtx for Ctx<'a> {
-	type Label = LabelDisplay<'a>;
-
-	fn cur_pos(&self) -> Pos {
-		self.pos
-	}
-
-	fn pos_label(&self, pos: Pos) -> Option<(Self::Label, i64)> {
-		// Try to get a label for the current function, if it exists
-		if let Some(label) = self.func.and_then(|func| func.labels.get(&pos)) {
-			return Some((LabelDisplay::CurFuncLabel(label), 0));
-		}
-
-		// Try to get a function from it
-		if let Some(func) = self.exe.func_table().get_containing(pos) {
-			// And then one of it's labels
-			if let Some(label) = func.labels.get(&pos) {
-				return Some((
-					LabelDisplay::OtherFuncLabel {
-						func: &func.name,
-						label,
-					},
-					0,
-				));
-			}
-
-			// Else just any position in it
-			return Some((LabelDisplay::OtherFunc { func: &func.name }, pos - func.start_pos));
-		}
-
-		// Else try a data
-		if let Some(data) = self.exe.data_table().get_containing(pos) {
-			return Some((LabelDisplay::Data { name: data.name() }, pos - data.start_pos()));
-		}
-
-		None
-	}
 }
 
 /// Argument position
