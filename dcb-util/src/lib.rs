@@ -125,7 +125,7 @@ pub const fn saturating_signed_offset(a: u64, b: i64) -> u64 {
 }
 
 /// Prints an error
-pub fn fmt_err(err: &(dyn std::error::Error + 'static), f: &mut fmt::Formatter) -> fmt::Result {
+pub fn fmt_err(err: &(dyn std::error::Error + '_), f: &mut fmt::Formatter) -> fmt::Result {
 	writeln!(f, "{err}")?;
 
 	match err.source() {
@@ -139,7 +139,7 @@ pub fn fmt_err(err: &(dyn std::error::Error + 'static), f: &mut fmt::Formatter) 
 }
 
 /// Returns a wrapper that prints an error
-pub fn fmt_err_wrapper<'a>(err: &'a (dyn std::error::Error + 'static)) -> impl fmt::Display + 'a {
+pub fn fmt_err_wrapper<'a>(err: &'a (dyn std::error::Error + 'a)) -> impl fmt::Display + 'a {
 	DisplayWrapper::new(move |f| self::fmt_err(err, f))
 }
 

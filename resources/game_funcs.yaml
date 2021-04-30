@@ -239,8 +239,8 @@
     Sets `SPU_DELAY` to `(SPU_DELAY & 0xf0fffff) | 0x2000ffff`
     and returns the new value
   inline_comments:
-    0x8004b45c: "$v0 = *SPU_DELAY"
-    0x8004b474: "*SPU_DELAY = $v0"
+    0x8004b434: "$v0 = *SPU_DELAY"
+    0x8004b44c: "*SPU_DELAY = $v0"
   start_pos: 0x8004b428
   end_pos: 0x8004b450
   kind: Known

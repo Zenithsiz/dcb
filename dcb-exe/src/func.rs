@@ -6,10 +6,12 @@
 //! type.
 
 // Modules
+pub mod error;
 pub mod kind;
 pub mod table;
 
 // Exports
+pub use error::ValidateError;
 pub use kind::FuncKind;
 pub use table::FuncTable;
 
@@ -61,11 +63,39 @@ pub struct Func {
 	pub kind: FuncKind,
 }
 
+// Getters
 impl Func {
 	/// Checks if this function contains `pos`
 	#[must_use]
 	pub fn contains(&self, pos: Pos) -> bool {
 		(self.start_pos..self.end_pos).contains(&pos)
+	}
+
+	/// Validates this function
+	pub fn validate(&self) -> Result<(), ValidateError<'_>> {
+		// TODO: Validate name and signature?
+
+		// If our positions don't make a proper range, return Err
+		if self.end_pos < self.start_pos {
+			return Err(ValidateError::InvalidRange {
+				start_pos: self.start_pos,
+				end_pos:   self.end_pos,
+			});
+		}
+
+		// Check all positions of labels and comments are within our range.
+		for (&pos, comment) in self.inline_comments.iter().chain(&self.comments) {
+			if !self.contains(pos) {
+				return Err(ValidateError::CommentPosOutOfBounds { pos, comment });
+			}
+		}
+		for (&pos, label) in &self.labels {
+			if !self.contains(pos) {
+				return Err(ValidateError::LabelPosOutOfBounds { pos, label });
+			}
+		}
+
+		Ok(())
 	}
 }
 

@@ -17,31 +17,23 @@ pub use error::GetKnownError;
 // Imports
 use super::Func;
 use crate::Pos;
-use std::{collections::BTreeSet, fs::File, iter::FromIterator, ops::RangeBounds};
+use std::{collections::BTreeSet, iter::FromIterator, ops::RangeBounds};
 
 /// Function table
 ///
 /// Stores all functions sorted by their address.
 /// Also guarantees all functions are unique and non-overlapping.
 #[derive(PartialEq, Eq, Clone, Debug)]
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(serde::Serialize)]
+#[serde(transparent)]
 pub struct FuncTable(BTreeSet<Func>);
 
+// Constructors
 impl FuncTable {
 	/// Creates an empty function table
 	#[must_use]
 	pub const fn new() -> Self {
 		Self(BTreeSet::new())
-	}
-}
-
-// Constructors
-impl FuncTable {
-	/// Returns all known functions
-	pub fn get_known() -> Result<Self, GetKnownError> {
-		let file = File::open("resources/game_funcs.yaml").map_err(GetKnownError::File)?;
-
-		serde_yaml::from_reader(file).map_err(GetKnownError::Parse)
 	}
 }
 
@@ -70,21 +62,30 @@ impl FuncTable {
 // Note: `BTreeSet` already discards duplicates on it's own.
 impl Extend<Func> for FuncTable {
 	fn extend<T: IntoIterator<Item = Func>>(&mut self, funcs: T) {
-		self.0.extend(funcs);
+		for func in funcs {
+			self.extend_one(func);
+		}
 	}
 
 	fn extend_one(&mut self, func: Func) {
-		self.0.extend_one(func);
-	}
-
-	fn extend_reserve(&mut self, additional: usize) {
-		self.0.extend_reserve(additional);
+		// Validate the function before inserting it.
+		match func.validate() {
+			Ok(()) => self.0.extend_one(func),
+			// If it fails validation, discard it and warn
+			Err(err) => log::warn!(
+				"Function {} failed validation, ignoring:\n{}",
+				func.name,
+				dcb_util::fmt_err_wrapper(&err)
+			),
+		}
 	}
 }
 
 impl FromIterator<Func> for FuncTable {
 	fn from_iter<T: IntoIterator<Item = Func>>(iter: T) -> Self {
-		Self(iter.into_iter().collect())
+		let mut table = Self::new();
+		table.extend(iter);
+		table
 	}
 }
 
