@@ -6,9 +6,11 @@
 //! type.
 
 // Modules
+pub mod kind;
 pub mod table;
 
 // Exports
+pub use kind::FuncKind;
 pub use table::FuncTable;
 
 // Imports
@@ -54,6 +56,9 @@ pub struct Func {
 
 	/// End position (non-inclusive)
 	pub end_pos: Pos,
+
+	/// Kind
+	pub kind: FuncKind,
 }
 
 impl Func {
@@ -201,6 +206,7 @@ impl Func {
 				labels,
 				start_pos: func_pos,
 				end_pos,
+				kind: FuncKind::Heuristics,
 			};
 			assert!(cur_funcs.insert(func));
 		}
