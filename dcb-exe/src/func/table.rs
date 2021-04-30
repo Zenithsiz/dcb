@@ -94,3 +94,16 @@ impl Default for FuncTable {
 		Self::new()
 	}
 }
+
+impl<'de> serde::Deserialize<'de> for FuncTable {
+	fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+	where
+		D: serde::Deserializer<'de>,
+	{
+		// Deserialize a vector of functions
+		let funcs = Vec::<Func>::deserialize(deserializer)?;
+
+		// Then collect into ourselves
+		Ok(funcs.into_iter().collect())
+	}
+}
