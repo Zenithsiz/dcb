@@ -155,14 +155,18 @@ pub const fn saturating_signed_offset(a: u64, b: i64) -> u64 {
 pub fn fmt_err(err: &(dyn error::Error + '_), f: &mut fmt::Formatter) -> fmt::Result {
 	writeln!(f, "{err}")?;
 
-	match err.source() {
-		Some(source) => {
-			writeln!(f, "Caused by:")?;
-			write!(f, "\t")?;
-			fmt_err(source, f)
-		},
-		None => Ok(()),
+	let mut source = err.source();
+	for n in 1usize.. {
+		match source {
+			Some(err) => {
+				write!(f, "  {n}: {err}")?;
+				source = err.source();
+			},
+			None => break,
+		}
 	}
+
+	Ok(())
 }
 
 /// Returns a wrapper that prints an error

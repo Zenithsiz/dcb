@@ -42,21 +42,21 @@ fn main() -> Result<(), anyhow::Error> {
 
 	let known_data: Vec<_> = dcb_util::parse_from_file(&known_data_path, serde_yaml::from_reader)
 		.map_err(dcb_util::fmt_err_wrapper_owned)
-		.map_err(|err| log::warn!("Unable to load game data from {known_data_path:?}:\n{err}"))
+		.map_err(|err| log::warn!("Unable to load game data from {known_data_path:?}: {err}"))
 		.unwrap_or_default();
 	let foreign_data: Vec<_> = dcb_util::parse_from_file(&foreign_data_path, serde_yaml::from_reader)
 		.map_err(dcb_util::fmt_err_wrapper_owned)
-		.map_err(|err| log::warn!("Unable to load foreign data from {foreign_data_path:?}:\n{err}"))
+		.map_err(|err| log::warn!("Unable to load foreign data from {foreign_data_path:?}: {err}"))
 		.unwrap_or_default();
 	let data_table = known_data.into_iter().chain(foreign_data).collect();
 
 	let func_table = dcb_util::parse_from_file(&known_funcs_path, serde_yaml::from_reader)
 		.map_err(dcb_util::fmt_err_wrapper_owned)
-		.map_err(|err| log::warn!("Unable to load functions from {known_funcs_path:?}:\n{err}"))
+		.map_err(|err| log::warn!("Unable to load functions from {known_funcs_path:?}: {err}"))
 		.unwrap_or_default();
 	let mut inst_arg_overrides = dcb_util::parse_from_file(&inst_arg_overrides_path, serde_yaml::from_reader)
 		.map_err(dcb_util::fmt_err_wrapper_owned)
-		.map_err(|err| log::warn!("Unable to load instruction overrides from {inst_arg_overrides_path:?}:\n{err}"))
+		.map_err(|err| log::warn!("Unable to load instruction overrides from {inst_arg_overrides_path:?}: {err}"))
 		.unwrap_or_default();
 
 	// Read the executable
@@ -321,7 +321,7 @@ pub fn inst_display<'a>(
 					};
 
 					if let Err(err) = validate() {
-						log::warn!("Override for {}/{} failed validation:\n{:?}", pos, idx, err);
+						log::warn!("Override for {}/{} failed validation: {:?}", pos, idx, err);
 					}
 
 					match arg {
