@@ -14,10 +14,22 @@ use anyhow::Context;
 use dcb_exe::{
 	inst::{basic, parse::LineArgExpr, Inst, InstDisplay, InstFmtArg, ParseCtx},
 	reader::{iter::ExeItem, DeserializeOpts},
-	Data, ExeReader, Func, Pos,
+	ExeReader, Func, Pos,
 };
 use itertools::{Itertools, Position};
 use std::{collections::BTreeMap, fmt, fs, path::PathBuf};
+
+/// Known data path
+pub const KNOWN_DATA_PATH: &str = "resources/game_data.yaml";
+
+/// Foreign data path
+pub const FOREIGN_DATA_PATH: &str = "resources/foreign_data.yaml";
+
+/// Known functions path
+pub const KNOWN_FUNCS_PATH: &str = "resources/game_funcs.yaml";
+
+/// Instruction overrides path
+pub const INST_ARG_OVERRIDES_PATH: &str = "resources/inst_args_override.yaml";
 
 fn main() -> Result<(), anyhow::Error> {
 	// Initialize the logger
@@ -35,44 +47,24 @@ fn main() -> Result<(), anyhow::Error> {
 	let mut input_file = fs::File::open(&cli.input_path).context("Unable to open input file")?;
 
 	// Load the known and foreign data / func tables
-	let known_data: Result<Vec<Data>, _> = try {
-		let file = fs::File::open("resources/game_data.yaml").context("Unable to open game data file")?;
-		serde_yaml::from_reader(file).context("Unable to parse game data file")?
-	};
-	let known_data = known_data.unwrap_or_else(|err: anyhow::Error| {
-		log::warn!("Unable to load game data:\n{:?}", err);
-		vec![]
-	});
-	let foreign_data: Result<Vec<Data>, _> = try {
-		let file = fs::File::open("resources/foreign_data.yaml").context("Unable to open foreign data file")?;
-		serde_yaml::from_reader(file).context("Unable to parse foreign data file")?
-	};
-	let foreign_data = foreign_data.unwrap_or_else(|err: anyhow::Error| {
-		log::warn!("Unable to load foreign data:\n{:?}", err);
-		vec![]
-	});
+	let known_data: Vec<_> = dcb_util::parse_from_file(KNOWN_DATA_PATH, serde_yaml::from_reader)
+		.map_err(dcb_util::fmt_err_wrapper_owned)
+		.map_err(|err| log::warn!("Unable to load game data from {KNOWN_DATA_PATH}:\n{err}"))
+		.unwrap_or_default();
+	let foreign_data: Vec<_> = dcb_util::parse_from_file(FOREIGN_DATA_PATH, serde_yaml::from_reader)
+		.map_err(dcb_util::fmt_err_wrapper_owned)
+		.map_err(|err| log::warn!("Unable to load foreign data from {FOREIGN_DATA_PATH}:\n{err}"))
+		.unwrap_or_default();
 	let data_table = known_data.into_iter().chain(foreign_data).collect();
 
-	let func_table: Result<Vec<Func>, _> = try {
-		let file = fs::File::open("resources/game_funcs.yaml").context("Unable to open functions file")?;
-		serde_yaml::from_reader(file).context("Unable to parse functions file")?
-	};
-	let func_table = func_table.unwrap_or_else(|err: anyhow::Error| {
-		log::warn!("Unable to load functions:\n{:?}", err);
-		vec![]
-	});
-	let func_table = func_table.into_iter().collect();
-
-	// Read all arg overrides
-	let inst_arg_overrides: Result<_, _> = try {
-		let file = fs::File::open("resources/inst_args_override.yaml")
-			.context("Unable to open instruction args override file")?;
-		serde_yaml::from_reader(file).context("Unable to parse instruction args override file")?
-	};
-	let mut inst_arg_overrides: BTreeMap<ArgPos, String> = inst_arg_overrides.unwrap_or_else(|err: anyhow::Error| {
-		log::warn!("Unable to load instruction overrides:\n{:?}", err);
-		BTreeMap::new()
-	});
+	let func_table = dcb_util::parse_from_file(KNOWN_FUNCS_PATH, serde_yaml::from_reader)
+		.map_err(dcb_util::fmt_err_wrapper_owned)
+		.map_err(|err| log::warn!("Unable to load functions from {KNOWN_FUNCS_PATH}:\n{err}"))
+		.unwrap_or_default();
+	let mut inst_arg_overrides = dcb_util::parse_from_file(INST_ARG_OVERRIDES_PATH, serde_yaml::from_reader)
+		.map_err(dcb_util::fmt_err_wrapper_owned)
+		.map_err(|err| log::warn!("Unable to load instruction overrides from {INST_ARG_OVERRIDES_PATH}:\n{err}"))
+		.unwrap_or_default();
 
 	// Read the executable
 	log::debug!("Deserializing executable");
