@@ -31,10 +31,11 @@
     0x80013e84: "args: (0x140, 0xf0, 0, 0)"
   labels:
     0x80013ef4: "0"
-    0x80013f48: "1"
-    0x80013f54: "2"
-    0x80013f6c: "3"
-    0x80013f8c: "4"
+    0x80013f04: "1"
+    0x80013f48: "2"
+    0x80013f54: "3"
+    0x80013f6c: "4"
+    0x80013f8c: "5"
   start_pos: 0x80013e4c
   end_pos: 0x80013fa4
   kind: Known
@@ -208,6 +209,8 @@
 - name: load_registers
   signature: fn(u32* pos)
   desc: "Loads the following registers from `pos[0x0 .. 0x30]`.\n$ra, $gp, $sp, $fp,\n$s0, $s1, $s2, $s3,\n$s4, $s5, $s6, $s7,\n"
+  labels:
+    0x8006a6f4: "0"
   start_pos: 0x8006a6b0
   end_pos: 0x8006a6fc
   kind: Known
@@ -301,20 +304,38 @@
     0x800142c0: "3"
 
 - name: something11
-  start_pos: 0x800142d0
-  end_pos: 0x80014364
-  kind: Known
   labels:
     0x8001431c: "0"
     0x80014320: "1"
     0x8001434c: "2"
+  start_pos: 0x800142d0
+  end_pos: 0x80014364
+  kind: Known
 
 - name: something12
+  labels:
+    0x8001537c: "0"
+    0x800153a0: "1"
+    0x800153b8: "2"
+    0x80015408: "3"
+    0x80015420: "4"
+    0x8001542c: "5"
+    0x80015510: "6"
+    0x80015554: "7"
+    0x80015578: "8"
+    0x800155a8: "9"
+    0x800155e8: "10"
+    0x800155f4: "11"
+    0x800156a8: "12"
   start_pos: 0x80015328
   end_pos: 0x800157b0
   kind: Known
 
 - name: something13
+  labels:
+    0x80014914: "0"
+    0x8001494c: "1"
+    0x80014968: "2"
   start_pos: 0x800148f8
   end_pos: 0x80014970
   kind: Known
@@ -325,126 +346,480 @@
   kind: Known
 
 - name: something15
+  labels:
+    0x8002a7f0: "0"
+    0x8002a800: "1"
+    0x8002a850: "2"
+    0x8002a864: "3"
+    0x8002a870: "4"
+    0x8002a87c: "5"
+    0x8002a888: "6"
+    0x8002a8a8: "7"
+    0x8002a8bc: "8"
+    0x8002a918: "9"
+    0x8002a934: "10"
+    0x8002a950: "11"
+    0x8002a970: "12"
+    0x8002a978: "13"
+    0x8002a9a0: "14"
+    0x8002a9b4: "15"
+    0x8002a9b8: "16"
+    0x8002aa14: "17"
+    0x8002aa4c: "18"
+    0x8002aa74: "19"
+    0x8002aac4: "20"
+    0x8002aafc: "21"
+    0x8002ab14: "22"
+    0x8002ab28: "23"
+    0x8002ab4c: "24"
+    0x8002ab54: "25"
   start_pos: 0x8002a7cc
   end_pos: 0x8002ab5c
   kind: Known
 
 - name: something16
+  labels:
+    0x8001b3a0: "0"
+    0x8001b3bc: "1"
+    0x8001b3fc: "2"
   start_pos: 0x8001b358
   end_pos: 0x8001b438
   kind: Known
 
 - name: something17
+  labels:
+    0x8002c1e0: "0"
+    0x8002c21c: "1"
+    0x8002c274: "2"
+    0x8002c2ac: "3"
+    0x8002c2b4: "4"
+    0x8002c2b8: "5"
+    0x8002c2c8: "6"
+    0x8002c2cc: "7"
+    0x8002c384: "8"
+    0x8002c3d8: "9"
+    0x8002c408: "10"
+    0x8002c44c: "11"
+    0x8002c450: "12"
+    0x8002c4ac: "13"
+    0x8002c4c4: "14"
+    0x8002c520: "15"
+    0x8002c574: "16"
+    0x8002c5a0: "17"
+    0x8002c624: "18"
+    0x8002c63c: "19"
+    0x8002c648: "20"
+    0x8002c650: "21"
+    0x8002c698: "22"
+    0x8002c6d4: "23"
+    0x8002c768: "24"
+    0x8002c76c: "25"
+    0x8002c7c4: "26"
+    0x8002c7dc: "27"
+    0x8002c820: "28"
+    0x8002c874: "29"
+    0x8002c8a0: "30"
+    0x8002c924: "31"
+    0x8002c93c: "32"
+    0x8002c948: "33"
+    0x8002c950: "34"
+    0x8002c998: "35"
+    0x8002c9d4: "36"
+    0x8002caa8: "37"
+    0x8002cab0: "38"
+    0x8002cab4: "39"
+    0x8002cb30: "40"
+    0x8002cb54: "41"
+    0x8002cb7c: "42"
+    0x8002cbb0: "43"
+    0x8002cbd4: "44"
+    0x8002cbf4: "45"
+    0x8002cbfc: "46"
+    0x8002cc14: "47"
+    0x8002cc38: "48"
   start_pos: 0x8002c1c0
   end_pos: 0x8002cc44
   kind: Known
 
 - name: something18
+  labels:
+    0x80015a4c: "0"
+    0x80015a64: "1"
+    0x80015a88: "2"
+    0x80015ab4: "3"
+    0x80015ac4: "4"
+    0x80015ac8: "5"
   start_pos: 0x80015a3c
   end_pos: 0x80015ad8
   kind: Known
 
 - name: something19
+  labels:
+    0x80016330: "0"
+    0x80016384: "1"
+    0x800163a4: "2"
+    0x800163bc: "3"
+    0x800163e0: "4"
+    0x800163ec: "5"
+    0x80016434: "6"
+    0x80016458: "7"
+    0x80016490: "8"
+    0x800164ac: "9"
+    0x800164b4: "10"
+    0x800164e4: "11"
+    0x80016540: "12"
+    0x8001658c: "13"
+    0x800165ac: "14"
+    0x800165c4: "15"
+    0x800165e8: "16"
+    0x800165f4: "17"
+    0x8001663c: "18"
+    0x80016660: "19"
+    0x80016690: "20"
+    0x800166ac: "21"
+    0x800166b4: "22"
+    0x80016708: "23"
+    0x8001676c: "24"
+    0x800167a8: "25"
+    0x800167b0: "26"
+    0x800167d0: "27"
+    0x800167fc: "28"
+    0x80016814: "29"
+    0x8001683c: "30"
+    0x80016848: "31"
+    0x80016868: "32"
+    0x80016870: "33"
   start_pos: 0x800162f0
   end_pos: 0x80016878
   kind: Known
 
 - name: something20
+  labels:
+    0x80019990: "0"
+    0x800199c8: "1"
+    0x80019a6c: "2"
+    0x80019abc: "3"
+    0x80019b08: "4"
+    0x80019b34: "5"
+    0x80019b74: "6"
+    0x80019b88: "7"
+    0x80019bb8: "8"
+    0x80019be4: "9"
+    0x80019c04: "10"
+    0x80019c58: "11"
+    0x80019c84: "12"
+    0x80019cd0: "13"
+    0x80019cfc: "14"
+    0x80019d34: "15"
+    0x80019d60: "16"
+    0x80019d80: "17"
+    0x80019d88: "18"
+    0x80019d8c: "19"
+    0x80019db0: "20"
+    0x80019e64: "21"
   start_pos: 0x8001963c
   end_pos: 0x80019ea4
   kind: Known
 
 - name: something21
+  labels:
+    0x8001a21c: "0"
+    0x8001a228: "1"
+    0x8001a27c: "2"
+    0x8001a2b4: "3"
+    0x8001a2d8: "4"
+    0x8001a314: "5"
+    0x8001a32c: "6"
+    0x8001a370: "7"
+    0x8001a37c: "8"
+    0x8001a380: "9"
+    0x8001a390: "10"
+    0x8001a3c4: "11"
+    0x8001a474: "12"
+    0x8001a520: "13"
+    0x8001a5a0: "14"
+    0x8001a5ec: "15"
   start_pos: 0x8001a1d8
   end_pos: 0x8001a600
   kind: Known
 
 - name: something22
+  labels:
+    0x8001a874: "0"
+    0x8001a940: "1"
+    0x8001a970: "2"
+    0x8001a980: "3"
+    0x8001a994: "4"
+    0x8001a998: "5"
   start_pos: 0x8001a870
   end_pos: 0x8001a9b0
   kind: Known
 
 - name: something23
+  labels:
+    0x8001b0bc: "0"
+    0x8001b0d4: "1"
+    0x8001b0f4: "2"
+    0x8001b0f8: "3"
   start_pos: 0x8001b088
   end_pos: 0x8001b10c
   kind: Known
 
 - name: something24
+  labels:
+    0x8001b770: "0"
+    0x8001b7b8: "1"
+    0x8001b7d8: "2"
+    0x8001b840: "3"
+    0x8001b8a8: "4"
+    0x8001b8e8: "5"
   start_pos: 0x8001b734
   end_pos: 0x8001b90c
   kind: Known
 
 - name: something25
+  labels:
+    0x8001bb4c: "0"
+    0x8001bb60: "1"
+    0x8001bb68: "2"
+    0x8001bb80: "3"
+    0x8001bb8c: "4"
   start_pos: 0x8001bb44
   end_pos: 0x8001bb94
   kind: Known
 
 - name: something26
+  labels:
+    0x8001bc84: "0"
   start_pos: 0x8001bc38
   end_pos: 0x8001bca4
   kind: Known
 
 - name: something27
+  labels:
+    0x8001c124: "0"
+    0x8001c12c: "1"
+    0x8001c144: "2"
+    0x8001c16c: "3"
+    0x8001c190: "4"
+    0x8001c1a0: "5"
+    0x8001c1b0: "6"
   start_pos: 0x8001c0a8
   end_pos: 0x8001c1e0
   kind: Known
 
 - name: something28
+  labels:
+    0x8001c27c: "0"
+    0x8001c290: "1"
+    0x8001c29c: "2"
+    0x8001c2ac: "3"
+    0x8001c2e0: "4"
+    0x8001c2e4: "5"
+    0x8001c394: "6"
+    0x8001c3dc: "7"
+    0x8001c3e4: "8"
+    0x8001c400: "9"
+    0x8001c434: "10"
+    0x8001c444: "11"
+    0x8001c454: "12"
+    0x8001c46c: "13"
+    0x8001c4a8: "14"
+    0x8001c4b8: "15"
+    0x8001c5b0: "16"
+    0x8001c5c8: "17"
+    0x8001c680: "18"
+    0x8001c724: "19"
+    0x8001c72c: "20"
+    0x8001c748: "21"
+    0x8001c770: "22"
+    0x8001c798: "23"
+    0x8001c7a4: "24"
+    0x8001c890: "25"
+    0x8001c898: "26"
+    0x8001c8b4: "27"
+    0x8001c93c: "28"
+    0x8001c9c4: "29"
+    0x8001cacc: "30"
+    0x8001cad8: "31"
+    0x8001caf4: "32"
+    0x8001cb10: "33"
+    0x8001cb2c: "34"
+    0x8001cbb4: "35"
+    0x8001cc3c: "36"
+    0x8001cc48: "37"
+    0x8001cd2c: "38"
+    0x8001cd38: "39"
+    0x8001cd54: "40"
+    0x8001cd70: "41"
+    0x8001cd8c: "42"
+    0x8001cda8: "43"
+    0x8001cdd0: "44"
+    0x8001ce00: "45"
+    0x8001ce0c: "46"
+    0x8001ced0: "47"
+    0x8001ceec: "48"
+    0x8001cf14: "49"
+    0x8001cf84: "50"
+    0x8001cfb0: "51"
+    0x8001d044: "52"
+    0x8001d060: "53"
+    0x8001d07c: "54"
+    0x8001d098: "55"
+    0x8001d0b4: "56"
+    0x8001d0dc: "57"
+    0x8001d0e8: "58"
+    0x8001d148: "59"
+    0x8001d17c: "60"
+    0x8001d210: "61"
+    0x8001d22c: "62"
+    0x8001d248: "63"
+    0x8001d264: "64"
+    0x8001d2e0: "65"
+    0x8001d30c: "66"
+    0x8001d390: "67"
+    0x8001d3ac: "68"
+    0x8001d410: "69"
+    0x8001d43c: "70"
+    0x8001d4c0: "71"
+    0x8001d4dc: "72"
+    0x8001d4f8: "73"
+    0x8001d55c: "74"
+    0x8001d588: "75"
+    0x8001d608: "76"
+    0x8001d624: "77"
+    0x8001d67c: "78"
+    0x8001d6a8: "79"
+    0x8001d730: "80"
+    0x8001d768: "81"
+    0x8001d7ac: "82"
+    0x8001d7c8: "83"
+    0x8001d84c: "84"
+    0x8001d88c: "85"
+    0x8001d8d0: "86"
+    0x8001d8ec: "87"
   start_pos: 0x8001c220
   end_pos: 0x8001d900
   kind: Known
 
 - name: something29
+  labels:
+    0x8001da98: "0"
+    0x8001dad0: "1"
+    0x8001db4c: "2"
+    0x8001db8c: "3"
+    0x8001dc30: "4"
+    0x8001dc70: "5"
+    0x8001dcec: "6"
+    0x8001dd2c: "7"
+    0x8001ddac: "8"
+    0x8001dde4: "9"
+    0x8001de28: "10"
+    0x8001de44: "11"
+    0x8001decc: "12"
+    0x8001df04: "13"
+    0x8001df80: "14"
+    0x8001dfc0: "15"
   start_pos: 0x8001da24
   end_pos: 0x8001dfe0
   kind: Known
 
 - name: something30
+  labels:
+    0x8001e240: "0"
+    0x8001e280: "1"
+    0x8001e364: "2"
+    0x8001e3a4: "3"
+    0x8001e418: "4"
+    0x8001e43c: "5"
+    0x8001e440: "6"
+    0x8001e45c: "7"
+    0x8001e474: "8"
+    0x8001e480: "9"
+    0x8001e484: "10"
+    0x8001e4a0: "11"
+    0x8001e4bc: "12"
+    0x8001e4cc: "13"
+    0x8001e4d0: "14"
   start_pos: 0x8001e180
   end_pos: 0x8001e53c
   kind: Known
 
 - name: something31
+  labels:
+    0x8001e87c: "0"
+    0x8001e884: "1"
   start_pos: 0x8001e850
   end_pos: 0x8001e894
   kind: Known
 
 - name: something32
+  labels:
+    0x8001f0d8: "0"
+    0x8001f0f4: "1"
+    0x8001f148: "2"
+    0x8001f170: "3"
+    0x8001f174: "4"
+    0x8001f344: "5"
+    0x8001f394: "6"
   start_pos: 0x8001f094
   end_pos: 0x8001f3c0
   kind: Known
 
 - name: something33
+  labels:
+    0x8001f5f0: "0"
   start_pos: 0x8001f5cc
   end_pos: 0x8001f5fc
   kind: Known
 
 - name: something34
+  labels:
+    0x8001f654: "0"
   start_pos: 0x8001f630
   end_pos: 0x8001f660
   kind: Known
 
 - name: something35
+  labels:
+    0x8001f708: "0"
+    0x8001f728: "1"
+    0x8001f760: "2"
   start_pos: 0x8001f6c4
   end_pos: 0x8001f768
   kind: Known
 
 - name: something36
+  labels:
+    0x8001f7bc: "0"
+    0x8001f7e4: "1"
+    0x8001f81c: "2"
   start_pos: 0x8001f768
   end_pos: 0x8001f824
   kind: Known
 
 - name: something37
+  labels:
+    0x8001f85c: "0"
+    0x8001f870: "1"
+    0x8001f8a8: "2"
   start_pos: 0x8001f824
   end_pos: 0x8001f8b0
   kind: Known
 
 - name: something38
+  labels:
+    0x8001f8f4: "0"
+    0x8001f90c: "1"
+    0x8001f944: "2"
   start_pos: 0x8001f8b0
   end_pos: 0x8001f94c
   kind: Known
 
 - name: something39
+  labels:
+    0x8005ab04: "0"
+    0x8005ab3c: "1"
   start_pos: 0x8005aa7c
   end_pos: 0x8005ab4c
   kind: Known
@@ -460,11 +835,17 @@
   kind: Known
 
 - name: something42
+  labels:
+    0x8004b320: "0"
+    0x8004b340: "1"
+    0x8004b370: "2"
+    0x8004b378: "3"
+    0x8004b38c: "4"
+  inline_comments:
+    0x8004b2f0: "Division by 0"
   start_pos: 0x8004b2f0
   end_pos: 0x8004b394
   kind: Known
-  inline_comments:
-    0x8004b2f0: "Division by 0"
 
 # A functions
 - name: InitHeap
