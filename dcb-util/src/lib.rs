@@ -67,6 +67,7 @@ pub mod impl_bytes;
 pub mod next_from_bytes;
 pub mod null_ascii_string;
 //pub mod peekable_iter;
+pub mod bcd;
 pub mod signed_hex;
 
 // Exports
@@ -77,6 +78,7 @@ pub use display_wrapper::DisplayWrapper;
 pub use next_from_bytes::NextFromBytes;
 pub use null_ascii_string::NullAsciiString;
 //pub use peekable_iter::PeekableIter;
+pub use bcd::BcdU8;
 pub use btree_map_par_iter::BTreeMapParIter;
 pub use signed_hex::SignedHex;
 
@@ -143,35 +145,6 @@ pub fn fmt_err_wrapper<'a>(err: &'a (dyn std::error::Error + 'a)) -> impl fmt::D
 	DisplayWrapper::new(move |f| self::fmt_err(err, f))
 }
 
-/// A `BCD` u8 type
-#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Debug)]
-pub struct BcdU8(pub u8);
-
-impl BcdU8 {
-	/// Returns this bcd as a normal integer
-	#[must_use]
-	pub const fn to_u8(self) -> Option<u8> {
-		let lo = self.0 & 0xF;
-		let hi = (self.0 & 0xF0) >> 4u8;
-		match (lo, hi) {
-			(0..=9, 0..=9) => Some(lo + hi * 10),
-			_ => None,
-		}
-	}
-
-	/// Create a bcd from a normal integer
-	#[must_use]
-	pub const fn from_u8(value: u8) -> Option<Self> {
-		if value >= 100 {
-			return None;
-		}
-
-		let lo = value % 10;
-		let hi = value / 10;
-
-		Some(Self(lo | (hi << 4)))
-	}
-}
 
 /// Attempts to create a folder. Returns `Ok` if it already exists.
 #[allow(clippy::create_dir)] // We only want to create a single level
