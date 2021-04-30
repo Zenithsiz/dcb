@@ -26,7 +26,7 @@ impl<'a> DisplayCtx<'a> {
 /// Label display for `DisplayCtx::pos_label`
 pub enum LabelDisplay<'a> {
 	/// Label within the current function
-	CurFuncLabel(&'a str),
+	CurFuncLabel { label: &'a str },
 
 	/// Label within another function
 	OtherFuncLabel { func: &'a str, label: &'a str },
@@ -41,7 +41,7 @@ pub enum LabelDisplay<'a> {
 impl<'a> fmt::Display for LabelDisplay<'a> {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 		match self {
-			LabelDisplay::CurFuncLabel(label) => write!(f, ".{label}"),
+			LabelDisplay::CurFuncLabel { label } => write!(f, ".{label}"),
 			LabelDisplay::OtherFuncLabel { func, label } => write!(f, "{func}.{label}"),
 			LabelDisplay::OtherFunc { func } => write!(f, "{func}"),
 			LabelDisplay::Data { name } => write!(f, "{name}"),
@@ -57,14 +57,14 @@ impl<'a> inst::DisplayCtx for DisplayCtx<'a> {
 	}
 
 	fn pos_label(&self, pos: Pos) -> Option<(Self::Label, i64)> {
-		// Try to get a label for the current function, if it exists
+		// Try to check if `pos` is a label within the current function
 		if let Some(label) = self.func.and_then(|func| func.labels.get(&pos)) {
-			return Some((LabelDisplay::CurFuncLabel(label), 0));
+			return Some((LabelDisplay::CurFuncLabel { label }, 0));
 		}
 
-		// Try to get a function from it
+		// Else check if there's any function containing this position
 		if let Some(func) = self.exe.func_table().get_containing(pos) {
-			// And then one of it's labels
+			// If so, check if any of the labels match it
 			if let Some(label) = func.labels.get(&pos) {
 				return Some((
 					LabelDisplay::OtherFuncLabel {
@@ -75,15 +75,26 @@ impl<'a> inst::DisplayCtx for DisplayCtx<'a> {
 				));
 			}
 
-			// Else just any position in it
+			// If no label matches and this is a known function and not the function itself, warn
+			if pos != func.start_pos && !func.kind.is_heuristics() {
+				log::warn!(
+					"Display context was queried for {}, which resides within {}, but no label was found with the \
+					 position",
+					pos,
+					func.name
+				);
+			}
+
+			// Then just return the function with an offset.
 			return Some((LabelDisplay::OtherFunc { func: &func.name }, pos - func.start_pos));
 		}
 
-		// Else try a data
+		// Else check if any data contains it.
 		if let Some(data) = self.exe.data_table().get_containing(pos) {
 			return Some((LabelDisplay::Data { name: data.name() }, pos - data.start_pos()));
 		}
 
+		// Else we don't have any label for it.
 		None
 	}
 }
