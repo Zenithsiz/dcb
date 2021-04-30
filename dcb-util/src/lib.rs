@@ -170,6 +170,11 @@ pub fn fmt_err_wrapper<'a>(err: &'a (dyn error::Error + 'a)) -> impl fmt::Displa
 	DisplayWrapper::new(move |f| self::fmt_err(err, f))
 }
 
+/// Returns a wrapper that prints an error that owns the error
+pub fn fmt_err_wrapper_owned<E: error::Error>(err: E) -> impl fmt::Display {
+	DisplayWrapper::new(move |f| self::fmt_err(&err, f))
+}
+
 
 /// Attempts to create a folder. Returns `Ok` if it already exists.
 #[allow(clippy::create_dir)] // We only want to create a single level
