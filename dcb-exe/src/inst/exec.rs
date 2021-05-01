@@ -10,6 +10,7 @@ use crate::{
 };
 use byteorder::{ByteOrder, LittleEndian};
 use std::{
+	collections::HashMap,
 	convert::TryInto,
 	ops::{Index, IndexMut},
 };
@@ -32,6 +33,9 @@ pub struct ExecState {
 	jump_target: JumpTargetState,
 }
 
+/// Sys callback
+pub type SysCallback<'a> = dyn FnMut(&mut ExecState) -> Result<(), ExecError> + 'a;
+
 impl ExecState {
 	/// Creates a new execution state
 	#[must_use]
@@ -46,15 +50,22 @@ impl ExecState {
 	}
 
 	/// Executes the next instruction
-	pub fn exec(&mut self) -> Result<(), ExecError> {
+	pub fn exec(&mut self, sys_calls: &mut HashMap<u32, Box<SysCallback>>) -> Result<(), ExecError> {
 		// Read the next instruction
 		let inst = self.read_word(self.pc)?;
 
 		// Parse the instruction
 		let inst = basic::Inst::decode(inst).ok_or(ExecError::DecodeInst)?;
 
-		// Then execute it
-		inst.exec(self)?;
+		match inst {
+			// Special case syscalls here
+			// TODO: Better solution than this
+			basic::Inst::Sys(inst) => {
+				let f = sys_calls.get_mut(&inst.comment).ok_or(ExecError::UnknownSys)?;
+				f(self)?;
+			},
+			_ => inst.exec(self)?,
+		}
 
 		// Then update our pc depending on whether we have a jump
 		self.pc = match self.jump_target {
@@ -68,9 +79,6 @@ impl ExecState {
 				pos
 			},
 		};
-
-		// And increment out program counter
-		self.pc += 4u32;
 
 		Ok(())
 	}
@@ -267,6 +275,10 @@ pub enum ExecError {
 	/// Attempted to jump while jumping
 	#[error("Cannot jump while jumping")]
 	JumpWhileJumping,
+
+	/// Unknown syscall
+	#[error("Unknown syscall")]
+	UnknownSys,
 }
 
 /// Jump target state
