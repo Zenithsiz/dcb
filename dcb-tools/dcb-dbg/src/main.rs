@@ -57,8 +57,18 @@ fn main() -> Result<(), anyhow::Error> {
 
 		Ok(())
 	};
+	let sys2 = |state: &mut ExecState| {
+		// Print all registers
+		for &reg in &Register::ALL_REGISTERS {
+			println!("{}: {:#x}", reg, state[reg]);
+		}
+
+		Ok(())
+	};
 	let mut syscalls: HashMap<u32, Box<SysCallback>> =
-		vec![(0, box_fn_mut(sys0)), (1, box_fn_mut(sys1))].into_iter().collect();
+		vec![(0, box_fn_mut(sys0)), (1, box_fn_mut(sys1)), (2, box_fn_mut(sys2))]
+			.into_iter()
+			.collect();
 
 	while !*should_stop.borrow() {
 		exec_state
