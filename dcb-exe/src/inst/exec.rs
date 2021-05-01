@@ -7,6 +7,7 @@ pub mod error;
 pub use error::ExecError;
 
 // Imports
+use super::basic;
 use crate::{
 	inst::{basic::mult::MultReg, Register},
 	Pos,
@@ -40,6 +41,9 @@ pub trait ExecCtx:
 
 	/// Writes a byte
 	fn write_byte(&mut self, pos: Pos, value: u8) -> Result<(), ExecError>;
+
+	/// Executes a syscall
+	fn sys(&mut self, inst: basic::sys::Inst) -> Result<(), ExecError>;
 }
 
 /// An executable instruction

@@ -4,6 +4,7 @@
 use super::ModifiesReg;
 use crate::inst::{
 	basic::{Decode, TryEncode},
+	exec::{ExecCtx, ExecError, Executable},
 	parse::LineArg,
 	DisplayCtx, InstDisplay, InstFmtArg, Parsable, ParseCtx, ParseError, Register,
 };
@@ -119,5 +120,11 @@ impl<'a> InstDisplay<'a> for Inst {
 impl ModifiesReg for Inst {
 	fn modifies_reg(&self, _reg: Register) -> bool {
 		false
+	}
+}
+
+impl Executable for Inst {
+	fn exec<Ctx: ExecCtx>(&self, state: &mut Ctx) -> Result<(), ExecError> {
+		state.sys(*self)
 	}
 }

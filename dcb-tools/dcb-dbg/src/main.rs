@@ -17,8 +17,6 @@ use dcb_exe::{
 	Pos,
 };
 use std::{
-	cell::RefCell,
-	collections::HashMap,
 	convert::TryInto,
 	fs,
 	ops::{Index, IndexMut},
@@ -50,56 +48,18 @@ fn main() -> Result<(), anyhow::Error> {
 		lo_hi_reg:   [0; 2],
 		memory:      memory.into(),
 		jump_target: JumpTarget::None,
+		should_stop: false,
 	};
 
-	// Setup syscalls
-	let should_stop = RefCell::new(false);
-	let sys0 = |_: &mut ExecState| {
-		*should_stop.borrow_mut() = true;
-		Ok(())
-	};
-	let sys1 = |state: &mut ExecState| {
-		// Print whatever string is in `$v0`
-		let ptr = Pos(state[Register::V0]);
-
-		for n in 0u32.. {
-			match state.read_byte(ptr + n)? {
-				0 => break,
-				b => print!("{}", char::from(b)),
-			}
-		}
-
-		Ok(())
-	};
-	let sys2 = |state: &mut ExecState| {
-		// Print all registers
-		for &reg in &Register::ALL_REGISTERS {
-			println!("{}: {:#x}", reg, state[reg]);
-		}
-
-		Ok(())
-	};
-	let mut syscalls: HashMap<u32, Box<SysCallback>> =
-		vec![(0, box_fn_mut(sys0)), (1, box_fn_mut(sys1)), (2, box_fn_mut(sys2))]
-			.into_iter()
-			.collect();
-
-	while !*should_stop.borrow() {
+	while !exec_state.should_stop {
 		exec_state
-			.exec(&mut syscalls)
+			.exec()
 			.with_context(|| format!("Failed to execute at {}", exec_state.pc()))?;
 	}
 
 
 	Ok(())
 }
-
-fn box_fn_mut<'a>(
-	f: impl FnMut(&mut ExecState) -> Result<(), ExecError> + 'a,
-) -> Box<dyn FnMut(&mut ExecState) -> Result<(), ExecError> + 'a> {
-	box f
-}
-
 
 /// Execution state
 pub struct ExecState {
@@ -117,26 +77,22 @@ pub struct ExecState {
 
 	/// Jump target
 	jump_target: JumpTarget,
+
+	/// If the processor should stop
+	should_stop: bool,
 }
 
 impl ExecState {
 	/// Executes the next instruction
-	fn exec(&mut self, sys_calls: &mut HashMap<u32, Box<SysCallback>>) -> Result<(), ExecError> {
+	fn exec(&mut self) -> Result<(), ExecError> {
 		// Read the next instruction
 		let inst = self.read_word(self.pc)?;
 
 		// Parse the instruction
 		let inst = basic::Inst::decode(inst).ok_or(ExecError::DecodeInst)?;
 
-		match inst {
-			// Special case syscalls here
-			// TODO: Better solution than this
-			basic::Inst::Sys(inst) => {
-				let f = sys_calls.get_mut(&inst.comment).ok_or(ExecError::UnknownSys)?;
-				f(self)?;
-			},
-			_ => inst.exec(self)?,
-		}
+		// Then execute the instruction
+		inst.exec(self)?;
 
 		// Then update our pc depending on whether we have a jump
 		self.pc = match self.jump_target {
@@ -272,6 +228,34 @@ impl ExecCtx for ExecState {
 		// Then write to memory
 		let mem = self.memory.get_mut(idx).ok_or(ExecError::MemoryOutOfBounds { pos })?;
 		*mem = value;
+
+		Ok(())
+	}
+
+	fn sys(&mut self, inst: basic::sys::Inst) -> Result<(), ExecError> {
+		match inst.comment {
+			0x0 => {
+				self.should_stop = true;
+			},
+			0x1 => {
+				// Print whatever string is in `$v0`
+				let ptr = Pos(self[Register::V0]);
+
+				for n in 0u32.. {
+					match self.read_byte(ptr + n)? {
+						0 => break,
+						b => print!("{}", char::from(b)),
+					}
+				}
+			},
+			0x2 => {
+				// Print all registers
+				for &reg in &Register::ALL_REGISTERS {
+					println!("{}: {:#x}", reg, self[reg]);
+				}
+			},
+			comment => return Err(ExecError::UnknownSys { comment }),
+		}
 
 		Ok(())
 	}

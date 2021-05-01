@@ -33,6 +33,9 @@ pub enum ExecError {
 	JumpWhileJumping,
 
 	/// Unknown syscall
-	#[error("Unknown syscall")]
-	UnknownSys,
+	#[error("Unknown syscall {comment:#x}")]
+	UnknownSys {
+		/// Syscall comment
+		comment: u32,
+	},
 }

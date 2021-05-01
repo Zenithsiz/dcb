@@ -207,9 +207,8 @@ impl Executable for Inst {
 			Inst::Mult (inst) => inst.exec(state),
 			Inst::Shift(inst) => inst.exec(state),
 			Inst::Store(inst) => inst.exec(state),
-			//Inst::Sys  (inst) => inst.exec(state),
-			//Inst::Co   (inst) => inst.exec(state),
-			_ => todo!(),
+			Inst::Sys  (inst) => inst.exec(state),
+			Inst::Co   (_) => todo!(),
 		}
 	}
 }
