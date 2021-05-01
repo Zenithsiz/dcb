@@ -7,6 +7,7 @@ pub mod reg;
 // Imports
 use crate::inst::{
 	basic::{Decode, Encode, ModifiesReg, TryEncode},
+	exec::{ExecError, ExecState, Executable},
 	parse::LineArg,
 	DisplayCtx, InstDisplay, InstFmtArg, Parsable, ParseCtx, ParseError, Register,
 };
@@ -84,6 +85,15 @@ impl ModifiesReg for Inst {
 		match self {
 			Inst::Imm(inst) => inst.modifies_reg(reg),
 			Inst::Reg(inst) => inst.modifies_reg(reg),
+		}
+	}
+}
+
+impl Executable for Inst {
+	fn exec(&self, state: &mut ExecState) -> Result<(), ExecError> {
+		match self {
+			Inst::Imm(inst) => inst.exec(state),
+			Inst::Reg(inst) => inst.exec(state),
 		}
 	}
 }

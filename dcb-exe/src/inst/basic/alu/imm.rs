@@ -3,10 +3,11 @@
 // Imports
 use crate::inst::{
 	basic::{Decode, Encode, ModifiesReg},
+	exec::{ExecError, ExecState, Executable},
 	parse::LineArg,
 	DisplayCtx, InstDisplay, InstFmtArg, Parsable, ParseCtx, ParseError, Register,
 };
-use int_conv::{Signed, Truncated, ZeroExtended};
+use int_conv::{SignExtended, Signed, Truncated, ZeroExtended};
 use std::{array, convert::TryInto};
 
 /// Instruction kind
@@ -182,5 +183,31 @@ impl<'a> InstDisplay<'a> for Inst {
 impl ModifiesReg for Inst {
 	fn modifies_reg(&self, reg: Register) -> bool {
 		self.dst == reg
+	}
+}
+
+impl Executable for Inst {
+	fn exec(&self, state: &mut ExecState) -> Result<(), ExecError> {
+		state[self.dst] = match self.kind {
+			Kind::Add(rhs) => state[self.lhs]
+				.as_signed()
+				.checked_add(rhs.sign_extended::<i32>())
+				.ok_or(ExecError::Overflow)?
+				.as_unsigned(),
+			Kind::AddUnsigned(rhs) => state[self.lhs]
+				.as_signed()
+				.wrapping_add(rhs.sign_extended::<i32>())
+				.as_unsigned(),
+			Kind::SetLessThan(rhs) => state[self.lhs].as_signed().lt(&rhs.sign_extended::<i32>()).into(),
+			// TODO: Verify it's sign extended
+			Kind::SetLessThanUnsigned(rhs) => state[self.lhs]
+				.lt(&rhs.as_signed().sign_extended::<i32>().as_unsigned())
+				.into(),
+			Kind::And(rhs) => state[self.lhs] & rhs.zero_extended::<u32>(),
+			Kind::Or(rhs) => state[self.lhs] | rhs.zero_extended::<u32>(),
+			Kind::Xor(rhs) => state[self.lhs] ^ rhs.zero_extended::<u32>(),
+		};
+
+		Ok(())
 	}
 }

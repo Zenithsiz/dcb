@@ -4,10 +4,11 @@
 use super::ModifiesReg;
 use crate::inst::{
 	basic::{Decode, Encode},
+	exec::{ExecError, ExecState, Executable},
 	parse::LineArg,
 	DisplayCtx, InstDisplay, InstFmtArg, Parsable, ParseCtx, ParseError, Register,
 };
-use int_conv::{Truncated, ZeroExtended};
+use int_conv::{Join, Truncated, ZeroExtended};
 use std::array;
 
 /// Load instructions
@@ -80,5 +81,12 @@ impl<'a> InstDisplay<'a> for Inst {
 impl ModifiesReg for Inst {
 	fn modifies_reg(&self, reg: Register) -> bool {
 		self.dst == reg
+	}
+}
+
+impl Executable for Inst {
+	fn exec(&self, state: &mut ExecState) -> Result<(), ExecError> {
+		state[self.dst] = u32::join(0, self.value);
+		Ok(())
 	}
 }

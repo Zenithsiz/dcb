@@ -3,9 +3,11 @@
 // Imports
 use crate::inst::{
 	basic::{Decode, Encode, ModifiesReg},
+	exec::{ExecError, ExecState, Executable},
 	parse::LineArg,
 	DisplayCtx, InstDisplay, InstFmtArg, Parsable, ParseCtx, ParseError, Register,
 };
+use int_conv::Signed;
 use std::array;
 
 /// Shift register instruction kind
@@ -140,5 +142,17 @@ impl<'a> InstDisplay<'a> for Inst {
 impl ModifiesReg for Inst {
 	fn modifies_reg(&self, reg: Register) -> bool {
 		self.dst == reg
+	}
+}
+
+impl Executable for Inst {
+	fn exec(&self, state: &mut ExecState) -> Result<(), ExecError> {
+		state[self.dst] = match self.kind {
+			Kind::LeftLogical => state[self.lhs].wrapping_shl(state[self.rhs]),
+			Kind::RightLogical => state[self.lhs].wrapping_shr(state[self.rhs]),
+			Kind::RightArithmetic => state[self.lhs].as_signed().wrapping_shr(state[self.rhs]).as_unsigned(),
+		};
+
+		Ok(())
 	}
 }

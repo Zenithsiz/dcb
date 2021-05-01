@@ -1,10 +1,14 @@
 //! Jump register instructions
 
 // Imports
-use crate::inst::{
-	basic::{Decode, Encode, ModifiesReg},
-	parse::LineArg,
-	DisplayCtx, InstDisplay, InstFmtArg, Parsable, ParseCtx, ParseError, Register,
+use crate::{
+	inst::{
+		basic::{Decode, Encode, ModifiesReg},
+		exec::{ExecError, ExecState, Executable},
+		parse::LineArg,
+		DisplayCtx, InstDisplay, InstFmtArg, Parsable, ParseCtx, ParseError, Register,
+	},
+	Pos,
 };
 use std::array;
 
@@ -120,5 +124,17 @@ impl<'a> InstDisplay<'a> for Inst {
 impl ModifiesReg for Inst {
 	fn modifies_reg(&self, _reg: Register) -> bool {
 		false
+	}
+}
+
+impl Executable for Inst {
+	fn exec(&self, state: &mut ExecState) -> Result<(), ExecError> {
+		// If we should link, set `$ra`
+		if let Kind::JumpLink(link) = self.kind {
+			state[link] = (state.pc() + 8u32).0;
+		}
+
+		// Then set the jump
+		state.set_jump(Pos(state[self.target]))
 	}
 }

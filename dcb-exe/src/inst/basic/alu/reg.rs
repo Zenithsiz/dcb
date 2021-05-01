@@ -3,9 +3,11 @@
 // Imports
 use crate::inst::{
 	basic::{Decode, Encode, ModifiesReg},
+	exec::{ExecError, ExecState, Executable},
 	parse::LineArg,
 	DisplayCtx, InstDisplay, InstFmtArg, Parsable, ParseCtx, ParseError, Register,
 };
+use int_conv::Signed;
 use std::array;
 
 /// Alu register instruction kind
@@ -196,5 +198,35 @@ impl<'a> InstDisplay<'a> for Inst {
 impl ModifiesReg for Inst {
 	fn modifies_reg(&self, reg: Register) -> bool {
 		self.dst == reg
+	}
+}
+
+impl Executable for Inst {
+	fn exec(&self, state: &mut ExecState) -> Result<(), ExecError> {
+		let lhs = state[self.lhs];
+		let rhs = state[self.rhs];
+
+		state[self.dst] = match self.kind {
+			Kind::Add => lhs
+				.as_signed()
+				.checked_add(rhs.as_signed())
+				.ok_or(ExecError::Overflow)?
+				.as_unsigned(),
+			Kind::AddUnsigned => lhs.as_signed().wrapping_add(rhs.as_signed()).as_unsigned(),
+			Kind::Sub => lhs
+				.as_signed()
+				.checked_sub(rhs.as_signed())
+				.ok_or(ExecError::Overflow)?
+				.as_unsigned(),
+			Kind::SubUnsigned => lhs.as_signed().wrapping_sub(rhs.as_signed()).as_unsigned(),
+			Kind::And => lhs & rhs,
+			Kind::Or => lhs | rhs,
+			Kind::Xor => lhs ^ rhs,
+			Kind::Nor => !(lhs | rhs),
+			Kind::SetLessThan => (lhs.as_signed() < rhs.as_signed()).into(),
+			Kind::SetLessThanUnsigned => (lhs < rhs).into(),
+		};
+
+		Ok(())
 	}
 }

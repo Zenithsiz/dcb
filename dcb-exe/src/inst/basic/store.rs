@@ -2,10 +2,14 @@
 
 // Imports
 use super::ModifiesReg;
-use crate::inst::{
-	basic::{Decode, Encode},
-	parse::LineArg,
-	DisplayCtx, InstDisplay, InstFmtArg, Parsable, ParseCtx, ParseError, Register,
+use crate::{
+	inst::{
+		basic::{Decode, Encode},
+		exec::{ExecError, ExecState, Executable},
+		parse::LineArg,
+		DisplayCtx, InstDisplay, InstFmtArg, Parsable, ParseCtx, ParseError, Register,
+	},
+	Pos,
 };
 use int_conv::{Signed, Truncated, ZeroExtended};
 use std::array;
@@ -160,5 +164,16 @@ impl<'a> InstDisplay<'a> for Inst {
 impl ModifiesReg for Inst {
 	fn modifies_reg(&self, _reg: Register) -> bool {
 		false
+	}
+}
+
+impl Executable for Inst {
+	fn exec(&self, state: &mut ExecState) -> Result<(), ExecError> {
+		match self.kind {
+			Kind::Byte => state.write_byte(Pos(state[self.addr]), state[self.value].truncated()),
+			Kind::HalfWord => state.write_half_word(Pos(state[self.addr]), state[self.value].truncated()),
+			Kind::Word => state.write_word(Pos(state[self.addr]), state[self.value]),
+			Kind::WordLeft | Kind::WordRight => todo!(),
+		}
 	}
 }

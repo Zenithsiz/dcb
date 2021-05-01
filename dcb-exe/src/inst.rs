@@ -5,6 +5,7 @@ pub mod basic;
 pub mod decode;
 pub mod directive;
 pub mod error;
+pub mod exec;
 pub mod fmt;
 pub mod parse;
 pub mod pseudo;

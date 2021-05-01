@@ -19,7 +19,8 @@
 	min_type_alias_impl_trait,
 	external_doc,
 	assert_matches,
-	extend_one
+	extend_one,
+	exclusive_range_pattern
 )]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]

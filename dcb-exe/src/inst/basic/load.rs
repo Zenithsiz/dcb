@@ -2,12 +2,16 @@
 
 // Imports
 use super::ModifiesReg;
-use crate::inst::{
-	basic::{Decode, Encode},
-	parse::LineArg,
-	DisplayCtx, InstDisplay, InstFmtArg, Parsable, ParseCtx, ParseError, Register,
+use crate::{
+	inst::{
+		basic::{Decode, Encode},
+		exec::{ExecError, ExecState, Executable},
+		parse::LineArg,
+		DisplayCtx, InstDisplay, InstFmtArg, Parsable, ParseCtx, ParseError, Register,
+	},
+	Pos,
 };
-use int_conv::{Signed, Truncated, ZeroExtended};
+use int_conv::{SignExtended, Signed, Truncated, ZeroExtended};
 use std::array;
 
 /// Instruction kind
@@ -172,5 +176,29 @@ impl<'a> InstDisplay<'a> for Inst {
 impl ModifiesReg for Inst {
 	fn modifies_reg(&self, reg: Register) -> bool {
 		self.value == reg
+	}
+}
+
+
+impl Executable for Inst {
+	fn exec(&self, state: &mut ExecState) -> Result<(), ExecError> {
+		state[self.value] = match self.kind {
+			Kind::Byte => state
+				.read_byte(Pos(state[self.addr]))?
+				.as_signed()
+				.sign_extended::<i32>()
+				.as_unsigned(),
+			Kind::HalfWord => state
+				.read_half_word(Pos(state[self.addr]))?
+				.as_signed()
+				.sign_extended::<i32>()
+				.as_unsigned(),
+			Kind::Word => state.read_word(Pos(state[self.addr]))?,
+			Kind::ByteUnsigned => state.read_byte(Pos(state[self.addr]))?.zero_extended(),
+			Kind::HalfWordUnsigned => state.read_half_word(Pos(state[self.addr]))?.zero_extended(),
+			Kind::WordLeft | Kind::WordRight => todo!(),
+		};
+
+		Ok(())
 	}
 }

@@ -3,10 +3,11 @@
 // Imports
 use crate::inst::{
 	basic::{Decode, ModifiesReg, TryEncode},
+	exec::{ExecError, ExecState, Executable},
 	parse::LineArg,
 	DisplayCtx, InstDisplay, InstFmtArg, Parsable, ParseCtx, ParseError, Register,
 };
-use int_conv::{Truncated, ZeroExtended};
+use int_conv::{Signed, Truncated, ZeroExtended};
 use std::array;
 
 /// Shift immediate instruction kind
@@ -155,5 +156,20 @@ impl<'a> InstDisplay<'a> for Inst {
 impl ModifiesReg for Inst {
 	fn modifies_reg(&self, reg: Register) -> bool {
 		self.dst == reg
+	}
+}
+
+impl Executable for Inst {
+	fn exec(&self, state: &mut ExecState) -> Result<(), ExecError> {
+		state[self.dst] = match self.kind {
+			Kind::LeftLogical => state[self.lhs].wrapping_shl(self.rhs.zero_extended()),
+			Kind::RightLogical => state[self.lhs].wrapping_shr(self.rhs.zero_extended()),
+			Kind::RightArithmetic => state[self.lhs]
+				.as_signed()
+				.wrapping_shr(self.rhs.zero_extended())
+				.as_unsigned(),
+		};
+
+		Ok(())
 	}
 }

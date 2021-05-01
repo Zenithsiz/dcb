@@ -5,6 +5,7 @@ use super::ModifiesReg;
 use crate::{
 	inst::{
 		basic::{Decode, Encode},
+		exec::{ExecError, ExecState, Executable},
 		parse::LineArg,
 		DisplayCtx, InstDisplay, InstFmtArg, Parsable, ParseCtx, ParseError, Register,
 	},
@@ -262,5 +263,32 @@ impl<'a> InstDisplay<'a> for Inst {
 impl ModifiesReg for Inst {
 	fn modifies_reg(&self, _reg: Register) -> bool {
 		false
+	}
+}
+
+impl Executable for Inst {
+	fn exec(&self, state: &mut ExecState) -> Result<(), ExecError> {
+		let lhs = state[self.arg].as_signed();
+		let do_jump = match self.kind {
+			Kind::Equal(rhs) => lhs == state[rhs].as_signed(),
+			Kind::NotEqual(rhs) => lhs != state[rhs].as_signed(),
+			Kind::LessOrEqualZero => lhs <= 0i32,
+			Kind::GreaterThanZero => lhs > 0i32,
+			Kind::LessThanZero | Kind::LessThanZeroLink => lhs < 0i32,
+			Kind::GreaterOrEqualZero | Kind::GreaterOrEqualZeroLink => lhs >= 0i32,
+		};
+
+		match do_jump {
+			true => {
+				// If we should link, set `$ra`
+				if matches!(self.kind, Kind::LessThanZeroLink | Kind::GreaterOrEqualZeroLink) {
+					state[Register::Ra] = (state.pc() + 8u32).0;
+				}
+
+				// Then set the jump
+				state.set_jump(self.target(state.pc()))
+			},
+			false => Ok(()),
+		}
 	}
 }
