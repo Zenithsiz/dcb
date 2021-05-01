@@ -12,7 +12,7 @@ use display_ctx::DisplayCtx;
 // Imports
 use anyhow::Context;
 use dcb_exe::{
-	inst::{basic, parse::LineArgExpr, Inst, InstDisplay, InstFmtArg, ParseCtx},
+	inst::{parse::LineArgExpr, Inst, InstDisplay, InstFmtArg, ParseCtx},
 	reader::{iter::ExeItem, DeserializeOpts},
 	ExeReader, Func, Pos,
 };
@@ -158,11 +158,7 @@ fn main() -> Result<(), anyhow::Error> {
 					print!("\t");
 
 					// If we had a branch / jump instruction before this one, add a "+ "
-					// TODO: Move this check to a method on main `Inst`
-					if matches!(
-						insts.get(&(pos - 4)),
-						Some(Inst::Basic(basic::Inst::Jmp(_) | basic::Inst::Cond(_)))
-					) {
+					if insts.get(&(pos - 4)).map_or(false, |inst| inst.may_jump()) {
 						print!("+ ");
 					}
 

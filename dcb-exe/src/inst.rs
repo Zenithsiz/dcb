@@ -47,7 +47,7 @@ pub enum Inst<'a> {
 impl<'a> Inst<'a> {
 	/// Decodes an instruction from bytes and it's position.
 	pub fn decode(
-		pos: Pos, bytes: &'a [u8], data_table: &'a DataTable, func_table: &'a FuncTable,
+		pos: Pos, bytes: &'a [u8], data_table: &'a DataTable, func_table: &'a FuncTable, prev_inst: Option<&Self>,
 	) -> Result<Self, DecodeError<'a>> {
 		// If `bytes` is empty, return Err
 		if bytes.is_empty() {
@@ -81,15 +81,30 @@ impl<'a> Inst<'a> {
 
 		// Try to decode a pseudo-instruction
 		if let Some(inst) = pseudo::Inst::decode(insts.clone()) {
-			// Then check if any function labels intersect it
-			// Note: Intersecting at the beginning is fine
-			let inst_range = (pos + 1u32)..(pos + inst.size());
-			match func_table.range(..=inst_range.end).next_back() {
-				// If any do, don't return the instruction
-				Some(func) if func.labels.range(inst_range).next().is_some() => (),
+			// Validate the instruction to see if it can exist.
+			let res: Result<(), ()> = 'validate: {
+				// If the previous instruction was a jump, and this instruction is larger
+				// than a simple instruction, don't consider it
+				if inst.size() > 4 && prev_inst.map_or(false, Self::may_jump) {
+					break 'validate Err(());
+				}
 
-				// Else return it
-				_ => return Ok(Self::Pseudo(inst)),
+				// Then check if any function labels intersect it
+				// Note: Intersecting at the beginning is fine
+				let inst_range = (pos + 1u32)..(pos + inst.size());
+				if let Some(func) = func_table.range(..=inst_range.end).next_back() {
+					// If any do, don't return the instruction
+					if func.labels.range(inst_range).next().is_some() {
+						break 'validate Err(());
+					}
+				}
+
+				Ok(())
+			};
+
+			// If it can, return it
+			if res.is_ok() {
+				return Ok(Self::Pseudo(inst));
 			}
 		}
 
@@ -117,6 +132,14 @@ impl<'a> Inst<'a> {
 		};
 
 		Ok(())
+	}
+}
+
+impl<'a> Inst<'a> {
+	/// Returns if this instruction may jump
+	#[must_use]
+	pub const fn may_jump(&self) -> bool {
+		matches!(self, Self::Basic(basic::Inst::Cond(_) | basic::Inst::Jmp(_)))
 	}
 }
 

@@ -21,6 +21,9 @@ pub struct DecodeIter<'a> {
 
 	/// Func table
 	func_table: &'a FuncTable,
+
+	/// Previous instruction
+	prev_inst: Option<Inst<'a>>,
 }
 
 impl<'a> DecodeIter<'a> {
@@ -32,6 +35,7 @@ impl<'a> DecodeIter<'a> {
 			cur_pos: start_pos,
 			data_table,
 			func_table,
+			prev_inst: None,
 		}
 	}
 
@@ -47,19 +51,21 @@ impl<'a> Iterator for DecodeIter<'a> {
 
 	fn next(&mut self) -> Option<Self::Item> {
 		// Try to read an instruction
-		let inst = match Inst::decode(self.cur_pos, self.bytes, self.data_table, self.func_table) {
+		let inst = match Inst::decode(
+			self.cur_pos,
+			self.bytes,
+			self.data_table,
+			self.func_table,
+			self.prev_inst.as_ref(),
+		) {
 			Ok(inst) => inst,
 			Err(err) => match err {
-				// If we're in an invalid data location, warn and skip it
-				DecodeError::InvalidDataLocation { data, err } => {
-					log::warn!(
-						"Attempted to decode in position {} from within data location {data}:\n{}",
-						self.cur_pos,
-						dcb_util::DisplayWrapper::new(|f| dcb_util::fmt_err(&err, f)),
-					);
-					self.cur_pos = data.end_pos();
-					return self.next(); // Tailcall
-				},
+				// If we're in an invalid data location, panic
+				DecodeError::InvalidDataLocation { data, err } => panic!(
+					"Attempted to decode in position {} from within data location {data}:\n{}",
+					self.cur_pos,
+					dcb_util::DisplayWrapper::new(|f| dcb_util::fmt_err(&err, f)),
+				),
 				// If we're out of bytes, return `None`
 				DecodeError::NoBytes => return None,
 			},
@@ -70,6 +76,9 @@ impl<'a> Iterator for DecodeIter<'a> {
 		let len = inst.size();
 		self.cur_pos += len;
 		self.bytes = &self.bytes[len..];
+
+		// Set our previous instruction
+		self.prev_inst = Some(inst);
 
 		// And return it
 		Some((pos, inst))

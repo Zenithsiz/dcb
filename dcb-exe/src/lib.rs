@@ -20,7 +20,8 @@
 	external_doc,
 	assert_matches,
 	extend_one,
-	exclusive_range_pattern
+	exclusive_range_pattern,
+	label_break_value
 )]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]
