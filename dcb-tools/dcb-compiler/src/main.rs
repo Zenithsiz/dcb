@@ -56,7 +56,7 @@ fn main() -> Result<(), anyhow::Error> {
 	let mut cur_pos = header.start_pos;
 	let res = itertools::process_results(lines, |lines| {
 		let mut labels_by_name = HashMap::new();
-		let mut labels_by_pos = BTreeMap::<Pos, Label>::new();
+		let mut labels_by_pos = BTreeMap::<Pos, Vec<Label>>::new();
 
 		let mut insts = BTreeMap::new();
 
@@ -69,7 +69,7 @@ fn main() -> Result<(), anyhow::Error> {
 						// Get the previous global label
 						let prev_label_name = labels_by_pos
 							.range(..=cur_pos)
-							.filter_map(|(_, label)| label.as_global())
+							.filter_map(|(_, label)| label.last().expect("No labels in this position").as_global())
 							.next_back()
 							.ok_or_else(|| {
 								(
@@ -92,7 +92,10 @@ fn main() -> Result<(), anyhow::Error> {
 
 				// Insert the label
 				let name = label.name().clone();
-				assert!(labels_by_pos.insert(cur_pos, label.clone()).is_none());
+				{
+					let labels = labels_by_pos.entry(cur_pos).or_default();
+					labels.push(label);
+				}
 				assert!(labels_by_name.insert(name, cur_pos).is_none());
 			}
 
@@ -108,7 +111,7 @@ fn main() -> Result<(), anyhow::Error> {
 						// Get the previous global label
 						let prev_label_name = labels_by_pos
 							.range(..=cur_pos)
-							.filter_map(|(_, label)| label.as_global())
+							.filter_map(|(_, label)| label.last().expect("No labels in this position").as_global())
 							.next_back()
 							.ok_or_else(|| {
 								(
