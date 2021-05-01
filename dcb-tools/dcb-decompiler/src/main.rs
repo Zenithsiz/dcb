@@ -292,9 +292,7 @@ pub fn inst_display<'a>(
 						let (expr, rest) = LineArgExpr::parse(&value).context("Unable to parse override")?;
 
 						let rest = rest.trim_start();
-						if !rest.is_empty() {
-							anyhow::bail!("Leftover tokens after parsing override: {:?}", rest);
-						}
+						anyhow::ensure!(rest.is_empty(), "Leftover tokens after parsing override: {:?}", rest);
 
 						// Then evaluate it
 						let parse_ctx = OverrideParseCtx { pos, exe };
@@ -302,20 +300,18 @@ pub fn inst_display<'a>(
 
 						// And make sure it's the same as the original
 						let actual_value = match arg {
-							InstFmtArg::Register(_) => {
-								anyhow::bail!("Cannot override register argument");
-							},
+							InstFmtArg::Register(_) => anyhow::bail!("Cannot override register argument"),
 							InstFmtArg::RegisterOffset { offset, .. } => offset,
 							InstFmtArg::Literal(value) => value,
 							InstFmtArg::Target(target) => i64::from(target.0),
-							InstFmtArg::String(_) => {
-								anyhow::bail!("Cannot override string argument");
-							},
+							InstFmtArg::String(_) => anyhow::bail!("Cannot override string argument"),
 						};
-
-						if actual_value != expected_value {
-							anyhow::bail!("Original value is {}, override is {}", actual_value, expected_value);
-						}
+						anyhow::ensure!(
+							actual_value == expected_value,
+							"Original value is {}, override is {}",
+							actual_value,
+							expected_value
+						);
 
 						Ok(())
 					};
