@@ -175,7 +175,7 @@ impl<'a> Parsable<'a> for Directive<'a> {
 				[LineArg::Expr(expr)] => Self::Db(ctx.eval_expr_as(expr)?),
 				_ => return Err(ParseError::InvalidArguments),
 			},
-			".ascii" => match args {
+			".asciiz" => match args {
 				[LineArg::String(s)] => Self::Ascii(AsciiStr::from_ascii(s).map_err(|_| ParseError::NonAsciiString)?),
 				_ => return Err(ParseError::InvalidArguments),
 			},
@@ -195,7 +195,7 @@ impl<'a> InstDisplay<'a> for Directive<'a> {
 			Directive::Dw(_) => "dw",
 			Directive::Dh(_) => "dh",
 			Directive::Db(_) => "db",
-			Directive::Ascii(_) => ".ascii",
+			Directive::Ascii(_) => ".asciiz",
 		}
 	}
 
