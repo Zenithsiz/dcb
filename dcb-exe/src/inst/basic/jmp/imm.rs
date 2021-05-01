@@ -4,7 +4,7 @@
 use crate::{
 	inst::{
 		basic::{Decode, Encode, ModifiesReg},
-		exec::{ExecError, ExecState, Executable},
+		exec::{ExecCtx, ExecError, Executable},
 		parse::LineArg,
 		DisplayCtx, InstDisplay, InstFmtArg, Parsable, ParseCtx, ParseError, Register,
 	},
@@ -137,13 +137,13 @@ impl ModifiesReg for Inst {
 }
 
 impl Executable for Inst {
-	fn exec(&self, state: &mut ExecState) -> Result<(), ExecError> {
+	fn exec<Ctx: ExecCtx>(&self, state: &mut Ctx) -> Result<(), ExecError> {
 		// If we should link, set `$ra`
 		if matches!(self.kind, Kind::JumpLink) {
 			state[Register::Ra] = (state.pc() + 8u32).0;
 		}
 
 		// Then set the jump
-		state.set_jump(self.target(state.pc()))
+		state.queue_jump(self.target(state.pc()))
 	}
 }

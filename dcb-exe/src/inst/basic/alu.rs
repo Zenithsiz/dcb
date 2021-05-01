@@ -8,7 +8,7 @@ pub mod reg;
 use super::ModifiesReg;
 use crate::inst::{
 	basic::{Decode, Encode},
-	exec::{ExecError, ExecState, Executable},
+	exec::{ExecError, ExecCtx, Executable},
 	parse::LineArg,
 	DisplayCtx, InstDisplay, InstFmtArg, Parsable, ParseCtx, ParseError,
 };
@@ -81,7 +81,7 @@ impl ModifiesReg for Inst {
 }
 
 impl Executable for Inst {
-	fn exec(&self, state: &mut ExecState) -> Result<(), ExecError> {
+	fn exec<Ctx: ExecCtx>(&self, state: &mut Ctx) -> Result<(), ExecError> {
 		match self {
 			Inst::Imm(inst) => inst.exec(state),
 			Inst::Reg(inst) => inst.exec(state),

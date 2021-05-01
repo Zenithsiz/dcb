@@ -3,7 +3,7 @@
 // Imports
 use crate::inst::{
 	basic::{Decode, ModifiesReg, TryEncode},
-	exec::{ExecError, ExecState, Executable},
+	exec::{ExecCtx, ExecError, Executable},
 	parse::LineArg,
 	DisplayCtx, InstDisplay, InstFmtArg, Parsable, ParseCtx, ParseError, Register,
 };
@@ -160,7 +160,7 @@ impl ModifiesReg for Inst {
 }
 
 impl Executable for Inst {
-	fn exec(&self, state: &mut ExecState) -> Result<(), ExecError> {
+	fn exec<Ctx: ExecCtx>(&self, state: &mut Ctx) -> Result<(), ExecError> {
 		state[self.dst] = match self.kind {
 			Kind::LeftLogical => state[self.lhs].wrapping_shl(self.rhs.zero_extended()),
 			Kind::RightLogical => state[self.lhs].wrapping_shr(self.rhs.zero_extended()),

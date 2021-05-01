@@ -18,7 +18,7 @@ pub mod sys;
 
 // Imports
 use super::{
-	exec::{ExecError, ExecState, Executable},
+	exec::{ExecCtx, ExecError, Executable},
 	parse::{LineArg, Parsable},
 	DisplayCtx, InstDisplay, InstFmtArg, InstSize, ParseCtx, ParseError, Register,
 };
@@ -197,7 +197,7 @@ impl ModifiesReg for Inst {
 
 impl Executable for Inst {
 	#[rustfmt::skip]
-	fn exec(&self, state: &mut ExecState) -> Result<(), ExecError> {
+	fn exec<Ctx: ExecCtx>(&self, state: &mut Ctx) -> Result<(), ExecError> {
 		match self {
 			Inst::Alu  (inst) => inst.exec(state),
 			Inst::Cond (inst) => inst.exec(state),

@@ -4,7 +4,7 @@
 use super::ModifiesReg;
 use crate::inst::{
 	basic::{Decode, Encode},
-	exec::{ExecError, ExecState, Executable},
+	exec::{ExecError, ExecCtx, Executable},
 	parse::LineArg,
 	DisplayCtx, InstDisplay, InstFmtArg, Parsable, ParseCtx, ParseError, Register,
 };
@@ -85,7 +85,7 @@ impl ModifiesReg for Inst {
 }
 
 impl Executable for Inst {
-	fn exec(&self, state: &mut ExecState) -> Result<(), ExecError> {
+	fn exec<Ctx: ExecCtx>(&self, state: &mut Ctx) -> Result<(), ExecError> {
 		state[self.dst] = u32::join(0, self.value);
 		Ok(())
 	}

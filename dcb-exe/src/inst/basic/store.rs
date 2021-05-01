@@ -5,7 +5,7 @@ use super::ModifiesReg;
 use crate::{
 	inst::{
 		basic::{Decode, Encode},
-		exec::{ExecError, ExecState, Executable},
+		exec::{ExecError, ExecCtx, Executable},
 		parse::LineArg,
 		DisplayCtx, InstDisplay, InstFmtArg, Parsable, ParseCtx, ParseError, Register,
 	},
@@ -168,7 +168,7 @@ impl ModifiesReg for Inst {
 }
 
 impl Executable for Inst {
-	fn exec(&self, state: &mut ExecState) -> Result<(), ExecError> {
+	fn exec<Ctx: ExecCtx>(&self, state: &mut Ctx) -> Result<(), ExecError> {
 		match self.kind {
 			Kind::Byte => state.write_byte(Pos(state[self.addr]), state[self.value].truncated()),
 			Kind::HalfWord => state.write_half_word(Pos(state[self.addr]), state[self.value].truncated()),

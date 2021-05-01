@@ -5,7 +5,7 @@ use super::ModifiesReg;
 use crate::{
 	inst::{
 		basic::{Decode, Encode},
-		exec::{ExecError, ExecState, Executable},
+		exec::{ExecCtx, ExecError, Executable},
 		parse::LineArg,
 		DisplayCtx, InstDisplay, InstFmtArg, Parsable, ParseCtx, ParseError, Register,
 	},
@@ -267,7 +267,7 @@ impl ModifiesReg for Inst {
 }
 
 impl Executable for Inst {
-	fn exec(&self, state: &mut ExecState) -> Result<(), ExecError> {
+	fn exec<Ctx: ExecCtx>(&self, state: &mut Ctx) -> Result<(), ExecError> {
 		let lhs = state[self.arg].as_signed();
 		let do_jump = match self.kind {
 			Kind::Equal(rhs) => lhs == state[rhs].as_signed(),
@@ -286,7 +286,7 @@ impl Executable for Inst {
 				}
 
 				// Then set the jump
-				state.set_jump(self.target(state.pc()))
+				state.queue_jump(self.target(state.pc()))
 			},
 			false => Ok(()),
 		}

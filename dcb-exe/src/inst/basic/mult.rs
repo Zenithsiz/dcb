@@ -4,7 +4,7 @@
 use super::ModifiesReg;
 use crate::inst::{
 	basic::{Decode, Encode},
-	exec::{ExecError, ExecState, Executable},
+	exec::{ExecCtx, ExecError, Executable},
 	parse::LineArg,
 	DisplayCtx, InstDisplay, InstFmtArg, Parsable, ParseCtx, ParseError, Register,
 };
@@ -247,7 +247,7 @@ impl ModifiesReg for Inst {
 }
 
 impl Executable for Inst {
-	fn exec(&self, state: &mut ExecState) -> Result<(), ExecError> {
+	fn exec<Ctx: ExecCtx>(&self, state: &mut Ctx) -> Result<(), ExecError> {
 		match *self {
 			Inst::Mult { kind, mode, lhs, rhs } => {
 				let (lo, hi) = match (kind, mode) {
