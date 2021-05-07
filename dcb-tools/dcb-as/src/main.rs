@@ -166,8 +166,13 @@ fn main() -> Result<(), anyhow::Error> {
 		// Make sure this instruction has an branch delay marker is the previous instruction
 		// has a jump
 		anyhow::ensure!(
-			branch_delay == last_inst.as_ref().map_or(false, Inst::may_jump),
-			"{}: Branch delays must be used only when the previous instruction may jump",
+			self::implies(branch_delay, || last_inst.as_ref().map_or(false, Inst::may_jump)),
+			"{}: Branch delay marker must be used only when the previous instruction may jump",
+			line_idx
+		);
+		anyhow::ensure!(
+			self::implies(!branch_delay, || !last_inst.as_ref().map_or(false, Inst::may_jump)),
+			"{}: Branch delay marker is required when the previous instruction may jump",
 			line_idx
 		);
 
@@ -176,7 +181,7 @@ fn main() -> Result<(), anyhow::Error> {
 
 		// If we got a pseudo instruction larger than 1 basic instruction after a jump, return Err
 		anyhow::ensure!(
-			branch_delay.then_some(inst.size() == 4).unwrap_or(true),
+			self::implies(branch_delay, || inst.size() == 4),
 			"{}: Branch delays cannot use pseudo instructions larger than 4 bytes",
 			line_idx
 		);
@@ -287,4 +292,9 @@ struct Header {
 
 	/// Executable region marker
 	pub marker: AsciiStrArr<0x7b3>,
+}
+
+/// Returns the logical implication of a boolean and a predicate
+pub fn implies(lhs: bool, rhs: impl FnOnce() -> bool) -> bool {
+	lhs.then(rhs).unwrap_or(true)
 }

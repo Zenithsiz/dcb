@@ -111,9 +111,6 @@ impl ExecState {
 	}
 }
 
-/// Sys callback
-pub type SysCallback<'a> = dyn FnMut(&mut ExecState) -> Result<(), ExecError> + 'a;
-
 impl ExecCtx for ExecState {
 	fn pc(&self) -> Pos {
 		self.pc
