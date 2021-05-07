@@ -7,6 +7,7 @@ pub mod directive;
 pub mod error;
 pub mod exec;
 pub mod fmt;
+pub mod label;
 pub mod parse;
 pub mod pseudo;
 pub mod reg;
@@ -17,6 +18,7 @@ pub use decode::DecodeIter;
 pub use directive::Directive;
 pub use error::DecodeError;
 pub use fmt::{DisplayCtx, InstDisplay, InstFmtArg};
+pub use label::Label;
 pub use parse::{Parsable, ParseCtx, ParseError};
 pub use reg::Register;
 pub use size::InstSize;
@@ -28,7 +30,7 @@ use self::{
 	pseudo::{Decodable as _, Encodable as _},
 };
 use crate::{DataTable, FuncTable, Pos};
-use std::{borrow::Borrow, io, ops::Deref};
+use std::io;
 
 /// An assembler instruction.
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -213,72 +215,4 @@ pub enum WriteError {
 	/// Encode basic
 	#[error("Unable to encode `basic` instruction")]
 	EncodeBasic(#[source] basic::EncodeError),
-}
-
-/// Label
-#[derive(PartialEq, Eq, Clone, Debug)]
-pub enum Label {
-	/// Local
-	Local {
-		/// Global name, '<parent>.<local>'
-		name: LabelName,
-	},
-
-	/// Global
-	Global {
-		/// Name
-		name: LabelName,
-	},
-}
-
-impl Label {
-	/// Returns the name of this label
-	#[must_use]
-	pub const fn name(&self) -> &LabelName {
-		match self {
-			Label::Local { name } | Label::Global { name } => name,
-		}
-	}
-
-	/// Returns this label as local
-	#[must_use]
-	pub const fn as_local(&self) -> Option<&LabelName> {
-		match self {
-			Self::Local { name } => Some(name),
-			_ => None,
-		}
-	}
-
-	/// Returns this label as global
-	#[must_use]
-	pub const fn as_global(&self) -> Option<&LabelName> {
-		match self {
-			Self::Global { name } => Some(name),
-			_ => None,
-		}
-	}
-}
-
-/// Label name
-#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Hash, Debug)]
-pub struct LabelName(pub String);
-
-impl Deref for LabelName {
-	type Target = String;
-
-	fn deref(&self) -> &Self::Target {
-		&self.0
-	}
-}
-
-impl Borrow<String> for LabelName {
-	fn borrow(&self) -> &String {
-		&self.0
-	}
-}
-
-impl Borrow<str> for LabelName {
-	fn borrow(&self) -> &str {
-		&self.0
-	}
 }
