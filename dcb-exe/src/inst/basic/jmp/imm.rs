@@ -90,7 +90,9 @@ impl Encode for Inst {
 }
 
 impl<'a> Parsable<'a> for Inst {
-	fn parse<Ctx: ?Sized + ParseCtx<'a>>(mnemonic: &'a str, args: &'a [LineArg], ctx: &Ctx) -> Result<Self, ParseError> {
+	fn parse<Ctx: ?Sized + ParseCtx<'a>>(
+		mnemonic: &'a str, args: &'a [LineArg], ctx: &Ctx,
+	) -> Result<Self, ParseError> {
 		let (pos, kind) = match mnemonic {
 			"j" => match args {
 				[arg] => (ctx.arg_pos(arg)?, Kind::Jump),

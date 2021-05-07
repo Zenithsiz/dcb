@@ -3,7 +3,7 @@
 // Imports
 use crate::inst::{
 	basic::{Decode, Encode, ModifiesReg},
-	exec::{ExecError, ExecCtx, Executable},
+	exec::{ExecCtx, ExecError, Executable},
 	parse::LineArg,
 	DisplayCtx, InstDisplay, InstFmtArg, Parsable, ParseCtx, ParseError, Register,
 };
