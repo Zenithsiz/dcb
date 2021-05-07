@@ -169,6 +169,62 @@ pub enum LineArg {
 	Expr(LineArgExpr),
 }
 
+impl LineArg {
+	/// Returns this argument as a string
+	#[must_use]
+	pub fn as_string(&self) -> Option<&str> {
+		match self {
+			Self::String(v) => Some(v),
+			_ => None,
+		}
+	}
+
+	/// Returns this argument as a register
+	#[must_use]
+	pub const fn as_register(&self) -> Option<Register> {
+		match *self {
+			Self::Register(v) => Some(v),
+			_ => None,
+		}
+	}
+
+	/// Returns this argument as a mnemonic
+	#[must_use]
+	pub fn as_mnemonic(&self) -> Option<&str> {
+		match self {
+			Self::Mnemonic(v) => Some(v),
+			_ => None,
+		}
+	}
+
+	/// Returns this argument as a register offset
+	#[must_use]
+	pub const fn as_register_offset(&self) -> Option<(Register, &LineArgExpr)> {
+		match *self {
+			Self::RegisterOffset { register, ref offset } => Some((register, offset)),
+			_ => None,
+		}
+	}
+
+	/// Returns this argument as an expression
+	#[must_use]
+	pub const fn as_expr(&self) -> Option<&LineArgExpr> {
+		match self {
+			Self::Expr(v) => Some(v),
+			_ => None,
+		}
+	}
+
+	/// Returns this argument as an expression mutably
+	#[must_use]
+	pub fn as_expr_mut(&mut self) -> Option<&mut LineArgExpr> {
+		match self {
+			Self::Expr(v) => Some(v),
+			_ => None,
+		}
+	}
+}
+
 /// Line argument expression
 #[derive(PartialEq, Clone, Debug)]
 pub enum LineArgExpr {
@@ -235,11 +291,42 @@ impl LineArgExpr {
 			None => Err(ParseArgError::Empty),
 		}
 	}
+
+	/// Returns this expression as a literal
+	#[must_use]
+	pub const fn as_literal(&self) -> Option<i64> {
+		match *self {
+			Self::Literal(v) => Some(v),
+			_ => None,
+		}
+	}
+
+	/// Returns this expression as a label
+	#[must_use]
+	pub fn as_label(&self) -> Option<(&str, Option<i64>, Option<LineLabelFunc>)> {
+		match *self {
+			Self::Label {
+				ref label,
+				offset,
+				func,
+			} => Some((label, offset, func)),
+			_ => None,
+		}
+	}
+
+	/// Returns this expression as a label mutably
+	#[must_use]
+	pub fn as_label_mut(&mut self) -> Option<(&mut String, &mut Option<i64>, &mut Option<LineLabelFunc>)> {
+		match self {
+			Self::Label { label, offset, func } => Some((label, offset, func)),
+			_ => None,
+		}
+	}
 }
 
 /// Line label functions
 #[allow(clippy::pub_enum_variant_names)] // We'll have other functions eventually
-#[derive(PartialEq, Clone, Debug)]
+#[derive(PartialEq, Clone, Copy, Debug)]
 pub enum LineLabelFunc {
 	/// Address lower 16-bits
 	AddrLo,

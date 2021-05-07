@@ -6,7 +6,7 @@ pub mod line;
 
 // Exports
 pub use error::ParseError;
-pub use line::{Line, LineArg, LineArgExpr, LineLabelFunc};
+pub use line::{Line, LineArg, LineArgExpr, LineInst, LineLabel, LineLabelFunc};
 
 // Imports
 use crate::Pos;
@@ -46,7 +46,7 @@ pub trait ParseCtx<'a> {
 					.ok_or(ParseError::LiteralOutOfRange)?;
 
 				// And evaluate any function on it
-				let value = func.as_ref().map_or(Ok(value), |func| self.eval_func(value, func))?;
+				let value = func.map_or(Ok(value), |func| self.eval_func(value, func))?;
 
 				Ok(value)
 			},
@@ -61,7 +61,7 @@ pub trait ParseCtx<'a> {
 	}
 
 	/// Evaluates a function on a literal
-	fn eval_func(&self, value: i64, func: &LineLabelFunc) -> Result<i64, ParseError> {
+	fn eval_func(&self, value: i64, func: LineLabelFunc) -> Result<i64, ParseError> {
 		// Converts a value into a position
 		let to_pos = |value: i64| value.try_into().map(Pos).map_err(|_| ParseError::LiteralOutOfRange);
 
