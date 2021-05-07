@@ -1,6 +1,6 @@
 //! Compiler
 
-#![feature(unwrap_infallible)]
+#![feature(unwrap_infallible, format_args_capture, try_blocks, hash_raw_entry, bool_to_option)]
 
 // Modules
 mod cli;
@@ -10,17 +10,19 @@ use anyhow::Context;
 use dcb_bytes::Bytes;
 use dcb_exe::{
 	inst::{
-		parse::{Line, LineArg, LineArgExpr},
-		Inst, InstSize, Label, LabelName, Parsable, ParseCtx,
+		parse::{Line, LineInst},
+		Inst, InstSize, Label, Parsable, ParseCtx,
 	},
 	Data, Pos,
 };
-use dcb_util::AsciiStrArr;
+use dcb_util::{AsciiStrArr, BTreeMapVector};
 use std::{
 	collections::{BTreeMap, HashMap},
 	convert::TryInto,
 	fs,
+	hash::{BuildHasher, Hash, Hasher},
 	io::{BufRead, BufReader, Seek, SeekFrom, Write},
+	rc::Rc,
 };
 
 fn main() -> Result<(), anyhow::Error> {
@@ -33,125 +35,117 @@ fn main() -> Result<(), anyhow::Error> {
 	.expect("Unable to initialize logger");
 
 	// Get all data from cli
-	let cli = cli::CliData::new();
+	let cli::CliData {
+		input_path,
+		header_path,
+		output_file_path,
+	} = cli::CliData::new();
 
 	// Get the header
-	let header_file = fs::File::open(&cli.header_path)
-		.with_context(|| format!("Unable to open header file {}", cli.header_path.display()))?;
-	let header: Header = serde_yaml::from_reader(header_file).context("Unable to read header file")?;
+	let header: Header = dcb_util::parse_from_file(&header_path, serde_yaml::from_reader)
+		.with_context(|| format!("Unable to read header file {header_path:?}"))?;
 
 	// Open the input and output file
-	let input_file = fs::File::open(&cli.input_path).context("Unable to open input file")?;
-	let input_file = BufReader::new(input_file);
-	let mut output_file = fs::File::create(&cli.output_file_path).context("Unable to open output file")?;
+	let input_file = fs::File::open(&input_path)
+		.map(BufReader::new)
+		.with_context(|| format!("Unable to open input file {input_path:?}"))?;
+	let mut output_file = fs::File::create(&output_file_path)
+		.with_context(|| format!("Unable to open output file {output_file_path:?}"))?;
 
-	// Read the input
-	let lines = input_file.lines().map(|line| {
-		line.context("Unable to read line")
-			.and_then(|line| Line::parse(&line).context("Unable to parse line"))
-	});
-	let lines = lines
-		.zip(0..)
-		.map(|(res, n)| res.map(|line| (n, line)).map_err(|err| (n, err)));
-	let mut cur_pos = header.start_pos;
-	let res = itertools::process_results(lines, |lines| {
-		let mut labels_by_name = HashMap::new();
-		let mut labels_by_pos = BTreeMap::<Pos, Vec<Label>>::new();
-
-		let mut insts = BTreeMap::new();
-
-		for (n, line) in lines {
-			for label in line.labels {
-				// Convert the label to ours
-				let label = match label.name.starts_with('.') {
-					// It's local
-					true => {
-						// Get the previous global label
-						let prev_label_name = labels_by_pos
-							.range(..=cur_pos)
-							.filter_map(|(_, label)| label.last().expect("No labels in this position").as_global())
-							.next_back()
-							.ok_or_else(|| {
-								(
-									n,
-									anyhow::anyhow!("Cannot define a local label before any global labels"),
-								)
-							})?;
-
-						// Then insert it
-						let mut name = label.name;
-						name.insert_str(0, prev_label_name);
-
-						Label::Local { name: LabelName(name) }
-					},
-					// It's global
-					false => Label::Global {
-						name: LabelName(label.name),
-					},
-				};
-
-				// Insert the label
-				let name = label.name().clone();
-				{
-					let labels = labels_by_pos.entry(cur_pos).or_default();
-					labels.push(label);
-				}
-				assert!(labels_by_name.insert(name, cur_pos).is_none());
-			}
-
-			if let Some(mut inst) = line.inst {
-				// Modify any local labels
-				for arg in &mut inst.args {
-					if let LineArg::Expr(LineArgExpr::Label { label: name, .. }) = arg {
-						// If the label isn't local, continue
-						if !name.starts_with('.') {
-							continue;
-						}
-
-						// Get the previous global label
-						let prev_label_name = labels_by_pos
-							.range(..=cur_pos)
-							.filter_map(|(_, label)| label.last().expect("No labels in this position").as_global())
-							.next_back()
-							.ok_or_else(|| {
-								(
-									n,
-									anyhow::anyhow!("Cannot define a local label before any global labels"),
-								)
-							})?;
-
-						// Then insert it
-						name.insert_str(0, prev_label_name);
-					}
-				}
-
-				// TODO: Better solution than assembling the instruction with a dummy context.
-				let inst_size = Inst::parse(&inst.mnemonic, &inst.args, &DummyCtx { pos: cur_pos })
-					.context("Unable to compile instruction")
-					.map_err(|err| (n, err))?
-					.size();
-
-				assert!(insts.insert(cur_pos, (n, line.branch_delay, inst)).is_none());
-
-				cur_pos += inst_size;
-			}
-		}
-
-		Ok((labels_by_name, labels_by_pos, insts))
-	});
-	let (mut labels_by_name, _labels_by_pos, insts) = match res {
-		Ok(Ok(v)) => v,
-		Ok(Err((n, err))) | Err((n, err)) => return Err(err).context(format!("Unable to parse line {}", n + 1)),
-	};
+	// All labels and instructions
+	let mut labels_by_name = HashMap::<Rc<Label>, Pos>::new();
+	let mut labels_by_pos = BTreeMapVector::<Pos, Rc<Label>>::new();
+	let mut insts = BTreeMap::<usize, (bool, LineInst)>::new();
 
 	// Read all foreign data as labels.
-	let foreign_data_file =
-		std::fs::File::open("resources/foreign_data.yaml").context("Unable to open foreign data file")?;
-	let foreign_data: Vec<Data> =
-		serde_yaml::from_reader(foreign_data_file).context("Unable to read foreign data file")?;
+	let foreign_data_file_path = "resources/foreign_data.yaml";
+	let foreign_data: Vec<Data> = dcb_util::parse_from_file(foreign_data_file_path, serde_yaml::from_reader)
+		.with_context(|| format!("Unable to read foreign data file {foreign_data_file_path:?}"))?;
 	for data in foreign_data {
-		let (pos, name) = data.into_label();
-		labels_by_name.insert(name, pos);
+		let (pos, label) = data.into_label();
+		let label = Rc::new(label);
+
+		labels_by_name.insert(Rc::clone(&label), pos);
+		labels_by_pos.insert(pos, label)
+	}
+
+	// Read all lines within the input
+	let mut cur_pos = header.start_pos;
+	for (line_idx, line) in input_file.lines().enumerate() {
+		let line_idx = line_idx + 1;
+		let line = line.with_context(|| format!("Unable to read line {line_idx}"))?;
+		let line = Line::parse(&line).with_context(|| format!("Unable to parse line {line_idx}"))?;
+
+		// Add every label we get
+		for label in line.labels {
+			/// Helper function to add a label
+			fn add_label(
+				mut label_name: String, cur_pos: Pos, labels_by_name: &mut HashMap<Rc<Label>, Pos>,
+				labels_by_pos: &mut BTreeMapVector<Pos, Rc<Label>>,
+			) -> Result<(), anyhow::Error> {
+				// If it starts with `.`, convert it to a global label
+				if label_name.starts_with('.') {
+					let last_label = labels_by_pos
+						.range(..=cur_pos)
+						.filter(|(_, label)| label.is_global())
+						.next_back()
+						.with_context(|| format!("Cannot use a local label {label_name:?} before any global labels"))?
+						.1;
+
+					label_name.insert_str(0, last_label);
+				}
+
+				// Then put it in an rc
+				let label_name = Rc::new(Label::new(label_name));
+
+				// Then try to insert it
+				if let Some(label) = labels_by_name.insert(Rc::clone(&label_name), cur_pos) {
+					anyhow::bail!("Cannot add duplicate label {:?}", label);
+				}
+				labels_by_pos.insert(cur_pos, label_name);
+
+				Ok(())
+			}
+
+			add_label(label.name, cur_pos, &mut labels_by_name, &mut labels_by_pos)
+				.with_context(|| format!("Unable to add label in line {line_idx}"))?;
+		}
+
+		// If this line has an instruction, add it
+		if let Some(mut inst) = line.inst {
+			// Modify any local labels within the instruction to be global
+			for arg in &mut inst.args {
+				// Try to get it as a label
+				let label_name = match arg.as_expr_mut().and_then(|expr| expr.as_label_mut()) {
+					Some((label, ..)) => label,
+					None => continue,
+				};
+
+				// If it doesn't start with `.`, ignore it
+				if !label_name.starts_with('.') {
+					continue;
+				}
+
+				// Then get the previous global label
+				let prev_label = labels_by_pos
+					.range(..=cur_pos)
+					.filter(|(_, label)| label.is_global())
+					.next_back()
+					.with_context(|| format!("Cannot use a local label {label_name:?} before any global labels"))?
+					.1;
+
+				label_name.insert_str(0, prev_label);
+			}
+
+			// Then insert the instruction, get it's size and update our current position
+			// TODO: Better solution than assembling the instruction with a dummy context.
+			let inst_size = Inst::parse(&inst.mnemonic, &inst.args, &DummyCtx { pos: cur_pos })
+				.with_context(|| format!("Unable to compile instruction in line {line_idx}"))?
+				.size();
+
+			assert!(insts.insert(line_idx, (line.branch_delay, inst)).is_none());
+			cur_pos += inst_size;
+		}
 	}
 
 	// Seek to the start of the instructions
@@ -160,46 +154,37 @@ fn main() -> Result<(), anyhow::Error> {
 		.context("Unable to seek stream to beginning of instructions")?;
 
 	// For each instruction, pack it and output it to the file
+	let mut cur_pos = header.start_pos;
 	let mut last_inst = None;
-	for (&pos, &(n, branch_delay, ref inst)) in &insts {
+	for (&line_idx, &(branch_delay, ref inst)) in &insts {
 		// Create the context
 		let ctx = Ctx {
-			pos,
+			pos:            cur_pos,
 			labels_by_name: &labels_by_name,
 		};
 
-		// If this instruction has a branch delay marker, if the previous instruction wasn't
-		// a jump, return Err
-		if branch_delay && !last_inst.as_ref().map_or(false, Inst::may_jump) {
-			anyhow::bail!(
-				"Unable to parse line {}: Branch delay markers can only be used when the previous instruction is a \
-				 jump",
-				n
-			);
-		}
-
-		// If this instruction doesn't have a branch delay marker, but the previous instruction
-		// was a jump, return Err
-		if !branch_delay && last_inst.as_ref().map_or(false, Inst::may_jump) {
-			anyhow::bail!(
-				"Unable to parse line {}: Must use a branch delay after a jump instruction",
-				n
-			);
-		}
+		// Make sure this instruction has an branch delay marker is the previous instruction
+		// has a jump
+		anyhow::ensure!(
+			branch_delay == last_inst.as_ref().map_or(false, Inst::may_jump),
+			"{}: Branch delays must be used only when the previous instruction may jump",
+			line_idx
+		);
 
 		let inst = Inst::parse(&inst.mnemonic, &inst.args, &ctx)
-			.with_context(|| format!("Unable to compile instruction at {} in line {}", pos, n + 1))?;
+			.with_context(|| format!("{line_idx}: Unable to compile instruction for {}", cur_pos))?;
 
 		// If we got a pseudo instruction larger than 1 basic instruction after a jump, return Err
-		if branch_delay && inst.size() > 4 {
-			anyhow::bail!(
-				"Unable to parse line {}: Cannot use a pseudo instruction larger than 4 bytes as a branch delay",
-				n
-			);
-		}
+		anyhow::ensure!(
+			branch_delay.then_some(inst.size() == 4).unwrap_or(true),
+			"{}: Branch delays cannot use pseudo instructions larger than 4 bytes",
+			line_idx
+		);
 
-		inst.write(&mut output_file).context("Unable to write to file")?;
+		inst.write(&mut output_file)
+			.context("Unable to write instruction to file")?;
 		last_inst = Some(inst);
+		cur_pos += inst.size();
 	}
 
 	let size = output_file.stream_position().context("Unable to get stream position")? - 0x800;
@@ -207,7 +192,9 @@ fn main() -> Result<(), anyhow::Error> {
 
 	// Go back and write the header
 	let header = dcb_exe::Header {
-		pc0: labels_by_name.get("start").context("No `start` label found")?.0,
+		pc0: self::pos_by_label_name(&labels_by_name, "start")
+			.context("No `start` label found")?
+			.0,
 		gp0: header.gp0,
 		start_pos: header.start_pos,
 		size,
@@ -229,7 +216,8 @@ fn main() -> Result<(), anyhow::Error> {
 	Ok(())
 }
 
-/// Dummy context to get size
+/// Dummy parsing context to get instruction size.
+// TODO: Find better solution than this?
 struct DummyCtx {
 	/// Current position
 	pos: Pos,
@@ -245,13 +233,13 @@ impl ParseCtx<'_> for DummyCtx {
 	}
 }
 
-/// Context
+/// Parsing context
 struct Ctx<'a> {
 	/// Current position
 	pos: Pos,
 
 	/// All labels by name
-	labels_by_name: &'a HashMap<LabelName, Pos>,
+	labels_by_name: &'a HashMap<Rc<Label>, Pos>,
 }
 
 impl<'a> ParseCtx<'a> for Ctx<'a> {
@@ -260,8 +248,19 @@ impl<'a> ParseCtx<'a> for Ctx<'a> {
 	}
 
 	fn label_pos(&self, label: &str) -> Option<Pos> {
-		self.labels_by_name.get(label).copied()
+		self::pos_by_label_name(&self.labels_by_name, label)
 	}
+}
+
+/// Helper function to retrieve a position by it's label name
+pub fn pos_by_label_name(labels_by_name: &HashMap<Rc<Label>, Pos>, label: &str) -> Option<Pos> {
+	let mut state = labels_by_name.hasher().build_hasher();
+	label.hash(&mut state);
+	let hash = state.finish();
+	labels_by_name
+		.raw_entry()
+		.from_hash(hash, |lhs| lhs.as_str() == label)
+		.map(|(_, &pos)| pos)
 }
 
 /// Header
