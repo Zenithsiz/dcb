@@ -230,7 +230,7 @@
   inline_comments:
     0x80061910: "args: ($s1, $s0, c & 0xffff, d & 0xffff)"
   start_pos: 0x800618e4
-  end_pos: 0x80061954
+  end_pos: 0x80061958
   kind: Known
 
 - name: modify_spu_delay1
@@ -845,6 +845,42 @@
     0x8004b2f0: "Division by 0"
   start_pos: 0x8004b2f0
   end_pos: 0x8004b394
+  kind: Known
+
+- name: something43
+  labels:
+    0x8002d0f4: "0"
+    0x8002d104: "1"
+    0x8002d110: "2"
+    0x8002d120: "3"
+    0x8002d130: "4"
+  start_pos: 0x8002d0e4
+  end_pos: 0x8002d140
+  kind: Known
+
+- name: something44
+  start_pos: 0x800316a8
+  end_pos: 0x800316b4
+  kind: Known
+
+- name: something45
+  start_pos: 0x80063cb0
+  end_pos: 0x80063cbc
+  kind: Known
+
+- name: something46
+  start_pos: 0x80063cc4
+  end_pos: 0x80063cd0
+  kind: Known
+
+- name: something47
+  start_pos: 0x80063cd8
+  end_pos: 0x80063ce4
+  kind: Known
+
+- name: something48
+  start_pos: 0x80063d04
+  end_pos: 0x80063d10
   kind: Known
 
 # A functions

@@ -227,10 +227,16 @@ fn main() -> Result<(), anyhow::Error> {
 
 			// If it's standalone, print it by it's own
 			ExeItem::Unknown { insts } => {
+				let mut prev_inst = None;
 				for (pos, inst) in insts {
 					// Write the position
 					if cli.print_inst_pos {
 						print!("{pos}: ");
+					}
+
+					// If we had a branch / jump instruction before this one, add a "+ "
+					if prev_inst.as_ref().map_or(false, Inst::may_jump) {
+						print!("+ ");
 					}
 
 					// Write the instruction
@@ -240,6 +246,8 @@ fn main() -> Result<(), anyhow::Error> {
 					);
 
 					println!();
+
+					prev_inst = Some(inst);
 				}
 			},
 		}

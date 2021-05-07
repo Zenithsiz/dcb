@@ -131,7 +131,7 @@ fn main() -> Result<(), anyhow::Error> {
 					.map_err(|err| (n, err))?
 					.size();
 
-				assert!(insts.insert(cur_pos, (n, inst)).is_none());
+				assert!(insts.insert(cur_pos, (n, line.branch_delay, inst)).is_none());
 
 				cur_pos += inst_size;
 			}
@@ -160,17 +160,46 @@ fn main() -> Result<(), anyhow::Error> {
 		.context("Unable to seek stream to beginning of instructions")?;
 
 	// For each instruction, pack it and output it to the file
-	for (&pos, (n, inst)) in &insts {
+	let mut last_inst = None;
+	for (&pos, &(n, branch_delay, ref inst)) in &insts {
 		// Create the context
 		let ctx = Ctx {
 			pos,
 			labels_by_name: &labels_by_name,
 		};
 
+		// If this instruction has a branch delay marker, if the previous instruction wasn't
+		// a jump, return Err
+		if branch_delay && !last_inst.as_ref().map_or(false, Inst::may_jump) {
+			anyhow::bail!(
+				"Unable to parse line {}: Branch delay markers can only be used when the previous instruction is a \
+				 jump",
+				n
+			);
+		}
+
+		// If this instruction doesn't have a branch delay marker, but the previous instruction
+		// was a jump, return Err
+		if !branch_delay && last_inst.as_ref().map_or(false, Inst::may_jump) {
+			anyhow::bail!(
+				"Unable to parse line {}: Must use a branch delay after a jump instruction",
+				n
+			);
+		}
+
 		let inst = Inst::parse(&inst.mnemonic, &inst.args, &ctx)
 			.with_context(|| format!("Unable to compile instruction at {} in line {}", pos, n + 1))?;
 
+		// If we got a pseudo instruction larger than 1 basic instruction after a jump, return Err
+		if branch_delay && inst.size() > 4 {
+			anyhow::bail!(
+				"Unable to parse line {}: Cannot use a pseudo instruction larger than 4 bytes as a branch delay",
+				n
+			);
+		}
+
 		inst.write(&mut output_file).context("Unable to write to file")?;
+		last_inst = Some(inst);
 	}
 
 	let size = output_file.stream_position().context("Unable to get stream position")? - 0x800;

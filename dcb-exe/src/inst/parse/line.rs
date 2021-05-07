@@ -18,6 +18,9 @@ pub struct Line {
 	/// Labels
 	pub labels: Vec<LineLabel>,
 
+	/// Branch delay
+	pub branch_delay: bool,
+
 	/// Instruction
 	pub inst: Option<LineInst>,
 }
@@ -28,11 +31,22 @@ impl Line {
 		let mut line = line.trim();
 
 		// Parse all labels and then the mnemonic
+		let mut branch_delay = false;
 		let mut labels = vec![];
 		let mnemonic = loop {
 			// If the line starts with a comment or is empty, return all labels
 			if line.starts_with('#') || line.is_empty() {
-				return Ok(Self { labels, inst: None });
+				return Ok(Self {
+					labels,
+					branch_delay,
+					inst: None,
+				});
+			}
+
+			// If we get a `+`, it's a branch delay
+			if let Some(rest) = line.strip_prefix('+') {
+				branch_delay = true;
+				line = rest.trim_start();
 			}
 
 			// Parse a name
@@ -41,7 +55,12 @@ impl Line {
 			// Check the character after the name
 			let mut rest = rest.chars();
 			match rest.next() {
-				// If we got ':', add a label and continue
+				// If we get a label after the branch delay, return Err
+				Some(':') if branch_delay => {
+					return Err(ParseLineError::LabelAfterBranchDelay);
+				},
+
+				// Else add the label
 				Some(':') => {
 					line = rest.as_str().trim_start();
 					let label = LineLabel { name: name.to_owned() };
@@ -53,6 +72,7 @@ impl Line {
 				Some('#') | None => {
 					return Ok(Self {
 						labels,
+						branch_delay,
 						inst: Some(LineInst {
 							mnemonic: name.to_owned(),
 							args:     vec![],
@@ -60,12 +80,12 @@ impl Line {
 					});
 				},
 
-				// If we got a space or eof, we found the mnemonic.
-				// On a space, break and parse arguments
+				// If we got a space, we found the mnemonic.
 				Some(' ') => {
 					line = rest.as_str().trim_start();
 					break name.to_owned();
 				},
+
 				_ => return Err(ParseLineError::InvalidNameSuffix),
 			}
 		};
@@ -90,7 +110,11 @@ impl Line {
 				// If we got eof or a comment, return
 				Some('#') | None => {
 					let inst = Some(LineInst { mnemonic, args });
-					return Ok(Self { labels, inst });
+					return Ok(Self {
+						labels,
+						branch_delay,
+						inst,
+					});
 				},
 
 				_ => return Err(ParseLineError::InvalidArgSuffix),

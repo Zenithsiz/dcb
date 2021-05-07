@@ -1,7 +1,7 @@
 //! Errors
 
+// Imports
 use snailquote::UnescapeError;
-
 
 /// Error for [`Line::parse`](super::Line::parse)
 #[derive(PartialEq, Debug, thiserror::Error)]
@@ -21,6 +21,10 @@ pub enum ParseLineError {
 	/// Invalid argument suffix
 	#[error("Invalid argument suffix")]
 	InvalidArgSuffix,
+
+	/// Found label after branch delay token
+	#[error("Labels must come before the branch delay token")]
+	LabelAfterBranchDelay,
 }
 
 /// Name parsing error
