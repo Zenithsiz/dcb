@@ -47,7 +47,7 @@ impl Encodable for Inst {
 }
 
 impl<'a> Parsable<'a> for Inst {
-	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &'a str, args: &'a [LineArg], ctx: &'a Ctx) -> Result<Self, ParseError> {
+	fn parse<Ctx: ?Sized + ParseCtx<'a>>(mnemonic: &'a str, args: &'a [LineArg], ctx: &Ctx) -> Result<Self, ParseError> {
 		if mnemonic != "nop" {
 			return Err(ParseError::UnknownMnemonic);
 		}

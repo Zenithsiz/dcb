@@ -206,7 +206,7 @@ struct DummyCtx {
 	pos: Pos,
 }
 
-impl ParseCtx for DummyCtx {
+impl ParseCtx<'_> for DummyCtx {
 	fn cur_pos(&self) -> Pos {
 		self.pos
 	}
@@ -225,7 +225,7 @@ struct Ctx<'a> {
 	labels_by_name: &'a HashMap<LabelName, Pos>,
 }
 
-impl ParseCtx for Ctx<'_> {
+impl<'a> ParseCtx<'a> for Ctx<'a> {
 	fn cur_pos(&self) -> Pos {
 		self.pos
 	}

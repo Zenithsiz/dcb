@@ -351,7 +351,7 @@ pub struct OverrideParseCtx<'a> {
 	exe: &'a ExeReader,
 }
 
-impl ParseCtx for OverrideParseCtx<'_> {
+impl<'a> ParseCtx<'a> for OverrideParseCtx<'a> {
 	fn cur_pos(&self) -> Pos {
 		self.pos
 	}

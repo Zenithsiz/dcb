@@ -3,7 +3,7 @@
 // Imports
 use crate::inst::{
 	basic::{Decode, Encode, ModifiesReg},
-	exec::{ExecError, ExecCtx, Executable},
+	exec::{ExecCtx, ExecError, Executable},
 	parse::LineArg,
 	DisplayCtx, InstDisplay, InstFmtArg, Parsable, ParseCtx, ParseError, Register,
 };
@@ -122,7 +122,9 @@ impl Encode for Inst {
 }
 
 impl<'a> Parsable<'a> for Inst {
-	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &'a str, args: &'a [LineArg], ctx: &'a Ctx) -> Result<Self, ParseError> {
+	fn parse<Ctx: ?Sized + ParseCtx<'a>>(
+		mnemonic: &'a str, args: &'a [LineArg], ctx: &Ctx,
+	) -> Result<Self, ParseError> {
 		#[rustfmt::skip]
 		let to_kind = match mnemonic {
 			"addi"  => |value: i64| value.try_into().map(Kind::Add                ),

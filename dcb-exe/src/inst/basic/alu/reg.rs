@@ -135,8 +135,8 @@ impl Encode for Inst {
 }
 
 impl<'a> Parsable<'a> for Inst {
-	fn parse<Ctx: ?Sized + ParseCtx>(
-		mnemonic: &'a str, args: &'a [LineArg], _ctx: &'a Ctx,
+	fn parse<Ctx: ?Sized + ParseCtx<'a>>(
+		mnemonic: &'a str, args: &'a [LineArg], _ctx: &Ctx,
 	) -> Result<Self, ParseError> {
 		#[rustfmt::skip]
 		let kind = match mnemonic {

@@ -16,11 +16,12 @@ use std::convert::{TryFrom, TryInto};
 /// Instruction parsing
 pub trait Parsable<'a>: Sized + 'a {
 	/// Parses this instruction
-	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &'a str, args: &'a [LineArg], ctx: &'a Ctx) -> Result<Self, ParseError>;
+	fn parse<Ctx: ?Sized + ParseCtx<'a>>(mnemonic: &'a str, args: &'a [LineArg], ctx: &Ctx)
+		-> Result<Self, ParseError>;
 }
 
 /// Parsing context
-pub trait ParseCtx {
+pub trait ParseCtx<'a> {
 	/// Returns the current position
 	fn cur_pos(&self) -> Pos;
 

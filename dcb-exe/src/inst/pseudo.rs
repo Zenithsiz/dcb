@@ -62,7 +62,9 @@ impl Encodable for Inst {
 }
 
 impl<'a> Parsable<'a> for Inst {
-	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &'a str, args: &'a [LineArg], ctx: &'a Ctx) -> Result<Self, ParseError> {
+	fn parse<Ctx: ?Sized + ParseCtx<'a>>(
+		mnemonic: &'a str, args: &'a [LineArg], ctx: &Ctx,
+	) -> Result<Self, ParseError> {
 		#[rustfmt::skip]
 		let parsers: &[&dyn Fn() -> Result<Self, ParseError>] = &[
 			&|| load_imm::Inst::parse(mnemonic, args, ctx).map(Self::LoadImm),

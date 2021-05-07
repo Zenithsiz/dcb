@@ -155,7 +155,7 @@ impl Encodable for Inst {
 }
 
 impl<'a> Parsable<'a> for Inst {
-	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &'a str, args: &'a [LineArg], ctx: &'a Ctx) -> Result<Self, ParseError> {
+	fn parse<Ctx: ?Sized + ParseCtx<'a>>(mnemonic: &'a str, args: &'a [LineArg], ctx: &Ctx) -> Result<Self, ParseError> {
 		let to_kind = match mnemonic {
 			"li" => |ctx: &Ctx, arg: &LineArg| match arg {
 				// Try `i16`, `u16` then `u32` for the literal

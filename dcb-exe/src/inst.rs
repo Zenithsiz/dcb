@@ -144,7 +144,9 @@ impl<'a> Inst<'a> {
 }
 
 impl<'a> Parsable<'a> for Inst<'a> {
-	fn parse<Ctx: ?Sized + ParseCtx>(mnemonic: &'a str, args: &'a [LineArg], ctx: &'a Ctx) -> Result<Self, ParseError> {
+	fn parse<Ctx: ?Sized + ParseCtx<'a>>(
+		mnemonic: &'a str, args: &'a [LineArg], ctx: &Ctx,
+	) -> Result<Self, ParseError> {
 		#[rustfmt::skip]
 		let parsers: &[&dyn Fn() -> Result<Self, ParseError>] = &[
 			&|| basic    ::Inst::parse(mnemonic, args, ctx).map(Self::Basic),

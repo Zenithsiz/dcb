@@ -3,7 +3,7 @@
 // Imports
 use crate::inst::{
 	basic::{Decode, Encode, ModifiesReg},
-	exec::{ExecError, ExecCtx, Executable},
+	exec::{ExecCtx, ExecError, Executable},
 	parse::LineArg,
 	DisplayCtx, InstDisplay, InstFmtArg, Parsable, ParseCtx, ParseError, Register,
 };
@@ -94,8 +94,8 @@ impl Encode for Inst {
 }
 
 impl<'a> Parsable<'a> for Inst {
-	fn parse<Ctx: ?Sized + ParseCtx>(
-		mnemonic: &'a str, args: &'a [LineArg], _ctx: &'a Ctx,
+	fn parse<Ctx: ?Sized + ParseCtx<'a>>(
+		mnemonic: &'a str, args: &'a [LineArg], _ctx: &Ctx,
 	) -> Result<Self, ParseError> {
 		let kind = match mnemonic {
 			"sllv" => Kind::LeftLogical,
