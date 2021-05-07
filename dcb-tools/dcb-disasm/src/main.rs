@@ -1,4 +1,4 @@
-//! Decompiler
+//! Disassembler
 
 #![feature(try_blocks, format_args_capture, iter_map_while)]
 

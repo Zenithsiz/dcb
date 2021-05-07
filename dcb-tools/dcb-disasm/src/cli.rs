@@ -50,10 +50,10 @@ impl CliData {
 		const INST_ARG_OVERRIDES_PATH_STR: &str = "inst-arg-overrides-path";
 
 		// Get all matches from cli
-		let matches = ClapApp::new("Dcb Decompiler")
+		let matches = ClapApp::new("Dcb disassembler")
 			.version("0.0")
 			.author("Filipe [...] <[...]@gmail.com>")
-			.about("Decompiles all code from the Digimon Digital Card Battle `.bin` game file")
+			.about("Disassembles code")
 			.arg(
 				ClapArg::with_name(INPUT_FILE_STR)
 					.long(INPUT_FILE_STR)

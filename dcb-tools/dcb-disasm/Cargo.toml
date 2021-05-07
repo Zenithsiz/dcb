@@ -1,5 +1,5 @@
 [package]
-name = "dcb-decompiler"
+name = "dcb-disasm"
 version = "0.1.0"
 authors = ["Filipe Rodrigues <filipejacintorodrigues1@gmail.com>"]
 edition = "2018"

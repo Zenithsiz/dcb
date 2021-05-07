@@ -25,10 +25,10 @@ impl CliData {
 		const OUTPUT_FILE_STR: &str = "output-file";
 
 		// Get all matches from cli
-		let matches = ClapApp::new("Dcb Decompiler")
+		let matches = ClapApp::new("Dcb assembler")
 			.version("0.0")
 			.author("Filipe [...] <[...]@gmail.com>")
-			.about("Compiles code from assembly")
+			.about("Assembles code")
 			.arg(
 				ClapArg::with_name(INPUT_FILE_STR)
 					.help("Sets the input file to use")

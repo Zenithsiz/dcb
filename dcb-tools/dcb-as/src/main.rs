@@ -1,4 +1,4 @@
-//! Compiler
+//! Assembler
 
 #![feature(unwrap_infallible, format_args_capture, try_blocks, hash_raw_entry, bool_to_option)]
 
