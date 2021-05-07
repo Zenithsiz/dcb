@@ -60,27 +60,29 @@
 // Modules
 pub mod array_split;
 pub mod ascii_str_arr;
+pub mod bcd;
 pub mod btree_map_par_iter;
+pub mod btree_map_vector;
 pub mod discarding_sorted_merge_iter;
 pub mod display_wrapper;
 pub mod impl_bytes;
 pub mod next_from_bytes;
 pub mod null_ascii_string;
-//pub mod peekable_iter;
-pub mod bcd;
 pub mod signed_hex;
+//pub mod peekable_iter;
 
 // Exports
 //pub use array_split::{array_split, array_split_mut};
 pub use ascii_str_arr::AsciiStrArr;
+pub use bcd::BcdU8;
+pub use btree_map_par_iter::BTreeMapParIter;
+pub use btree_map_vector::BTreeMapVector;
 pub use discarding_sorted_merge_iter::DiscardingSortedMergeIter;
 pub use display_wrapper::DisplayWrapper;
 pub use next_from_bytes::NextFromBytes;
 pub use null_ascii_string::NullAsciiString;
-//pub use peekable_iter::PeekableIter;
-pub use bcd::BcdU8;
-pub use btree_map_par_iter::BTreeMapParIter;
 pub use signed_hex::SignedHex;
+//pub use peekable_iter::PeekableIter;
 
 // Imports
 use std::{error, fmt, fs, io, path::Path};
