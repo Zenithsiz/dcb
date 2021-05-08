@@ -309,6 +309,7 @@ pub fn inst_display<'a>(
 							InstFmtArg::Literal(value) => value,
 							InstFmtArg::Target(target) => i64::from(target.0),
 							InstFmtArg::String(_) => anyhow::bail!("Cannot override string argument"),
+							InstFmtArg::RegArray(_) => anyhow::bail!("Cannot override array argument"),
 						};
 						anyhow::ensure!(
 							actual_value == expected_value,

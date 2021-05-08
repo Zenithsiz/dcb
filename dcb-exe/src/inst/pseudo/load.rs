@@ -53,10 +53,10 @@ impl Decodable for Inst {
 	}
 }
 
-impl Encodable for Inst {
-	type Iterator = impl Iterator<Item = basic::Inst>;
+impl<'a> Encodable<'a> for Inst {
+	type Iterator = impl Iterator<Item = basic::Inst> + 'a;
 
-	fn encode(&self) -> Self::Iterator {
+	fn encode(&'a self) -> Self::Iterator {
 		let addr = self.target.0;
 		let (lo, hi) = match addr.lo().as_signed() < 0 {
 			true => (addr.lo(), addr.hi().wrapping_add(1)),

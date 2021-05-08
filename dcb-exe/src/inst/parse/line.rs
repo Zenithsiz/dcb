@@ -151,6 +151,10 @@ pub enum LineArg {
 	/// `<reg>`
 	Register(Register),
 
+	/// Register array
+	/// `[<reg>, ...]`
+	RegisterArr(Vec<Register>),
+
 	/// Mnemonic
 	/// `^<mnemonic>`
 	Mnemonic(String),
@@ -184,6 +188,15 @@ impl LineArg {
 	pub const fn as_register(&self) -> Option<Register> {
 		match *self {
 			Self::Register(v) => Some(v),
+			_ => None,
+		}
+	}
+
+	/// Returns this argument as a register array
+	#[must_use]
+	pub fn as_register_arr(&self) -> Option<&[Register]> {
+		match self {
+			Self::RegisterArr(v) => Some(v),
 			_ => None,
 		}
 	}
@@ -367,6 +380,9 @@ pub fn parse_arg(s: &str) -> Result<(LineArg, &str), ParseArgError> {
 		// If we got '"', it's a string
 		Some((_, '"')) => self::parse_string(s).map(|(string, rest)| (LineArg::String(string), rest)),
 
+		// If we got '[', it's a register arr
+		Some((_, '[')) => self::parse_reg_arr(s).map(|(arr, rest)| (LineArg::RegisterArr(arr), rest)),
+
 		// If we got '^', it's a mnemonic
 		Some((_, '^')) => self::parse_name(chars.as_str())
 			.map(|(name, rest)| (LineArg::Mnemonic(name.to_owned()), rest))
@@ -420,6 +436,36 @@ pub fn parse_reg(s: &str) -> Result<(Register, &str), ParseArgError> {
 	}
 }
 
+/// Parse a register array
+///
+/// # Panics
+/// Panics if `s[0]` isn't '['.
+pub fn parse_reg_arr(s: &str) -> Result<(Vec<Register>, &str), ParseArgError> {
+	assert_matches!(s.get(0..=0), Some("["));
+
+	let mut registers = vec![];
+	let mut s = s[1..].trim_start();
+	loop {
+		s = match s.chars().next() {
+			// If we got a ',', skip it
+			// TODO: Maybe deal with this better to enforce only 1 ',' each time?
+			Some(',') => s[1..].trim_start(),
+
+			// If we got ']', close
+			Some(']') => break Ok((registers, &s[1..])),
+
+			// Else try to read a register
+			Some(_) => {
+				let (reg, rest) = self::parse_reg(s)?;
+				registers.push(reg);
+				rest
+			},
+
+			None => break Err(ParseArgError::MissingClosingDelimiterArray),
+		};
+	}
+}
+
 /// Parses a func
 pub fn parse_func(s: &str) -> Result<(LineLabelFunc, &str), ParseFuncError> {
 	None.or_else(|| s.strip_prefix("addr_hi").map(|rest| (LineLabelFunc::AddrHi, rest)))
@@ -429,7 +475,8 @@ pub fn parse_func(s: &str) -> Result<(LineLabelFunc, &str), ParseFuncError> {
 
 /// Parses a string
 ///
-/// # Panics if `s[0]` isn't '"'.
+/// # Panics
+/// Panics if `s[0]` isn't '"'.
 pub fn parse_string(s: &str) -> Result<(String, &str), ParseArgError> {
 	let mut is_escaping = false;
 	let mut in_multi_escape = false;

@@ -106,6 +106,10 @@ pub enum ParseArgError {
 	#[error("Missing closing delimiter for string")]
 	MissingClosingDelimiterString,
 
+	/// Missing closing ']' for array
+	#[error("Missing closing delimiter for array")]
+	MissingClosingDelimiterArray,
+
 	/// Unable to unescape string
 	#[error("Unable to unescape string")]
 	UnescapeString(UnescapeError),

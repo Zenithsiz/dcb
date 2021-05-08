@@ -96,11 +96,11 @@ impl Decodable for Inst {
 	}
 }
 
-impl Encodable for Inst {
-	type Iterator = impl Iterator<Item = basic::Inst>;
+impl<'a> Encodable<'a> for Inst {
+	type Iterator = impl Iterator<Item = basic::Inst> + 'a;
 
 	#[auto_enums::auto_enum(Iterator)]
-	fn encode(&self) -> Self::Iterator {
+	fn encode(&'a self) -> Self::Iterator {
 		match self.kind {
 			Kind::Address(Pos(addr)) => {
 				let (lo, hi) = match addr.lo().as_signed() < 0 {

@@ -33,7 +33,7 @@ use crate::{DataTable, FuncTable, Pos};
 use std::io;
 
 /// An assembler instruction.
-#[derive(PartialEq, Eq, Clone, Copy, Debug)]
+#[derive(PartialEq, Eq, Clone, Debug)]
 #[derive(derive_more::TryInto)]
 pub enum Inst<'a> {
 	/// A basic instruction

@@ -38,10 +38,10 @@ impl Decodable for Inst {
 	}
 }
 
-impl Encodable for Inst {
-	type Iterator = impl Iterator<Item = basic::Inst>;
+impl<'a> Encodable<'a> for Inst {
+	type Iterator = impl Iterator<Item = basic::Inst> + 'a;
 
-	fn encode(&self) -> Self::Iterator {
+	fn encode(&'a self) -> Self::Iterator {
 		std::iter::repeat(Self::INST).take(self.len)
 	}
 }

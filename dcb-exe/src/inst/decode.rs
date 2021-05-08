@@ -78,7 +78,7 @@ impl<'a> Iterator for DecodeIter<'a> {
 		self.bytes = &self.bytes[len..];
 
 		// Set our previous instruction
-		self.prev_inst = Some(inst);
+		self.prev_inst = Some(inst.clone());
 
 		// And return it
 		Some((pos, inst))

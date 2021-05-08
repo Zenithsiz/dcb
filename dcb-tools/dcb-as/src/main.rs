@@ -192,8 +192,8 @@ fn main() -> Result<(), anyhow::Error> {
 
 		inst.write(&mut output_file)
 			.context("Unable to write instruction to file")?;
-		last_inst = Some(inst);
 		cur_pos += inst.size();
+		last_inst = Some(inst);
 	}
 
 	let size = output_file.stream_position().context("Unable to get stream position")? - 0x800;

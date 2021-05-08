@@ -5,6 +5,7 @@
 // Imports
 use crate::{inst::Register, Pos};
 use dcb_util::SignedHex;
+use itertools::Itertools;
 use std::fmt;
 
 /// Instruction display
@@ -58,6 +59,9 @@ pub enum InstFmtArg<'a> {
 
 	/// String
 	String(&'a str),
+
+	/// Register Array
+	RegArray(&'a [Register]),
 }
 
 impl<'a> InstFmtArg<'a> {
@@ -92,6 +96,8 @@ impl<'a> InstFmtArg<'a> {
 				None => write!(f, "{pos}"),
 			},
 			InstFmtArg::String(s) => write!(f, "\"{}\"", s.escape_debug()),
+
+			InstFmtArg::RegArray(arr) => write!(f, "[{}]", arr.iter().format_with(", ", |reg, f| f(reg))),
 		}
 	}
 }
