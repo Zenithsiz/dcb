@@ -5,6 +5,7 @@
 //! via the [`Decodable`] trait.
 
 // Modules
+pub mod bios;
 pub mod load;
 pub mod load_imm;
 pub mod move_reg;
@@ -33,16 +34,21 @@ pub enum Inst {
 
 	/// Store
 	Store(store::Inst),
+
+	/// Bios
+	Bios(bios::Inst),
 }
 
 impl Decodable for Inst {
 	#[rustfmt::skip]
 	fn decode(insts: impl Iterator<Item = basic::Inst> + Clone) -> Option<Self> {
-		                 load_imm    ::Inst::decode(insts.clone()).map(Self::LoadImm    )
-		.or_else(     || nop         ::Inst::decode(insts.clone()).map(Self::Nop        ))
-		.or_else(     || load        ::Inst::decode(insts.clone()).map(Self::Load       ))
-		.or_else(     || store       ::Inst::decode(insts.clone()).map(Self::Store      ))
-		.or_else(move || move_reg    ::Inst::decode(       insts        ).map(Self::MoveReg    ))
+		// Note: Order is important
+		None.or_else(|| bios        ::Inst::decode(insts.clone()).map(Self::Bios   ))
+			.or_else(|| load_imm    ::Inst::decode(insts.clone()).map(Self::LoadImm))
+			.or_else(|| nop         ::Inst::decode(insts.clone()).map(Self::Nop    ))
+			.or_else(|| load        ::Inst::decode(insts.clone()).map(Self::Load   ))
+			.or_else(|| store       ::Inst::decode(insts.clone()).map(Self::Store  ))
+			.or_else(|| move_reg    ::Inst::decode(insts.clone()).map(Self::MoveReg))
 	}
 }
 
@@ -57,6 +63,7 @@ impl Encodable for Inst {
 			Inst::MoveReg(inst) => inst.encode(),
 			Inst::Load(inst) => inst.encode(),
 			Inst::Store(inst) => inst.encode(),
+			Inst::Bios(inst) => inst.encode(),
 		}
 	}
 }
@@ -65,8 +72,10 @@ impl<'a> Parsable<'a> for Inst {
 	fn parse<Ctx: ?Sized + ParseCtx<'a>>(
 		mnemonic: &'a str, args: &'a [LineArg], ctx: &Ctx,
 	) -> Result<Self, ParseError> {
+		// Note: Order is important
 		#[rustfmt::skip]
 		let parsers: &[&dyn Fn() -> Result<Self, ParseError>] = &[
+			&|| bios    ::Inst::parse(mnemonic, args, ctx).map(Self::Bios),
 			&|| load_imm::Inst::parse(mnemonic, args, ctx).map(Self::LoadImm),
 			&|| nop     ::Inst::parse(mnemonic, args, ctx).map(Self::Nop),
 			&|| move_reg::Inst::parse(mnemonic, args, ctx).map(Self::MoveReg),
@@ -101,6 +110,7 @@ impl<'a> InstDisplay<'a> for Inst {
 			Inst::MoveReg(inst) => inst.mnemonic(ctx),
 			Inst::Load   (inst) => inst.mnemonic(ctx),
 			Inst::Store  (inst) => inst.mnemonic(ctx),
+			Inst::Bios   (inst) => inst.mnemonic(ctx),
 		}
 	}
 
@@ -113,6 +123,7 @@ impl<'a> InstDisplay<'a> for Inst {
 			Inst::MoveReg(inst) => inst.args(ctx),
 			Inst::Load   (inst) => inst.args(ctx),
 			Inst::Store  (inst) => inst.args(ctx),
+			Inst::Bios   (inst) => inst.args(ctx),
 		}
 	}
 }
@@ -125,6 +136,7 @@ impl InstSize for Inst {
 			Self::MoveReg(inst) => inst.size(),
 			Self::Load(inst) => inst.size(),
 			Self::Store(inst) => inst.size(),
+			Self::Bios(inst) => inst.size(),
 		}
 	}
 }

@@ -166,12 +166,16 @@ fn main() -> Result<(), anyhow::Error> {
 		// Make sure this instruction has an branch delay marker is the previous instruction
 		// has a jump
 		anyhow::ensure!(
-			self::implies(branch_delay, || last_inst.as_ref().map_or(false, Inst::may_jump)),
+			self::implies(branch_delay, || last_inst
+				.as_ref()
+				.map_or(false, Inst::expects_branch_delay)),
 			"{}: Branch delay marker must be used only when the previous instruction may jump",
 			line_idx
 		);
 		anyhow::ensure!(
-			self::implies(!branch_delay, || !last_inst.as_ref().map_or(false, Inst::may_jump)),
+			self::implies(!branch_delay, || !last_inst
+				.as_ref()
+				.map_or(false, Inst::expects_branch_delay)),
 			"{}: Branch delay marker is required when the previous instruction may jump",
 			line_idx
 		);

@@ -87,7 +87,7 @@ impl<'a> Inst<'a> {
 			let res: Result<(), ()> = 'validate: {
 				// If the previous instruction was a jump, and this instruction is larger
 				// than a simple instruction, don't consider it
-				if inst.size() > 4 && prev_inst.map_or(false, Self::may_jump) {
+				if inst.size() > 4 && prev_inst.map_or(false, Self::expects_branch_delay) {
 					break 'validate Err(());
 				}
 
@@ -138,9 +138,9 @@ impl<'a> Inst<'a> {
 }
 
 impl<'a> Inst<'a> {
-	/// Returns if this instruction may jump
+	/// Returns if this instruction expects a branch delay after
 	#[must_use]
-	pub const fn may_jump(&self) -> bool {
+	pub const fn expects_branch_delay(&self) -> bool {
 		matches!(self, Self::Basic(basic::Inst::Cond(_) | basic::Inst::Jmp(_)))
 	}
 }

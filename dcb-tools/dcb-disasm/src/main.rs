@@ -158,7 +158,7 @@ fn main() -> Result<(), anyhow::Error> {
 					print!("\t");
 
 					// If we had a branch / jump instruction before this one, add a "+ "
-					if insts.get(&(pos - 4)).map_or(false, |inst| inst.may_jump()) {
+					if insts.get(&(pos - 4)).map_or(false, |inst| inst.expects_branch_delay()) {
 						print!("+ ");
 					}
 
@@ -235,7 +235,7 @@ fn main() -> Result<(), anyhow::Error> {
 					}
 
 					// If we had a branch / jump instruction before this one, add a "+ "
-					if prev_inst.as_ref().map_or(false, Inst::may_jump) {
+					if prev_inst.as_ref().map_or(false, Inst::expects_branch_delay) {
 						print!("+ ");
 					}
 
