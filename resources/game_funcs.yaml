@@ -883,6 +883,30 @@
   end_pos: 0x80063d10
   kind: Known
 
+- name: something49
+  start_pos: 0x801ead04
+  end_pos: 0x801ead08
+  kind: Known
+
+- name: something50
+  start_pos: 0x8002b3ec
+  end_pos: 0x8002b498
+  kind: Known
+
+- name: something51
+  labels:
+    0x8002f578: "0"
+    0x8002f5dc: "1"
+    0x8002f5f0: "2"
+    0x8002f6e4: "3"
+    0x8002f710: "4"
+    0x8002f74c: "5"
+    0x8002f774: "6"
+    0x8002f77c: "7"
+  start_pos: 0x8002f4f4
+  end_pos: 0x8002f79c
+  kind: Known
+
 # A functions
 - name: InitHeap
   signature: "fn(addr: *u32, size: u32)"

@@ -368,3 +368,390 @@
 ? pos: 0x800146e0
   arg: 1
 : "something11_data1@addr_lo"
+
+? pos: 0x800146c0
+  arg: 1
+: "something11_data4@addr_hi"
+? pos: 0x800146c4
+  arg: 1
+: "something11_data4@addr_lo"
+? pos: 0x800146d4
+  arg: 1
+: "something11_data4@addr_lo"
+
+? pos: 0x800146e4
+  arg: 1
+: "something11_data3@addr_hi"
+? pos: 0x800146e8
+  arg: 1
+: "something11_data3@addr_lo"
+? pos: 0x80014714
+  arg: 1
+: "something11_data3@addr_lo"
+
+? pos: 0x800146f4
+  arg: 1
+: "something11_data2@addr_hi"
+? pos: 0x800146f8
+  arg: 1
+: "something11_data2@addr_lo"
+? pos: 0x80014708
+  arg: 1
+: "something11_data2@addr_lo"
+
+? pos: 0x80014754
+  arg: 1
+: "something11_data5@addr_hi"
+? pos: 0x80014758
+  arg: 1
+: "something11_data5@addr_lo"
+
+? pos: 0x80014784
+  arg: 1
+: "unknown4@addr_hi"
+? pos: 0x80014788
+  arg: 2
+: "unknown4@addr_lo"
+
+? pos: 0x80014798
+  arg: 1
+: "something11_data1@addr_hi"
+? pos: 0x800147a0
+  arg: 1
+: "something11_data1@addr_hi"
+? pos: 0x800147a4
+  arg: 1
+: "something11_data1@addr_lo"
+? pos: 0x800147d0
+  arg: 1
+: "something11_data1@addr_lo"
+
+? pos: 0x800147b0
+  arg: 1
+: "something11_data4@addr_hi"
+? pos: 0x800147b4
+  arg: 1
+: "something11_data4@addr_lo"
+? pos: 0x800147c4
+  arg: 1
+: "something11_data4@addr_lo"
+
+? pos: 0x800147d4
+  arg: 1
+: "something11_data3@addr_hi"
+? pos: 0x800147d8
+  arg: 1
+: "something11_data3@addr_lo"
+? pos: 0x80014808
+  arg: 1
+: "something11_data3@addr_lo"
+
+? pos: 0x800147e8
+  arg: 1
+: "something11_data2@addr_hi"
+? pos: 0x800147ec
+  arg: 1
+: "something11_data2@addr_lo"
+? pos: 0x800147fc
+  arg: 1
+: "something11_data2@addr_lo"
+
+? pos: 0x800148ec
+  arg: 1
+: "something11_data5@addr_hi"
+? pos: 0x800148f8
+  arg: 1
+: "something11_data5@addr_lo"
+
+? pos: 0x80014940
+  arg: 1
+: "something11_data5@addr_hi"
+? pos: 0x8001494c
+  arg: 1
+: "something11_data5@addr_lo"
+
+? pos: 0x80014d04
+  arg: 1
+: "unknown7@addr_hi"
+? pos: 0x80014d08
+  arg: 1
+: "unknown7@addr_lo"
+
+? pos: 0x80014d4c
+  arg: 1
+: "unknown8@addr_hi"
+? pos: 0x80014d50
+  arg: 1
+: "unknown8@addr_lo"
+? pos: 0x80014d60
+  arg: 1
+: "unknown8@addr_lo"
+
+? pos: 0x80014d90
+  arg: 1
+: "unknown9@addr_hi"
+? pos: 0x80014d94
+  arg: 2
+: "unknown9@addr_lo"
+
+? pos: 0x80014d9c
+  arg: 1
+: "unknown10@addr_hi"
+? pos: 0x80014da0
+  arg: 2
+: "unknown10@addr_lo"
+
+? pos: 0x80014f18
+  arg: 1
+: "unknown13@addr_hi"
+? pos: 0x80014f1c
+  arg: 1
+: "unknown13@addr_lo"
+
+? pos: 0x80014f3c
+  arg: 1
+: "unknown9@addr_hi"
+? pos: 0x80014f40
+  arg: 2
+: "unknown9@addr_lo"
+
+? pos: 0x80014f54
+  arg: 1
+: "unknown10@addr_hi"
+? pos: 0x80014f58
+  arg: 2
+: "unknown10@addr_lo"
+
+? pos: 0x80014f44
+  arg: 1
+: "unknown14@addr_hi"
+? pos: 0x80014f74
+  arg: 1
+: "unknown14@addr_lo"
+? pos: 0x80014fa4
+  arg: 1
+: "unknown14@addr_lo"
+? pos: 0x80014fcc
+  arg: 1
+: "unknown14@addr_lo"
+? pos: 0x80014ff8
+  arg: 1
+: "unknown14@addr_lo"
+? pos: 0x80015020
+  arg: 1
+: "unknown14@addr_lo"
+? pos: 0x80015048
+  arg: 1
+: "unknown14@addr_lo"
+? pos: 0x80015070
+  arg: 1
+: "unknown14@addr_lo"
+? pos: 0x80015098
+  arg: 1
+: "unknown14@addr_lo"
+? pos: 0x800150e0
+  arg: 1
+: "unknown14@addr_lo"
+? pos: 0x80015118
+  arg: 1
+: "unknown14@addr_lo"
+
+? pos: 0x800150b4
+  arg: 1
+: "unknown15@addr_hi"
+? pos: 0x800150b8
+  arg: 1
+: "unknown15@addr_lo"
+
+? pos: 0x800152e0
+  arg: 1
+: "unknown16@addr_hi"
+? pos: 0x800152e4
+  arg: 2
+: "unknown16@addr_lo"
+? pos: 0x800152e8
+  arg: 1
+: "unknown16@addr_lo"
+
+? pos: 0x80015308
+  arg: 1
+: "unknown17@addr_hi"
+? pos: 0x80015314
+  arg: 1
+: "unknown17@addr_lo"
+
+? pos: 0x80015354
+  arg: 1
+: "unknown16@addr_hi"
+? pos: 0x80015358
+  arg: 2
+: "unknown16@addr_lo"
+
+? pos: 0x80015360
+  arg: 1
+: "unknown8@addr_hi"
+? pos: 0x80015364
+  arg: 1
+: "unknown8@addr_lo"
+
+? pos: 0x80015374
+  arg: 1
+: "unknown8@addr_hi"
+? pos: 0x8001538c
+  arg: 1
+: "unknown8@addr_lo"
+? pos: 0x800153a0
+  arg: 1
+: "unknown8@addr_lo"
+
+? pos: 0x800153c0
+  arg: 1
+: "unknown14@addr_hi"
+? pos: 0x800153c4
+  arg: 1
+: "unknown14@addr_lo"
+
+? pos: 0x800153c8
+  arg: 1
+: "unknown15@addr_hi"
+? pos: 0x800153d0
+  arg: 1
+: "unknown15@addr_lo"
+
+? pos: 0x800153e0
+  arg: 1
+: "unknown14@addr_hi"
+? pos: 0x80015444
+  arg: 1
+: "unknown14@addr_lo"
+? pos: 0x80015450
+  arg: 1
+: "unknown14@addr_lo"
+
+? pos: 0x80015454
+  arg: 1
+: "unknown15@addr_hi"
+? pos: 0x80015478
+  arg: 1
+: "unknown15@addr_lo"
+? pos: 0x800154a0
+  arg: 1
+: "unknown15@addr_lo"
+
+? pos: 0x80015488
+  arg: 1
+: "unknown9@addr_hi"
+? pos: 0x8001548c
+  arg: 2
+: "unknown9@addr_lo"
+
+? pos: 0x8001554c
+  arg: 1
+: "unknown15@addr_hi"
+? pos: 0x80015558
+  arg: 1
+: "unknown15@addr_lo"
+
+? pos: 0x80015550
+  arg: 1
+: "unknown14@addr_hi"
+? pos: 0x8001555c
+  arg: 1
+: "unknown14@addr_lo"
+
+? pos: 0x8001559c
+  arg: 1
+: "unknown15@addr_hi"
+? pos: 0x800155a8
+  arg: 1
+: "unknown15@addr_lo"
+? pos: 0x800155b4
+  arg: 1
+: "unknown15@addr_lo"
+? pos: 0x800155c0
+  arg: 1
+: "unknown15@addr_lo"
+
+? pos: 0x800155e8
+  arg: 1
+: "unknown8@addr_hi"
+? pos: 0x800155f0
+  arg: 1
+: "unknown8@addr_lo"
+
+? pos: 0x80015690
+  arg: 1
+: "something50@addr_hi"
+? pos: 0x80015694
+  arg: 2
+: "something50@addr_lo"
+
+? pos: 0x80015698
+  arg: 1
+: "something12@addr_hi"
+? pos: 0x8001569c
+  arg: 2
+: "something12@addr_lo"
+
+? pos: 0x800156a0
+  arg: 1
+: "something51@addr_hi"
+? pos: 0x800156a4
+  arg: 2
+: "something51@addr_lo"
+
+? pos: 0x80015230
+  arg: 1
+: "unknown15@addr_hi"
+? pos: 0x80015234
+  arg: 1
+: "unknown15@addr_lo"
+
+? pos: 0x80015408
+  arg: 1
+: "unknown17@addr_hi"
+? pos: 0x8001540c
+  arg: 1
+: "unknown17@addr_lo"
+
+? pos: 0x800156d8
+  arg: 1
+: "unknown18@addr_hi"
+? pos: 0x800156e0
+  arg: 1
+: "unknown18@addr_lo"
+
+? pos: 0x80015830
+  arg: 1
+: "unknown20@addr_hi"
+? pos: 0x80015834
+  arg: 1
+: "unknown20@addr_lo"
+
+? pos: 0x8001586c
+  arg: 1
+: "unknown21@addr_hi"
+? pos: 0x80015874
+  arg: 1
+: "unknown21@addr_lo"
+
+? pos: 0x80015888
+  arg: 1
+: "unknown20@addr_hi"
+? pos: 0x80015890
+  arg: 1
+: "unknown20@addr_lo"
+
+? pos: 0x800158e8
+  arg: 1
+: "unknown22@addr_hi"
+? pos: 0x800158f0
+  arg: 1
+: "unknown22@addr_lo"
+
+? pos: 0x80015a3c
+  arg: 1
+: "unknown21@addr_hi"
+? pos: 0x80015a40
+  arg: 2
+: "unknown21@addr_lo"
