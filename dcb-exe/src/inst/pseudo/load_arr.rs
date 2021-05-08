@@ -1,4 +1,4 @@
-//! Store array
+//! Load array
 
 // Imports
 use super::{Decodable, Encodable};
@@ -7,7 +7,7 @@ use crate::inst::{
 };
 use std::array;
 
-/// Store instruction kind
+/// Load instruction kind
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum Kind {
 	/// Byte, `i8`
@@ -18,6 +18,12 @@ pub enum Kind {
 
 	/// Word, `u32`
 	Word,
+
+	/// Byte unsigned, `u8`
+	ByteUnsigned,
+
+	/// Half-word unsigned, `u16`
+	HalfWordUnsigned,
 }
 
 impl Kind {
@@ -25,19 +31,19 @@ impl Kind {
 	#[must_use]
 	pub const fn size(self) -> u8 {
 		match self {
-			Kind::Byte => 1,
-			Kind::HalfWord => 2,
+			Kind::Byte | Kind::ByteUnsigned => 1,
+			Kind::HalfWord | Kind::HalfWordUnsigned => 2,
 			Kind::Word => 4,
 		}
 	}
 }
 
-/// Store array
+/// Load array
 ///
 /// Alias for
 /// ```mips
-/// s{b, h, w} $.., start($addr)
-/// s{b, h, w} $.., start+4($addr)
+/// l{b, bu, h, hu, w} $.., start($addr)
+/// l{b, bu, h, hu, w} $.., start+4($addr)
 /// ...
 /// ```
 #[derive(PartialEq, Eq, Clone, Debug)]
@@ -60,15 +66,17 @@ impl Decodable for Inst {
 	fn decode(mut insts: impl Iterator<Item = basic::Inst> + Clone) -> Option<Self> {
 		// If it's a `sw $.., offset($sp)`, get the initial offset and keep reading
 		let (addr, reg, offset, kind) = match insts.next()? {
-			basic::Inst::Store(basic::store::Inst {
+			basic::Inst::Load(basic::load::Inst {
 				value,
 				addr,
 				offset,
 				kind,
 			}) => (addr, value, offset, match kind {
-				basic::store::Kind::Byte => Kind::Byte,
-				basic::store::Kind::HalfWord => Kind::HalfWord,
-				basic::store::Kind::Word => Kind::Word,
+				basic::load::Kind::Byte => Kind::Byte,
+				basic::load::Kind::HalfWord => Kind::HalfWord,
+				basic::load::Kind::Word => Kind::Word,
+				basic::load::Kind::ByteUnsigned => Kind::ByteUnsigned,
+				basic::load::Kind::HalfWordUnsigned => Kind::HalfWordUnsigned,
 				_ => return None,
 			}),
 			_ => return None,
@@ -77,7 +85,7 @@ impl Decodable for Inst {
 		// Then keep reading while they're in order.
 		let mut registers = vec![reg];
 		let mut cur_offset = offset;
-		while let Some(basic::Inst::Store(basic::store::Inst {
+		while let Some(basic::Inst::Load(basic::load::Inst {
 			value,
 			addr: Register::Sp,
 			offset,
@@ -85,9 +93,11 @@ impl Decodable for Inst {
 		})) = insts.next()
 		{
 			match (kind, next_kind) {
-				(Kind::Byte, basic::store::Kind::Byte) |
-				(Kind::HalfWord, basic::store::Kind::HalfWord) |
-				(Kind::Word, basic::store::Kind::Word) => (),
+				(Kind::Byte, basic::load::Kind::Byte) |
+				(Kind::HalfWord, basic::load::Kind::HalfWord) |
+				(Kind::Word, basic::load::Kind::Word) |
+				(Kind::ByteUnsigned, basic::load::Kind::ByteUnsigned) |
+				(Kind::HalfWordUnsigned, basic::load::Kind::HalfWordUnsigned) => (),
 				_ => break,
 			};
 
@@ -119,14 +129,16 @@ impl<'a> Encodable<'a> for Inst {
 		let kind = self.kind;
 		let start_offset = self.offset;
 		self.registers.iter().copied().zip(0..).map(move |(reg, idx)| {
-			basic::Inst::Store(basic::store::Inst {
+			basic::Inst::Load(basic::load::Inst {
 				value:  reg,
 				addr:   Register::Sp,
 				offset: start_offset + i16::from(kind.size()) * idx,
 				kind:   match kind {
-					Kind::Byte => basic::store::Kind::Byte,
-					Kind::HalfWord => basic::store::Kind::HalfWord,
-					Kind::Word => basic::store::Kind::Word,
+					Kind::Byte => basic::load::Kind::Byte,
+					Kind::HalfWord => basic::load::Kind::HalfWord,
+					Kind::Word => basic::load::Kind::Word,
+					Kind::ByteUnsigned => basic::load::Kind::ByteUnsigned,
+					Kind::HalfWordUnsigned => basic::load::Kind::HalfWordUnsigned,
 				},
 			})
 		})
@@ -138,9 +150,11 @@ impl<'a> Parsable<'a> for Inst {
 		mnemonic: &'a str, args: &'a [LineArg], ctx: &Ctx,
 	) -> Result<Self, ParseError> {
 		let kind = match mnemonic {
-			"sbarr" => Kind::Byte,
-			"sharr" => Kind::HalfWord,
-			"swarr" => Kind::Word,
+			"lbarr" => Kind::Byte,
+			"lharr" => Kind::HalfWord,
+			"lwarr" => Kind::Word,
+			"lbuarr" => Kind::ByteUnsigned,
+			"lhuarr" => Kind::HalfWordUnsigned,
 			_ => return Err(ParseError::UnknownMnemonic),
 		};
 
@@ -167,9 +181,11 @@ impl<'a> InstDisplay<'a> for Inst {
 
 	fn mnemonic<Ctx: DisplayCtx>(&'a self, _ctx: &Ctx) -> Self::Mnemonic {
 		match self.kind {
-			Kind::Byte => "sbarr",
-			Kind::HalfWord => "sharr",
-			Kind::Word => "swarr",
+			Kind::Byte => "lbarr",
+			Kind::HalfWord => "lharr",
+			Kind::Word => "lwarr",
+			Kind::ByteUnsigned => "lbuarr",
+			Kind::HalfWordUnsigned => "lhuarr",
 		}
 	}
 

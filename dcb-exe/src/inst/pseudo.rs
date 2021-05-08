@@ -7,6 +7,7 @@
 // Modules
 pub mod bios;
 pub mod load;
+pub mod load_arr;
 pub mod load_imm;
 pub mod move_reg;
 pub mod nop;
@@ -36,6 +37,9 @@ pub enum Inst {
 	/// Store
 	Store(store::Inst),
 
+	/// Load array
+	LoadArr(load_arr::Inst),
+
 	/// Store array
 	StoreArr(store_arr::Inst),
 
@@ -50,6 +54,7 @@ impl Decodable for Inst {
 		None.or_else(|| bios        ::Inst::decode(insts.clone()).map(Self::Bios    ))
 			.or_else(|| load_imm    ::Inst::decode(insts.clone()).map(Self::LoadImm ))
 			.or_else(|| nop         ::Inst::decode(insts.clone()).map(Self::Nop     ))
+			.or_else(|| load_arr    ::Inst::decode(insts.clone()).map(Self::LoadArr ))
 			.or_else(|| store_arr   ::Inst::decode(insts.clone()).map(Self::StoreArr))
 			.or_else(|| load        ::Inst::decode(insts.clone()).map(Self::Load    ))
 			.or_else(|| store       ::Inst::decode(insts.clone()).map(Self::Store   ))
@@ -66,9 +71,10 @@ impl<'a> Encodable<'a> for Inst {
 			Inst::LoadImm(inst) => inst.encode(),
 			Inst::Nop(inst) => inst.encode(),
 			Inst::MoveReg(inst) => inst.encode(),
+			Inst::LoadArr(inst) => inst.encode(),
+			Inst::StoreArr(inst) => inst.encode(),
 			Inst::Load(inst) => inst.encode(),
 			Inst::Store(inst) => inst.encode(),
-			Inst::StoreArr(inst) => inst.encode(),
 			Inst::Bios(inst) => inst.encode(),
 		}
 	}
@@ -83,9 +89,10 @@ impl<'a> Parsable<'a> for Inst {
 			&|| load_imm ::Inst::parse(mnemonic, args, ctx).map(Self::LoadImm),
 			&|| nop      ::Inst::parse(mnemonic, args, ctx).map(Self::Nop),
 			&|| move_reg ::Inst::parse(mnemonic, args, ctx).map(Self::MoveReg),
+			&|| load_arr ::Inst::parse(mnemonic, args, ctx).map(Self::LoadArr),
+			&|| store_arr::Inst::parse(mnemonic, args, ctx).map(Self::StoreArr),
 			&|| load     ::Inst::parse(mnemonic, args, ctx).map(Self::Load),
 			&|| store    ::Inst::parse(mnemonic, args, ctx).map(Self::Store),
-			&|| store_arr::Inst::parse(mnemonic, args, ctx).map(Self::StoreArr),
 			&|| bios     ::Inst::parse(mnemonic, args, ctx).map(Self::Bios),
 		];
 
@@ -114,9 +121,10 @@ impl<'a> InstDisplay<'a> for Inst {
 			Inst::LoadImm (inst) => inst.mnemonic(ctx),
 			Inst::Nop     (inst) => inst.mnemonic(ctx),
 			Inst::MoveReg (inst) => inst.mnemonic(ctx),
+			Inst::LoadArr (inst) => inst.mnemonic(ctx),
+			Inst::StoreArr(inst) => inst.mnemonic(ctx),
 			Inst::Load    (inst) => inst.mnemonic(ctx),
 			Inst::Store   (inst) => inst.mnemonic(ctx),
-			Inst::StoreArr(inst) => inst.mnemonic(ctx),
 			Inst::Bios    (inst) => inst.mnemonic(ctx),
 		}
 	}
@@ -128,9 +136,10 @@ impl<'a> InstDisplay<'a> for Inst {
 			Inst::LoadImm (inst) => inst.args(ctx),
 			Inst::Nop     (inst) => inst.args(ctx),
 			Inst::MoveReg (inst) => inst.args(ctx),
+			Inst::LoadArr (inst) => inst.args(ctx),
+			Inst::StoreArr(inst) => inst.args(ctx),
 			Inst::Load    (inst) => inst.args(ctx),
 			Inst::Store   (inst) => inst.args(ctx),
-			Inst::StoreArr(inst) => inst.args(ctx),
 			Inst::Bios    (inst) => inst.args(ctx),
 		}
 	}
@@ -142,9 +151,10 @@ impl InstSize for Inst {
 			Self::LoadImm(inst) => inst.size(),
 			Self::Nop(inst) => inst.size(),
 			Self::MoveReg(inst) => inst.size(),
+			Self::LoadArr(inst) => inst.size(),
+			Self::StoreArr(inst) => inst.size(),
 			Self::Load(inst) => inst.size(),
 			Self::Store(inst) => inst.size(),
-			Self::StoreArr(inst) => inst.size(),
 			Self::Bios(inst) => inst.size(),
 		}
 	}
