@@ -112,6 +112,26 @@ pub fn parse_from_file<
 	parser(file).map_err(ParseFromFileError::Parse)
 }
 
+/// Error for [`write_to_file`]
+#[derive(Debug, thiserror::Error)]
+pub enum WriteToFileError<E: fmt::Debug + error::Error + 'static> {
+	/// Unable to create file
+	#[error("Unable to crate file")]
+	Create(#[source] io::Error),
+
+	/// Unable to write the file
+	#[error("Unable to write file")]
+	Write(#[source] E),
+}
+
+/// Creates and writes a value to a file
+pub fn write_to_file<T: serde::Serialize, E: fmt::Debug + error::Error + 'static, P: ?Sized + AsRef<Path>>(
+	path: &P, value: &T, writer: fn(fs::File, &T) -> Result<(), E>,
+) -> Result<(), WriteToFileError<E>> {
+	let file = fs::File::create(path).map_err(WriteToFileError::Create)?;
+	writer(file, value).map_err(WriteToFileError::Write)
+}
+
 /// Returns the absolute different between `a` and `b`, `a - b` as a `i64`.
 ///
 /// # Panics
