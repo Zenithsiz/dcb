@@ -338,8 +338,7 @@ impl<'a> ParseCtx<'a> for OverrideParseCtx<'a> {
 		if let Some(pos) = self.exe.func_table().range(..).find_map(|func| {
 			let warn_on_heuristic = || {
 				// If we're asked for a heuristically found function, warn
-				// TODO: Better way of checking if it's heuristically found?
-				if func.name.starts_with("func_") {
+				if func.kind.is_heuristics() {
 					log::warn!(
 						"Override parsing context was queried for a heuristically found func: {} @ {}",
 						func.name,
