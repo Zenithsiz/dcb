@@ -5,9 +5,12 @@
 // Modules
 mod cli;
 mod display_ctx;
+mod external;
 
 // Exports
+use cli::CliData;
 use display_ctx::DisplayCtx;
+use external::{ArgPos, ExternalResources};
 
 // Imports
 use anyhow::Context;
@@ -17,7 +20,7 @@ use dcb_exe::{
 	ExeReader, Func, Pos,
 };
 use itertools::{Itertools, Position};
-use std::{collections::BTreeMap, fmt, fs, path::PathBuf};
+use std::{collections::BTreeMap, fmt, fs};
 
 fn main() -> Result<(), anyhow::Error> {
 	// Initialize the logger
@@ -29,35 +32,19 @@ fn main() -> Result<(), anyhow::Error> {
 	.expect("Unable to initialize logger");
 
 	// Get all data from cli
-	let cli = cli::CliData::new();
+	let cli = CliData::new();
+
+	// Load all external resources
+	let ExternalResources {
+		data_table,
+		func_table,
+		mut inst_arg_overrides,
+	} = ExternalResources::load(&cli);
 
 	// Open the input file
-	let mut input_file = fs::File::open(&cli.input_path).context("Unable to open input file")?;
-
-	// Load the known and foreign data / func tables
-	let known_data_path = cli.known_data_path;
-	let foreign_data_path = cli.foreign_data_path;
-	let known_funcs_path = cli.known_funcs_path;
-	let inst_arg_overrides_path = cli.inst_arg_overrides_path;
-
-	let known_data: Vec<_> = dcb_util::parse_from_file(&known_data_path, serde_yaml::from_reader)
-		.map_err(dcb_util::fmt_err_wrapper_owned)
-		.map_err(|err| log::warn!("Unable to load game data from {known_data_path:?}: {err}"))
-		.unwrap_or_default();
-	let foreign_data: Vec<_> = dcb_util::parse_from_file(&foreign_data_path, serde_yaml::from_reader)
-		.map_err(dcb_util::fmt_err_wrapper_owned)
-		.map_err(|err| log::warn!("Unable to load foreign data from {foreign_data_path:?}: {err}"))
-		.unwrap_or_default();
-	let data_table = known_data.into_iter().chain(foreign_data).collect();
-
-	let func_table = dcb_util::parse_from_file(&known_funcs_path, serde_yaml::from_reader)
-		.map_err(dcb_util::fmt_err_wrapper_owned)
-		.map_err(|err| log::warn!("Unable to load functions from {known_funcs_path:?}: {err}"))
-		.unwrap_or_default();
-	let mut inst_arg_overrides = dcb_util::parse_from_file(&inst_arg_overrides_path, serde_yaml::from_reader)
-		.map_err(dcb_util::fmt_err_wrapper_owned)
-		.map_err(|err| log::warn!("Unable to load instruction overrides from {inst_arg_overrides_path:?}: {err}"))
-		.unwrap_or_default();
+	let input_file_path = &cli.input_path;
+	let mut input_file =
+		fs::File::open(input_file_path).with_context(|| format!("Unable to open input file {input_file_path:?}"))?;
 
 	// Read the executable
 	log::debug!("Deserializing executable");
@@ -67,14 +54,10 @@ fn main() -> Result<(), anyhow::Error> {
 	})
 	.context("Unable to parse game executable")?;
 
-	if cli.print_header {
-		let header_file_path = {
-			let mut path = cli.input_path.clone().into_os_string();
-			path.push(".header");
-			PathBuf::from(path)
-		};
-		let header_file = fs::File::create(header_file_path).context("Unable to create header file")?;
-		serde_yaml::to_writer(header_file, exe.header()).context("Unable to write header to file")?;
+	// If we should print a header, create a `.header` file with the input
+	if let Some(header_path) = &cli.header_path {
+		dcb_util::write_to_file(header_path, exe.header(), serde_yaml::to_writer)
+			.with_context(|| format!("Unable to write header to file {header_path:?}"))?;
 	}
 
 	// Instruction buffer
@@ -253,10 +236,6 @@ fn main() -> Result<(), anyhow::Error> {
 		}
 	}
 
-	if cli.print_data_table {
-		println!("Data Table:\n{}", exe.data_table());
-	}
-
 	// If there are any leftover overrides, warn
 	for (pos, _) in inst_arg_overrides {
 		log::warn!("Ignoring override at {}/{}", pos.pos, pos.arg);
@@ -338,17 +317,6 @@ pub fn inst_display<'a>(
 
 		Ok(())
 	})
-}
-
-/// Argument position
-#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Debug)]
-#[derive(serde::Serialize, serde::Deserialize)]
-pub struct ArgPos {
-	/// Position
-	pos: Pos,
-
-	/// Argument
-	arg: usize,
 }
 
 /// Parsing context for overrides

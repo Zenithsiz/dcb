@@ -16,11 +16,8 @@ pub struct CliData {
 	/// If instruction positions should be printed
 	pub print_inst_pos: bool,
 
-	/// If the header should be printed
-	pub print_header: bool,
-
-	/// If the data table should be printed
-	pub print_data_table: bool,
+	/// Path to print the header to
+	pub header_path: Option<PathBuf>,
 
 	/// Known data path
 	pub known_data_path: PathBuf,
@@ -37,12 +34,12 @@ pub struct CliData {
 
 impl CliData {
 	/// Constructs all of the cli data given and returns it
+	#[allow(clippy::new_without_default)] // No need
 	pub fn new() -> Self {
 		const INPUT_FILE_STR: &str = "input-file";
 		const OUTPUT_DIR_STR: &str = "output-dir";
 		const PRINT_INST_POS_STR: &str = "print-inst-pos";
 		const PRINT_HEADER_STR: &str = "print-header";
-		const PRINT_DATA_TABLE_STR: &str = "print-data-table";
 
 		const KNOWN_DATA_PATH_STR: &str = "known-data-path";
 		const FOREIGN_DATA_PATH_STR: &str = "foreign-data-path";
@@ -62,11 +59,12 @@ impl CliData {
 					.index(1)
 					.takes_value(true),
 			)
+			// TODO: Use this argument
 			.arg(
 				ClapArg::with_name(OUTPUT_DIR_STR)
 					.long(OUTPUT_DIR_STR)
 					.short("o")
-					.help("Sets the input game file to use")
+					.help("Sets the output directory to extract to")
 					.takes_value(true),
 			)
 			.arg(
@@ -77,12 +75,8 @@ impl CliData {
 			.arg(
 				ClapArg::with_name(PRINT_HEADER_STR)
 					.long(PRINT_HEADER_STR)
-					.help("If the header of the executable should be printed"),
-			)
-			.arg(
-				ClapArg::with_name(PRINT_DATA_TABLE_STR)
-					.long(PRINT_DATA_TABLE_STR)
-					.help("If the data table of the executable should be printed"),
+					.help("Path of the header file to output to")
+					.takes_value(true),
 			)
 			.arg(
 				ClapArg::with_name(KNOWN_DATA_PATH_STR)
@@ -125,8 +119,7 @@ impl CliData {
 
 
 		let print_inst_pos = matches.is_present(PRINT_INST_POS_STR);
-		let print_header = matches.is_present(PRINT_HEADER_STR);
-		let print_data_table = matches.is_present(PRINT_DATA_TABLE_STR);
+		let header_path = matches.value_of(PRINT_HEADER_STR).map(PathBuf::from);
 
 		let known_data_path = matches
 			.value_of(KNOWN_DATA_PATH_STR)
@@ -146,8 +139,7 @@ impl CliData {
 			input_path,
 			output_dir_path,
 			print_inst_pos,
-			print_header,
-			print_data_table,
+			header_path,
 
 			known_data_path: PathBuf::from(known_data_path),
 			foreign_data_path: PathBuf::from(foreign_data_path),
