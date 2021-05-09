@@ -2,6 +2,7 @@
 
 // Imports
 use crate::Data;
+use std::rc::Rc;
 
 /// Error for [`DataNode::insert`](super::DataNode::insert)
 #[derive(Debug, thiserror::Error)]
@@ -17,7 +18,7 @@ pub enum InsertError {
 		data: Data,
 
 		/// The data that it intersects with
-		intersecting: Data,
+		intersecting: Rc<Data>,
 	},
 
 	/// The data location already existed
@@ -27,7 +28,7 @@ pub enum InsertError {
 		data: Data,
 
 		/// The data that it is a duplicate of
-		duplicate: Data,
+		duplicate: Rc<Data>,
 	},
 
 	/// Attempted to insert heuristic data into known non-marker data
@@ -37,14 +38,14 @@ pub enum InsertError {
 		data: Data,
 
 		/// The known non-marker data
-		known: Data,
+		known: Rc<Data>,
 	},
 
 	/// Unable to insert into child node
 	#[error("Unable to insert into child {child}")]
 	InsertChild {
 		/// The child being inserted into
-		child: Data,
+		child: Rc<Data>,
 
 		/// Underlying error
 		#[source]

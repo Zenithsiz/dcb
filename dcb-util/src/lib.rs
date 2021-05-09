@@ -175,13 +175,13 @@ pub const fn saturating_signed_offset(a: u64, b: i64) -> u64 {
 
 /// Prints an error
 pub fn fmt_err(err: &(dyn error::Error + '_), f: &mut fmt::Formatter) -> fmt::Result {
-	writeln!(f, "{err}")?;
+	write!(f, "{err}")?;
 
 	let mut source = err.source();
 	for n in 1usize.. {
 		match source {
 			Some(err) => {
-				write!(f, "  {n}: {err}")?;
+				write!(f, "\n  {n}: {err}")?;
 				source = err.source();
 			},
 			None => break,

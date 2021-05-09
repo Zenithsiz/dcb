@@ -9,13 +9,13 @@ pub mod error;
 pub mod node;
 
 // Exports
-pub use error::{ExtendError, NewError};
+pub use error::{ExtendError, InsertError, NewError};
 pub use node::DataNode;
 
 // Imports
 use super::{Data, DataKind};
 use crate::Pos;
-use std::{fmt, iter::FromIterator};
+use std::{collections::HashMap, fmt, iter::FromIterator, rc::Rc};
 
 /// Data table
 ///
@@ -41,16 +41,48 @@ pub struct DataTable {
 	/// Note: The root data is never actually returned, it is a dummy data
 	///       that encompasses all of the data positions.
 	root: DataNode,
+
+	/// Name to data for efficient name searching
+	by_name: HashMap<String, Rc<Data>>,
 }
 
+// Constructors
 impl DataTable {
 	/// Creates an empty data table
 	#[must_use]
 	pub fn new() -> Self {
 		let root = DataNode::new(Data::dummy());
-		Self { root }
+		Self {
+			root,
+			by_name: HashMap::new(),
+		}
 	}
+}
 
+// Modifier
+impl DataTable {
+	/// Inserts data into this table
+	pub fn insert(&mut self, data: Data) -> Result<(), InsertError> {
+		// If some data with the same name exists, return Err
+		if let Some(duplicate) = self.by_name.get(&data.name) {
+			return Err(InsertError::DuplicateName {
+				data,
+				duplicate: Rc::clone(duplicate),
+			});
+		}
+
+		// Else try to insert it into the root
+		let data = self.root.insert(data).map_err(InsertError::Insert)?;
+
+		// Then insert it into our names
+		self.by_name.insert(data.name.clone(), data);
+
+		Ok(())
+	}
+}
+
+// Getters
+impl DataTable {
 	/// Retrieves the smallest data location containing `pos`
 	#[must_use]
 	pub fn get_containing(&self, pos: Pos) -> Option<&Data> {
@@ -95,10 +127,9 @@ impl DataTable {
 	}
 
 	/// Searches for a data with name 'name'
-	///
-	/// Note: This has `O(N)` complexity where `N` is the number of data
+	#[must_use]
 	pub fn search_name(&self, name: &str) -> Option<&Data> {
-		self.root.search_name(name).map(DataNode::data)
+		self.by_name.get(name).map(|data| &**data)
 	}
 }
 
@@ -108,6 +139,7 @@ impl Default for DataTable {
 	}
 }
 
+// TODO: Replace with `insert` method once we finish name searching.
 impl Extend<Data> for DataTable {
 	fn extend<T: IntoIterator<Item = Data>>(&mut self, data: T) {
 		for data in data {
@@ -117,15 +149,16 @@ impl Extend<Data> for DataTable {
 
 	fn extend_one(&mut self, data: Data) {
 		// Try to insert and log if we get an error.
-		if let Err(err) = self.root.insert(data) {
-			let log_level = match err.data().kind() {
+		if let Err(err) = self.insert(data) {
+			let data = err.data();
+			let log_level = match data.kind() {
 				DataKind::Known | DataKind::Foreign => log::Level::Warn,
 				DataKind::Heuristics => log::Level::Trace,
 			};
 			log::log!(
 				log_level,
-				"Unable to add data:\n{:#}",
-				dcb_util::DisplayWrapper::new(|f| dcb_util::fmt_err(&err, f))
+				"Unable to add data {data}: {}",
+				dcb_util::fmt_err_wrapper(&err)
 			);
 		}
 	}

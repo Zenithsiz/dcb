@@ -14,6 +14,7 @@ use std::{
 	collections::BTreeSet,
 	fmt,
 	ops::{Bound, Range},
+	rc::Rc,
 };
 
 /// A data node
@@ -22,7 +23,7 @@ use std::{
 #[derive(Clone, Debug)]
 pub struct DataNode {
 	/// The data in this node
-	data: Data,
+	data: Rc<Data>,
 
 	/// All children
 	nodes: BTreeSet<Self>,
@@ -31,16 +32,16 @@ pub struct DataNode {
 impl DataNode {
 	/// Creates a new data node
 	#[must_use]
-	pub const fn new(data: Data) -> Self {
+	pub fn new(data: Data) -> Self {
 		Self {
-			data,
+			data:  Rc::new(data),
 			nodes: BTreeSet::new(),
 		}
 	}
 
 	/// Returns the data in this node
 	#[must_use]
-	pub const fn data(&self) -> &Data {
+	pub fn data(&self) -> &Data {
 		&self.data
 	}
 
@@ -49,9 +50,8 @@ impl DataNode {
 		self.nodes.iter()
 	}
 
-	/// Inserts a new data into this node
-	// TODO: Get rid of all these clones.
-	pub fn insert(&mut self, data: Data) -> Result<(), InsertError> {
+	/// Inserts a new data into this node and returns it.
+	pub fn insert(&mut self, data: Data) -> Result<Rc<Data>, InsertError> {
 		// If the data isn't contained in ourselves, return Err
 		if !self.contains(&data) {
 			return Err(InsertError::NotContained(data));
@@ -63,7 +63,7 @@ impl DataNode {
 			if node.data.start_pos() == data.start_pos() && node.data.ty() == data.ty() {
 				return Err(InsertError::Duplicate {
 					data,
-					duplicate: node.data.clone(),
+					duplicate: Rc::clone(&node.data),
 				});
 			}
 			// If it contains it, check if we can insert it there
@@ -75,7 +75,7 @@ impl DataNode {
 				{
 					return Err(InsertError::InsertHeuristicsIntoNonMarkerKnown {
 						data,
-						known: node.data.clone(),
+						known: Rc::clone(&node.data),
 					});
 				}
 
@@ -83,7 +83,7 @@ impl DataNode {
 				let node_pos = node.data.start_pos();
 				return self::btree_set_modify(&mut self.nodes, &node_pos, |node| {
 					node.insert(data).map_err(|err| InsertError::InsertChild {
-						child: node.data.clone(),
+						child: Rc::clone(&node.data),
 						err:   Box::new(err),
 					})
 				});
@@ -92,7 +92,7 @@ impl DataNode {
 			else if node.intersects(&data) {
 				return Err(InsertError::Intersection {
 					data,
-					intersecting: node.data.clone(),
+					intersecting: Rc::clone(&node.data),
 				});
 			};
 		}
@@ -102,18 +102,20 @@ impl DataNode {
 			if node.intersects(&data) {
 				return Err(InsertError::Intersection {
 					data,
-					intersecting: node.data.clone(),
+					intersecting: Rc::clone(&node.data),
 				});
 			}
 		}
 
 		// And insert it
+		let node = Self::new(data);
+		let data = Rc::clone(&node.data);
 		assert_eq!(
-			self.nodes.replace(Self::new(data)),
+			self.nodes.replace(node),
 			None,
 			"No node with this position should exist",
 		);
-		Ok(())
+		Ok(data)
 	}
 
 	/// Checks if a data is contained in this node
@@ -154,26 +156,6 @@ impl DataNode {
 	#[must_use]
 	pub fn get_next_from(&self, pos: Pos) -> Option<&Self> {
 		self.nodes.range((Bound::Excluded(pos), Bound::Unbounded)).next()
-	}
-
-	/// Searches for a data with name 'name'
-	///
-	/// Note: This has `O(N)` complexity where `N` is the number of data
-	#[must_use]
-	pub fn search_name(&self, name: &str) -> Option<&Self> {
-		// Search each node
-		for node in &self.nodes {
-			// If the name is equal, return it
-			if node.data.name == name {
-				return Some(node);
-			}
-			// Else recurse into it to check
-			else if let Some(data) = node.search_name(name) {
-				return Some(data);
-			}
-		}
-
-		None
 	}
 
 	/// Formats this node with a depth
