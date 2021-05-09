@@ -9,11 +9,12 @@ mod cli;
 use anyhow::Context;
 use dcb_bytes::Bytes;
 use dcb_exe::{
+	data::DataKind,
 	inst::{
 		parse::{Line, LineInst},
 		Inst, InstSize, Label, Parsable, ParseCtx,
 	},
-	Data, Pos,
+	Data, DataType, Pos,
 };
 use dcb_util::{AsciiStrArr, BTreeMapVector};
 use std::{
@@ -59,10 +60,10 @@ fn main() -> Result<(), anyhow::Error> {
 
 	// Read all foreign data as labels.
 	let foreign_data_file_path = "resources/foreign_data.yaml";
-	let foreign_data: Vec<Data> = dcb_util::parse_from_file(foreign_data_file_path, serde_yaml::from_reader)
+	let foreign_data: Vec<SerializedData> = dcb_util::parse_from_file(foreign_data_file_path, serde_yaml::from_reader)
 		.with_context(|| format!("Unable to read foreign data file {foreign_data_file_path:?}"))?;
 	for data in foreign_data {
-		let (pos, label) = data.into_label();
+		let (pos, label) = data.into_data().into_label();
 		let label = Rc::new(label);
 
 		labels_by_name.insert(Rc::clone(&label), pos);
@@ -301,4 +302,29 @@ struct Header {
 /// Returns the logical implication of a boolean and a predicate
 pub fn implies(lhs: bool, rhs: impl FnOnce() -> bool) -> bool {
 	lhs.then(rhs).unwrap_or(true)
+}
+
+/// Serialized foreign data
+#[derive(Clone, Debug)]
+#[derive(serde::Deserialize)]
+pub struct SerializedData {
+	/// Name
+	name: String,
+
+	/// Description
+	#[serde(default)]
+	desc: String,
+
+	/// Start position
+	pos: Pos,
+
+	/// Data type
+	ty: DataType,
+}
+
+impl SerializedData {
+	/// Converts this data to a `Data`
+	pub fn into_data(self) -> Data {
+		Data::new(self.name, self.desc, self.pos, self.ty, DataKind::Foreign)
+	}
 }

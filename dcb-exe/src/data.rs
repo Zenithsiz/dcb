@@ -36,7 +36,7 @@ use std::{collections::BTreeSet, ops::Range};
 /// This is to implement `specialized` data locations, where
 /// a large data location can have multiple data locations inside.
 #[derive(Clone, Debug)]
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(serde::Serialize)]
 #[derive(derive_more::Display)]
 #[display(fmt = "{name} ({ty}) @ {pos}")]
 pub struct Data {
@@ -44,7 +44,6 @@ pub struct Data {
 	name: String,
 
 	/// Description
-	#[serde(default)]
 	desc: String,
 
 	/// Start position
@@ -54,11 +53,22 @@ pub struct Data {
 	ty: DataType,
 
 	/// Data kind
-	#[serde(default = "DataKind::known")]
 	kind: DataKind,
 }
 
 impl Data {
+	/// Creates a new data
+	#[must_use]
+	pub const fn new(name: String, desc: String, pos: Pos, ty: DataType, kind: DataKind) -> Self {
+		Self {
+			name,
+			desc,
+			pos,
+			ty,
+			kind,
+		}
+	}
+
 	/// Creates a dummy over all of [`Pos`]'s range
 	pub(crate) fn dummy() -> Self {
 		Self {

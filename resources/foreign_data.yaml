@@ -4,13 +4,11 @@
   ty:
     Marker:
       len: 0x80000
-  kind: Foreign
 - name: ExpansionRegion1Header
   pos: 0x1f00000
   ty:
     Marker:
       len: 0x100
-  kind: Foreign
 
 # Scratchpad
 - name: Scratchpad
@@ -18,121 +16,97 @@
   ty:
     Marker:
       len: 0x400
-  kind: Foreign
 
 # Memory control 1
 - name: Expansion1BaseAddress
   pos: 0x1f801000
   ty: u32
-  kind: Foreign
 - name: Expansion2BaseAddress
   pos: 0x1f801004
   ty: u32
-  kind: Foreign
 - name: Expansion1DelaySize
   pos: 0x1f801008
   ty: u32
-  kind: Foreign
 - name: Expansion3DelaySize
   pos: 0x1f80100c
   ty: u32
-  kind: Foreign
 - name: BIOS_ROM
   pos: 0x1f801010
   ty: u32
-  kind: Foreign
 - name: SPU_DELAY
   pos: 0x1f801014
   ty: u32
-  kind: Foreign
 - name: CDROM_DELAY
   pos: 0x1f801018
   ty: u32
-  kind: Foreign
 - name: Expansion2DelaySize
   pos: 0x1f80101c
   ty: u32
-  kind: Foreign
 - name: COM_DELAY
   pos: 0x1f801020
   ty: u32
-  kind: Foreign
 
 # Peripheral I/O Ports
 - name: JOY_DATA
   desc: "Joypad / Memory card data"
   pos: 0x1f801040
   ty: u32
-  kind: Foreign
 - name: JOY_STAT
   desc: "Joypad / Memory card status"
   pos: 0x1f801044
   ty: u32
-  kind: Foreign
 - name: JOY_MODE
   desc: "Joypad / Memory card mode"
   pos: 0x1f801048
   ty: u16
-  kind: Foreign
 - name: JOY_CTRL
   desc: "Joypad / Memory card control"
   pos: 0x1f80104a
   ty: u16
-  kind: Foreign
 - name: JOY_BAUD
   desc: "Joypad / Memory card baud-rate"
   pos: 0x1f80104e
   ty: u16
-  kind: Foreign
 
 - name: SIO_DATA
   desc: "Serial port data"
   pos: 0x1f801050
   ty: u32
-  kind: Foreign
 - name: SIO_STAT
   desc: "Serial port status"
   pos: 0x1f801054
   ty: u32
-  kind: Foreign
 - name: SIO_MODE
   desc: "Serial port mode"
   pos: 0x1f801058
   ty: u16
-  kind: Foreign
 - name: SIO_CTRL
   desc: "Serial port control"
   pos: 0x1f80105a
   ty: u16
-  kind: Foreign
 - name: SIO_MISC
   desc: "Serial port internal register"
   pos: 0x1f80105c
   ty: u16
-  kind: Foreign
 - name: SIO_BAUD
   desc: "Serial port internal baud-rate"
   pos: 0x1f80105e
   ty: u16
-  kind: Foreign
 
 # Memory Control 2
 - name: Ram_SIZE
   pos: 0x1f801060
   ty: u32
-  kind: Foreign
 
 # Interrupt control
 - name: I_STAT
   desc: Interrupt status register
   pos: 0x1f801070
   ty: u32
-  kind: Foreign
 - name: I_MASK
   desc: Interrupt mask register
   pos: 0x1f801074
   ty: u32
-  kind: Foreign
 
 # DMA Registers
 - name: DMA_Registers
@@ -140,7 +114,6 @@
   ty:
     Marker:
       len: 0x80
-  kind: Foreign
 - name: DMA_MDECin
   desc: DMA0 channel 0
   pos: 0x1f801080
@@ -148,7 +121,6 @@
     Array:
       ty: u32
       len: 4
-  kind: Foreign
 - name: DMA_MDECout
   desc: DMA1 channel 1
   pos: 0x1f801090
@@ -156,7 +128,6 @@
     Array:
       ty: u32
       len: 4
-  kind: Foreign
 - name: DMA_GPU
   desc: DMA2 channel 2
   pos: 0x1f8010a0
@@ -164,7 +135,6 @@
     Array:
       ty: u32
       len: 4
-  kind: Foreign
 - name: DMA_CDROM
   desc: DMA3 channel 3
   pos: 0x1f8010b0
@@ -172,7 +142,6 @@
     Array:
       ty: u32
       len: 4
-  kind: Foreign
 - name: DMA_SPU
   desc: DMA4 channel 4
   pos: 0x1f8010c0
@@ -180,7 +149,6 @@
     Array:
       ty: u32
       len: 4
-  kind: Foreign
 - name: DMA_PIO
   desc: DMA5 channel 5, Expansion port
   pos: 0x1f8010d0
@@ -188,7 +156,6 @@
     Array:
       ty: u32
       len: 4
-  kind: Foreign
 - name: DMA_OTC
   desc: DMA5 channel 5, Reverse clear OT (GPU)
   pos: 0x1f8010e0
@@ -196,34 +163,28 @@
     Array:
       ty: u32
       len: 4
-  kind: Foreign
 - name: DPCR
   desc: DMA Control register
   pos: 0x1f8010f0
   ty: u32
-  kind: Foreign
 - name: DICR
   desc: DMA Interrupt register
   pos: 0x1f8010f4
   ty: u32
-  kind: Foreign
 
 # Timers / Root counters
 - name: Timer0
   desc: Dotclock
   pos: 0x1f801100
   ty: u32
-  kind: Foreign
 - name: Timer1
   desc: Horizontal Retrace
   pos: 0x1f801110
   ty: u32
-  kind: Foreign
 - name: Timer2
   desc: 1/8 System clock
   pos: 0x1f801120
   ty: u32
-  kind: Foreign
 
 # CDRom Registers
 # TODO: Figure out what Index means for these.
@@ -232,29 +193,24 @@
   ty:
     Marker:
       len: 0x4
-  kind: Foreign
 
 # GPU Registers
 - name: GP0_SEND_OR_GPU_READ
   desc: GP0 Sender / GPU Responses
   pos: 0x1f801810
   ty: u32
-  kind: Foreign
 - name: GP1_SEND_OR_GPU_STAT
   desc: GP1 Sender / GPU Status register
   pos: 0x1f801814
   ty: u32
-  kind: Foreign
 
 # MDEC Registers
 - name: MDEC_CommandParameter_Or_DataResponse_Register
   pos: 0x1f801820
   ty: u32
-  kind: Foreign
 - name: MDEC_ControlReset_Or_StatusRegister_Register
   pos: 0x1f801824
   ty: u32
-  kind: Foreign
 
 # SPU Voice registers
 # TODO: Find a better way of expressing this
@@ -264,7 +220,6 @@
   ty:
     Marker:
       len: 0x180
-  kind: Foreign
 
 # SPU Control registers
 - name: SPU_Control_Registers
@@ -272,188 +227,148 @@
   ty:
     Marker:
       len: 0x40
-  kind: Foreign
 - name: SPU_MainVolumeLR
   pos: 0x1f801d80
   ty: u32
-  kind: Foreign
 - name: SPU_ReverbOutputVolumeLR
   pos: 0x1f801d84
   ty: u32
-  kind: Foreign
 - name: SPU_VoiceKeyOn
   pos: 0x1f801d88
   ty: u32
-  kind: Foreign
 - name: SPU_VoiceKeyOff
   pos: 0x1f801d8c
   ty: u32
-  kind: Foreign
 - name: SPU_VoiceChannelFMMode
   pos: 0x1f801d90
   ty: u32
-  kind: Foreign
 - name: SPU_VoiceChannelNoiseMode
   pos: 0x1f801d94
   ty: u32
-  kind: Foreign
 - name: SPU_VoiceChannelReverbMode
   pos: 0x1f801d98
   ty: u32
-  kind: Foreign
 - name: SPU_VoiceChannelOnOffStatus
   pos: 0x1f801d9c
   ty: u32
-  kind: Foreign
 - name: SPU_SoundRamReverbWorkAreaStartAddress
   pos: 0x1f801da2
   ty: u16
-  kind: Foreign
 - name: SPU_SoundRamIrqAddress
   pos: 0x1f801da4
   ty: u16
-  kind: Foreign
 - name: SPU_SoundRamDataTransferAddress
   pos: 0x1f801da6
   ty: u16
-  kind: Foreign
 - name: SPU_SoundRamDataTransferFifo
   pos: 0x1f801da8
   ty: u16
-  kind: Foreign
 - name: SPU_CNT
   desc: SPU Control Register
   pos: 0x1f801daa
   ty: u16
-  kind: Foreign
 - name: SPU_SoundRamDataTransferControl
   pos: 0x1f801dac
   ty: u16
-  kind: Foreign
 - name: SPU_STAT
   desc: SPU Status Register
   pos: 0x1f801dae
   ty: u16
-  kind: Foreign
 - name: SPU_CDVolumeLR
   pos: 0x1f801db0
   ty: u32
-  kind: Foreign
 - name: SPU_ExternVolumeLR
   pos: 0x1f801db4
   ty: u32
-  kind: Foreign
 - name: SPU_CurrentMainVolumeLR
   pos: 0x1f801db8
   ty: u32
-  kind: Foreign
 
 # SPU Reverb configuration area
 - name: SPU_dAPF1
   desc: SPU Reverb APF offset 1
   pos: 0x1f801dc0
   ty: u16
-  kind: Foreign
 - name: SPU_dAPF2
   desc: SPU Reverb APF offset 2
   pos: 0x1f801dc2
   ty: u16
-  kind: Foreign
 - name: SPU_vIIR
   desc: SPU Reflection volume 1
   pos: 0x1f801dc4
   ty: u16
-  kind: Foreign
 - name: SPU_vCOMB1
   desc: SPU Comb volume 1
   pos: 0x1f801dc6
   ty: u16
-  kind: Foreign
 - name: SPU_vCOMB2
   desc: SPU Comb volume 2
   pos: 0x1f801dc8
   ty: u16
-  kind: Foreign
 - name: SPU_vCOMB3
   desc: SPU Comb volume 3
   pos: 0x1f801dca
   ty: u16
-  kind: Foreign
 - name: SPU_vCOMB4
   desc: SPU Comb volume 4
   pos: 0x1f801dcc
   ty: u16
-  kind: Foreign
 - name: SPU_vWALL
   desc: SPU Reflection volume 2
   pos: 0x1f801dce
   ty: u16
-  kind: Foreign
 - name: SPU_vAPF1
   desc: SPU Reverb APF volume 1
   pos: 0x1f801dd0
   ty: u16
-  kind: Foreign
 - name: SPU_vAPF2
   desc: SPU Reverb APF volume 2
   pos: 0x1f801dd2
   ty: u16
-  kind: Foreign
 - name: SPU_mSAME
   desc: SPU Reverb same-side reflection address 1 (L/R)
   pos: 0x1f801dd4
   ty: u32
-  kind: Foreign
 - name: SPU_mCOMB1
   desc: SPU Comb address 1 (L/R)
   pos: 0x1f801dd8
   ty: u32
-  kind: Foreign
 - name: SPU_mCOMB2
   desc: SPU Comb address 2 (L/R)
   pos: 0x1f801ddc
   ty: u32
-  kind: Foreign
 - name: SPU_dSAME
   desc: SPU Reverb same-side reflection address 2 (L/R)
   pos: 0x1f801de0
   ty: u32
-  kind: Foreign
 - name: SPU_mDIFF
   desc: SPU Reverb different-side reflection address 1 (L/R)
   pos: 0x1f801de4
   ty: u32
-  kind: Foreign
 - name: SPU_mCOMB3
   desc: SPU Comb address 3 (L/R)
   pos: 0x1f801de8
   ty: u32
-  kind: Foreign
 - name: SPU_mCOMB4
   desc: SPU Comb address 4 (L/R)
   pos: 0x1f801dec
   ty: u32
-  kind: Foreign
 - name: SPU_dDIFF
   desc: SPU Reverb different-side reflection address 2 (L/R)
   pos: 0x1f801df0
   ty: u32
-  kind: Foreign
 - name: SPU_mAPF1
   desc: SPU Reverb APF address 1 (L/R)
   pos: 0x1f801df4
   ty: u32
-  kind: Foreign
 - name: SPU_mAPF2
   desc: SPU Reverb APF address 2 (L/R)
   pos: 0x1f801df8
   ty: u32
-  kind: Foreign
 - name: SPU_vIN
   desc: SPU Reverb input volume (L/R)
   pos: 0x1f801dfc
   ty: u32
-  kind: Foreign
 
 # SPU internal registers
 - name: SPU_VoiceCurrentVolumeLR
@@ -463,19 +378,16 @@
     Array:
       ty: u32
       len: 24
-  kind: Foreign
 - name: SPU_Unknown2
   pos: 0x1f801e60
   ty:
     Marker:
       len: 0x20
-  kind: Foreign
 - name: SPU_Unknown3
   pos: 0x1f801e80
   ty:
     Marker:
       len: 0x180
-  kind: Foreign
 
 # TODO: Expansion region 2
 
@@ -492,9 +404,7 @@
   desc: Current prng value
   pos: 0x801ddc10
   ty: u32
-  kind: Known
 - name: HeapStart
   desc: Start of the heap
   pos: 0x801ddf38
   ty: u32
-  kind: Known

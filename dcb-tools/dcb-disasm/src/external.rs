@@ -2,7 +2,7 @@
 
 // Imports
 use crate::cli::CliData;
-use dcb_exe::{DataTable, FuncTable, Pos};
+use dcb_exe::{data::DataKind, Data, DataTable, DataType, FuncTable, Pos};
 use std::collections::BTreeMap;
 
 /// External resources
@@ -25,22 +25,31 @@ impl ExternalResources {
 		let known_funcs_path = &cli.known_funcs_path;
 		let inst_arg_overrides_path = &cli.inst_arg_overrides_path;
 
-		let known_data: Vec<_> = dcb_util::parse_from_file(&known_data_path, serde_yaml::from_reader)
+		// Read all data
+		let known_data: Vec<SerializedData> = dcb_util::parse_from_file(&known_data_path, serde_yaml::from_reader)
 			.map_err(dcb_util::fmt_err_wrapper_owned)
 			.map_err(|err| log::warn!("Unable to load game data from {known_data_path:?}: {err}"))
 			.unwrap_or_default();
-		let foreign_data: Vec<_> = dcb_util::parse_from_file(&foreign_data_path, serde_yaml::from_reader)
+		let foreign_data: Vec<SerializedData> = dcb_util::parse_from_file(&foreign_data_path, serde_yaml::from_reader)
 			.map_err(dcb_util::fmt_err_wrapper_owned)
 			.map_err(|err| log::warn!("Unable to load foreign data from {foreign_data_path:?}: {err}"))
 			.unwrap_or_default();
-		let mut data_table = DataTable::default();
-		for data in known_data.into_iter().chain(foreign_data) {
+
+		// Bundle it up
+		let all_data = known_data
+			.into_iter()
+			.map(|data| data.into_data(DataKind::Known))
+			.chain(foreign_data.into_iter().map(|data| data.into_data(DataKind::Known)));
+
+		// Then create the data table
+		let data_table = all_data.fold(DataTable::default(), |mut data_table, data| {
 			// Try to insert and log if we get an error.
 			if let Err(err) = data_table.insert(data) {
 				let data = err.data();
 				log::warn!("Unable to add data {data}: {}", dcb_util::fmt_err_wrapper(&err));
 			}
-		}
+			data_table
+		});
 
 		let func_table = dcb_util::parse_from_file(&known_funcs_path, serde_yaml::from_reader)
 			.map_err(dcb_util::fmt_err_wrapper_owned)
@@ -68,4 +77,29 @@ pub struct ArgPos {
 
 	/// Argument
 	pub arg: usize,
+}
+
+/// Serialized game / foreign data
+#[derive(Clone, Debug)]
+#[derive(serde::Deserialize)]
+pub struct SerializedData {
+	/// Name
+	name: String,
+
+	/// Description
+	#[serde(default)]
+	desc: String,
+
+	/// Start position
+	pos: Pos,
+
+	/// Data type
+	ty: DataType,
+}
+
+impl SerializedData {
+	/// Converts this data to a `Data` given it's kind
+	pub fn into_data(self, kind: DataKind) -> Data {
+		Data::new(self.name, self.desc, self.pos, self.ty, kind)
+	}
 }

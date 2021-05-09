@@ -5,13 +5,11 @@
   ty:
     Marker:
       len: 0x3e4c
-  kind: Known
 - name: ExeEnd
   pos: 0x8006dd3c
   ty:
     Marker:
       len: 0xa2C4
-  kind: Known
 
 - name: CrossMoveEffectStringsRaw
   desc: The cross move effect string table with raw symbols
@@ -20,7 +18,6 @@
     Array:
       ty: u32
       len: 16
-  kind: Known
 - name: CrossMoveEffectStrings
   desc: The cross move effect string table with escaped symbols
   pos: 0x8006e4bc
@@ -28,7 +25,6 @@
     Array:
       ty: u32
       len: 16
-  kind: Known
 - name: PartnerEffectStrings
   desc: Partner effects string table.
   pos: 0x8006edb4
@@ -41,44 +37,35 @@
   desc: Stores the start of the heap in KUSEG (Minus 0x4).
   pos: 0x8006f988
   ty: u32
-  kind: Known
 - name: HeapSize
   desc: Stores the size of the heap .
   pos: 0x8006f98c
   ty: u32
-  kind: Known
 - name: StartReturnAddress
   desc: Stores the return address in `start` when calling `InitHeap`
   pos: 0x80077a20
   ty: u32
-  kind: Known
 
 - name: GPU_STAT_PTR
   pos: 0x8006f9b0
   ty: u32
-  kind: Known
 - name: Timer1Ptr
   pos: 0x8006f9b4
   ty: u32
-  kind: Known
 
 - name: I_STAT_PTR
   pos: 0x80070aac
   ty: u32
-  kind: Known
 - name: I_MASK_PTR
   pos: 0x80070ab0
   ty: u32
-  kind: Known
 - name: DPCR_PTR
   pos: 0x80070ab4
   ty: u32
-  kind: Known
 
 - name: something6_data1
   pos: 0x80070ae8
   ty: u32
-  kind: Known
 - name: ZeroStart
   desc: "Start of the zero section in `start`"
   pos: 0x80077a08
@@ -89,165 +76,128 @@
   ty:
     AsciiStr:
       len: 6
-  kind: Known
 - name: StackTop
   desc: Stack top address
   pos: 0x8006dd44
   ty: u32
-  kind: Known
 - name: StackSize
   desc: Stack size
   pos: 0x8006dd48
   ty: u32
-  kind: Known
 - name: something1_executed
   pos: 0x8006f984
   ty: u32
-  kind: Known
 - name: something5_data1
   pos: 0x8006fa20
   ty:
     Array:
       ty: u16
       len: 2
-  kind: Known
 - name: something5_data5
   pos: 0x8006fa5c
   ty: u32
-  kind: Known
 - name: FuncList1
   pos: 0x80070a88
   ty:
     Array:
       ty: u32
       len: 8
-  kind: Known
 - name: FuncList1Ptr
   desc: Pointer to FuncList1
   pos: 0x80070aa8
   ty: u32
-  kind: Known
 
 - name: something11_data1
   pos: 0x80077a1a
   ty: u16
-  kind: Known
 
 - name: something11_data2
   pos: 0x80077a14
   ty: u32
-  kind: Known
 
 - name: something11_data3
   pos: 0x80077a1c
   ty: u16
-  kind: Known
 
 - name: something11_data4
   pos: 0x80077a10
   ty: u32
-  kind: Known
 
 - name: something11_data5
   pos: 0x80077a0c
   ty: u32
-  kind: Known
 
 - name: something11_data6
   pos: 0x80077a18
   ty: u16
-  kind: Known
 
 - name: main_loop_data1
   pos: 0x80077aec
   ty: u16
-  kind: Known
 
 - name: unknown1
   pos: 0x80077af4
   ty: u32
-  kind: Known
 - name: unknown2
   pos: 0x80077bc0
   ty: u32
-  kind: Known
 - name: unknown3
   pos: 0x80077ba0
   ty: u32
-  kind: Known
 - name: unknown4
   pos: 0x80077ae0
   ty: u32
-  kind: Known
 - name: unknown5
   pos: 0x80077adc
   ty: u32
-  kind: Known
 - name: unknown6
   pos: 0x80077ad8
   ty: u32
-  kind: Known
 - name: unknown7
   pos: 0x8006e050
   ty: u32
-  kind: Known
 - name: unknown8
   pos: 0x800794ec
   ty: u32
-  kind: Known
 - name: unknown9
   pos: 0x800793a8
   ty: u32
-  kind: Known
 - name: unknown10
   pos: 0x80079408
   ty: u32
-  kind: Known
 - name: unknown11
   pos: 0x800794a8
   ty: u32
-  kind: Known
 - name: unknown12
   pos: 0x800794b4
   ty: u32
-  kind: Known
 - name: unknown13
   pos: 0x800794e7
   ty: u32
-  kind: Known
 - name: unknown14
   pos: 0x800794f4
   ty: u8
-  kind: Known
 - name: unknown15
   pos: 0x800793a0
   ty: u32
-  kind: Known
 - name: unknown16
   pos: 0x800794f8
   ty: u32
-  kind: Known
 - name: unknown17
   pos: 0x800794f0
   ty: u32
-  kind: Known
 - name: unknown18
   pos: 0x8008983c
   ty: u32
-  kind: Known
 - name: unknown19
   pos: 0x80081710
   ty: u32
-  kind: Known
 - name: unknown20
   pos: 0x800857d0
   ty: u32
-  kind: Known
 - name: unknown21
   pos: 0x800857e0
   ty: u32
-  kind: Known
 - name: unknown22
   pos: 0x8006dd50
   ty: u32
-  kind: Known
