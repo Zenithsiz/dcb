@@ -24,6 +24,7 @@ use std::{
 	hash::{BuildHasher, Hash, Hasher},
 	io::{BufRead, BufReader, Seek, SeekFrom, Write},
 	rc::Rc,
+	str::FromStr,
 };
 
 fn main() -> Result<(), anyhow::Error> {
@@ -319,6 +320,7 @@ pub struct SerializedData {
 	pos: Pos,
 
 	/// Data type
+	#[serde(deserialize_with = "deserialize_data_ty")]
 	ty: DataType,
 }
 
@@ -327,4 +329,13 @@ impl SerializedData {
 	pub fn into_data(self) -> Data {
 		Data::new(self.name, self.desc, self.pos, self.ty, DataKind::Foreign)
 	}
+}
+
+fn deserialize_data_ty<'de, D>(deserializer: D) -> Result<DataType, D::Error>
+where
+	D: serde::Deserializer<'de>,
+{
+	let s = <String as serde::Deserialize>::deserialize(deserializer)?;
+
+	DataType::from_str(&s).map_err(serde::de::Error::custom)
 }

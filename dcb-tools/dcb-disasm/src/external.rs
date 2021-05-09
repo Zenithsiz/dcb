@@ -3,7 +3,7 @@
 // Imports
 use crate::cli::CliData;
 use dcb_exe::{data::DataKind, Data, DataTable, DataType, FuncTable, Pos};
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, str::FromStr};
 
 /// External resources
 pub struct ExternalResources {
@@ -94,6 +94,7 @@ pub struct SerializedData {
 	pos: Pos,
 
 	/// Data type
+	#[serde(deserialize_with = "deserialize_data_ty")]
 	ty: DataType,
 }
 
@@ -102,4 +103,13 @@ impl SerializedData {
 	pub fn into_data(self, kind: DataKind) -> Data {
 		Data::new(self.name, self.desc, self.pos, self.ty, kind)
 	}
+}
+
+fn deserialize_data_ty<'de, D>(deserializer: D) -> Result<DataType, D::Error>
+where
+	D: serde::Deserializer<'de>,
+{
+	let s = <String as serde::Deserialize>::deserialize(deserializer)?;
+
+	DataType::from_str(&s).map_err(serde::de::Error::custom)
 }

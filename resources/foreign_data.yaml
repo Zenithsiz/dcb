@@ -1,21 +1,15 @@
 # Expansion region 1
 - name: ExpansionRegion1
   pos: 0x1f00000
-  ty:
-    Marker:
-      len: 0x80000
+  ty: Marker<0x80000>
 - name: ExpansionRegion1Header
   pos: 0x1f00000
-  ty:
-    Marker:
-      len: 0x100
+  ty: Marker<0x100>
 
 # Scratchpad
 - name: Scratchpad
   pos: 0x1f800000
-  ty:
-    Marker:
-      len: 0x400
+  ty: Marker<0x400>
 
 # Memory control 1
 - name: Expansion1BaseAddress
@@ -111,58 +105,35 @@
 # DMA Registers
 - name: DMA_Registers
   pos: 0x1f801080
-  ty:
-    Marker:
-      len: 0x80
+  ty: Marker<0x80>
 - name: DMA_MDECin
   desc: DMA0 channel 0
   pos: 0x1f801080
-  ty:
-    Array:
-      ty: u32
-      len: 4
+  ty: Arr<u32, 4>
 - name: DMA_MDECout
   desc: DMA1 channel 1
   pos: 0x1f801090
-  ty:
-    Array:
-      ty: u32
-      len: 4
+  ty: Arr<u32, 4>
 - name: DMA_GPU
   desc: DMA2 channel 2
   pos: 0x1f8010a0
-  ty:
-    Array:
-      ty: u32
-      len: 4
+  ty: Arr<u32, 4>
 - name: DMA_CDROM
   desc: DMA3 channel 3
   pos: 0x1f8010b0
-  ty:
-    Array:
-      ty: u32
-      len: 4
+  ty: Arr<u32, 4>
 - name: DMA_SPU
   desc: DMA4 channel 4
   pos: 0x1f8010c0
-  ty:
-    Array:
-      ty: u32
-      len: 4
+  ty: Arr<u32, 4>
 - name: DMA_PIO
   desc: DMA5 channel 5, Expansion port
   pos: 0x1f8010d0
-  ty:
-    Array:
-      ty: u32
-      len: 4
+  ty: Arr<u32, 4>
 - name: DMA_OTC
   desc: DMA5 channel 5, Reverse clear OT (GPU)
   pos: 0x1f8010e0
-  ty:
-    Array:
-      ty: u32
-      len: 4
+  ty: Arr<u32, 4>
 - name: DPCR
   desc: DMA Control register
   pos: 0x1f8010f0
@@ -190,9 +161,7 @@
 # TODO: Figure out what Index means for these.
 - name: CDROM_Registers
   pos: 0x1F801800
-  ty:
-    Marker:
-      len: 0x4
+  ty: Marker<0x4>
 
 # GPU Registers
 - name: GP0_SEND_OR_GPU_READ
@@ -217,16 +186,12 @@
 #       interleaved memory layout.
 - name: SPU_Voices
   pos: 0x1f801c00
-  ty:
-    Marker:
-      len: 0x180
+  ty: Marker<0x180>
 
 # SPU Control registers
 - name: SPU_Control_Registers
   pos: 0x1f801d80
-  ty:
-    Marker:
-      len: 0x40
+  ty: Marker<0x40>
 - name: SPU_MainVolumeLR
   pos: 0x1f801d80
   ty: u32
@@ -374,30 +339,20 @@
 - name: SPU_VoiceCurrentVolumeLR
   desc: Voices current volume
   pos: 0x1f801e00
-  ty:
-    Array:
-      ty: u32
-      len: 24
+  ty: Arr<u32, 24>
 - name: SPU_Unknown2
   pos: 0x1f801e60
-  ty:
-    Marker:
-      len: 0x20
+  ty: Marker<0x20>
 - name: SPU_Unknown3
   pos: 0x1f801e80
-  ty:
-    Marker:
-      len: 0x180
+  ty: Marker<0x180>
 
 # TODO: Expansion region 2
 
 # BIOS Region
 - name: BIOS
   pos: 0x1fc00000
-  ty:
-    Marker:
-      len: 0x80000
-  kind: Foreign
+  ty: Marker<0x80000>
 
 # Others
 - name: cur_prng_value
