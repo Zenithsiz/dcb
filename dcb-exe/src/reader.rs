@@ -66,7 +66,11 @@ impl ExeReader {
 		};
 		let heuristics_data = Data::search_instructions(insts_range.clone(), insts.clone());
 		let heuristics_func_table = Func::search_instructions(insts_range, insts, Some(&func_table), Some(&data_table));
-		data_table.extend(heuristics_data);
+		// Note: We ignore errors for when we can't insert heuristic data.
+		for data in heuristics_data {
+			#[allow(clippy::let_underscore_drop)] // We want to explicitly ignore it
+			let _ = data_table.insert(data);
+		}
 		func_table.extend(heuristics_func_table);
 
 		Ok(Self {

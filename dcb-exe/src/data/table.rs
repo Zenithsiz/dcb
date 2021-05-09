@@ -13,9 +13,9 @@ pub use error::{ExtendError, InsertError, NewError};
 pub use node::DataNode;
 
 // Imports
-use super::{Data, DataKind};
+use super::Data;
 use crate::Pos;
-use std::{collections::HashMap, fmt, iter::FromIterator, rc::Rc};
+use std::{collections::HashMap, fmt, rc::Rc};
 
 /// Data table
 ///
@@ -136,39 +136,6 @@ impl DataTable {
 impl Default for DataTable {
 	fn default() -> Self {
 		Self::new()
-	}
-}
-
-// TODO: Replace with `insert` method once we finish name searching.
-impl Extend<Data> for DataTable {
-	fn extend<T: IntoIterator<Item = Data>>(&mut self, data: T) {
-		for data in data {
-			self.extend_one(data);
-		}
-	}
-
-	fn extend_one(&mut self, data: Data) {
-		// Try to insert and log if we get an error.
-		if let Err(err) = self.insert(data) {
-			let data = err.data();
-			let log_level = match data.kind() {
-				DataKind::Known | DataKind::Foreign => log::Level::Warn,
-				DataKind::Heuristics => log::Level::Trace,
-			};
-			log::log!(
-				log_level,
-				"Unable to add data {data}: {}",
-				dcb_util::fmt_err_wrapper(&err)
-			);
-		}
-	}
-}
-
-impl FromIterator<Data> for DataTable {
-	fn from_iter<T: IntoIterator<Item = Data>>(data: T) -> Self {
-		let mut table = Self::new();
-		table.extend(data);
-		table
 	}
 }
 

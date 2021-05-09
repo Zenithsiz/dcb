@@ -1,9 +1,9 @@
 //! External resources
 
+// Imports
 use crate::cli::CliData;
 use dcb_exe::{DataTable, FuncTable, Pos};
 use std::collections::BTreeMap;
-
 
 /// External resources
 pub struct ExternalResources {
@@ -33,7 +33,14 @@ impl ExternalResources {
 			.map_err(dcb_util::fmt_err_wrapper_owned)
 			.map_err(|err| log::warn!("Unable to load foreign data from {foreign_data_path:?}: {err}"))
 			.unwrap_or_default();
-		let data_table = known_data.into_iter().chain(foreign_data).collect();
+		let mut data_table = DataTable::default();
+		for data in known_data.into_iter().chain(foreign_data) {
+			// Try to insert and log if we get an error.
+			if let Err(err) = data_table.insert(data) {
+				let data = err.data();
+				log::warn!("Unable to add data {data}: {}", dcb_util::fmt_err_wrapper(&err));
+			}
+		}
 
 		let func_table = dcb_util::parse_from_file(&known_funcs_path, serde_yaml::from_reader)
 			.map_err(dcb_util::fmt_err_wrapper_owned)
