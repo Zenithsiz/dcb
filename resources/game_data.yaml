@@ -57,7 +57,6 @@
   desc: "Start of the zero section in `start`"
   pos: 0x80077a08
   ty: u32
-  kind: Known
 - name: something1_data2
   pos: 0x80010000
   ty: AsciiStr<6>

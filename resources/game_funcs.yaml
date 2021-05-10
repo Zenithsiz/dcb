@@ -4,14 +4,21 @@
   signature: fn() -> !
   desc: Executable start
   inline_comments:
-    0x80056280: Zero out ZeroStart .. HeapStart word by word.
-    0x80056284: ^
-    0x80056288: ^
-    0x8005628c: ^
-    0x800562a8: Initialize stack to (*StackTop - 0x10) | 0x80000000
-    0x800562f8: "args: (HeapStart + 0x4, (*StackTop - 0x10) - *StackSize - (HeapStart & 0x1fff_ffff))"
-    0x80056314: "Seems to never be reached, as we get to the title screen before this instruction"
-    0x80056324: "args: (something1_data2, something1_data2)"
+    0x800562b8: "`$a0 &= 0x1fff_ffff`"
+    0x800562cc: = 0x1a0b8
+    0x800562d8: "`$a0 |= 0x8000_0000`"
+    0x800562ec: "TODO: Figure out why global pointer is here"
+    0x800562f8: "InitHeap(&HeapStart, 0x1a0b8)"
+  comments:
+    0x80056270: |-
+      Zero out `ZeroStart..HeapStart`
+    0x80056294: |-
+      Setup stack pointer to StackTop - 0x10 in KSEG0
+    0x800562ac: |-
+      Setup heap starting at `HeapStart + 0x4` with
+      size up until the stack bottom.
+    0x80056314: |-
+      Dead code?
   labels:
     0x80056280: zero_loop
   start_pos: 0x80056270
