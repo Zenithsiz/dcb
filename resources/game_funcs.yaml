@@ -50,13 +50,18 @@
 # ???
 - name: something1
   signature: fn()
-  desc: If something1_executed is 0, sets it to 1.
+  desc: |-
+    If something1_executed is 0, sets it to 1.
     Also calls `call_func_arr(something1_data2, something1_data2)` if 0,
     but this seems to be a nop.
+  comments:
+    0x80056350: |-
+      Sets `something1_executed` to `1` and then calls
+      `call_func_arr` with an empty array.
+      TODO: Check what this is about, maybe self-modifying code?
   inline_comments:
-    0x80056348: If *something1_executed != 0, skip
-    0x80056350: Else set it to 1.
-    0x80056368: "args: (something1_data2, something1_data2). Seems like a nop?"
+    0x8005633c: "TODO: Check why it's storing `$s{0, 1}`, it doesn't modify them?"
+    0x80056348: If something1_executed != 0, skip
   labels:
     0x80056370: skip
   start_pos: 0x80056330
@@ -84,42 +89,6 @@
     0x800563d0: exit
   start_pos: 0x80056388
   end_pos: 0x800563e4
-  kind: Known
-
-# ?
-- name: something3
-  signature: fn()
-  desc: Calls `something5`.
-  inline_comments:
-    0x80056604: "Loads FuncList1[3]"
-    0x8005660c: "Calls FuncList1[3] (i.e. something5)"
-  start_pos: 0x800565f4
-  end_pos: 0x80056624
-  kind: Known
-
-# ?
-- name: something5
-  signature: fn()
-  desc: Setups interrupt and DMA.
-    If called again, simply returns.
-  inline_comments:
-    0x8005679c: Loads *something5_data1
-    0x800567a4: "If the loaded value is not zero, exit"
-    0x800567c0: Stop all interrupts by writing 0 to I_MASK
-    0x800567c4: "Before the write goes through, save the current interrupts (?)"
-    0x800567cc: Set I_STAT to the previous I_MASK value.
-    0x800567dc: Set the DMA control registers to 0x33333333
-    0x800567e0: "args: (something5_data1, 0x33333333), Zero out `something5_data1[..0x33333333]`"
-    0x800567e8: "Save all registers with `save_registers` and check return value"
-    0x800567f0: "If the return value isn't 0, call `func_831`. This shouldn't happen, as `save_registers` always returns 0"
-    0x800567f8: "args: (something5_data1 as *u8 + 0x38, 0x41a)"
-    0x80056810: "Set the exception exit function as something5_data5 - 1; args: (something5_data5 as *u8 - 0x4)"
-    0x80056814: Set something5_data5 to 0xfdc
-  labels:
-    0x80056850: exit
-    0x80056800: skip_call
-  start_pos: 0x80056788
-  end_pos: 0x80056860
   kind: Known
 
 # ?
@@ -173,22 +142,6 @@
   end_pos: 0x800565f4
   kind: Known
 
-#?
-- name: something4
-  signature: fn()
-  labels:
-    0x80056ac0: "0"
-    0x80056ae0: "1"
-    0x80056b04: "2"
-    0x80056b1c: "3"
-    0x80056b34: "4"
-    0x80056b44: "5"
-    0x80056b54: "6"
-    0x80056b58: "7"
-  start_pos: 0x80056a30
-  end_pos: 0x80056b78
-  kind: Known
-
 - name: memset_zero
   signature: "fn(u32* ptr, u32 size)"
   desc: "Zeroes out the memory at `ptr` for `size` words.\n"
@@ -208,14 +161,22 @@
 
 - name: save_registers
   signature: fn(u32* pos)
-  desc: "Saves the following registers in `pos[0x0 .. 0x30]`.\n$ra, $gp, $sp, $fp,\n$s0, $s1, $s2, $s3,\n$s4, $s5, $s6, $s7,\n"
+  desc: |-
+    Saves the following registers in `pos[0x0 .. 0x30]`.
+    $ra, $sp, $fp, $s0,
+    $s1, $s2, $s3, $s4,
+    $s5, $s6, $s7, $gp,
   start_pos: 0x8006a674
   end_pos: 0x8006a6b0
   kind: Known
 
 - name: load_registers
   signature: fn(u32* pos)
-  desc: "Loads the following registers from `pos[0x0 .. 0x30]`.\n$ra, $gp, $sp, $fp,\n$s0, $s1, $s2, $s3,\n$s4, $s5, $s6, $s7,\n"
+  desc: |-
+    Loads the following registers from `pos[0x0 .. 0x30]`.
+    $ra, $sp, $fp, $s0,
+    $s1, $s2, $s3, $s4,
+    $s5, $s6, $s7, $gp,
   labels:
     0x8006a6f4: "0"
   start_pos: 0x8006a6b0
@@ -912,6 +873,184 @@
     0x8002f77c: "7"
   start_pos: 0x8002f4f4
   end_pos: 0x8002f79c
+  kind: Known
+
+# intr
+- name: intr.call_f3
+  signature: fn()
+  desc: Calls `intr.f3()`.
+  start_pos: 0x800565f4
+  end_pos: 0x80056624
+  kind: Known
+
+- name: intr.call_f2
+  signature: fn()
+  desc: Calls `intr.f2()`.
+  start_pos: 0x80056624
+  end_pos: 0x80056654
+  kind: Known
+
+- name: intr.call_f1
+  signature: fn()
+  desc: Calls `intr.f1()`.
+  start_pos: 0x80056654
+  end_pos: 0x80056684
+  kind: Known
+
+- name: intr.call_f5_0x4
+  signature: fn()
+  desc: Calls `intr.f5(0x4)`.
+  start_pos: 0x80056684
+  end_pos: 0x800566b8
+  kind: Known
+
+- name: intr.call_f5
+  signature: fn()
+  desc: Calls `intr.f5()`.
+  start_pos: 0x800566b8
+  end_pos: 0x800566e8
+  kind: Known
+
+- name: intr.call_f4
+  signature: fn()
+  desc: Calls `intr.f4()`.
+  start_pos: 0x800566e8
+  end_pos: 0x80056718
+  kind: Known
+
+- name: intr.call_f6
+  signature: fn()
+  desc: Calls `intr.f6()`.
+  start_pos: 0x80056718
+  end_pos: 0x80056748
+  kind: Known
+
+- name: intr.f1
+  labels:
+    0x80057008: "0"
+    0x80057044: "1"
+  start_pos: 0x80056fa0
+  end_pos: 0x8005704c
+  kind: Known
+
+- name: intr.f2
+  signature: "fn(a: u32, callback: *Fn())"
+  labels:
+    0x80056ac0: "0"
+    0x80056ae0: "1"
+    0x80056b04: "2"
+    0x80056b1c: "3"
+    0x80056b34: "4"
+    0x80056b44: "5"
+    0x80056b54: "6"
+    0x80056b58: "7"
+  start_pos: 0x80056a30
+  end_pos: 0x80056b78
+  kind: Known
+
+- name: intr.init
+  signature: fn() -> *u16
+  desc: |-
+    Setups interrupt and DMA.
+    If called again, simply returns.
+  comments:
+    0x800567ac: "Stop all interrupts and save previous state"
+    0x800567e0: "Zero out all of `intr.data`"
+    0x800567d0: "Write 0x33333333 to `*DPCR_PTR`"
+    0x800567e8: |-
+      Save registers in `intr.saved_registers` and call `func_831` if return value isn't 0.
+      Note: Saving registers always returns 0, so not sure how
+            this call could ever be triggered.
+    0x80056800: |-
+      Sets up the saved registers for when returning from exceptions
+      to `intr.saved_registers_sp`
+  inline_comments:
+    0x800567a4: "if intr.init_executed != 0 { return 0; }"
+    0x800567c8: "*I_MASK = I_STAT"
+    0x80056814: "intr.saved_registers_sp = 0xfdc; # Kernel stack top - 4"
+    0x80056820: "intr.init_executed = 0x1;"
+    0x80056830: "intr.f5 = intr.f5_init()"
+    0x80056840: "intr.f1 = intr.f1_init()"
+    0x8005684c: "return &intr.init_executed"
+  labels:
+    0x80056850: exit
+    0x80056800: skip_call
+  start_pos: 0x80056788
+  end_pos: 0x80056860
+  kind: Known
+
+- name: intr.f5
+  labels:
+    0x80056d9c: exit
+  start_pos: 0x80056d78
+  end_pos: 0x80056da4
+  kind: Known
+
+- name: intr.f5_init
+  desc: "Initializes and returns &intr.f5"
+  inline_comments:
+    0x80056cd4: "Initialize something6_data1 to 0"
+    0x80056cdc: "Zero out intr.f5_init.data"
+    0x80056cec: "intr.call_f2(0x0, &intr.f5_init.callback)"
+  start_pos: 0x80056cb4
+  end_pos: 0x80056d0c
+  kind: Known
+
+- name: intr.f5_init.callback
+  comments:
+    0x80056d3c: |-
+      Calls all non-null functions in intr.f5_init.data.
+  inline_comments:
+    0x80056d34: "something6_data1 += 1"
+  labels:
+    0x80056d3c: "loop"
+    0x80056d54: "skip_call"
+  start_pos: 0x80056d0c
+  end_pos: 0x80056d78
+  kind: Known
+
+- name: intr.f5_init.memzero
+  signature: "fn(ptr: *u32, size: u32)"
+  desc: Zeroes out `ptr[..size]`.
+  inline_comments:
+    0x80056da4: "if b == 0 { return; }"
+  labels:
+    0x80056db0: "loop"
+    0x80056dc0: "exit"
+  start_pos: 0x80056da4
+  end_pos: 0x80056dc8
+  kind: Known
+
+- name: intr.f1_init
+  desc: "Initializes and returns &intr.f1"
+  start_pos: 0x80056dd4
+  end_pos: 0x80056e20
+  kind: Known
+
+- name: intr.f1_init.callback
+  labels:
+    0x80056e74: "0"
+    0x80056e80: "1"
+    0x80056ec8: "2"
+    0x80056ed8: "3"
+    0x80056efc: "4"
+    0x80056f34: "5"
+    0x80056f48: "6"
+    0x80056f7c: "7"
+  start_pos: 0x80056e20
+  end_pos: 0x80056fa0
+  kind: Known
+
+- name: intr.f1_init.memzero
+  signature: "fn(ptr: *u32, size: u32)"
+  desc: Zeroes out `ptr[..size]`.
+  inline_comments:
+    0x8005704c: "if b == 0 { return; }"
+  labels:
+    0x80057058: "loop"
+    0x80057068: "exit"
+  start_pos: 0x8005704c
+  end_pos: 0x80057070
   kind: Known
 
 # A functions

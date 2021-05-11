@@ -71,19 +71,34 @@
 - name: something1_executed
   pos: 0x8006f984
   ty: u32
-- name: something5_data1
+
+# Interrupts
+- name: intr.header_text
+  desc: Header text for an interrupts implementation?
+  pos: 0x8001312c
+  ty: AsciiStr<51>
+- name: intr.data
   pos: 0x8006fa20
-  ty: Arr<u16, 2>
-- name: something5_data5
-  pos: 0x8006fa5c
-  ty: u32
-- name: FuncList1
+  ty: Marker<0x1068>
+- name: intr.saved_registers
+  pos: 0x8006fa58
+  ty: Arr<u32, 0x30>
+
+- name: intr.init_executed
+  desc: If intr.init was already executed.
+  pos: 0x8006fa20
+  ty: u16
+- name: intr.obj
+  desc: Object responsible for managing interrupts.
   pos: 0x80070a88
   ty: Arr<u32, 8>
-- name: FuncList1Ptr
-  desc: Pointer to FuncList1
+- name: intr.obj_ptr
+  desc: Pointer to intr.obj
   pos: 0x80070aa8
   ty: u32
+- name: intr.f5_init.data
+  pos: 0x80070ac8
+  ty: Arr<u32, 0x8>
 
 - name: something11_data1
   pos: 0x80077a1a
