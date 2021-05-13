@@ -12,34 +12,34 @@ use ref_cast::RefCast;
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct EffectCondition {
 	/// If the effect should throw a misfire when false
-	misfire: bool,
+	pub misfire: bool,
 
 	/// The property to compare to
-	property_cmp: DigimonProperty,
+	pub property_cmp: DigimonProperty,
 
 	/// The property argument
-	arg_property: Option<DigimonProperty>,
+	pub arg_property: Option<DigimonProperty>,
 
 	/// The number argument
-	arg_num: u16,
+	pub arg_num: u16,
 
 	/// The operation
-	operation: EffectConditionOperation,
+	pub operation: EffectConditionOperation,
 
 	/// Unknown field at `0x1`
-	unknown_1: u8,
+	pub unknown_1: u8,
 
 	/// Unknown field at `0x3`
-	unknown_3: [u8; 0x5],
+	pub unknown_3: [u8; 0x5],
 
 	/// Unknown field at `0x9`
-	unknown_9: [u8; 0xb],
+	pub unknown_9: [u8; 0xb],
 
 	/// Unknown field at `0x16`
-	unknown_16: [u8; 0x4],
+	pub unknown_16: [u8; 0x4],
 
 	/// Unknown field at `0x1b`
-	unknown_1b: [u8; 0x5],
+	pub unknown_1b: [u8; 0x5],
 }
 
 /// The error type thrown by `FromBytes`

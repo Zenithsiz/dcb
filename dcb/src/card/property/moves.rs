@@ -19,13 +19,13 @@ use dcb_util::{
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Move {
 	/// The move's name
-	name: AsciiStrArr<0x15>,
+	pub name: AsciiStrArr<0x15>,
 
 	/// The move's power
-	power: u16,
+	pub power: u16,
 
 	/// The unknown data
-	unknown: u32,
+	pub unknown: u32,
 }
 
 /// Error type for [`Bytes::from_bytes`](dcb_bytes::Bytes::from_bytes)
