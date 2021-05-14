@@ -191,8 +191,15 @@ pub enum FromBytesError {
 /// Error type for [`Bytes::from_bytes`](dcb_bytes::Bytes::from_bytes)
 #[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
 pub enum ToBytesError {
+	/// Invalid property to set
+	#[error("Invalid property to set {property}")]
+	InvalidProperty {
+		/// Property that was invalid
+		property: DigimonProperty,
+	},
+	
 	/// Invalid move [`Effect::MoveCards`] effect
-	#[error("Invalid move cards effect ({} => {})", from, to)]
+	#[error("Invalid move cards effect ({from} => {to})")]
 	InvalidMoveCards {
 		/// Slot we tried to move from
 		from: Slot,
@@ -216,16 +223,22 @@ impl Bytes for Effect {
 		let bytes = array_split!(bytes,
 			effect_type: 0x1,   // 0x0
 			a          : 0x1,   // 0x1
-			_unknown_2 : 0x1,   // 0x2
+			zero_0     : 0x1,   // 0x2
 			b          : 0x1,   // 0x3
-			_unknown_4 : 0x1,   // 0x4
+			zero_1     : 0x1,   // 0x4
 			c          : 0x1,   // 0x5
-			_unknown_6 : [0x3], // 0x6
+			zero_2     : [0x3], // 0x6
 			x          : [0x2], // 0x9
 			y          : [0x2], // 0xb
-			_unknown_d : 0x1,   // 0xd
+			zero_3     : 0x1,   // 0xd
 			op         : 0x1,   // 0xe
 		);
+
+		// Make sure all zeros are actually zero in debug mode.
+		debug_assert_eq!(*bytes.zero_0, 0);
+		debug_assert_eq!(*bytes.zero_1, 0);
+		debug_assert_eq!(*bytes.zero_2, [0; 3]);
+		debug_assert_eq!(*bytes.zero_3, 0);
 
 		// Else create getters for all arguments
 		let get_a = || {
@@ -324,17 +337,17 @@ impl Bytes for Effect {
 
 		// Get all byte arrays we need
 		let bytes = array_split_mut!(bytes,
-			effect_type: 0x1,
-			a          : 0x1,
-			_unknown_2 : 0x1,
-			b          : 0x1,
-			_unknown_4 : 0x1,
-			c          : 0x1,
-			_unknown_6 : [0x3],
-			x          : [0x2],
-			y          : [0x2],
-			_unknown_d : 0x1,
-			op         : 0x1,
+			effect_type: 0x1,   // 0x0
+			a          : 0x1,   // 0x1
+			zero_0     : 0x1,   // 0x2
+			b          : 0x1,   // 0x3
+			zero_1     : 0x1,   // 0x4
+			c          : 0x1,   // 0x5
+			zero_2     : [0x3], // 0x6
+			x          : [0x2], // 0x9
+			y          : [0x2], // 0xb
+			zero_3     : 0x1,   // 0xd
+			op         : 0x1,   // 0xe
 		);
 
 		// Setters
@@ -365,6 +378,12 @@ impl Bytes for Effect {
 		let bytes_attack_type = &mut bytes.y[0];
 		let mut set_attack_type = |attack: AttackType| attack.to_bytes(bytes_attack_type).into_ok();
 
+		// Set zeros
+		*bytes.zero_0 = 0;
+		*bytes.zero_1 = 0;
+		*bytes.zero_2 = [0; 3];
+		*bytes.zero_3 = 0;
+
 		// Check our variant and fill `bytes` with info
 		#[rustfmt::skip]
 		match *self {
@@ -372,6 +391,11 @@ impl Bytes for Effect {
 				// Write the property minus one
 				property.to_bytes(bytes.effect_type).into_ok();
 				*bytes.effect_type -= 1;
+				
+				// If the effect type isn't within 0..=13, return Err
+				if !(0..=13).contains(bytes.effect_type) {
+					return Err(ToBytesError::InvalidProperty { property });
+				}
 
 				// Write all arguments
 				set_a(a);
