@@ -234,6 +234,7 @@ pub struct MaybeCrossMoveEffect(Option<CrossMoveEffect>);
 pub struct MaybeDigimonProperty(Option<DigimonProperty>);
 
 // Complex
+pub mod digivolve_effect;
 pub mod effect;
 pub mod effect_condition;
 pub mod moves; // Note: Can't be `move`, as it's a keyword
@@ -244,6 +245,7 @@ pub use attack_type::AttackType;
 pub use card_type::CardType;
 pub use cross_move_effect::CrossMoveEffect;
 pub use digimon_property::DigimonProperty;
+pub use digivolve_effect::DigivolveEffect;
 pub use effect::{Effect, MaybeEffect};
 pub use effect_condition::{EffectCondition, MaybeEffectCondition};
 pub use effect_condition_operation::EffectConditionOperation;

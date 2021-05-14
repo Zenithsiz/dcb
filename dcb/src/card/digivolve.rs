@@ -1,6 +1,7 @@
 #![doc(include = "digivolve.md")]
 
 // Imports
+use crate::card::property::{digivolve_effect, DigivolveEffect};
 use dcb_bytes::Bytes;
 use dcb_util::{
 	array_split, array_split_mut,
@@ -22,8 +23,8 @@ pub struct Digivolve {
 	/// The description is split along 4 lines
 	pub effect_description: [AsciiStrArr<0x14>; 4],
 
-	/// Unknown field at `0x15`
-	pub unknown_15: [u8; 3],
+	/// Effect
+	pub effect: DigivolveEffect,
 }
 
 /// Error type for [`Bytes::from_bytes`](dcb_bytes::Bytes::from_bytes)
@@ -48,6 +49,10 @@ pub enum FromBytesError {
 	/// Unable to read the fourth support effect description
 	#[error("Unable to read the fourth line of the effect description")]
 	EffectDescription4(#[source] null_ascii_string::ReadError),
+
+	/// Unable to parse the effect
+	#[error("Unable to parse the effect")]
+	Effect(#[source] digivolve_effect::FromBytesError),
 }
 
 impl Bytes for Digivolve {
@@ -59,7 +64,7 @@ impl Bytes for Digivolve {
 		// Split bytes
 		let bytes = array_split!(bytes,
 			name                : [0x15],
-			unknown_15          : [0x3],
+			effect              : [0x3],
 			effect_description_0: [0x15],
 			effect_description_1: [0x15],
 			effect_description_2: [0x15],
@@ -91,7 +96,7 @@ impl Bytes for Digivolve {
 			],
 
 			// Unknown
-			unknown_15: *bytes.unknown_15,
+			effect: DigivolveEffect::from_bytes(bytes.effect).map_err(FromBytesError::Effect)?,
 		})
 	}
 
@@ -99,7 +104,7 @@ impl Bytes for Digivolve {
 		// Split bytes
 		let bytes = array_split_mut!(bytes,
 			name                : [0x15],
-			unknown_15          : [0x3],
+			effect              : [0x3],
 			effect_description_0: [0x15],
 			effect_description_1: [0x15],
 			effect_description_2: [0x15],
@@ -116,7 +121,7 @@ impl Bytes for Digivolve {
 		bytes.effect_description_3.write_string(&self.effect_description[3]);
 
 		// Unknown
-		*bytes.unknown_15 = self.unknown_15;
+		self.effect.to_bytes(bytes.effect).into_ok();
 
 		// Return Ok
 		Ok(())
