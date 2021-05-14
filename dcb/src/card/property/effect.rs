@@ -197,7 +197,7 @@ pub enum ToBytesError {
 		/// Property that was invalid
 		property: DigimonProperty,
 	},
-	
+
 	/// Invalid move [`Effect::MoveCards`] effect
 	#[error("Invalid move cards effect ({from} => {to})")]
 	InvalidMoveCards {
@@ -391,7 +391,7 @@ impl Bytes for Effect {
 				// Write the property minus one
 				property.to_bytes(bytes.effect_type).into_ok();
 				*bytes.effect_type -= 1;
-				
+
 				// If the effect type isn't within 0..=13, return Err
 				if !(0..=13).contains(bytes.effect_type) {
 					return Err(ToBytesError::InvalidProperty { property });

@@ -2,7 +2,7 @@
 
 // Imports
 use crate::inst::parse::line::{parse_literal, ParseLiteralError}; /* TODO: Stop importing these from here, move
-                                                                    * them elsewhere */
+																   * them elsewhere */
 use std::{convert::TryInto, str::FromStr};
 
 /// Data types
