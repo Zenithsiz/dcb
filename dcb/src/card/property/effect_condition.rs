@@ -25,21 +25,6 @@ pub struct EffectCondition {
 
 	/// The operation
 	pub operation: EffectConditionOperation,
-
-	/// Unknown field at `0x1`
-	pub unknown_1: u8,
-
-	/// Unknown field at `0x3`
-	pub unknown_3: [u8; 0x5],
-
-	/// Unknown field at `0x9`
-	pub unknown_9: [u8; 0xb],
-
-	/// Unknown field at `0x16`
-	pub unknown_16: [u8; 0x4],
-
-	/// Unknown field at `0x1b`
-	pub unknown_1b: [u8; 0x5],
 }
 
 /// The error type thrown by `FromBytes`
@@ -66,16 +51,32 @@ impl Bytes for EffectCondition {
 	fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError> {
 		let bytes = array_split!(bytes,
 			misfire     : 0x1,
-			unknown_1   : 0x1,
+			zero_0      : 0x1,
 			property_cmp: 0x1,
-			unknown_3   : [0x5],
+			zero_1      : [0x5],
 			arg_property: 0x1,
-			unknown_9   : [0xb],
+			zero_2      : [0xb],
 			arg_num     : [0x2],
-			unknown_16  : [0x4],
+			zero_3      : [0x4],
 			operation   : 1,
-			unknown_1b  : [0x5],
+			zero_4      : [0x5],
 		);
+
+		// Make sure all zeros are actually zero in debug mode.
+		// Except for `zero_1`, as the card `Heap of Junk` seems to
+		// have the value `[0, 22, 0, 0, 0]` here for some reason, but
+		// it doesn't seem necessary
+		debug_assert_eq!(*bytes.zero_0, 0);
+		match *bytes.zero_1 {
+			[0, 22, 0, 0, 0] => {
+				log::warn!("Found bytes `[0, 22, 0, 0, 0]` for effect condition `zero_1`.");
+				log::info!("The previous warning should only appear for \"Heap of Junk\" in the original game file.");
+			},
+			_ => debug_assert_eq!(*bytes.zero_1, [0; 0x5]),
+		}
+		debug_assert_eq!(*bytes.zero_2, [0; 0xb]);
+		debug_assert_eq!(*bytes.zero_3, [0; 0x4]);
+		debug_assert_eq!(*bytes.zero_4, [0; 0x5]);
 
 		Ok(Self {
 			misfire:      (*bytes.misfire != 0),
@@ -88,27 +89,21 @@ impl Bytes for EffectCondition {
 			arg_num: LittleEndian::read_u16(bytes.arg_num),
 
 			operation: EffectConditionOperation::from_bytes(bytes.operation).map_err(FromBytesError::Operation)?,
-
-			unknown_1:  *bytes.unknown_1,
-			unknown_3:  *bytes.unknown_3,
-			unknown_9:  *bytes.unknown_9,
-			unknown_16: *bytes.unknown_16,
-			unknown_1b: *bytes.unknown_1b,
 		})
 	}
 
 	fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError> {
 		let bytes = array_split_mut!(bytes,
 			misfire     : 0x1,
-			unknown_1   : 0x1,
+			zero_0      : 0x1,
 			property_cmp: 0x1,
-			unknown_3   : [0x5],
+			zero_1      : [0x5],
 			arg_property: 0x1,
-			unknown_9   : [0xb],
+			zero_2      : [0xb],
 			arg_num     : [0x2],
-			unknown_16  : [0x4],
+			zero_3      : [0x4],
 			operation   : 1,
-			unknown_1b  : [0x5],
+			zero_4      : [0x5],
 		);
 
 		// Misfire
@@ -124,12 +119,12 @@ impl Bytes for EffectCondition {
 		LittleEndian::write_u16(bytes.arg_num, self.arg_num);
 		self.operation.to_bytes(bytes.operation).into_ok();
 
-		// Unknowns
-		*bytes.unknown_1 = self.unknown_1;
-		*bytes.unknown_3 = self.unknown_3;
-		*bytes.unknown_9 = self.unknown_9;
-		*bytes.unknown_16 = self.unknown_16;
-		*bytes.unknown_1b = self.unknown_1b;
+		// Zeros
+		*bytes.zero_0 = 0;
+		*bytes.zero_1 = [0; 0x5];
+		*bytes.zero_2 = [0; 0xb];
+		*bytes.zero_3 = [0; 0x4];
+		*bytes.zero_4 = [0; 0x5];
 
 		// And return OK
 		Ok(())

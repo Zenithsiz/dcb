@@ -137,7 +137,6 @@ dcb_util::generate_enum_property_mod!(
 			0xFF => {
 				log::warn!("Found byte 0xFF for effect condition operation. Interpreting as `EqualToNumber`");
 				log::info!("The previous warning should only appear for \"Aquilamon\" in the original game file.");
-				log::info!("Once the file is patched for the first time, this warning should not appear again.");
 				Self::EqualToNumber
 			},
 

@@ -18,6 +18,7 @@ macro_rules! array_split {
 		),* $(,)?
 	) => {{
 		// Struct holding all fields
+		#[derive(Clone, Copy, Debug)]
 		struct Fields<'a, T> {
 			$(
 				$name:
@@ -73,6 +74,7 @@ macro_rules! array_split_mut {
 		),* $(,)?
 	) => {{
 		// Struct holding all fields
+		#[derive(Debug)]
 		struct Fields<'a, T> {
 			$(
 				$name:
