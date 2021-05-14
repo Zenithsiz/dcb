@@ -12,7 +12,6 @@ use std::fmt;
 pub struct SignedHex<T>(pub T);
 
 // All references implement it for their underlying type.
-#[allow(clippy::use_self)] // We're using a generic version `SignedHex`, not `Self`
 impl<'a, T> fmt::Display for SignedHex<&'a T>
 where
 	SignedHex<T>: fmt::Display,

@@ -70,7 +70,6 @@ impl SubHeader {
 }
 
 
-#[allow(clippy::ptr_offset_with_cast)]
 impl Bytes for SubHeader {
 	type ByteArray = [u8; 4];
 	type FromError = FromBytesError;

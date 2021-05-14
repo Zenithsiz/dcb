@@ -67,7 +67,6 @@ impl Bytes for DigivolveEffect {
 		Ok(effect)
 	}
 
-	#[allow(clippy::too_many_lines)] // It's a single match, we can't really split it
 	fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError> {
 		*bytes = match *self {
 			Self::DisregardSpecialityLevelDP => [0, 0, 5],

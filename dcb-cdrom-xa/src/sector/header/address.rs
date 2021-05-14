@@ -37,14 +37,12 @@ impl Address {
 		let block = u8::try_from(sector_pos % 75).expect("Must fit");
 		let total_secs = sector_pos / 75;
 		let sec = u8::try_from(total_secs % 60).expect("Must fit");
-		#[allow(clippy::map_err_ignore)] // We want to ignore the error here, only one way for it to fail
 		let min = u8::try_from(total_secs / 60).map_err(|_| FromSectorPosError::TooLarge(sector_pos))?;
 
 		Ok(Self { min, sec, block })
 	}
 }
 
-#[allow(clippy::ptr_offset_with_cast)]
 impl dcb_bytes::Bytes for Address {
 	type ByteArray = [u8; 3];
 	type FromError = FromBytesError;
