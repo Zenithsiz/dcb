@@ -21,7 +21,6 @@ use dcb::{
 use eframe::{egui, epi};
 use native_dialog::{FileDialog, MessageDialog, MessageType};
 use std::{
-	borrow::Cow,
 	collections::hash_map::DefaultHasher,
 	fs,
 	hash::{Hash, Hasher},
@@ -50,14 +49,8 @@ pub struct CardEditor {
 	/// Card search
 	card_search: String,
 
-	/// Currently selected card
-	selected_card_idx: Option<usize>,
-
-	/// Card edit state
-	cur_card_edit_state: Option<CardEditState>,
-
-	/// Card edit status
-	cur_card_edit_status: Option<Cow<'static, str>>,
+	/// All selected edit screens
+	open_edit_screens: Vec<EditScreen>,
 }
 
 impl CardEditor {
@@ -124,13 +117,11 @@ impl CardEditor {
 impl Default for CardEditor {
 	fn default() -> Self {
 		Self {
-			file_path:            None,
-			card_table:           None,
-			card_table_hash:      None,
-			card_search:          String::new(),
-			selected_card_idx:    None,
-			cur_card_edit_state:  None,
-			cur_card_edit_status: None,
+			file_path:         None,
+			card_table:        None,
+			card_table_hash:   None,
+			card_search:       String::new(),
+			open_edit_screens: vec![],
 		}
 	}
 }
@@ -142,9 +133,7 @@ impl epi::App for CardEditor {
 			card_table,
 			card_table_hash,
 			card_search,
-			selected_card_idx,
-			cur_card_edit_state,
-			cur_card_edit_status,
+			open_edit_screens,
 		} = self;
 
 		// Top panel
@@ -228,40 +217,66 @@ impl epi::App for CardEditor {
 
 				egui::ScrollArea::auto_sized().show(ui, |ui| {
 					for (idx, name) in names {
-						// If clicked, set the selected card index and flush the edits
-						if ui.selectable_label(*selected_card_idx == Some(idx), name).clicked() {
-							*selected_card_idx = Some(idx);
-							*cur_card_edit_state = None;
-							*cur_card_edit_status = None;
+						// If clicked, open/close a new screen
+						let screen_idx = open_edit_screens.iter().position(|screen| screen.card_idx == idx);
+						if ui.selectable_label(screen_idx.is_some(), name).clicked() {
+							match screen_idx {
+								Some(screen_idx) => {
+									let really_delete =
+										match open_edit_screens[screen_idx].cur_card_edit_error.is_some() {
+											true => MessageDialog::new()
+												.set_text("You have unresolved errors, really close?")
+												.set_type(MessageType::Warning)
+												.show_confirm()
+												.expect("Unable to ask user for confirmation"),
+											false => true,
+										};
+
+									if really_delete {
+										open_edit_screens.remove(screen_idx);
+									}
+								},
+								None => open_edit_screens.push(EditScreen {
+									card_idx:            idx,
+									cur_card_edit_state: None,
+									cur_card_edit_error: None,
+								}),
+							}
 						}
 					}
 				});
 			}
 		});
 
-		// If we have a selected card, show a screen for it
-		if let Some(selected_card_idx) = *selected_card_idx {
+		// For every screen, display it
+		for screen in open_edit_screens {
 			let card = Self::get_card_from_idx(
 				card_table.as_mut().expect("Had a selected card without a card table"),
-				selected_card_idx,
+				screen.card_idx,
 			);
 
-			// Header for the card
-			egui::TopPanel::top("card_header_name").show(ctx, |ui| {
-				ui.heading(card.name());
-				ui.label(match card {
-					Card::Digimon(_) => "Digimon",
-					Card::Item(_) => "Item",
-					Card::Digivolve(_) => "Digivolve",
-				});
-				if let Some(cur_card_edit_status) = cur_card_edit_status {
+			egui::SidePanel::left((screen as *const _, "panel"), 500.0).show(ctx, |ui| {
+				// Header for the card
+				ui.vertical(|ui| {
+					ui.heading(card.name());
+					ui.label(match card {
+						Card::Digimon(_) => "Digimon",
+						Card::Item(_) => "Item",
+						Card::Digivolve(_) => "Digivolve",
+					});
+					if let Some(cur_card_edit_status) = &screen.cur_card_edit_error {
+						ui.separator();
+						ui.label(&**cur_card_edit_status);
+					}
 					ui.separator();
-					ui.label(&**cur_card_edit_status);
-				}
-			});
+				});
 
-			egui::CentralPanel::default().show(ctx, |ui| {
-				self::render_card(ui, card, cur_card_edit_state, cur_card_edit_status);
+				self::render_card(
+					ui,
+					card,
+					&mut screen.cur_card_edit_state,
+					&mut screen.cur_card_edit_error,
+				);
 			});
 		}
 	}
@@ -303,6 +318,18 @@ impl epi::App for CardEditor {
 	}
 }
 
+/// An edit screen
+pub struct EditScreen {
+	/// Currently selected card
+	card_idx: usize,
+
+	/// Card edit state
+	cur_card_edit_state: Option<CardEditState>,
+
+	/// Card edit error
+	cur_card_edit_error: Option<String>,
+}
+
 /// Digimon, Item or digivolve
 pub enum Card<'a> {
 	Digimon(&'a mut dcb::Digimon),
@@ -325,7 +352,7 @@ impl<'a> Card<'a> {
 /// Renders a card
 fn render_card(
 	ui: &mut egui::Ui, card: Card, cur_card_edit_state: &mut Option<CardEditState>,
-	cur_card_edit_status: &mut Option<Cow<str>>,
+	cur_card_edit_error: &mut Option<String>,
 ) {
 	egui::ScrollArea::auto_sized().show(ui, |ui| {
 		match card {
@@ -344,12 +371,10 @@ fn render_card(
 
 				// And try to apply if anything was changed
 				if self::hash_of(edit_state) != edit_state_start_hash {
-					let status = match edit_state.apply(digimon) {
-						Ok(()) => Cow::Borrowed("All ok"),
-						Err(err) => Cow::Owned(format!("Error: {:?}", err)),
+					*cur_card_edit_error = match edit_state.apply(digimon) {
+						Ok(()) => None,
+						Err(err) => Some(format!("Error: {:?}", err)),
 					};
-
-					*cur_card_edit_status = Some(status);
 				}
 			},
 			Card::Item(item) => {
@@ -367,12 +392,10 @@ fn render_card(
 
 				// And try to apply if anything was changed
 				if self::hash_of(edit_state) != edit_state_start_hash {
-					let status = match edit_state.apply(item) {
-						Ok(()) => Cow::Borrowed("All ok"),
-						Err(err) => Cow::Owned(format!("Error: {:?}", err)),
+					*cur_card_edit_error = match edit_state.apply(item) {
+						Ok(()) => None,
+						Err(err) => Some(format!("Error: {:?}", err)),
 					};
-
-					*cur_card_edit_status = Some(status);
 				}
 			},
 			Card::Digivolve(digivolve) => {
@@ -390,12 +413,10 @@ fn render_card(
 
 				// And try to apply if anything was changed
 				if self::hash_of(edit_state) != edit_state_start_hash {
-					let status = match edit_state.apply(digivolve) {
-						Ok(()) => Cow::Borrowed("All ok"),
-						Err(err) => Cow::Owned(format!("Error: {:?}", err)),
+					*cur_card_edit_error = match edit_state.apply(digivolve) {
+						Ok(()) => None,
+						Err(err) => Some(format!("Error: {:?}", err)),
 					};
-
-					*cur_card_edit_status = Some(status);
 				}
 			},
 		}
