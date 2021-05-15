@@ -7,14 +7,14 @@
 pub mod edit_state;
 
 // Exports
-pub use edit_state::{CardEditState, DigimonEditState};
+pub use edit_state::{CardEditState, DigimonEditState, DigivolveEditState, ItemEditState};
 
 // Imports
 use anyhow::Context;
 use dcb::{
 	card::property::{
-		ArrowColor, AttackType, CrossMoveEffect, DigimonProperty, Effect, EffectCondition, EffectConditionOperation,
-		EffectOperation, Level, Move, PlayerType, Slot, Speciality,
+		ArrowColor, AttackType, CrossMoveEffect, DigimonProperty, DigivolveEffect, Effect, EffectCondition,
+		EffectConditionOperation, EffectOperation, Level, Move, PlayerType, Slot, Speciality,
 	},
 	CardTable,
 };
@@ -265,7 +265,11 @@ impl epi::App for CardEditor {
 					Card::Digimon(_) => "Digimon",
 					Card::Item(_) => "Item",
 					Card::Digivolve(_) => "Digivolve",
-				})
+				});
+				if let Some(cur_card_edit_status) = cur_card_edit_status {
+					ui.separator();
+					ui.label(&**cur_card_edit_status);
+				}
 			});
 
 			egui::CentralPanel::default().show(ctx, |ui| {
@@ -278,11 +282,67 @@ impl epi::App for CardEditor {
 								.as_digimon_mut()
 								.expect("Edit state wasn't a digimon when a digimon was selected");
 
+							// Get the hash of the edit state to compare against later.
+							let edit_state_start_hash = self::hash_of(edit_state);
+
 							// Then render it
-							self::render_digimon_card(ui, digimon, edit_state, cur_card_edit_status);
+							self::render_digimon_card(ui, digimon, edit_state);
+
+							// And try to apply if anything was changed
+							if self::hash_of(edit_state) != edit_state_start_hash {
+								let status = match edit_state.apply(digimon) {
+									Ok(()) => Cow::Borrowed("All ok"),
+									Err(err) => Cow::Owned(format!("Error: {:?}", err)),
+								};
+
+								*cur_card_edit_status = Some(status);
+							}
 						},
-						Card::Item(_) | Card::Digivolve(_) => {
-							ui.heading("TODO");
+						Card::Item(item) => {
+							// Get the current card edit state as digimon
+							let edit_state = cur_card_edit_state
+								.get_or_insert_with(|| CardEditState::item(item))
+								.as_item_mut()
+								.expect("Edit state wasn't an item when an item was selected");
+
+							// Get the hash of the edit state to compare against later.
+							let edit_state_start_hash = self::hash_of(edit_state);
+
+							// Then render it
+							self::render_item_card(ui, item, edit_state);
+
+							// And try to apply if anything was changed
+							if self::hash_of(edit_state) != edit_state_start_hash {
+								let status = match edit_state.apply(item) {
+									Ok(()) => Cow::Borrowed("All ok"),
+									Err(err) => Cow::Owned(format!("Error: {:?}", err)),
+								};
+
+								*cur_card_edit_status = Some(status);
+							}
+						},
+						Card::Digivolve(digivolve) => {
+							// Get the current card edit state as digimon
+							let edit_state = cur_card_edit_state
+								.get_or_insert_with(|| CardEditState::digivolve(digivolve))
+								.as_digivolve_mut()
+								.expect("Edit state wasn't a digivolve when a digivolve was selected");
+
+							// Get the hash of the edit state to compare against later.
+							let edit_state_start_hash = self::hash_of(edit_state);
+
+							// Then render it
+							self::render_digivolve_card(ui, digivolve, edit_state);
+
+							// And try to apply if anything was changed
+							if self::hash_of(edit_state) != edit_state_start_hash {
+								let status = match edit_state.apply(digivolve) {
+									Ok(()) => Cow::Borrowed("All ok"),
+									Err(err) => Cow::Owned(format!("Error: {:?}", err)),
+								};
+
+								*cur_card_edit_status = Some(status);
+							}
 						},
 					}
 
@@ -350,13 +410,7 @@ impl<'a> Card<'a> {
 }
 
 /// Renders a digimon card
-fn render_digimon_card(
-	ui: &mut egui::Ui, digimon: &mut dcb::Digimon, edit_state: &mut DigimonEditState,
-	cur_card_edit_status: &mut Option<Cow<'static, str>>,
-) {
-	// Get the hash of the edit state to compare against later.
-	let edit_state_start_hash = self::hash_of(edit_state);
-
+fn render_digimon_card(ui: &mut egui::Ui, digimon: &mut dcb::Digimon, edit_state: &mut DigimonEditState) {
 	// Name
 	ui.horizontal(|ui| {
 		ui.label("Name");
@@ -433,22 +487,60 @@ fn render_digimon_card(
 			self::render_effect_opt(ui, effect);
 		}
 	});
+}
 
+/// Renders an item card
+fn render_item_card(ui: &mut egui::Ui, item: &mut dcb::Item, edit_state: &mut ItemEditState) {
+	// Name
+	ui.horizontal(|ui| {
+		ui.label("Name");
+		ui.text_edit_singleline(&mut edit_state.name).changed();
+	});
 
-	// Then try to apply if anything was changed
-	if self::hash_of(edit_state) != edit_state_start_hash {
-		let status = match edit_state.apply(digimon) {
-			Ok(()) => Cow::Borrowed("All ok"),
-			Err(err) => Cow::Owned(format!("Error: {:?}", err)),
-		};
+	ui.group(|ui| {
+		ui.label("Effect description");
+		for line in &mut edit_state.effect_description {
+			ui.text_edit_singleline(line);
+		}
+	});
 
-		*cur_card_edit_status = Some(status);
-	}
+	ui.group(|ui| {
+		ui.label("Effect arrow color");
+		self::render_arrow_color_opt(ui, &mut item.effect_arrow_color);
+	});
 
-	if let Some(cur_card_edit_status) = cur_card_edit_status {
-		ui.separator();
-		ui.label(&**cur_card_edit_status);
-	}
+	ui.group(|ui| {
+		ui.label("Effect conditions");
+		for cond in &mut item.effect_conditions {
+			self::render_effect_condition_opt(ui, cond);
+		}
+	});
+
+	ui.group(|ui| {
+		ui.label("Effects");
+		for effect in &mut item.effects {
+			self::render_effect_opt(ui, effect);
+		}
+	});
+}
+
+/// Renders a digivolve card
+fn render_digivolve_card(ui: &mut egui::Ui, digivolve: &mut dcb::Digivolve, edit_state: &mut DigivolveEditState) {
+	// Name
+	ui.horizontal(|ui| {
+		ui.label("Name");
+		ui.text_edit_singleline(&mut edit_state.name).changed();
+	});
+
+	ui.group(|ui| {
+		ui.label("Effect description");
+		for line in &mut edit_state.effect_description {
+			ui.text_edit_singleline(line);
+		}
+	});
+
+	ui.label("Effect");
+	self::render_digivolve_effect(ui, &mut digivolve.effect);
 }
 
 /// Displays an optional cross move effect
@@ -603,6 +695,17 @@ fn render_slot(ui: &mut egui::Ui, cur_slot: &mut Slot) {
 		.show_ui(ui, |ui| {
 			for &slot in Slot::ALL {
 				ui.selectable_value(cur_slot, slot, slot.as_str());
+			}
+		});
+}
+
+/// Displays a digivolve effect
+fn render_digivolve_effect(ui: &mut egui::Ui, cur_effect: &mut DigivolveEffect) {
+	egui::ComboBox::from_id_source(cur_effect as *const _)
+		.selected_text(cur_effect.as_str())
+		.show_ui(ui, |ui| {
+			for &effect in DigivolveEffect::ALL {
+				ui.selectable_value(cur_effect, effect, effect.as_str());
 			}
 		});
 }

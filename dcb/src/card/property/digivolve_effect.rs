@@ -35,6 +35,35 @@ pub enum DigivolveEffect {
 	DowngradeLevelWithHpBoostOnSuccess,
 }
 
+impl DigivolveEffect {
+	/// All of the effects
+	pub const ALL: &'static [Self] = &[
+		Self::DisregardSpecialityLevelDP,
+		Self::ArmorToChampionUltimate,
+		Self::DisregardSpecialityFor20DP,
+		Self::SameLevelWithDPIgnoringSpeciality,
+		Self::RookieToUltimate,
+		Self::DowngradeArmorToRookie,
+		Self::DisregardDPInNonAbnormalStates,
+		Self::DowngradeLevelWithHpBoostOnSuccess,
+	];
+
+	/// Return a script describing this effect
+	#[must_use]
+	pub const fn as_str(self) -> &'static str {
+		match self {
+			Self::DisregardSpecialityLevelDP => "Disregard speciality & level & dp",
+			Self::ArmorToChampionUltimate => "Armor to champion or ultimate",
+			Self::DisregardSpecialityFor20DP => "Disregard speciality for 20 dp",
+			Self::SameLevelWithDPIgnoringSpeciality => "Same level without dp, ignoring speciality",
+			Self::RookieToUltimate => "Rookie to ultimate",
+			Self::DowngradeArmorToRookie => "Downgrade armor to rookie",
+			Self::DisregardDPInNonAbnormalStates => "Disregard dp in non-abnormal states",
+			Self::DowngradeLevelWithHpBoostOnSuccess => "Downgrade level with hp boost on success",
+		}
+	}
+}
+
 /// Error type for [`Bytes::from_bytes`](dcb_bytes::Bytes::from_bytes)
 #[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
 pub enum FromBytesError {
