@@ -15,7 +15,7 @@ use dcb_bytes::Bytes;
 use std::{convert::TryInto, io};
 
 /// Table storing all cards.
-#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(PartialEq, Eq, Clone, Hash, Debug)]
 #[derive(serde::Serialize, serde::Deserialize)]
 #[allow(clippy::unsafe_derive_deserialize)] // False positive
 pub struct Table {

@@ -23,7 +23,9 @@ use native_dialog::{FileDialog, MessageDialog, MessageType};
 use regex::{Regex, RegexBuilder};
 use std::{
 	borrow::Cow,
+	collections::hash_map::DefaultHasher,
 	fs,
+	hash::{Hash, Hasher},
 	io::{self, Read, Seek},
 	path::{Path, PathBuf},
 };
@@ -40,6 +42,9 @@ pub struct CardEditor {
 
 	/// Card table
 	card_table: Option<CardTable>,
+
+	/// Card table hash
+	card_table_hash: Option<u64>,
 
 	/// Card search
 	card_search: String,
@@ -123,6 +128,7 @@ impl Default for CardEditor {
 		Self {
 			file_path:            None,
 			card_table:           None,
+			card_table_hash:      None,
 			card_search:          String::new(),
 			selected_card_idx:    None,
 			cur_card_edit_state:  None,
@@ -137,6 +143,7 @@ impl epi::App for CardEditor {
 		let Self {
 			file_path,
 			card_table,
+			card_table_hash,
 			card_search,
 			selected_card_idx,
 			cur_card_edit_state,
@@ -160,7 +167,11 @@ impl epi::App for CardEditor {
 						// Then load the card table if we got a file
 						if let Some(file_path) = file_path {
 							match Self::parse_card_table(file_path) {
-								Ok(table) => *card_table = Some(table),
+								Ok(table) => {
+									let hash = self::hash_of(&table);
+									*card_table = Some(table);
+									*card_table_hash = Some(hash);
+								},
 								Err(err) => MessageDialog::new()
 									.set_text(&format!("Unable to open file: {:?}", err))
 									.set_type(MessageType::Error)
@@ -283,10 +294,9 @@ impl epi::App for CardEditor {
 	}
 
 	fn on_exit(&mut self) {
-		// Ask user if they want to save before leaving
-		// TODO: Only do this if we have any changes
-		let wants_to_save = match (&self.file_path, &self.card_table) {
-			(Some(_), Some(_)) => MessageDialog::new()
+		// Ask user if they want to save before leaving if they had any changes
+		let wants_to_save = match (&self.file_path, &self.card_table, self.card_table_hash) {
+			(Some(_), Some(table), Some(hash)) if self::hash_of(table) != hash => MessageDialog::new()
 				.set_text("Do you want to save?")
 				.set_type(MessageType::Warning)
 				.show_confirm()
@@ -345,7 +355,7 @@ fn render_digimon_card(
 	cur_card_edit_status: &mut Option<Cow<'static, str>>,
 ) {
 	// Get the hash of the edit state to compare against later.
-	let edit_state_start_hash = edit_state.calc_hash();
+	let edit_state_start_hash = self::hash_of(edit_state);
 
 	// Name
 	ui.horizontal(|ui| {
@@ -426,7 +436,7 @@ fn render_digimon_card(
 
 
 	// Then try to apply if anything was changed
-	if edit_state.calc_hash() != edit_state_start_hash {
+	if self::hash_of(edit_state) != edit_state_start_hash {
 		let status = match edit_state.apply(digimon) {
 			Ok(()) => Cow::Borrowed("All ok"),
 			Err(err) => Cow::Owned(format!("Error: {:?}", err)),
@@ -955,4 +965,11 @@ fn render_effect_opt(ui: &mut egui::Ui, effect: &mut Option<Effect>) {
 				}
 			});
 	});
+}
+
+/// Calculates the hash of any single value
+pub fn hash_of<T: Hash>(value: &T) -> u64 {
+	let mut state = DefaultHasher::new();
+	value.hash(&mut state);
+	state.finish()
 }

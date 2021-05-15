@@ -3,11 +3,7 @@
 // Imports
 use anyhow::Context;
 use dcb_util::AsciiStrArr;
-use std::{
-	collections::hash_map::DefaultHasher,
-	hash::{Hash, Hasher},
-	str::FromStr,
-};
+use std::str::FromStr;
 
 /// Helper state for managing each card
 #[derive(PartialEq, Clone, Hash, Debug)]
@@ -70,12 +66,5 @@ impl DigimonEditState {
 		}
 
 		Ok(())
-	}
-
-	/// Calculates the hash of this state
-	pub fn calc_hash(&self) -> u64 {
-		let mut state = DefaultHasher::new();
-		self.hash(&mut state);
-		state.finish()
 	}
 }
