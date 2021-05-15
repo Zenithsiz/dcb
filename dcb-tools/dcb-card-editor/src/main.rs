@@ -82,18 +82,12 @@ impl CardEditor {
 		let mut file = dcb_cdrom_xa::CdRomCursor::new(file);
 
 		// Seek to the card file position and limit our writing to the file size
-		// TODO: Properly limit instead of checking afterwards
 		file.seek(io::SeekFrom::Start(Self::CARD_TABLE_OFFSET))
 			.context("Unable to seek to card table")?;
+		let mut file = dcb_util::WriteTake::new(file, Self::CARD_TABLE_SIZE);
 
 		// Then parse it
 		card_table.serialize(&mut file).context("Unable to serialize table")?;
-
-		// Make sure it wrote less than our size
-		debug_assert!(
-			file.stream_position().expect("Unable to get stream position") - Self::CARD_TABLE_OFFSET <=
-				Self::CARD_TABLE_SIZE
-		);
 
 		Ok(())
 	}

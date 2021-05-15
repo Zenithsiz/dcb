@@ -69,6 +69,7 @@ pub mod impl_bytes;
 pub mod next_from_bytes;
 pub mod null_ascii_string;
 pub mod signed_hex;
+pub mod write_take;
 //pub mod peekable_iter;
 
 // Exports
@@ -82,6 +83,7 @@ pub use display_wrapper::DisplayWrapper;
 pub use next_from_bytes::NextFromBytes;
 pub use null_ascii_string::NullAsciiString;
 pub use signed_hex::SignedHex;
+pub use write_take::WriteTake;
 //pub use peekable_iter::PeekableIter;
 
 // Imports
