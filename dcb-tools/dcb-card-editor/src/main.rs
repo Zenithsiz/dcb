@@ -233,6 +233,16 @@ impl epi::App for CardEditor {
 				selected_card_idx,
 			);
 
+			// Header for the card
+			egui::TopPanel::top("card_header_name").show(ctx, |ui| {
+				ui.heading(card.name());
+				ui.label(match card {
+					Card::Digimon(_) => "Digimon",
+					Card::Item(_) => "Item",
+					Card::Digivolve(_) => "Digivolve",
+				})
+			});
+
 			egui::CentralPanel::default().show(ctx, |ui| {
 				egui::ScrollArea::auto_sized().show(ui, |ui| {
 					match card {
@@ -301,18 +311,30 @@ pub enum Card<'a> {
 	Digivolve(&'a mut dcb::Digivolve),
 }
 
+impl<'a> Card<'a> {
+	/// Returns the name of this card
+	pub fn name(&self) -> &str {
+		match self {
+			Card::Digimon(digimon) => digimon.name.as_str(),
+			Card::Item(item) => item.name.as_str(),
+			Card::Digivolve(digivolve) => digivolve.name.as_str(),
+		}
+	}
+}
+
 /// Renders a digimon card
 fn render_digimon_card(
 	ui: &mut egui::Ui, digimon: &mut dcb::Digimon, edit_state: &mut DigimonEditState,
 	cur_card_edit_status: &mut Option<Cow<'static, str>>,
 ) {
-	// Write all ui
-	ui.heading(digimon.name.as_str());
+	// Keeps track if any of the `edit_state` fields were changed, so we can apply the changes
+	// at the end
+	let mut any_edit_state_changed = false;
 
-	let mut any_changed = false;
+	// Name
 	ui.horizontal(|ui| {
 		ui.label("Name");
-		any_changed |= ui.text_edit_singleline(&mut edit_state.name).changed();
+		any_edit_state_changed |= ui.text_edit_singleline(&mut edit_state.name).changed();
 	});
 
 	ui.vertical(|ui| {
@@ -359,7 +381,7 @@ fn render_digimon_card(
 			ui.heading(name);
 			ui.horizontal(|ui| {
 				ui.label("Name");
-				any_changed |= ui.text_edit_singleline(mv_name).changed();
+				any_edit_state_changed |= ui.text_edit_singleline(mv_name).changed();
 			});
 			ui.horizontal(|ui| {
 				ui.label("Power");
@@ -384,7 +406,7 @@ fn render_digimon_card(
 	ui.group(|ui| {
 		ui.label("Effect description");
 		for line in &mut edit_state.effect_description {
-			any_changed |= ui.text_edit_singleline(line).changed();
+			any_edit_state_changed |= ui.text_edit_singleline(line).changed();
 		}
 	});
 
@@ -697,7 +719,7 @@ fn render_digimon_card(
 
 
 	// Then try to apply if anything was changed
-	if any_changed {
+	if any_edit_state_changed {
 		let status = match edit_state.apply(digimon) {
 			Ok(()) => Cow::Borrowed("All ok"),
 			Err(err) => Cow::Owned(format!("Error: {:?}", err)),
