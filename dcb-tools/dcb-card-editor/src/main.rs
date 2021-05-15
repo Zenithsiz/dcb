@@ -14,7 +14,7 @@ use anyhow::Context;
 use dcb::{
 	card::property::{
 		ArrowColor, AttackType, CrossMoveEffect, DigimonProperty, Effect, EffectConditionOperation, EffectOperation,
-		Level, PlayerType, Slot, Speciality,
+		Level, Move, PlayerType, Slot, Speciality,
 	},
 	CardTable,
 };
@@ -387,27 +387,20 @@ fn render_digimon_card(
 		ui.add(egui::Slider::new(&mut digimon.dp_give, 0..=100));
 	});
 
-	for (name, mv, mv_name) in std::array::IntoIter::new([
-		("Circle", &mut digimon.move_circle, &mut edit_state.move_circle_name),
-		(
-			"Triangle",
-			&mut digimon.move_triangle,
-			&mut edit_state.move_triangle_name,
-		),
-		("Cross", &mut digimon.move_cross, &mut edit_state.move_cross_name),
-	]) {
-		ui.group(|ui| {
-			ui.heading(name);
-			ui.horizontal(|ui| {
-				ui.label("Name");
-				any_edit_state_changed |= ui.text_edit_singleline(mv_name).changed();
-			});
-			ui.horizontal(|ui| {
-				ui.label("Power");
-				ui.add(egui::Slider::new(&mut mv.power, 0..=2000));
-			});
-		});
-	}
+	ui.group(|ui| {
+		ui.heading("Moves");
+
+		#[rustfmt::skip]
+		let moves = [
+			("Circle"  , &mut digimon.move_circle  , &mut edit_state.move_circle_name  ),
+			("Triangle", &mut digimon.move_triangle, &mut edit_state.move_triangle_name),
+			("Cross"   , &mut digimon.move_cross   , &mut edit_state.move_cross_name   ),
+		];
+		for (name, mv, mv_name) in std::array::IntoIter::new(moves) {
+			self::render_move(ui, name, mv, mv_name, &mut any_edit_state_changed);
+		}
+	});
+
 
 	ui.group(|ui| {
 		ui.label("Cross move effect");
@@ -751,4 +744,21 @@ fn render_digimon_card(
 		ui.separator();
 		ui.label(&**cur_card_edit_status);
 	}
+}
+
+/// Displays a move
+fn render_move(ui: &mut egui::Ui, name: &str, mv: &mut Move, mv_name: &mut String, any_edit_state_changed: &mut bool) {
+	ui.group(|ui| {
+		ui.vertical(|ui| {
+			ui.heading(name);
+			ui.horizontal(|ui| {
+				ui.label("Name");
+				*any_edit_state_changed |= ui.text_edit_singleline(mv_name).changed();
+			});
+			ui.horizontal(|ui| {
+				ui.label("Power");
+				ui.add(egui::Slider::new(&mut mv.power, 0..=2000));
+			});
+		});
+	});
 }
