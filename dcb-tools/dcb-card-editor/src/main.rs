@@ -341,14 +341,13 @@ fn render_digimon_card(
 	ui: &mut egui::Ui, digimon: &mut dcb::Digimon, edit_state: &mut DigimonEditState,
 	cur_card_edit_status: &mut Option<Cow<'static, str>>,
 ) {
-	// Keeps track if any of the `edit_state` fields were changed, so we can apply the changes
-	// at the end
-	let mut any_edit_state_changed = false;
+	// Get the hash of the edit state to compare against later.
+	let edit_state_start_hash = edit_state.calc_hash();
 
 	// Name
 	ui.horizontal(|ui| {
 		ui.label("Name");
-		any_edit_state_changed |= ui.text_edit_singleline(&mut edit_state.name).changed();
+		ui.text_edit_singleline(&mut edit_state.name).changed();
 	});
 
 	// Speciality
@@ -397,7 +396,7 @@ fn render_digimon_card(
 			("Cross"   , &mut digimon.move_cross   , &mut edit_state.move_cross_name   ),
 		];
 		for (name, mv, mv_name) in std::array::IntoIter::new(moves) {
-			self::render_move(ui, name, mv, mv_name, &mut any_edit_state_changed);
+			self::render_move(ui, name, mv, mv_name);
 		}
 	});
 
@@ -418,7 +417,7 @@ fn render_digimon_card(
 	ui.group(|ui| {
 		ui.label("Effect description");
 		for line in &mut edit_state.effect_description {
-			any_edit_state_changed |= ui.text_edit_singleline(line).changed();
+			ui.text_edit_singleline(line);
 		}
 	});
 
@@ -731,7 +730,7 @@ fn render_digimon_card(
 
 
 	// Then try to apply if anything was changed
-	if any_edit_state_changed {
+	if edit_state.calc_hash() != edit_state_start_hash {
 		let status = match edit_state.apply(digimon) {
 			Ok(()) => Cow::Borrowed("All ok"),
 			Err(err) => Cow::Owned(format!("Error: {:?}", err)),
@@ -747,13 +746,13 @@ fn render_digimon_card(
 }
 
 /// Displays a move
-fn render_move(ui: &mut egui::Ui, name: &str, mv: &mut Move, mv_name: &mut String, any_edit_state_changed: &mut bool) {
+fn render_move(ui: &mut egui::Ui, name: &str, mv: &mut Move, mv_name: &mut String) {
 	ui.group(|ui| {
 		ui.vertical(|ui| {
 			ui.heading(name);
 			ui.horizontal(|ui| {
 				ui.label("Name");
-				*any_edit_state_changed |= ui.text_edit_singleline(mv_name).changed();
+				ui.text_edit_singleline(mv_name);
 			});
 			ui.horizontal(|ui| {
 				ui.label("Power");
