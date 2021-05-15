@@ -249,36 +249,38 @@ impl epi::App for CardEditor {
 		});
 
 		// For every screen, display it
-		for screen in open_edit_screens {
-			let card = Self::get_card_from_idx(
-				card_table.as_mut().expect("Had a selected card without a card table"),
-				screen.card_idx,
-			);
-
-			egui::SidePanel::left((screen as *const _, "panel"), 500.0).show(ctx, |ui| {
-				// Header for the card
-				ui.vertical(|ui| {
-					ui.heading(card.name());
-					ui.label(match card {
-						Card::Digimon(_) => "Digimon",
-						Card::Item(_) => "Item",
-						Card::Digivolve(_) => "Digivolve",
-					});
-					if let Some(cur_card_edit_status) = &screen.cur_card_edit_error {
-						ui.separator();
-						ui.label(&**cur_card_edit_status);
-					}
-					ui.separator();
-				});
-
-				self::render_card(
-					ui,
-					card,
-					&mut screen.cur_card_edit_state,
-					&mut screen.cur_card_edit_error,
+		egui::CentralPanel::default().show(ctx, |_| {
+			for screen in open_edit_screens {
+				let card = Self::get_card_from_idx(
+					card_table.as_mut().expect("Had a selected card without a card table"),
+					screen.card_idx,
 				);
-			});
-		}
+
+				egui::SidePanel::left((screen as *const _, "panel"), 300.0).show(ctx, |ui| {
+					// Header for the card
+					ui.vertical(|ui| {
+						ui.heading(card.name());
+						ui.label(match card {
+							Card::Digimon(_) => "Digimon",
+							Card::Item(_) => "Item",
+							Card::Digivolve(_) => "Digivolve",
+						});
+						if let Some(cur_card_edit_status) = &screen.cur_card_edit_error {
+							ui.separator();
+							ui.label(&**cur_card_edit_status);
+						}
+						ui.separator();
+					});
+
+					self::render_card(
+						ui,
+						card,
+						&mut screen.cur_card_edit_state,
+						&mut screen.cur_card_edit_error,
+					);
+				});
+			}
+		});
 	}
 
 	fn on_exit(&mut self) {
