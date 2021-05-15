@@ -274,6 +274,9 @@ impl epi::App for CardEditor {
 							ui.heading("TODO");
 						},
 					}
+
+					// Add some space at bottom for cut-off stuff at the bottom
+					ui.add_space(400.0);
 				});
 			});
 		}
@@ -417,243 +420,7 @@ fn render_digimon_card(
 	ui.group(|ui| {
 		ui.label("Effects");
 		for effect in &mut digimon.effects {
-			ui.group(|ui| {
-				match effect {
-					Some(Effect::ChangeProperty {
-						property,
-						a,
-						b,
-						c,
-						x,
-						y,
-						op,
-					}) => {
-						ui.heading("Change Property");
-						ui.vertical(|ui| {
-							ui.label("Property");
-							ui.horizontal_wrapped(|ui| {
-								for &digimon_property in DigimonProperty::ALL {
-									ui.radio_value(property, digimon_property, digimon_property.as_str());
-								}
-							});
-
-							ui.label("A");
-							ui.horizontal_wrapped(|ui| {
-								for digimon_property in
-									std::iter::once(None).chain(DigimonProperty::ALL.iter().map(Some))
-								{
-									let text = match digimon_property {
-										Some(property) => property.as_str(),
-										None => "None",
-									};
-									ui.radio_value(a, digimon_property.copied(), text);
-								}
-							});
-							ui.label("B");
-							ui.horizontal_wrapped(|ui| {
-								for digimon_property in
-									std::iter::once(None).chain(DigimonProperty::ALL.iter().map(Some))
-								{
-									let text = match digimon_property {
-										Some(property) => property.as_str(),
-										None => "None",
-									};
-									ui.radio_value(b, digimon_property.copied(), text);
-								}
-							});
-							ui.label("C");
-							ui.horizontal_wrapped(|ui| {
-								for digimon_property in
-									std::iter::once(None).chain(DigimonProperty::ALL.iter().map(Some))
-								{
-									let text = match digimon_property {
-										Some(property) => property.as_str(),
-										None => "None",
-									};
-									ui.radio_value(c, digimon_property.copied(), text);
-								}
-							});
-
-							ui.horizontal(|ui| {
-								ui.label("X");
-								ui.add(egui::Slider::new(x, 0..=500));
-							});
-							ui.horizontal(|ui| {
-								ui.label("Y");
-								ui.add(egui::Slider::new(y, 0..=500));
-							});
-
-							ui.label("Operation");
-							ui.horizontal_wrapped(|ui| {
-								for &operation in EffectOperation::ALL {
-									ui.radio_value(op, operation, operation.as_str());
-								}
-							});
-						});
-					},
-					Some(Effect::UseAttack { player, attack }) => {
-						ui.heading("Use attack");
-
-						ui.label("Player");
-						ui.horizontal_wrapped(|ui| {
-							for &player_type in PlayerType::ALL {
-								ui.radio_value(player, player_type, player_type.as_str());
-							}
-						});
-
-						ui.label("Attack");
-						ui.horizontal_wrapped(|ui| {
-							for &attack_type in AttackType::ALL {
-								ui.radio_value(attack, attack_type, attack_type.as_str());
-							}
-						});
-					},
-					Some(Effect::SetTempSlot { a, b, c, op }) => {
-						ui.heading("Set temp slot");
-						ui.vertical(|ui| {
-							ui.label("A");
-							ui.horizontal_wrapped(|ui| {
-								for digimon_property in
-									std::iter::once(None).chain(DigimonProperty::ALL.iter().map(Some))
-								{
-									let text = match digimon_property {
-										Some(property) => property.as_str(),
-										None => "None",
-									};
-									ui.radio_value(a, digimon_property.copied(), text);
-								}
-							});
-							ui.label("B");
-							ui.horizontal_wrapped(|ui| {
-								for digimon_property in
-									std::iter::once(None).chain(DigimonProperty::ALL.iter().map(Some))
-								{
-									let text = match digimon_property {
-										Some(property) => property.as_str(),
-										None => "None",
-									};
-									ui.radio_value(b, digimon_property.copied(), text);
-								}
-							});
-							ui.label("C");
-							ui.horizontal_wrapped(|ui| {
-								for digimon_property in
-									std::iter::once(None).chain(DigimonProperty::ALL.iter().map(Some))
-								{
-									let text = match digimon_property {
-										Some(property) => property.as_str(),
-										None => "None",
-									};
-									ui.radio_value(c, digimon_property.copied(), text);
-								}
-							});
-
-							ui.label("Operation");
-							ui.horizontal_wrapped(|ui| {
-								for &operation in EffectOperation::ALL {
-									ui.radio_value(op, operation, operation.as_str());
-								}
-							});
-						});
-					},
-					Some(Effect::MoveCards {
-						player,
-						source,
-						destination,
-						count,
-					}) => {
-						ui.heading("Move cards");
-
-						ui.label("Player");
-						ui.horizontal_wrapped(|ui| {
-							for &player_type in PlayerType::ALL {
-								ui.radio_value(player, player_type, player_type.as_str());
-							}
-						});
-
-						ui.label("Source");
-						ui.horizontal_wrapped(|ui| {
-							for &slot in Slot::ALL {
-								ui.radio_value(source, slot, slot.as_str());
-							}
-						});
-
-						ui.label("Destination");
-						ui.horizontal_wrapped(|ui| {
-							for &slot in Slot::ALL {
-								ui.radio_value(destination, slot, slot.as_str());
-							}
-						});
-
-						ui.horizontal(|ui| {
-							ui.label("Count");
-							ui.add(egui::Slider::new(count, 0..=40));
-						});
-					},
-					Some(Effect::ShuffleOnlineDeck { player }) => {
-						ui.heading("Shuffle online deck");
-
-						ui.label("Player");
-						ui.horizontal_wrapped(|ui| {
-							for &player_type in PlayerType::ALL {
-								ui.radio_value(player, player_type, player_type.as_str());
-							}
-						});
-					},
-					Some(Effect::VoidOpponentSupportEffect) => {
-						ui.heading("Void opponent support effect");
-					},
-					Some(Effect::VoidOpponentSupportOptionEffect) => {
-						ui.heading("Void opponent support option effect");
-					},
-					Some(Effect::PickPartnerCard) => {
-						ui.heading("Pick partner card");
-					},
-					Some(Effect::CycleOpponentAttackType) => {
-						ui.heading("Cycle opponent attack type");
-					},
-					Some(Effect::KoDigimonRevives { health }) => {
-						ui.heading("Ko'd digimon revives");
-
-						ui.horizontal(|ui| {
-							ui.label("Health");
-							ui.add(egui::Slider::new(health, 0..=2000));
-						});
-					},
-					Some(Effect::DrawCards { player, count }) => {
-						ui.heading("Draw cards");
-
-						ui.label("Player");
-						ui.horizontal_wrapped(|ui| {
-							for &player_type in PlayerType::ALL {
-								ui.radio_value(player, player_type, player_type.as_str());
-							}
-						});
-
-						ui.horizontal(|ui| {
-							ui.label("Count");
-							ui.add(egui::Slider::new(count, 0..=40));
-						});
-					},
-					Some(Effect::OwnAttackBecomesEatUpHP) => {
-						ui.heading("Own attack becomes eat up hp");
-					},
-					Some(Effect::AttackFirst { player }) => {
-						ui.heading("Attack first");
-
-						ui.label("Player");
-						ui.horizontal_wrapped(|ui| {
-							for &player_type in PlayerType::ALL {
-								ui.radio_value(player, player_type, player_type.as_str());
-							}
-						});
-					},
-					None => {
-						ui.label("None");
-						// TODO: Be able to add new once all fields are figured out.
-					},
-				}
-			});
+			self::render_effect_opt(ui, effect);
 		}
 	});
 
@@ -681,24 +448,29 @@ fn render_cross_move_effect_opt(ui: &mut egui::Ui, cross_move_effect: &mut Optio
 		egui::ComboBox::from_id_source("cross_move_effect")
 			.selected_text(cross_move_effect.map_or("None", CrossMoveEffect::as_str))
 			.show_ui(ui, |ui| {
+				const ATTACK_TO_ZERO_DEFAULT: CrossMoveEffect = CrossMoveEffect::AttackToZero(AttackType::Circle);
+				const COUNTER_DEFAULT: CrossMoveEffect = CrossMoveEffect::Counter(AttackType::Circle);
+				const TRIPLE_AGAINST_DEFAULT: CrossMoveEffect = CrossMoveEffect::TripleAgainst(Speciality::Darkness);
+
+				let is_attack_to_zero = cross_move_effect.map_or(false, CrossMoveEffect::is_attack_to_zero);
+				let is_counter = cross_move_effect.map_or(false, CrossMoveEffect::is_counter);
+				let is_triple_against = cross_move_effect.map_or(false, CrossMoveEffect::is_triple_against);
+
 				ui.selectable_value(
 					cross_move_effect,
 					Some(CrossMoveEffect::AttackFirst),
 					CrossMoveEffect::AttackFirst.as_str(),
 				);
-				let is_attack_to_zero = cross_move_effect.map_or(false, CrossMoveEffect::is_attack_to_zero);
-				let attack_to_zero_default = CrossMoveEffect::AttackToZero(AttackType::Circle);
+
 				if ui
-					.selectable_label(is_attack_to_zero, attack_to_zero_default.as_str())
+					.selectable_label(is_attack_to_zero, ATTACK_TO_ZERO_DEFAULT.as_str())
 					.clicked() && !is_attack_to_zero
 				{
-					*cross_move_effect = Some(attack_to_zero_default);
+					*cross_move_effect = Some(ATTACK_TO_ZERO_DEFAULT);
 				}
 
-				let is_counter = cross_move_effect.map_or(false, CrossMoveEffect::is_counter);
-				let counter_default = CrossMoveEffect::Counter(AttackType::Circle);
-				if ui.selectable_label(is_counter, counter_default.as_str()).clicked() && !is_counter {
-					*cross_move_effect = Some(counter_default);
+				if ui.selectable_label(is_counter, COUNTER_DEFAULT.as_str()).clicked() && !is_counter {
+					*cross_move_effect = Some(COUNTER_DEFAULT);
 				}
 
 				ui.selectable_value(
@@ -717,13 +489,11 @@ fn render_cross_move_effect_opt(ui: &mut egui::Ui, cross_move_effect: &mut Optio
 					CrossMoveEffect::Jamming.as_str(),
 				);
 
-				let is_triple_against = cross_move_effect.map_or(false, CrossMoveEffect::is_triple_against);
-				let triple_against_default = CrossMoveEffect::TripleAgainst(Speciality::Darkness);
 				if ui
-					.selectable_label(is_triple_against, triple_against_default.as_str())
+					.selectable_label(is_triple_against, TRIPLE_AGAINST_DEFAULT.as_str())
 					.clicked() && !is_triple_against
 				{
-					*cross_move_effect = Some(triple_against_default);
+					*cross_move_effect = Some(TRIPLE_AGAINST_DEFAULT);
 				}
 			});
 
@@ -794,6 +564,38 @@ fn render_effect_condition_operation(ui: &mut egui::Ui, cur_op: &mut EffectCondi
 		});
 }
 
+/// Displays an effect operation
+fn render_effect_operation(ui: &mut egui::Ui, cur_op: &mut EffectOperation) {
+	egui::ComboBox::from_id_source(cur_op as *const _)
+		.selected_text(cur_op.as_str())
+		.show_ui(ui, |ui| {
+			for &op in EffectOperation::ALL {
+				ui.selectable_value(cur_op, op, op.as_str());
+			}
+		});
+}
+
+/// Displays a player type
+fn render_player_type(ui: &mut egui::Ui, cur_player: &mut PlayerType) {
+	egui::ComboBox::from_id_source(cur_player as *const _)
+		.selected_text(cur_player.as_str())
+		.show_ui(ui, |ui| {
+			for &player in PlayerType::ALL {
+				ui.selectable_value(cur_player, player, player.as_str());
+			}
+		});
+}
+
+/// Displays a slot
+fn render_slot(ui: &mut egui::Ui, cur_slot: &mut Slot) {
+	egui::ComboBox::from_id_source(cur_slot as *const _)
+		.selected_text(cur_slot.as_str())
+		.show_ui(ui, |ui| {
+			for &slot in Slot::ALL {
+				ui.selectable_value(cur_slot, slot, slot.as_str());
+			}
+		});
+}
 
 /// Displays a digimon property
 fn render_digimon_property(ui: &mut egui::Ui, cur_property: &mut DigimonProperty) {
@@ -890,5 +692,267 @@ fn render_effect_condition_opt(ui: &mut egui::Ui, cur_cond: &mut Option<EffectCo
 				});
 			}
 		},
+	});
+}
+
+/// Displays an optional effect
+fn render_effect_opt(ui: &mut egui::Ui, effect: &mut Option<Effect>) {
+	ui.group(|ui| {
+		match effect {
+			Some(Effect::ChangeProperty {
+				property,
+				a,
+				b,
+				c,
+				x,
+				y,
+				op,
+			}) => {
+				ui.heading("Change Property");
+				ui.vertical(|ui| {
+					ui.label("Property");
+					self::render_digimon_property(ui, property);
+
+					ui.label("A");
+					self::render_digimon_property_opt(ui, a);
+					ui.label("B");
+					self::render_digimon_property_opt(ui, b);
+					ui.label("C");
+					self::render_digimon_property_opt(ui, c);
+
+					ui.horizontal(|ui| {
+						ui.label("X");
+						ui.add(egui::Slider::new(x, 0..=500));
+					});
+					ui.horizontal(|ui| {
+						ui.label("Y");
+						ui.add(egui::Slider::new(y, 0..=500));
+					});
+
+					ui.label("Operation");
+					self::render_effect_operation(ui, op);
+				});
+			},
+			Some(Effect::UseAttack { player, attack }) => {
+				ui.heading("Use attack");
+
+				ui.label("Player");
+				self::render_player_type(ui, player);
+
+				ui.label("Attack");
+				self::render_attack_type(ui, attack);
+			},
+			Some(Effect::SetTempSlot { a, b, c, op }) => {
+				ui.heading("Set temp slot");
+				ui.vertical(|ui| {
+					ui.label("A");
+					self::render_digimon_property_opt(ui, a);
+					ui.label("B");
+					self::render_digimon_property_opt(ui, b);
+					ui.label("C");
+					self::render_digimon_property_opt(ui, c);
+
+					ui.label("Operation");
+					self::render_effect_operation(ui, op);
+				});
+			},
+			Some(Effect::MoveCards {
+				player,
+				source,
+				destination,
+				count,
+			}) => {
+				ui.heading("Move cards");
+
+				ui.label("Player");
+				self::render_player_type(ui, player);
+
+				ui.label("Source");
+				self::render_slot(ui, source);
+
+				ui.label("Destination");
+				self::render_slot(ui, destination);
+
+				ui.horizontal(|ui| {
+					ui.label("Count");
+					ui.add(egui::Slider::new(count, 0..=40));
+				});
+			},
+			Some(Effect::ShuffleOnlineDeck { player }) => {
+				ui.heading("Shuffle online deck");
+
+				ui.label("Player");
+				self::render_player_type(ui, player);
+			},
+			Some(Effect::VoidOpponentSupportEffect) => {
+				ui.heading("Void opponent support effect");
+			},
+			Some(Effect::VoidOpponentSupportOptionEffect) => {
+				ui.heading("Void opponent support option effect");
+			},
+			Some(Effect::PickPartnerCard) => {
+				ui.heading("Pick partner card");
+			},
+			Some(Effect::CycleOpponentAttackType) => {
+				ui.heading("Cycle opponent attack type");
+			},
+			Some(Effect::KoDigimonRevives { health }) => {
+				ui.heading("Ko'd digimon revives");
+
+				ui.horizontal(|ui| {
+					ui.label("Health");
+					ui.add(egui::Slider::new(health, 0..=2000));
+				});
+			},
+			Some(Effect::DrawCards { player, count }) => {
+				ui.heading("Draw cards");
+
+				ui.label("Player");
+				self::render_player_type(ui, player);
+
+				ui.horizontal(|ui| {
+					ui.label("Count");
+					ui.add(egui::Slider::new(count, 0..=40));
+				});
+			},
+			Some(Effect::OwnAttackBecomesEatUpHP) => {
+				ui.heading("Own attack becomes eat up hp");
+			},
+			Some(Effect::AttackFirst { player }) => {
+				ui.heading("Attack first");
+
+				ui.label("Player");
+				self::render_player_type(ui, player);
+			},
+			None => {
+				ui.label("None");
+			},
+		}
+
+		ui.separator();
+		ui.label("Change");
+		egui::ComboBox::from_id_source(effect as *const _)
+			.selected_text(effect.map_or("None", Effect::as_str))
+			.show_ui(ui, |ui| {
+				const CHANGE_PROPERTY_DEFAULT: Effect = Effect::ChangeProperty {
+					property: DigimonProperty::OwnSpeciality,
+					a:        None,
+					b:        None,
+					c:        None,
+					x:        0,
+					y:        0,
+					op:       EffectOperation::Addition,
+				};
+				const USE_ATTACK_DEFAULT: Effect = Effect::UseAttack {
+					player: PlayerType::Player,
+					attack: AttackType::Circle,
+				};
+				const SET_TEMP_SLOT_DEFAULT: Effect = Effect::SetTempSlot {
+					a:  None,
+					b:  None,
+					c:  None,
+					op: EffectOperation::Addition,
+				};
+				const MOVE_CARDS_DEFAULT: Effect = Effect::MoveCards {
+					player:      PlayerType::Player,
+					source:      Slot::Hand,
+					destination: Slot::Offline,
+					count:       0,
+				};
+				const SHUFFLE_ONLINE_DECK_DEFAULT: Effect = Effect::ShuffleOnlineDeck {
+					player: PlayerType::Player,
+				};
+				const KO_DIGIMON_REVIVES_DEFAULT: Effect = Effect::KoDigimonRevives { health: 0 };
+				const DRAW_CARDS_DEFAULT: Effect = Effect::DrawCards {
+					player: PlayerType::Player,
+					count:  0,
+				};
+				const ATTACK_FIRST_DEFAULT: Effect = Effect::AttackFirst {
+					player: PlayerType::Player,
+				};
+
+				let is_change_property = effect.map_or(false, Effect::is_change_property);
+				let is_use_attack = effect.map_or(false, Effect::is_use_attack);
+				let is_set_temp_slot = effect.map_or(false, Effect::is_set_temp_slot);
+				let is_move_cards = effect.map_or(false, Effect::is_move_cards);
+				let is_shuffle_online_deck = effect.map_or(false, Effect::is_shuffle_online_deck);
+				let is_ko_digimon_revives = effect.map_or(false, Effect::is_ko_digimon_revives);
+				let is_draw_cards = effect.map_or(false, Effect::is_draw_cards);
+				let is_attack_first = effect.map_or(false, Effect::is_attack_first);
+
+				if ui
+					.selectable_label(is_change_property, CHANGE_PROPERTY_DEFAULT.as_str())
+					.clicked() && !is_change_property
+				{
+					*effect = Some(CHANGE_PROPERTY_DEFAULT);
+				}
+				if ui
+					.selectable_label(is_use_attack, USE_ATTACK_DEFAULT.as_str())
+					.clicked() && !is_use_attack
+				{
+					*effect = Some(USE_ATTACK_DEFAULT);
+				}
+				if ui
+					.selectable_label(is_set_temp_slot, SET_TEMP_SLOT_DEFAULT.as_str())
+					.clicked() && !is_set_temp_slot
+				{
+					*effect = Some(SET_TEMP_SLOT_DEFAULT);
+				}
+				if ui
+					.selectable_label(is_move_cards, MOVE_CARDS_DEFAULT.as_str())
+					.clicked() && !is_move_cards
+				{
+					*effect = Some(MOVE_CARDS_DEFAULT);
+				}
+				if ui
+					.selectable_label(is_shuffle_online_deck, SHUFFLE_ONLINE_DECK_DEFAULT.as_str())
+					.clicked() && !is_shuffle_online_deck
+				{
+					*effect = Some(SHUFFLE_ONLINE_DECK_DEFAULT);
+				}
+
+				ui.selectable_value(
+					effect,
+					Some(Effect::VoidOpponentSupportEffect),
+					Effect::VoidOpponentSupportEffect.as_str(),
+				);
+				ui.selectable_value(
+					effect,
+					Some(Effect::VoidOpponentSupportOptionEffect),
+					Effect::VoidOpponentSupportOptionEffect.as_str(),
+				);
+				ui.selectable_value(effect, Some(Effect::PickPartnerCard), Effect::PickPartnerCard.as_str());
+				ui.selectable_value(
+					effect,
+					Some(Effect::CycleOpponentAttackType),
+					Effect::CycleOpponentAttackType.as_str(),
+				);
+
+				if ui
+					.selectable_label(is_ko_digimon_revives, KO_DIGIMON_REVIVES_DEFAULT.as_str())
+					.clicked() && !is_ko_digimon_revives
+				{
+					*effect = Some(KO_DIGIMON_REVIVES_DEFAULT);
+				}
+				if ui
+					.selectable_label(is_draw_cards, DRAW_CARDS_DEFAULT.as_str())
+					.clicked() && !is_draw_cards
+				{
+					*effect = Some(DRAW_CARDS_DEFAULT);
+				}
+
+				ui.selectable_value(
+					effect,
+					Some(Effect::OwnAttackBecomesEatUpHP),
+					Effect::OwnAttackBecomesEatUpHP.as_str(),
+				);
+
+				if ui
+					.selectable_label(is_attack_first, ATTACK_FIRST_DEFAULT.as_str())
+					.clicked() && !is_attack_first
+				{
+					*effect = Some(ATTACK_FIRST_DEFAULT);
+				}
+			});
 	});
 }

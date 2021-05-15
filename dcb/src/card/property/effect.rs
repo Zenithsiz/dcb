@@ -157,6 +157,106 @@ pub enum Effect {
 	},
 }
 
+impl Effect {
+	/// Returns a string representing this effect
+	#[must_use]
+	pub const fn as_str(self) -> &'static str {
+		match self {
+			Effect::ChangeProperty { .. } => "Change property",
+			Effect::UseAttack { .. } => "Use attack",
+			Effect::SetTempSlot { .. } => "Set temp slot",
+			Effect::MoveCards { .. } => "Move cards",
+			Effect::ShuffleOnlineDeck { .. } => "Shuffle online deck",
+			Effect::VoidOpponentSupportEffect => "Void opponent support effect",
+			Effect::VoidOpponentSupportOptionEffect => "Void opponent support option effect",
+			Effect::PickPartnerCard => "Pick partner card",
+			Effect::CycleOpponentAttackType => "Cycle opponent attack type",
+			Effect::KoDigimonRevives { .. } => "Ko'd digimon revives",
+			Effect::DrawCards { .. } => "Draw cards",
+			Effect::OwnAttackBecomesEatUpHP => "Own attack becomes Eat Up HP",
+			Effect::AttackFirst { .. } => "Attack first",
+		}
+	}
+
+	/// Returns `true` if the effect is [`ChangeProperty`].
+	#[must_use]
+	pub const fn is_change_property(self) -> bool {
+		matches!(self, Self::ChangeProperty { .. })
+	}
+
+	/// Returns `true` if the effect is [`UseAttack`].
+	#[must_use]
+	pub const fn is_use_attack(self) -> bool {
+		matches!(self, Self::UseAttack { .. })
+	}
+
+	/// Returns `true` if the effect is [`SetTempSlot`].
+	#[must_use]
+	pub const fn is_set_temp_slot(self) -> bool {
+		matches!(self, Self::SetTempSlot { .. })
+	}
+
+	/// Returns `true` if the effect is [`MoveCards`].
+	#[must_use]
+	pub const fn is_move_cards(self) -> bool {
+		matches!(self, Self::MoveCards { .. })
+	}
+
+	/// Returns `true` if the effect is [`ShuffleOnlineDeck`].
+	#[must_use]
+	pub const fn is_shuffle_online_deck(self) -> bool {
+		matches!(self, Self::ShuffleOnlineDeck { .. })
+	}
+
+	/// Returns `true` if the effect is [`VoidOpponentSupportEffect`].
+	#[must_use]
+	pub const fn is_void_opponent_support_effect(self) -> bool {
+		matches!(self, Self::VoidOpponentSupportEffect)
+	}
+
+	/// Returns `true` if the effect is [`VoidOpponentSupportOptionEffect`].
+	#[must_use]
+	pub const fn is_void_opponent_support_option_effect(self) -> bool {
+		matches!(self, Self::VoidOpponentSupportOptionEffect)
+	}
+
+	/// Returns `true` if the effect is [`PickPartnerCard`].
+	#[must_use]
+	pub const fn is_pick_partner_card(self) -> bool {
+		matches!(self, Self::PickPartnerCard)
+	}
+
+	/// Returns `true` if the effect is [`CycleOpponentAttackType`].
+	#[must_use]
+	pub const fn is_cycle_opponent_attack_type(self) -> bool {
+		matches!(self, Self::CycleOpponentAttackType)
+	}
+
+	/// Returns `true` if the effect is [`KoDigimonRevives`].
+	#[must_use]
+	pub const fn is_ko_digimon_revives(self) -> bool {
+		matches!(self, Self::KoDigimonRevives { .. })
+	}
+
+	/// Returns `true` if the effect is [`DrawCards`].
+	#[must_use]
+	pub const fn is_draw_cards(self) -> bool {
+		matches!(self, Self::DrawCards { .. })
+	}
+
+	/// Returns `true` if the effect is [`OwnAttackBecomesEatUpHP`].
+	#[must_use]
+	pub const fn is_own_attack_becomes_eat_up_h_p(self) -> bool {
+		matches!(self, Self::OwnAttackBecomesEatUpHP)
+	}
+
+	/// Returns `true` if the effect is [`AttackFirst`].
+	#[must_use]
+	pub const fn is_attack_first(self) -> bool {
+		matches!(self, Self::AttackFirst { .. })
+	}
+}
+
 /// Error type for [`Bytes::from_bytes`](dcb_bytes::Bytes::from_bytes)
 #[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
 pub enum FromBytesError {
