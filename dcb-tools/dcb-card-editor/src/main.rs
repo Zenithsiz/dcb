@@ -261,82 +261,7 @@ impl epi::App for CardEditor {
 			});
 
 			egui::CentralPanel::default().show(ctx, |ui| {
-				egui::ScrollArea::auto_sized().show(ui, |ui| {
-					match card {
-						Card::Digimon(digimon) => {
-							// Get the current card edit state as digimon
-							let edit_state = cur_card_edit_state
-								.get_or_insert_with(|| CardEditState::digimon(digimon))
-								.as_digimon_mut()
-								.expect("Edit state wasn't a digimon when a digimon was selected");
-
-							// Get the hash of the edit state to compare against later.
-							let edit_state_start_hash = self::hash_of(edit_state);
-
-							// Then render it
-							self::render_digimon_card(ui, digimon, edit_state);
-
-							// And try to apply if anything was changed
-							if self::hash_of(edit_state) != edit_state_start_hash {
-								let status = match edit_state.apply(digimon) {
-									Ok(()) => Cow::Borrowed("All ok"),
-									Err(err) => Cow::Owned(format!("Error: {:?}", err)),
-								};
-
-								*cur_card_edit_status = Some(status);
-							}
-						},
-						Card::Item(item) => {
-							// Get the current card edit state as digimon
-							let edit_state = cur_card_edit_state
-								.get_or_insert_with(|| CardEditState::item(item))
-								.as_item_mut()
-								.expect("Edit state wasn't an item when an item was selected");
-
-							// Get the hash of the edit state to compare against later.
-							let edit_state_start_hash = self::hash_of(edit_state);
-
-							// Then render it
-							self::render_item_card(ui, item, edit_state);
-
-							// And try to apply if anything was changed
-							if self::hash_of(edit_state) != edit_state_start_hash {
-								let status = match edit_state.apply(item) {
-									Ok(()) => Cow::Borrowed("All ok"),
-									Err(err) => Cow::Owned(format!("Error: {:?}", err)),
-								};
-
-								*cur_card_edit_status = Some(status);
-							}
-						},
-						Card::Digivolve(digivolve) => {
-							// Get the current card edit state as digimon
-							let edit_state = cur_card_edit_state
-								.get_or_insert_with(|| CardEditState::digivolve(digivolve))
-								.as_digivolve_mut()
-								.expect("Edit state wasn't a digivolve when a digivolve was selected");
-
-							// Get the hash of the edit state to compare against later.
-							let edit_state_start_hash = self::hash_of(edit_state);
-
-							// Then render it
-							self::render_digivolve_card(ui, digivolve, edit_state);
-
-							// And try to apply if anything was changed
-							if self::hash_of(edit_state) != edit_state_start_hash {
-								let status = match edit_state.apply(digivolve) {
-									Ok(()) => Cow::Borrowed("All ok"),
-									Err(err) => Cow::Owned(format!("Error: {:?}", err)),
-								};
-
-								*cur_card_edit_status = Some(status);
-							}
-						},
-					}
-
-					// Add some space at bottom for cut-off stuff at the bottom
-					ui.add_space(400.0);
-				});
+				self::render_card(ui, card, cur_card_edit_state, cur_card_edit_status);
 			});
 		}
 	}
@@ -378,7 +303,6 @@ impl epi::App for CardEditor {
 	}
 }
 
-
 /// Digimon, Item or digivolve
 pub enum Card<'a> {
 	Digimon(&'a mut dcb::Digimon),
@@ -395,6 +319,90 @@ impl<'a> Card<'a> {
 			Card::Digivolve(digivolve) => digivolve.name.as_str(),
 		}
 	}
+}
+
+
+/// Renders a card
+fn render_card(
+	ui: &mut egui::Ui, card: Card, cur_card_edit_state: &mut Option<CardEditState>,
+	cur_card_edit_status: &mut Option<Cow<str>>,
+) {
+	egui::ScrollArea::auto_sized().show(ui, |ui| {
+		match card {
+			Card::Digimon(digimon) => {
+				// Get the current card edit state as digimon
+				let edit_state = cur_card_edit_state
+					.get_or_insert_with(|| CardEditState::digimon(digimon))
+					.as_digimon_mut()
+					.expect("Edit state wasn't a digimon when a digimon was selected");
+
+				// Get the hash of the edit state to compare against later.
+				let edit_state_start_hash = self::hash_of(edit_state);
+
+				// Then render it
+				self::render_digimon_card(ui, digimon, edit_state);
+
+				// And try to apply if anything was changed
+				if self::hash_of(edit_state) != edit_state_start_hash {
+					let status = match edit_state.apply(digimon) {
+						Ok(()) => Cow::Borrowed("All ok"),
+						Err(err) => Cow::Owned(format!("Error: {:?}", err)),
+					};
+
+					*cur_card_edit_status = Some(status);
+				}
+			},
+			Card::Item(item) => {
+				// Get the current card edit state as digimon
+				let edit_state = cur_card_edit_state
+					.get_or_insert_with(|| CardEditState::item(item))
+					.as_item_mut()
+					.expect("Edit state wasn't an item when an item was selected");
+
+				// Get the hash of the edit state to compare against later.
+				let edit_state_start_hash = self::hash_of(edit_state);
+
+				// Then render it
+				self::render_item_card(ui, item, edit_state);
+
+				// And try to apply if anything was changed
+				if self::hash_of(edit_state) != edit_state_start_hash {
+					let status = match edit_state.apply(item) {
+						Ok(()) => Cow::Borrowed("All ok"),
+						Err(err) => Cow::Owned(format!("Error: {:?}", err)),
+					};
+
+					*cur_card_edit_status = Some(status);
+				}
+			},
+			Card::Digivolve(digivolve) => {
+				// Get the current card edit state as digimon
+				let edit_state = cur_card_edit_state
+					.get_or_insert_with(|| CardEditState::digivolve(digivolve))
+					.as_digivolve_mut()
+					.expect("Edit state wasn't a digivolve when a digivolve was selected");
+
+				// Get the hash of the edit state to compare against later.
+				let edit_state_start_hash = self::hash_of(edit_state);
+
+				// Then render it
+				self::render_digivolve_card(ui, digivolve, edit_state);
+
+				// And try to apply if anything was changed
+				if self::hash_of(edit_state) != edit_state_start_hash {
+					let status = match edit_state.apply(digivolve) {
+						Ok(()) => Cow::Borrowed("All ok"),
+						Err(err) => Cow::Owned(format!("Error: {:?}", err)),
+					};
+
+					*cur_card_edit_status = Some(status);
+				}
+			},
+		}
+
+		// Add some space at bottom for cut-off stuff at the bottom
+		ui.add_space(400.0);
+	});
 }
 
 /// Renders a digimon card
