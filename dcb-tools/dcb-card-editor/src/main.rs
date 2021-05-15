@@ -386,6 +386,7 @@ fn render_digimon_card(
 		ui.add(egui::Slider::new(&mut digimon.dp_give, 0..=100));
 	});
 
+	// Moves
 	ui.group(|ui| {
 		ui.heading("Moves");
 
@@ -400,18 +401,10 @@ fn render_digimon_card(
 		}
 	});
 
-
+	// Cross move effect
 	ui.group(|ui| {
 		ui.label("Cross move effect");
-		ui.horizontal_wrapped(|ui| {
-			for cross_move_effect in std::iter::once(None).chain(CrossMoveEffect::ALL.iter().map(Some)) {
-				let text = match cross_move_effect {
-					Some(effect) => effect.as_str(),
-					None => "None",
-				};
-				ui.radio_value(&mut digimon.cross_move_effect, cross_move_effect.copied(), text);
-			}
-		});
+		self::render_cross_move_effect(ui, &mut digimon.cross_move_effect);
 	});
 
 	ui.group(|ui| {
@@ -743,6 +736,92 @@ fn render_digimon_card(
 		ui.separator();
 		ui.label(&**cur_card_edit_status);
 	}
+}
+
+/// Displays a cross move effect
+fn render_cross_move_effect(ui: &mut egui::Ui, cross_move_effect: &mut Option<CrossMoveEffect>) {
+	ui.horizontal(|ui| {
+		// Show the effect generically
+		egui::ComboBox::from_id_source("cross_move_effect")
+			.selected_text(cross_move_effect.map_or("None", CrossMoveEffect::as_str))
+			.show_ui(ui, |ui| {
+				ui.selectable_value(
+					cross_move_effect,
+					Some(CrossMoveEffect::AttackFirst),
+					CrossMoveEffect::AttackFirst.as_str(),
+				);
+				let is_attack_to_zero = cross_move_effect.map_or(false, CrossMoveEffect::is_attack_to_zero);
+				let attack_to_zero_default = CrossMoveEffect::AttackToZero(AttackType::Circle);
+				if ui
+					.selectable_label(is_attack_to_zero, attack_to_zero_default.as_str())
+					.clicked() && !is_attack_to_zero
+				{
+					*cross_move_effect = Some(attack_to_zero_default);
+				}
+
+				let is_counter = cross_move_effect.map_or(false, CrossMoveEffect::is_counter);
+				let counter_default = CrossMoveEffect::Counter(AttackType::Circle);
+				if ui.selectable_label(is_counter, counter_default.as_str()).clicked() && !is_counter {
+					*cross_move_effect = Some(counter_default);
+				}
+
+				ui.selectable_value(
+					cross_move_effect,
+					Some(CrossMoveEffect::Crash),
+					CrossMoveEffect::Crash.as_str(),
+				);
+				ui.selectable_value(
+					cross_move_effect,
+					Some(CrossMoveEffect::EatUpHP),
+					CrossMoveEffect::EatUpHP.as_str(),
+				);
+				ui.selectable_value(
+					cross_move_effect,
+					Some(CrossMoveEffect::Jamming),
+					CrossMoveEffect::Jamming.as_str(),
+				);
+
+				let is_triple_against = cross_move_effect.map_or(false, CrossMoveEffect::is_triple_against);
+				let triple_against_default = CrossMoveEffect::TripleAgainst(Speciality::Darkness);
+				if ui
+					.selectable_label(is_triple_against, triple_against_default.as_str())
+					.clicked() && !is_triple_against
+				{
+					*cross_move_effect = Some(triple_against_default);
+				}
+			});
+
+		// Then display extra arguments
+		match cross_move_effect {
+			Some(CrossMoveEffect::AttackToZero(attack_type)) | Some(CrossMoveEffect::Counter(attack_type)) => {
+				self::render_attack_type(ui, attack_type)
+			},
+			Some(CrossMoveEffect::TripleAgainst(speciality)) => self::render_speciality(ui, speciality),
+			_ => (),
+		};
+	});
+}
+
+/// Displays an attack type
+fn render_attack_type(ui: &mut egui::Ui, cur_attack_type: &mut AttackType) {
+	egui::ComboBox::from_id_source(cur_attack_type as *const _)
+		.selected_text(cur_attack_type.as_str())
+		.show_ui(ui, |ui| {
+			for &attack_type in AttackType::ALL {
+				ui.selectable_value(cur_attack_type, attack_type, attack_type.as_str());
+			}
+		});
+}
+
+/// Displays a speciality
+fn render_speciality(ui: &mut egui::Ui, cur_speciality: &mut Speciality) {
+	egui::ComboBox::from_id_source(cur_speciality as *const _)
+		.selected_text(cur_speciality.as_str())
+		.show_ui(ui, |ui| {
+			for &speciality in Speciality::ALL {
+				ui.selectable_value(cur_speciality, speciality, speciality.as_str());
+			}
+		});
 }
 
 /// Displays a move

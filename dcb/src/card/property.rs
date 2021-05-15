@@ -144,34 +144,6 @@ dcb_util::generate_enum_property_mod!(
 		}
 	}
 
-	pub mod cross_move_effect {
-		/// A digimon's cross move effect
-		enum CrossMoveEffect
-		{
-			FirstAttack("Attack first") => 1,
-
-			  CircleTo0("Circle to 0"  ) => 2,
-			TriangleTo0("Triangle to 0") => 3,
-			   CrossTo0("Cross to 0"   ) => 4,
-
-			  CircleCounter("Circle counter"  ) => 5,
-			TriangleCounter("Triangle counter") => 6,
-			   CrossCounter("Cross counter"   ) => 7,
-
-			Crash  ("Crash"    ) => 8,
-			EatUpHP("Eat Up HP") => 9,
-			Jamming("Jamming"  ) => 10,
-
-				FireFoe3x("Fire Foe x3"    ) => 11,
-				 IceFoe3x("Ice Foe x3"     ) => 12,
-			  NatureFoe3x("Nature Foe x3"  ) => 13,
-			DarknessFoe3x("Darkness Foe x3") => 14,
-				RareFoe3x("Rare Foe x3"    ) => 15,
-
-			_ => "Unknown byte {:#x} for a cross move effect",
-		}
-	}
-
 	pub mod digimon_property {
 		/// A digimon's property
 		enum DigimonProperty
@@ -234,6 +206,7 @@ pub struct MaybeCrossMoveEffect(Option<CrossMoveEffect>);
 pub struct MaybeDigimonProperty(Option<DigimonProperty>);
 
 // Complex
+pub mod cross_move_effect;
 pub mod digivolve_effect;
 pub mod effect;
 pub mod effect_condition;
