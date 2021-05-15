@@ -353,24 +353,12 @@ fn render_digimon_card(
 	// Speciality
 	ui.horizontal(|ui| {
 		ui.label("Speciality");
-		egui::ComboBox::from_id_source("digimon_speciality")
-			.selected_text(digimon.speciality.as_str())
-			.show_ui(ui, |ui| {
-				for &speciality in Speciality::ALL {
-					ui.selectable_value(&mut digimon.speciality, speciality, speciality.as_str());
-				}
-			});
+		self::render_speciality(ui, &mut digimon.speciality);
 	});
 
 	ui.horizontal(|ui| {
 		ui.label("Level");
-		egui::ComboBox::from_id_source("digimon_level")
-			.selected_text(digimon.level.as_str())
-			.show_ui(ui, |ui| {
-				for &level in Level::ALL {
-					ui.selectable_value(&mut digimon.level, level, level.as_str());
-				}
-			});
+		self::render_level(ui, &mut digimon.level);
 	});
 
 	ui.horizontal(|ui| {
@@ -820,6 +808,17 @@ fn render_speciality(ui: &mut egui::Ui, cur_speciality: &mut Speciality) {
 		.show_ui(ui, |ui| {
 			for &speciality in Speciality::ALL {
 				ui.selectable_value(cur_speciality, speciality, speciality.as_str());
+			}
+		});
+}
+
+/// Displays a level
+fn render_level(ui: &mut egui::Ui, cur_level: &mut Level) {
+	egui::ComboBox::from_id_source(cur_level as *const _)
+		.selected_text(cur_level.as_str())
+		.show_ui(ui, |ui| {
+			for &level in Level::ALL {
+				ui.selectable_value(cur_level, level, level.as_str());
 			}
 		});
 }
