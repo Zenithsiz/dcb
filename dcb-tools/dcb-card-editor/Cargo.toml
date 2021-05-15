@@ -18,4 +18,3 @@ anyhow = "1.0.40"
 
 # Utils
 native-dialog = "0.5.5"
-regex = {version = "1.5.4", features = ["pattern"]}

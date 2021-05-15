@@ -1,7 +1,7 @@
 //! Card editor
 
 // Features
-#![feature(array_map, with_options, format_args_capture)]
+#![feature(array_map, with_options, format_args_capture, once_cell)]
 
 // Modules
 pub mod edit_state;
@@ -20,14 +20,15 @@ use dcb::{
 };
 use eframe::{egui, epi};
 use native_dialog::{FileDialog, MessageDialog, MessageType};
-use regex::{Regex, RegexBuilder};
 use std::{
 	borrow::Cow,
 	collections::hash_map::DefaultHasher,
 	fs,
 	hash::{Hash, Hasher},
 	io::{self, Read, Seek},
+	lazy::SyncLazy,
 	path::{Path, PathBuf},
+	sync::Mutex,
 };
 
 fn main() {
@@ -57,9 +58,6 @@ pub struct CardEditor {
 
 	/// Card edit status
 	cur_card_edit_status: Option<Cow<'static, str>>,
-
-	/// Regex used to compare the search string with card names
-	search_regex: Option<Regex>,
 }
 
 impl CardEditor {
@@ -133,7 +131,6 @@ impl Default for CardEditor {
 			selected_card_idx:    None,
 			cur_card_edit_state:  None,
 			cur_card_edit_status: None,
-			search_regex:         None,
 		}
 	}
 }
@@ -148,7 +145,6 @@ impl epi::App for CardEditor {
 			selected_card_idx,
 			cur_card_edit_state,
 			cur_card_edit_status,
-			search_regex,
 		} = self;
 
 		// Top panel
@@ -216,15 +212,7 @@ impl epi::App for CardEditor {
 
 			ui.vertical(|ui| {
 				ui.label("Search");
-
-				// Update the regex if changed
-				if ui.text_edit_singleline(card_search).changed() {
-					let regex = RegexBuilder::new(&regex::escape(card_search))
-						.case_insensitive(true)
-						.build()
-						.expect("Unable to compile regex");
-					*search_regex = Some(regex);
-				}
+				ui.text_edit_singleline(card_search);
 			});
 
 			// If we have a card table, display all cards
@@ -236,7 +224,7 @@ impl epi::App for CardEditor {
 					.chain(card_table.items.iter().map(|item| item.name.as_str()))
 					.chain(card_table.digivolves.iter().map(|digivolve| digivolve.name.as_str()))
 					.enumerate()
-					.filter(|(_, name)| search_regex.as_ref().map_or(true, |regex| name.contains(regex)));
+					.filter(|(_, name)| self::contains_case_insensitive(name, card_search));
 
 				egui::ScrollArea::auto_sized().show(ui, |ui| {
 					for (idx, name) in names {
@@ -712,30 +700,64 @@ fn render_digivolve_effect(ui: &mut egui::Ui, cur_effect: &mut DigivolveEffect) 
 
 /// Displays a digimon property
 fn render_digimon_property(ui: &mut egui::Ui, cur_property: &mut DigimonProperty) {
-	egui::ComboBox::from_id_source(cur_property as *const _)
+	// Note: Only one search menu is up at a time, so this is fine.
+	static SEARCH: SyncLazy<Mutex<String>> = SyncLazy::new(Mutex::default);
+	let mut search = SEARCH.lock().expect("Poisoned");
+
+	let response = egui::ComboBox::from_id_source(cur_property as *const _)
 		.selected_text(cur_property.as_str())
 		.show_ui(ui, |ui| {
-			for &property in DigimonProperty::ALL {
-				ui.selectable_value(cur_property, property, property.as_str());
+			ui.label("Search");
+			ui.text_edit_singleline(&mut *search);
+			ui.separator();
+
+			let properties = DigimonProperty::ALL
+				.iter()
+				.map(|&property| (property, property.as_str()))
+				.filter(|(_, name)| self::contains_case_insensitive(name, &*search));
+
+			for (property, name) in properties {
+				ui.selectable_value(cur_property, property, name);
 			}
 		});
+
+	// If we no longer have focus, reset the search
+	if response.clicked_elsewhere() {
+		search.clear();
+	}
 }
 
 /// Displays an optional digimon property
 fn render_digimon_property_opt(ui: &mut egui::Ui, cur_property: &mut Option<DigimonProperty>) {
-	let to_str = |color: Option<DigimonProperty>| color.map_or("None", DigimonProperty::as_str);
-	egui::ComboBox::from_id_source(cur_property as *const _)
-		.selected_text(to_str(*cur_property))
+	// Note: Only one search menu is up at a time, so this is fine.
+	static SEARCH: SyncLazy<Mutex<String>> = SyncLazy::new(Mutex::default);
+	let mut search = SEARCH.lock().expect("Poisoned");
+
+	const TO_STR: fn(Option<DigimonProperty>) -> &'static str = |color| color.map_or("None", DigimonProperty::as_str);
+	let response = egui::ComboBox::from_id_source(cur_property as *const _)
+		.selected_text(TO_STR(*cur_property))
 		.show_ui(ui, |ui| {
-			for property in DigimonProperty::ALL
+			ui.label("Search");
+			ui.text_edit_singleline(&mut *search);
+			ui.separator();
+
+			let properties = DigimonProperty::ALL
 				.iter()
 				.copied()
 				.map(Some)
 				.chain(std::iter::once(None))
-			{
-				ui.selectable_value(cur_property, property, to_str(property));
+				.map(|property| (property, TO_STR(property)))
+				.filter(|(_, name)| self::contains_case_insensitive(name, &*search));
+
+			for (property, name) in properties {
+				ui.selectable_value(cur_property, property, name);
 			}
 		});
+
+	// If we no longer have focus, reset the search
+	if response.clicked_elsewhere() {
+		search.clear();
+	}
 }
 
 /// Displays a move
@@ -1075,4 +1097,18 @@ pub fn hash_of<T: Hash>(value: &T) -> u64 {
 	let mut state = DefaultHasher::new();
 	value.hash(&mut state);
 	state.finish()
+}
+
+/// Checks if string `pattern` is contained in `haystack` without
+/// checking for case
+pub fn contains_case_insensitive(mut haystack: &str, pattern: &str) -> bool {
+	loop {
+		match haystack.get(..pattern.len()) {
+			Some(s) => match s.eq_ignore_ascii_case(pattern) {
+				true => return true,
+				false => haystack = &haystack[1..],
+			},
+			None => return false,
+		}
+	}
 }
