@@ -20,6 +20,7 @@ use dcb::{
 };
 use eframe::{egui, epi};
 use native_dialog::{FileDialog, MessageDialog, MessageType};
+use regex::{Regex, RegexBuilder};
 use std::{
 	borrow::Cow,
 	fs,
@@ -51,6 +52,9 @@ pub struct CardEditor {
 
 	/// Card edit status
 	cur_card_edit_status: Option<Cow<'static, str>>,
+
+	/// Regex used to compare the search string with card names
+	search_regex: Option<Regex>,
 }
 
 impl CardEditor {
@@ -123,6 +127,7 @@ impl Default for CardEditor {
 			selected_card_idx:    None,
 			cur_card_edit_state:  None,
 			cur_card_edit_status: None,
+			search_regex:         None,
 		}
 	}
 }
@@ -136,6 +141,7 @@ impl epi::App for CardEditor {
 			selected_card_idx,
 			cur_card_edit_state,
 			cur_card_edit_status,
+			search_regex,
 		} = self;
 
 		// Top panel
@@ -199,7 +205,15 @@ impl epi::App for CardEditor {
 
 			ui.vertical(|ui| {
 				ui.label("Search");
-				ui.text_edit_singleline(card_search);
+
+				// Update the regex if changed
+				if ui.text_edit_singleline(card_search).changed() {
+					let regex = RegexBuilder::new(&regex::escape(card_search))
+						.case_insensitive(true)
+						.build()
+						.expect("Unable to compile regex");
+					*search_regex = Some(regex);
+				}
 			});
 
 			// If we have a card table, display all cards
@@ -211,7 +225,7 @@ impl epi::App for CardEditor {
 					.chain(card_table.items.iter().map(|item| item.name.as_str()))
 					.chain(card_table.digivolves.iter().map(|digivolve| digivolve.name.as_str()))
 					.enumerate()
-					.filter(|(_, name)| name.contains(card_search.as_str())); // TODO: Switch to better searching
+					.filter(|(_, name)| search_regex.as_ref().map_or(true, |regex| name.contains(regex)));
 
 				egui::ScrollArea::auto_sized().show(ui, |ui| {
 					for (idx, name) in names {
