@@ -13,6 +13,11 @@ pub enum CardEditState {
 }
 
 impl CardEditState {
+	/// Creates an edit state from a digimon
+	pub fn digimon(digimon: &dcb::Digimon) -> Self {
+		Self::Digimon(DigimonEditState::new(digimon))
+	}
+
 	/// Returns this card as digimon
 	pub fn as_digimon_mut(&mut self) -> Option<&mut DigimonEditState> {
 		match self {
