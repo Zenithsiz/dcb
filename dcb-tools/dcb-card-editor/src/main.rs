@@ -1,7 +1,7 @@
 //! Card editor
 
 // Features
-#![feature(array_map, with_options)]
+#![feature(array_map, with_options, format_args_capture)]
 
 // Modules
 pub mod edit_state;
@@ -13,8 +13,8 @@ pub use edit_state::{CardEditState, DigimonEditState};
 use anyhow::Context;
 use dcb::{
 	card::property::{
-		ArrowColor, AttackType, CrossMoveEffect, DigimonProperty, Effect, EffectConditionOperation, EffectOperation,
-		Level, Move, PlayerType, Slot, Speciality,
+		ArrowColor, AttackType, CrossMoveEffect, DigimonProperty, Effect, EffectCondition, EffectConditionOperation,
+		EffectOperation, Level, Move, PlayerType, Slot, Speciality,
 	},
 	CardTable,
 };
@@ -392,7 +392,7 @@ fn render_digimon_card(
 	// Cross move effect
 	ui.group(|ui| {
 		ui.label("Cross move effect");
-		self::render_cross_move_effect(ui, &mut digimon.cross_move_effect);
+		self::render_cross_move_effect_opt(ui, &mut digimon.cross_move_effect);
 	});
 
 	ui.group(|ui| {
@@ -404,57 +404,13 @@ fn render_digimon_card(
 
 	ui.group(|ui| {
 		ui.label("Effect arrow color");
-		self::render_arrow_color(ui, &mut digimon.effect_arrow_color);
+		self::render_arrow_color_opt(ui, &mut digimon.effect_arrow_color);
 	});
 
 	ui.group(|ui| {
 		ui.label("Effect conditions");
 		for cond in &mut digimon.effect_conditions {
-			ui.group(|ui| {
-				match cond {
-					Some(cond) => {
-						ui.vertical(|ui| {
-							ui.checkbox(&mut cond.misfire, "Misfire");
-
-							ui.label("Property cmp");
-							ui.horizontal_wrapped(|ui| {
-								for &digimon_property in DigimonProperty::ALL {
-									ui.radio_value(&mut cond.property_cmp, digimon_property, digimon_property.as_str());
-								}
-							});
-
-							ui.label("Arg property");
-							ui.horizontal_wrapped(|ui| {
-								for digimon_property in
-									std::iter::once(None).chain(DigimonProperty::ALL.iter().map(Some))
-								{
-									let text = match digimon_property {
-										Some(property) => property.as_str(),
-										None => "None",
-									};
-									ui.radio_value(&mut cond.arg_property, digimon_property.copied(), text);
-								}
-							});
-
-							ui.horizontal(|ui| {
-								ui.label("Num property");
-								ui.add(egui::Slider::new(&mut cond.arg_num, 0..=10));
-							});
-
-							ui.label("Operation");
-							ui.horizontal_wrapped(|ui| {
-								for &operation in EffectConditionOperation::ALL {
-									ui.radio_value(&mut cond.operation, operation, operation.as_str());
-								}
-							});
-						});
-					},
-					None => {
-						ui.label("None");
-						// TODO: Be able to add new once all fields are figured out.
-					},
-				}
-			});
+			self::render_effect_condition_opt(ui, cond);
 		}
 	});
 
@@ -718,8 +674,8 @@ fn render_digimon_card(
 	}
 }
 
-/// Displays a cross move effect
-fn render_cross_move_effect(ui: &mut egui::Ui, cross_move_effect: &mut Option<CrossMoveEffect>) {
+/// Displays an optional cross move effect
+fn render_cross_move_effect_opt(ui: &mut egui::Ui, cross_move_effect: &mut Option<CrossMoveEffect>) {
 	ui.horizontal(|ui| {
 		// Show the effect generically
 		egui::ComboBox::from_id_source("cross_move_effect")
@@ -815,14 +771,54 @@ fn render_level(ui: &mut egui::Ui, cur_level: &mut Level) {
 		});
 }
 
-/// Displays an arrow color
-fn render_arrow_color(ui: &mut egui::Ui, cur_color: &mut Option<ArrowColor>) {
+/// Displays an optional arrow color
+fn render_arrow_color_opt(ui: &mut egui::Ui, cur_color: &mut Option<ArrowColor>) {
 	let to_str = |color: Option<ArrowColor>| color.map_or("None", ArrowColor::as_str);
 	egui::ComboBox::from_id_source(cur_color as *const _)
 		.selected_text(to_str(*cur_color))
 		.show_ui(ui, |ui| {
 			for color in ArrowColor::ALL.iter().copied().map(Some).chain(std::iter::once(None)) {
 				ui.selectable_value(cur_color, color, to_str(color));
+			}
+		});
+}
+
+/// Displays an effect condition operation
+fn render_effect_condition_operation(ui: &mut egui::Ui, cur_op: &mut EffectConditionOperation) {
+	egui::ComboBox::from_id_source(cur_op as *const _)
+		.selected_text(cur_op.as_str())
+		.show_ui(ui, |ui| {
+			for &op in EffectConditionOperation::ALL {
+				ui.selectable_value(cur_op, op, op.as_str());
+			}
+		});
+}
+
+
+/// Displays a digimon property
+fn render_digimon_property(ui: &mut egui::Ui, cur_property: &mut DigimonProperty) {
+	egui::ComboBox::from_id_source(cur_property as *const _)
+		.selected_text(cur_property.as_str())
+		.show_ui(ui, |ui| {
+			for &property in DigimonProperty::ALL {
+				ui.selectable_value(cur_property, property, property.as_str());
+			}
+		});
+}
+
+/// Displays an optional digimon property
+fn render_digimon_property_opt(ui: &mut egui::Ui, cur_property: &mut Option<DigimonProperty>) {
+	let to_str = |color: Option<DigimonProperty>| color.map_or("None", DigimonProperty::as_str);
+	egui::ComboBox::from_id_source(cur_property as *const _)
+		.selected_text(to_str(*cur_property))
+		.show_ui(ui, |ui| {
+			for property in DigimonProperty::ALL
+				.iter()
+				.copied()
+				.map(Some)
+				.chain(std::iter::once(None))
+			{
+				ui.selectable_value(cur_property, property, to_str(property));
 			}
 		});
 }
@@ -841,5 +837,58 @@ fn render_move(ui: &mut egui::Ui, name: &str, mv: &mut Move, mv_name: &mut Strin
 				ui.add(egui::Slider::new(&mut mv.power, 0..=2000));
 			});
 		});
+	});
+}
+
+/// Displays an optional effect condition
+fn render_effect_condition_opt(ui: &mut egui::Ui, cur_cond: &mut Option<EffectCondition>) {
+	ui.group(|ui| match cur_cond {
+		Some(cond) => {
+			// Calculate what the condition is doing to display to the user
+			// TODO: Improve this once the effects are actually figured out properly
+			let explanation = {
+				let op = cond.operation.operator_str();
+				let property_cmp = cond.property_cmp.as_str();
+				let arg_property = cond.arg_property.map_or("None", DigimonProperty::as_str);
+				let arg_num = cond.arg_num;
+				match cond.operation.targets_property() {
+					true => format!("{property_cmp} {op} {arg_property}"),
+					false => format!("{property_cmp} {op} {arg_num}"),
+				}
+			};
+			ui.heading(explanation);
+
+			ui.checkbox(&mut cond.misfire, "Misfire");
+
+			ui.label("Property cmp");
+			self::render_digimon_property(ui, &mut cond.property_cmp);
+
+			ui.label("Arg property");
+			self::render_digimon_property_opt(ui, &mut cond.arg_property);
+
+			ui.horizontal(|ui| {
+				ui.label("Number property");
+				ui.add(egui::Slider::new(&mut cond.arg_num, 0..=10));
+			});
+
+			ui.label("Operation");
+			self::render_effect_condition_operation(ui, &mut cond.operation);
+
+			if ui.button("Remove").clicked() {
+				*cur_cond = None;
+			}
+		},
+		None => {
+			ui.label("None");
+			if ui.button("Add").clicked() {
+				*cur_cond = Some(EffectCondition {
+					misfire:      false,
+					property_cmp: DigimonProperty::OwnSpeciality,
+					arg_property: None,
+					arg_num:      0,
+					operation:    EffectConditionOperation::DifferentFromNumber,
+				});
+			}
+		},
 	});
 }

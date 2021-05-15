@@ -142,6 +142,26 @@ dcb_util::generate_enum_property_mod!(
 
 			_ => "Unknown byte {:#x} for a effect condition operation",
 		}
+
+		impl EffectConditionOperation {
+			/// Returns the operator
+			#[must_use]
+			pub const fn operator_str(self) -> &'static str {
+				match self {
+					Self::LessThanProperty | Self::LessThanNumber => "<",
+					Self::MoreThanProperty | Self::MoreThanNumber => ">",
+					Self::DifferentFromNumber => "!=",
+					Self::EqualToNumber => "==",
+
+				}
+			}
+
+			/// Returns if this operator targets a property
+			#[must_use]
+			pub const fn targets_property(self) -> bool {
+				matches!(self, Self::LessThanProperty | Self::MoreThanProperty)
+			}
+		}
 	}
 
 	pub mod digimon_property {
