@@ -404,15 +404,7 @@ fn render_digimon_card(
 
 	ui.group(|ui| {
 		ui.label("Effect arrow color");
-		ui.horizontal(|ui| {
-			for arrow_color in std::iter::once(None).chain(ArrowColor::ALL.iter().map(Some)) {
-				let text = match arrow_color {
-					Some(arrow_color) => arrow_color.as_str(),
-					None => "None",
-				};
-				ui.radio_value(&mut digimon.effect_arrow_color, arrow_color.copied(), text);
-			}
-		});
+		self::render_arrow_color(ui, &mut digimon.effect_arrow_color);
 	});
 
 	ui.group(|ui| {
@@ -819,6 +811,18 @@ fn render_level(ui: &mut egui::Ui, cur_level: &mut Level) {
 		.show_ui(ui, |ui| {
 			for &level in Level::ALL {
 				ui.selectable_value(cur_level, level, level.as_str());
+			}
+		});
+}
+
+/// Displays an arrow color
+fn render_arrow_color(ui: &mut egui::Ui, cur_color: &mut Option<ArrowColor>) {
+	let to_str = |color: Option<ArrowColor>| color.map_or("None", ArrowColor::as_str);
+	egui::ComboBox::from_id_source(cur_color as *const _)
+		.selected_text(to_str(*cur_color))
+		.show_ui(ui, |ui| {
+			for color in ArrowColor::ALL.iter().copied().map(Some).chain(std::iter::once(None)) {
+				ui.selectable_value(cur_color, color, to_str(color));
 			}
 		});
 }

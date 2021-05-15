@@ -131,7 +131,7 @@ macro_rules! generate_enum_property_mod
 					];
 
 					/// Returns a string representing this
-					pub fn as_str(&self) -> &'static str {
+					pub fn as_str(self) -> &'static str {
 						match self {
 							$(
 								<$enum_name>::$enum_variant_name => $enum_variant_rename,
