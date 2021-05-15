@@ -173,6 +173,43 @@ pub const fn saturating_signed_offset(a: u64, b: i64) -> u64 {
 	}
 }
 
+/// Adds a `i64` to a `u64`, performing `a + b`.
+///
+/// If smaller than `0` or larger than `u64::MAX`, returns `None`
+#[allow(clippy::as_conversions)] // We check every operation
+#[allow(clippy::cast_sign_loss)] // We've verify it's positive / negative
+#[must_use]
+pub const fn checked_signed_offset(a: u64, b: i64) -> Option<u64> {
+	// If `b` is positive, check for overflows. Else check for underflows
+	if b > 0 {
+		a.checked_add(b as u64)
+	} else {
+		let neg_b = match b.checked_neg() {
+			Some(neg_b) => neg_b as u64,
+			None => i64::MAX as u64 + 1,
+		};
+		a.checked_sub(neg_b)
+	}
+}
+
+/// Adds a `i64` to a `u64`, performing `a + b`.
+///
+/// If smaller than `0` or larger than `u64::MAX`, panics
+#[allow(clippy::as_conversions)] // We check every operation
+#[allow(clippy::cast_sign_loss)] // We've verify it's positive / negative
+#[must_use]
+pub const fn signed_offset(a: u64, b: i64) -> u64 {
+	if b > 0 {
+		a + b as u64
+	} else {
+		let neg_b = match b.checked_neg() {
+			Some(neg_b) => neg_b as u64,
+			None => i64::MAX as u64 + 1,
+		};
+		a - neg_b
+	}
+}
+
 /// Prints an error
 pub fn fmt_err(err: &(dyn error::Error + '_), f: &mut fmt::Formatter) -> fmt::Result {
 	write!(f, "{err}")?;

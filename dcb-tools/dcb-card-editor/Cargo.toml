@@ -8,6 +8,7 @@ edition = "2018"
 # Dcb
 dcb = { path = "../../dcb" }
 dcb-util = { path = "../../dcb-util" }
+dcb-cdrom-xa = { path = "../../dcb-cdrom-xa" }
 
 # Gui
 eframe = "0.11.0"

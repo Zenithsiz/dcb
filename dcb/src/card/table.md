@@ -8,7 +8,7 @@ array of card entries.
 
 | Offset | Size     | Type                              | Name         | Details                                                |
 | ------ | -------- | --------------------------------- | ------------ | ------------------------------------------------------ |
-| 0x0    | 0x8      | u32                               | Header       | The [table header](Header)                             |
+| 0x0    | 0x8      | Header                            | Header       | The [table header](Header)                             |
 | 0x8    | variable | [`CardEntry`](#card-entry-layout) | Card Entries | A contiguous array of [Card Entry](#card-entry-layout) |
 
 # Card Entry Layout

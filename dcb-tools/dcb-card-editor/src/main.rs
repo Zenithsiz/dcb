@@ -1,7 +1,7 @@
 //! Card editor
 
 // Features
-#![feature(array_map)]
+#![feature(array_map, with_options)]
 
 // Imports
 use anyhow::Context;
@@ -18,6 +18,7 @@ use native_dialog::{FileDialog, MessageDialog, MessageType};
 use std::{
 	borrow::Cow,
 	fs,
+	io::{self, Read, Seek},
 	path::{Path, PathBuf},
 	str::FromStr,
 };
@@ -49,10 +50,21 @@ pub struct CardEditor {
 }
 
 impl CardEditor {
+	/// Card table offset
+	pub const CARD_TABLE_OFFSET: u64 = 0x216d000;
+	/// Card table size
+	pub const CARD_TABLE_SIZE: u64 = 0x14958;
+
 	/// Parses the card table from file
 	pub fn parse_card_table(file_path: &Path) -> Result<CardTable, anyhow::Error> {
 		// Open the file
-		let mut file = fs::File::open(file_path).context("Unable to open file")?;
+		let file = fs::File::open(file_path).context("Unable to open file")?;
+		let mut file = dcb_cdrom_xa::CdRomCursor::new(file);
+
+		// Seek to the card file position and limit our reading to the file size
+		file.seek(io::SeekFrom::Start(Self::CARD_TABLE_OFFSET))
+			.context("Unable to seek to card table")?;
+		let mut file = file.take(Self::CARD_TABLE_SIZE);
 
 		// Then parse it
 		let card_table = CardTable::deserialize(&mut file).context("Unable to parse table")?;
@@ -63,10 +75,25 @@ impl CardEditor {
 	/// Saves the card table to file
 	pub fn save_card_table(file_path: &Path, card_table: &CardTable) -> Result<(), anyhow::Error> {
 		// Open the file
-		let mut file = fs::File::create(file_path).context("Unable to create file")?;
+		let file = fs::File::with_options()
+			.write(true)
+			.open(file_path)
+			.context("Unable to open file")?;
+		let mut file = dcb_cdrom_xa::CdRomCursor::new(file);
+
+		// Seek to the card file position and limit our writing to the file size
+		// TODO: Properly limit instead of checking afterwards
+		file.seek(io::SeekFrom::Start(Self::CARD_TABLE_OFFSET))
+			.context("Unable to seek to card table")?;
 
 		// Then parse it
 		card_table.serialize(&mut file).context("Unable to serialize table")?;
+
+		// Make sure it wrote less than our size
+		debug_assert!(
+			file.stream_position().expect("Unable to get stream position") - Self::CARD_TABLE_OFFSET <=
+				Self::CARD_TABLE_SIZE
+		);
 
 		Ok(())
 	}
@@ -119,9 +146,10 @@ impl epi::App for CardEditor {
 				egui::menu::menu(ui, "File", |ui| {
 					// On open, ask the user and open the file
 					if ui.button("Open").clicked() {
+						let cur_dir_path = std::env::current_dir().expect("Unable to get current directory path");
 						*file_path = FileDialog::new()
-							.set_location(".")
-							.add_filter("Card list", &["CDD"])
+							.set_location(&cur_dir_path)
+							.add_filter("Game file", &["bin"])
 							.show_open_single_file()
 							.expect("Unable to ask user for file");
 
