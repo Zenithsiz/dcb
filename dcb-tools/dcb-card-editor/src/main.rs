@@ -216,7 +216,7 @@ impl epi::App for CardEditor {
 				egui::ScrollArea::auto_sized().show(ui, |ui| {
 					for (idx, name) in names {
 						// If clicked, set the selected card index and flush the edits
-						if ui.button(name).clicked() {
+						if ui.selectable_label(*selected_card_idx == Some(idx), name).clicked() {
 							*selected_card_idx = Some(idx);
 							*cur_card_edit_state = None;
 							*cur_card_edit_status = None;
@@ -337,22 +337,27 @@ fn render_digimon_card(
 		any_edit_state_changed |= ui.text_edit_singleline(&mut edit_state.name).changed();
 	});
 
-	ui.vertical(|ui| {
+	// Speciality
+	ui.horizontal(|ui| {
 		ui.label("Speciality");
-		ui.horizontal(|ui| {
-			for &speciality in Speciality::ALL {
-				ui.radio_value(&mut digimon.speciality, speciality, speciality.as_str());
-			}
-		});
+		egui::ComboBox::from_id_source("digimon_speciality")
+			.selected_text(digimon.speciality.as_str())
+			.show_ui(ui, |ui| {
+				for &speciality in Speciality::ALL {
+					ui.selectable_value(&mut digimon.speciality, speciality, speciality.as_str());
+				}
+			});
 	});
 
-	ui.vertical(|ui| {
+	ui.horizontal(|ui| {
 		ui.label("Level");
-		ui.horizontal(|ui| {
-			for &level in Level::ALL {
-				ui.radio_value(&mut digimon.level, level, level.as_str());
-			}
-		});
+		egui::ComboBox::from_id_source("digimon_level")
+			.selected_text(digimon.level.as_str())
+			.show_ui(ui, |ui| {
+				for &level in Level::ALL {
+					ui.selectable_value(&mut digimon.level, level, level.as_str());
+				}
+			});
 	});
 
 	ui.horizontal(|ui| {
