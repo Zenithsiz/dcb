@@ -117,6 +117,19 @@ dcb_util::generate_enum_property_mod!(
 
 			_ => "Unknown byte {:#x} for a effect operation",
 		}
+
+		impl EffectOperation {
+			/// Returns the operator
+			#[must_use]
+			pub const fn operator_str(self) -> &'static str {
+				match self {
+					Self::Addition => "+",
+					Self::Subtraction => "-",
+					Self::Multiplication => "*",
+					Self::Division => "/",
+				}
+			}
+		}
 	}
 
 	pub mod effect_condition_operation {

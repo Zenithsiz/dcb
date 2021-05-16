@@ -820,13 +820,7 @@ fn render_effect_condition_opt(ui: &mut egui::Ui, cur_cond: &mut Option<EffectCo
 			let explanation = {
 				let op = cond.operation.operator_str();
 				let property_cmp = cond.property_cmp.as_str();
-				let arg_property = match cond.arg_property {
-					Some(property) => property.as_str(),
-					None => match cond.operation.targets_property() {
-						true => "0",
-						false => "None",
-					},
-				};
+				let arg_property = cond.arg_property.map_or("0", DigimonProperty::as_str);
 				let arg_num = cond.arg_num;
 				match cond.operation.targets_property() {
 					true => format!("{property_cmp} {op} {arg_property}"),
@@ -884,7 +878,53 @@ fn render_effect_opt(ui: &mut egui::Ui, effect: &mut Option<Effect>) {
 				y,
 				op,
 			}) => {
-				ui.heading("Change Property");
+				// Calculate what the condition is doing to display to the user
+				// `<property> = ( <A> + <Y> ) + ( <C> <op> ( <B> + <X> ) )`
+				let explanation = {
+					// Special case some common equations
+					match (&*property, &*a, &*y, &*c, &*op, &*b, &*x) {
+						// `property += <c> <op> <x>`
+						(property, Some(a), 0, Some(c), op, None, x) if a == property => {
+							let op = op.operator_str();
+							format!("{property} += {c} {op} {x}")
+						},
+
+						// `property <op> = <b>`
+						(property, None, 0, Some(c), op, Some(b), 0) if property == c => {
+							let op = op.operator_str();
+							format!("{property} {op}= {b}")
+						},
+
+						// `property <op> = <x>`
+						(property, None, 0, Some(c), op, None, x) if c == property => {
+							let op = op.operator_str();
+							format!("{property} {op}= {x}")
+						},
+
+						// `property = <c>`
+						(property, None, 0, Some(c), EffectOperation::Addition, None, 0) => {
+							format!("{property} = {c}")
+						},
+
+						// `property = <x | y>`
+						(property, None, 0, None, EffectOperation::Addition, None, num) |
+						(property, None, num, None, EffectOperation::Addition, None, 0) => {
+							format!("{property} = {num}")
+						},
+
+						// Else just fully format it
+						_ => {
+							let a = a.map_or("0", DigimonProperty::as_str);
+							let b = b.map_or("0", DigimonProperty::as_str);
+							let c = c.map_or("0", DigimonProperty::as_str);
+							let op = op.operator_str();
+
+							format!("{property} = ({a} + {y}) + {c} {op} ({b} + {x})")
+						},
+					}
+				};
+				ui.heading(explanation);
+
 				ui.vertical(|ui| {
 					ui.label("Property");
 					self::render_digimon_property(ui, property);
