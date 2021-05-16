@@ -817,7 +817,13 @@ fn render_effect_condition_opt(ui: &mut egui::Ui, cur_cond: &mut Option<EffectCo
 			let explanation = {
 				let op = cond.operation.operator_str();
 				let property_cmp = cond.property_cmp.as_str();
-				let arg_property = cond.arg_property.map_or("None", DigimonProperty::as_str);
+				let arg_property = match cond.arg_property {
+					Some(property) => property.as_str(),
+					None => match cond.operation.targets_property() {
+						true => "0",
+						false => "None",
+					},
+				};
 				let arg_num = cond.arg_num;
 				match cond.operation.targets_property() {
 					true => format!("{property_cmp} {op} {arg_property}"),
