@@ -62,9 +62,11 @@
 pub mod byteorder_ext;
 pub mod bytes;
 pub mod derive;
+pub mod validate;
 
 // Exports
 pub use byteorder_ext::ByteOrderExt;
 pub use bytes::{ByteArray, Bytes};
+pub use validate::{Validate, ValidateVisitor};
 #[doc(hidden)]
 pub use ::{arrayref, byteorder};

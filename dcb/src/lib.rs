@@ -69,9 +69,7 @@
 // Modules
 pub mod card;
 pub mod deck;
-pub mod validation;
 
 // Exports
 pub use card::{Digimon, Digivolve, Item, Table as CardTable};
 pub use deck::{Deck, Table as DeckTable};
-pub use validation::{Validatable, Validation};

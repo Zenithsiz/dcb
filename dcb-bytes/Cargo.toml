@@ -9,3 +9,6 @@ edition = "2018"
 # Bytes
 byteorder = "1.4.2"
 arrayref = "0.3.6"
+
+# Util
+either = "1.6.1"

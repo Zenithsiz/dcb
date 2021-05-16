@@ -5,9 +5,8 @@
 mod test;
 
 // Imports
-use crate::{Validatable, Validation};
 use byteorder::{ByteOrder, LittleEndian};
-use dcb_bytes::Bytes;
+use dcb_bytes::{Bytes, Validate, ValidateVisitor};
 use dcb_util::{
 	array_split, array_split_mut,
 	null_ascii_string::{self, NullAsciiString},
@@ -77,23 +76,17 @@ impl Bytes for Move {
 	}
 }
 
-impl Validatable for Move {
-	type Error = ValidationError;
+impl<'a> Validate<'a> for Move {
+	type Error = !;
 	type Warning = ValidationWarning;
 
-	fn validate(&self) -> Validation<Self::Error, Self::Warning> {
-		// Create the initial validation
-		let mut validation = Validation::new();
-
+	fn validate<V: ValidateVisitor<'a, Self>>(&'a self, mut visitor: V) {
 		// If the power isn't a multiple of 10, warn, as we don't know how the game handles
 		// powers that aren't multiples of 10.
 		// TODO: Verify if the game can handle non-multiple of 10 powers.
 		if self.power % 10 != 0 {
-			validation.emit_warning(ValidationWarning::PowerMultiple10);
+			visitor.visit_warning(ValidationWarning::PowerMultiple10);
 		}
-
-		// And return the validation
-		validation
 	}
 }
 
@@ -103,12 +96,4 @@ pub enum ValidationWarning {
 	/// Power is not a multiple of 10
 	#[error("Power is not a multiple of 10.")]
 	PowerMultiple10,
-}
-
-/// All errors for [`Move`] validation
-#[derive(PartialEq, Eq, Clone, Debug, thiserror::Error)]
-pub enum ValidationError {
-	/// Name length
-	#[error("Name is too long. Must be at most 21 characters")]
-	NameTooLong,
 }

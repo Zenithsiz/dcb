@@ -2,7 +2,6 @@
 
 // Imports
 use super::*;
-use crate::Validatable;
 use std::convert::TryFrom;
 
 #[test]
@@ -47,10 +46,9 @@ fn valid_bytes() {
 			mov
 		);
 
-		// Make sure the validation succeeds
-		let validation = mov.validate();
-		assert!(validation.successful());
-		assert!(validation.warnings().is_empty());
+		// Make sure the validation succeeds without warnings or errors
+		let mut successful = true;
+		mov.validate(|_| successful = false);
 
 		// Then serialize it to bytes and make sure it's equal
 		let mut mov_bytes = <Move as Bytes>::ByteArray::default();
