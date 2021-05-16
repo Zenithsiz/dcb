@@ -9,7 +9,7 @@ pub mod error;
 pub mod node;
 
 // Exports
-pub use error::{ExtendError, InsertError, NewError};
+pub use error::InsertError;
 pub use node::DataNode;
 
 // Imports

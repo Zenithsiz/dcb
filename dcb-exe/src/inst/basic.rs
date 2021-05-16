@@ -1,8 +1,8 @@
 //! Basic instructions
 //!
 //! All instructions in this module are a single word long, and
-//! may be decoded from a `u32` via the [`Inst::decode`](<Inst as Decodable>::decode) method,
-//! using the [`Decodable`] trait.
+//! may be decoded from a `u32` via the [`Inst::decode`] method,
+//! using the [`Decode`] trait.
 
 // Modules
 pub mod alu;

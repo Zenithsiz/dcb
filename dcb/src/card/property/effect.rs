@@ -164,73 +164,73 @@ impl Effect {
 		}
 	}
 
-	/// Returns `true` if the effect is [`ChangeProperty`].
+	/// Returns `true` if the effect is [`ChangeProperty`](Self::ChangeProperty).
 	#[must_use]
 	pub const fn is_change_property(self) -> bool {
 		matches!(self, Self::ChangeProperty { .. })
 	}
 
-	/// Returns `true` if the effect is [`UseAttack`].
+	/// Returns `true` if the effect is [`UseAttack`](Self::UseAttack).
 	#[must_use]
 	pub const fn is_use_attack(self) -> bool {
 		matches!(self, Self::UseAttack { .. })
 	}
 
-	/// Returns `true` if the effect is [`MoveCards`].
+	/// Returns `true` if the effect is [`MoveCards`](Self::MoveCards).
 	#[must_use]
 	pub const fn is_move_cards(self) -> bool {
 		matches!(self, Self::MoveCards { .. })
 	}
 
-	/// Returns `true` if the effect is [`ShuffleOnlineDeck`].
+	/// Returns `true` if the effect is [`ShuffleOnlineDeck`](Self::ShuffleOnlineDeck).
 	#[must_use]
 	pub const fn is_shuffle_online_deck(self) -> bool {
 		matches!(self, Self::ShuffleOnlineDeck { .. })
 	}
 
-	/// Returns `true` if the effect is [`VoidOpponentSupportEffect`].
+	/// Returns `true` if the effect is [`VoidOpponentSupportEffect`](Self::VoidOpponentSupportEffect).
 	#[must_use]
 	pub const fn is_void_opponent_support_effect(self) -> bool {
 		matches!(self, Self::VoidOpponentSupportEffect)
 	}
 
-	/// Returns `true` if the effect is [`VoidOpponentSupportOptionEffect`].
+	/// Returns `true` if the effect is [`VoidOpponentSupportOptionEffect`](Self::VoidOpponentSupportOptionEffect).
 	#[must_use]
 	pub const fn is_void_opponent_support_option_effect(self) -> bool {
 		matches!(self, Self::VoidOpponentSupportOptionEffect)
 	}
 
-	/// Returns `true` if the effect is [`PickPartnerCard`].
+	/// Returns `true` if the effect is [`PickPartnerCard`](Self::PickPartnerCard).
 	#[must_use]
 	pub const fn is_pick_partner_card(self) -> bool {
 		matches!(self, Self::PickPartnerCard)
 	}
 
-	/// Returns `true` if the effect is [`CycleOpponentAttackType`].
+	/// Returns `true` if the effect is [`CycleOpponentAttackType`](Self::CycleOpponentAttackType).
 	#[must_use]
 	pub const fn is_cycle_opponent_attack_type(self) -> bool {
 		matches!(self, Self::CycleOpponentAttackType)
 	}
 
-	/// Returns `true` if the effect is [`KoDigimonRevives`].
+	/// Returns `true` if the effect is [`KoDigimonRevives`](Self::KoDigimonRevives).
 	#[must_use]
 	pub const fn is_ko_digimon_revives(self) -> bool {
 		matches!(self, Self::KoDigimonRevives { .. })
 	}
 
-	/// Returns `true` if the effect is [`DrawCards`].
+	/// Returns `true` if the effect is [`DrawCards`](Self::DrawCards).
 	#[must_use]
 	pub const fn is_draw_cards(self) -> bool {
 		matches!(self, Self::DrawCards { .. })
 	}
 
-	/// Returns `true` if the effect is [`OwnAttackBecomesEatUpHP`].
+	/// Returns `true` if the effect is [`OwnAttackBecomesEatUpHP`](Self::OwnAttackBecomesEatUpHP).
 	#[must_use]
 	pub const fn is_own_attack_becomes_eat_up_h_p(self) -> bool {
 		matches!(self, Self::OwnAttackBecomesEatUpHP)
 	}
 
-	/// Returns `true` if the effect is [`AttackFirst`].
+	/// Returns `true` if the effect is [`AttackFirst`](Self::AttackFirst).
 	#[must_use]
 	pub const fn is_attack_first(self) -> bool {
 		matches!(self, Self::AttackFirst { .. })

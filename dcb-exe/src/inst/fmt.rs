@@ -1,6 +1,6 @@
 //! Instruction formatting
 //!
-//! See the [`InstFmt`] type for more details.
+//! See the [`InstDisplay`] type for more details.
 
 // Imports
 use crate::{inst::Register, Pos};

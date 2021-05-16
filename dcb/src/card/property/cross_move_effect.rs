@@ -30,19 +30,19 @@ pub enum CrossMoveEffect {
 }
 
 impl CrossMoveEffect {
-	/// Returns `true` if the effect is [`AttackToZero`].
+	/// Returns `true` if the effect is [`AttackToZero`](Self::AttackToZero).
 	#[must_use]
 	pub const fn is_attack_to_zero(self) -> bool {
 		matches!(self, Self::AttackToZero(..))
 	}
 
-	/// Returns `true` if the effect is [`Counter`].
+	/// Returns `true` if the effect is [`Counter`](Self::Counter).
 	#[must_use]
 	pub const fn is_counter(self) -> bool {
 		matches!(self, Self::Counter(..))
 	}
 
-	/// Returns `true` if the effect is [`TripleAgainst`].
+	/// Returns `true` if the effect is [`TripleAgainst`](Self::TripleAgainst).
 	#[must_use]
 	pub const fn is_triple_against(self) -> bool {
 		matches!(self, Self::TripleAgainst(..))
