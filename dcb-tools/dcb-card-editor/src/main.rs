@@ -848,6 +848,7 @@ fn render_effect_condition_opt(ui: &mut egui::Ui, cur_cond: &mut Option<EffectCo
 			ui.label("Operation");
 			self::render_effect_condition_operation(ui, &mut cond.operation);
 
+			ui.separator();
 			if ui.button("Remove").clicked() {
 				*cur_cond = None;
 			}
