@@ -12,7 +12,7 @@ dcb-util = { path = "../../dcb-util" }
 dcb-cdrom-xa = { path = "../../dcb-cdrom-xa" }
 
 # Gui
-eframe = "0.11.0"
+eframe = { git = "https://github.com/Zenithsiz/egui" }
 
 # Error
 anyhow = "1.0.40"
@@ -20,6 +20,8 @@ anyhow = "1.0.40"
 # Utils
 native-dialog = "0.5.5"
 either = "1.6.1"
+ref-cast = "1.0.6"
+derive_more = "0.99.13"
 
 # Serde
 serde_yaml = "0.8.17"

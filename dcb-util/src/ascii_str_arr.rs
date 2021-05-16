@@ -10,7 +10,14 @@ pub use error::{FromBytesError, FromUtf8Error, NotAsciiError, TooLongError};
 
 // Imports
 use ascii::AsciiStr;
-use std::{cmp::Ordering, convert::TryFrom, fmt, hash::Hash, ops, slice::SliceIndex};
+use std::{
+	cmp::Ordering,
+	convert::TryFrom,
+	fmt,
+	hash::Hash,
+	ops::{self, Range},
+	slice::SliceIndex,
+};
 use visitor::DeserializerVisitor;
 
 /// An ascii string backed by an array
@@ -164,6 +171,50 @@ impl<const N: usize> AsciiStrArr<N> {
 	#[must_use]
 	pub fn get_mut<I: SliceIndex<[AsciiChar]>>(&mut self, idx: I) -> Option<&mut I::Output> {
 		idx.get_mut(&mut self.chars)
+	}
+}
+
+/// Push/Pop
+impl<const N: usize> AsciiStrArr<N> {
+	/// Pushes a character onto this string, if there is enough space
+	#[allow(clippy::result_unit_err)] // TODO: An error type for this?
+	pub fn push(&mut self, ch: AsciiChar) -> Result<(), ()> {
+		match self.len == N {
+			true => Err(()),
+			false => {
+				self.chars[self.len] = ch;
+				self.len += 1;
+				Ok(())
+			},
+		}
+	}
+
+	/// Inserts a character onto the string, if there is enough space
+	///
+	/// # Panics
+	/// Panics if `idx` is out of bounds.
+	#[allow(clippy::result_unit_err)] // TODO: An error type for this?
+	pub fn insert(&mut self, idx: usize, ch: AsciiChar) -> Result<(), ()> {
+		match self.len == N {
+			true => Err(()),
+			false => {
+				self.chars.copy_within(idx..self.len, idx + 1);
+				self.chars[idx] = ch;
+				self.len += 1;
+				Ok(())
+			},
+		}
+	}
+
+	/// Removes a range of characters
+	///
+	/// # Panics
+	/// Panics if `range` is out of bounds.
+	pub fn drain_range(&mut self, range: Range<usize>) {
+		assert!(range.end <= self.len);
+
+		self.chars.copy_within(range.end..self.len, range.start);
+		self.len -= range.end - range.start;
 	}
 }
 

@@ -4,10 +4,10 @@
 #![feature(array_map, with_options, format_args_capture, once_cell, never_type)]
 
 // Modules
-pub mod edit_state;
+pub mod ascii_text_buffer;
 
 // Exports
-pub use edit_state::{CardEditState, DigimonEditState, DigivolveEditState, ItemEditState};
+pub use ascii_text_buffer::AsciiTextBuffer;
 
 // Imports
 use anyhow::Context;
@@ -19,9 +19,10 @@ use dcb::{
 	CardTable,
 };
 use dcb_bytes::Validate;
-use eframe::{egui, epi};
+use eframe::{egui, epi, NativeOptions};
 use either::Either;
 use native_dialog::{FileDialog, MessageDialog, MessageType};
+use ref_cast::RefCast;
 use std::{
 	collections::hash_map::DefaultHasher,
 	fs,
@@ -36,7 +37,7 @@ use std::{
 fn main() {
 	// Crate the app and run it
 	let app = CardEditor::default();
-	eframe::run_native(Box::new(app));
+	eframe::run_native(Box::new(app), NativeOptions::default());
 }
 
 pub struct CardEditor {
@@ -225,25 +226,9 @@ impl epi::App for CardEditor {
 						if ui.selectable_label(screen_idx.is_some(), name).clicked() {
 							match screen_idx {
 								Some(screen_idx) => {
-									let really_delete =
-										match open_edit_screens[screen_idx].cur_card_edit_error.is_some() {
-											true => MessageDialog::new()
-												.set_text("You have unresolved errors, really close?")
-												.set_type(MessageType::Warning)
-												.show_confirm()
-												.expect("Unable to ask user for confirmation"),
-											false => true,
-										};
-
-									if really_delete {
-										open_edit_screens.remove(screen_idx);
-									}
+									open_edit_screens.remove(screen_idx);
 								},
-								None => open_edit_screens.push(EditScreen {
-									card_idx:            idx,
-									cur_card_edit_state: None,
-									cur_card_edit_error: None,
-								}),
+								None => open_edit_screens.push(EditScreen { card_idx: idx }),
 							}
 						}
 					}
@@ -271,20 +256,11 @@ impl epi::App for CardEditor {
 							Card::Item(_) => "Item",
 							Card::Digivolve(_) => "Digivolve",
 						});
-						if let Some(cur_card_edit_status) = &screen.cur_card_edit_error {
-							ui.separator();
-							ui.label(&**cur_card_edit_status);
-						}
 						ui.separator();
 					});
 
 					egui::ScrollArea::auto_sized().show(ui, |ui| {
-						self::render_card(
-							ui,
-							card,
-							&mut screen.cur_card_edit_state,
-							&mut screen.cur_card_edit_error,
-						);
+						self::render_card(ui, card);
 					});
 				});
 			}
@@ -344,12 +320,6 @@ impl epi::App for CardEditor {
 pub struct EditScreen {
 	/// Currently selected card
 	card_idx: usize,
-
-	/// Card edit state
-	cur_card_edit_state: Option<CardEditState>,
-
-	/// Card edit error
-	cur_card_edit_error: Option<String>,
 }
 
 /// Digimon, Item or digivolve
@@ -372,74 +342,11 @@ impl<'a> Card<'a> {
 
 
 /// Renders a card
-fn render_card(
-	ui: &mut egui::Ui, card: Card, cur_card_edit_state: &mut Option<CardEditState>,
-	cur_card_edit_error: &mut Option<String>,
-) {
+fn render_card(ui: &mut egui::Ui, card: Card) {
 	match card {
-		Card::Digimon(digimon) => {
-			// Get the current card edit state as digimon
-			let edit_state = cur_card_edit_state
-				.get_or_insert_with(|| CardEditState::digimon(digimon))
-				.as_digimon_mut()
-				.expect("Edit state wasn't a digimon when a digimon was selected");
-
-			// Get the hash of the edit state to compare against later.
-			let edit_state_start_hash = self::hash_of(edit_state);
-
-			// Then render it
-			self::render_digimon_card(ui, digimon, edit_state);
-
-			// And try to apply if anything was changed
-			if self::hash_of(edit_state) != edit_state_start_hash {
-				*cur_card_edit_error = match edit_state.apply(digimon) {
-					Ok(()) => None,
-					Err(err) => Some(format!("Error: {:?}", err)),
-				};
-			}
-		},
-		Card::Item(item) => {
-			// Get the current card edit state as digimon
-			let edit_state = cur_card_edit_state
-				.get_or_insert_with(|| CardEditState::item(item))
-				.as_item_mut()
-				.expect("Edit state wasn't an item when an item was selected");
-
-			// Get the hash of the edit state to compare against later.
-			let edit_state_start_hash = self::hash_of(edit_state);
-
-			// Then render it
-			self::render_item_card(ui, item, edit_state);
-
-			// And try to apply if anything was changed
-			if self::hash_of(edit_state) != edit_state_start_hash {
-				*cur_card_edit_error = match edit_state.apply(item) {
-					Ok(()) => None,
-					Err(err) => Some(format!("Error: {:?}", err)),
-				};
-			}
-		},
-		Card::Digivolve(digivolve) => {
-			// Get the current card edit state as digimon
-			let edit_state = cur_card_edit_state
-				.get_or_insert_with(|| CardEditState::digivolve(digivolve))
-				.as_digivolve_mut()
-				.expect("Edit state wasn't a digivolve when a digivolve was selected");
-
-			// Get the hash of the edit state to compare against later.
-			let edit_state_start_hash = self::hash_of(edit_state);
-
-			// Then render it
-			self::render_digivolve_card(ui, digivolve, edit_state);
-
-			// And try to apply if anything was changed
-			if self::hash_of(edit_state) != edit_state_start_hash {
-				*cur_card_edit_error = match edit_state.apply(digivolve) {
-					Ok(()) => None,
-					Err(err) => Some(format!("Error: {:?}", err)),
-				};
-			}
-		},
+		Card::Digimon(digimon) => self::render_digimon_card(ui, digimon),
+		Card::Item(item) => self::render_item_card(ui, item),
+		Card::Digivolve(digivolve) => self::render_digivolve_card(ui, digivolve),
 	}
 
 	// Add some space at bottom for cut-off stuff at the bottom
@@ -447,11 +354,11 @@ fn render_card(
 }
 
 /// Renders a digimon card
-fn render_digimon_card(ui: &mut egui::Ui, digimon: &mut dcb::Digimon, edit_state: &mut DigimonEditState) {
+fn render_digimon_card(ui: &mut egui::Ui, digimon: &mut dcb::Digimon) {
 	// Name
 	ui.horizontal(|ui| {
 		ui.label("Name");
-		ui.text_edit_singleline(&mut edit_state.name).changed();
+		ui.text_edit_singleline(AsciiTextBuffer::ref_cast_mut(&mut digimon.name));
 	});
 
 	// Speciality
@@ -482,14 +389,12 @@ fn render_digimon_card(ui: &mut egui::Ui, digimon: &mut dcb::Digimon, edit_state
 	ui.group(|ui| {
 		ui.heading("Moves");
 
-		#[rustfmt::skip]
-		let moves = [
-			("Circle"  , &mut digimon.move_circle  , &mut edit_state.move_circle_name  ),
-			("Triangle", &mut digimon.move_triangle, &mut edit_state.move_triangle_name),
-			("Cross"   , &mut digimon.move_cross   , &mut edit_state.move_cross_name   ),
-		];
-		for (name, mv, mv_name) in std::array::IntoIter::new(moves) {
-			self::render_move(ui, name, mv, mv_name);
+		for (name, mv) in std::array::IntoIter::new([
+			("Circle", &mut digimon.move_circle),
+			("Triangle", &mut digimon.move_triangle),
+			("Cross", &mut digimon.move_cross),
+		]) {
+			self::render_move(ui, name, mv);
 		}
 	});
 
@@ -501,8 +406,8 @@ fn render_digimon_card(ui: &mut egui::Ui, digimon: &mut dcb::Digimon, edit_state
 
 	ui.group(|ui| {
 		ui.label("Effect description");
-		for line in &mut edit_state.effect_description {
-			ui.text_edit_singleline(line);
+		for line in &mut digimon.effect_description {
+			ui.text_edit_singleline(AsciiTextBuffer::ref_cast_mut(line));
 		}
 	});
 
@@ -527,17 +432,18 @@ fn render_digimon_card(ui: &mut egui::Ui, digimon: &mut dcb::Digimon, edit_state
 }
 
 /// Renders an item card
-fn render_item_card(ui: &mut egui::Ui, item: &mut dcb::Item, edit_state: &mut ItemEditState) {
+fn render_item_card(ui: &mut egui::Ui, item: &mut dcb::Item) {
 	// Name
 	ui.horizontal(|ui| {
 		ui.label("Name");
-		ui.text_edit_singleline(&mut edit_state.name).changed();
+		ui.text_edit_singleline(AsciiTextBuffer::ref_cast_mut(&mut item.name))
+			.changed();
 	});
 
 	ui.group(|ui| {
 		ui.label("Effect description");
-		for line in &mut edit_state.effect_description {
-			ui.text_edit_singleline(line);
+		for line in &mut item.effect_description {
+			ui.text_edit_singleline(AsciiTextBuffer::ref_cast_mut(line));
 		}
 	});
 
@@ -562,17 +468,18 @@ fn render_item_card(ui: &mut egui::Ui, item: &mut dcb::Item, edit_state: &mut It
 }
 
 /// Renders a digivolve card
-fn render_digivolve_card(ui: &mut egui::Ui, digivolve: &mut dcb::Digivolve, edit_state: &mut DigivolveEditState) {
+fn render_digivolve_card(ui: &mut egui::Ui, digivolve: &mut dcb::Digivolve) {
 	// Name
 	ui.horizontal(|ui| {
 		ui.label("Name");
-		ui.text_edit_singleline(&mut edit_state.name).changed();
+		ui.text_edit_singleline(AsciiTextBuffer::ref_cast_mut(&mut digivolve.name))
+			.changed();
 	});
 
 	ui.group(|ui| {
 		ui.label("Effect description");
-		for line in &mut edit_state.effect_description {
-			ui.text_edit_singleline(line);
+		for line in &mut digivolve.effect_description {
+			ui.text_edit_singleline(AsciiTextBuffer::ref_cast_mut(line));
 		}
 	});
 
@@ -810,7 +717,7 @@ fn render_digimon_property_opt(ui: &mut egui::Ui, cur_property: &mut Option<Digi
 }
 
 /// Displays a move
-fn render_move(ui: &mut egui::Ui, name: &str, mv: &mut Move, mv_name: &mut String) {
+fn render_move(ui: &mut egui::Ui, name: &str, mv: &mut Move) {
 	// Validate the move so we can display warnings
 	let mut warn_power_multiple_of_10 = false;
 	mv.validate(|event: Either<_, !>| match event.unwrap_left() {
@@ -822,7 +729,7 @@ fn render_move(ui: &mut egui::Ui, name: &str, mv: &mut Move, mv_name: &mut Strin
 			ui.heading(name);
 			ui.horizontal(|ui| {
 				ui.label("Name");
-				ui.text_edit_singleline(mv_name);
+				ui.text_edit_singleline(AsciiTextBuffer::ref_cast_mut(&mut mv.name));
 			});
 			ui.horizontal(|ui| {
 				ui.label("Power");
