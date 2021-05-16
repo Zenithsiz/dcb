@@ -1,7 +1,7 @@
 //! Card editor
 
 // Features
-#![feature(array_map, with_options, format_args_capture, once_cell)]
+#![feature(array_map, with_options, format_args_capture, once_cell, never_type)]
 
 // Modules
 pub mod edit_state;
@@ -18,7 +18,9 @@ use dcb::{
 	},
 	CardTable,
 };
+use dcb_bytes::Validate;
 use eframe::{egui, epi};
+use either::Either;
 use native_dialog::{FileDialog, MessageDialog, MessageType};
 use std::{
 	collections::hash_map::DefaultHasher,
@@ -809,6 +811,12 @@ fn render_digimon_property_opt(ui: &mut egui::Ui, cur_property: &mut Option<Digi
 
 /// Displays a move
 fn render_move(ui: &mut egui::Ui, name: &str, mv: &mut Move, mv_name: &mut String) {
+	// Validate the move so we can display warnings
+	let mut warn_power_multiple_of_10 = false;
+	mv.validate(|event: Either<_, !>| match event.unwrap_left() {
+		dcb::card::property::moves::ValidationWarning::PowerMultiple10 => warn_power_multiple_of_10 = true,
+	});
+
 	ui.group(|ui| {
 		ui.vertical(|ui| {
 			ui.heading(name);
@@ -819,6 +827,9 @@ fn render_move(ui: &mut egui::Ui, name: &str, mv: &mut Move, mv_name: &mut Strin
 			ui.horizontal(|ui| {
 				ui.label("Power");
 				ui.add(egui::Slider::new(&mut mv.power, 0..=2000));
+				if warn_power_multiple_of_10 {
+					ui.label("Warning: Power should be a multiple of 10");
+				}
 			});
 		});
 	});

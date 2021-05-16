@@ -7,6 +7,7 @@ edition = "2018"
 [dependencies]
 # Dcb
 dcb = { path = "../../dcb" }
+dcb-bytes = { path = "../../dcb-bytes" }
 dcb-util = { path = "../../dcb-util" }
 dcb-cdrom-xa = { path = "../../dcb-cdrom-xa" }
 
@@ -18,6 +19,7 @@ anyhow = "1.0.40"
 
 # Utils
 native-dialog = "0.5.5"
+either = "1.6.1"
 
 # Serde
 serde_yaml = "0.8.17"
