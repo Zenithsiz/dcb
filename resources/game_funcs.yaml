@@ -875,6 +875,27 @@
   end_pos: 0x8002f79c
   kind: Known
 
+# Card table
+- name: card_table.something0
+  comments:
+    0x8004580c: |-
+      Store into the stack the following:
+        0x10: &func_70
+        0x14: &card_table_path
+        0x18: func_7()
+        0x1c: -2
+      But doesn't seem to do anything else with them, are they
+      arguments for func_12, maybe?-
+  inline_comments:
+    0x8004584c: "0x7fff_ffff, -1, 0, 0x800"
+  labels:
+    0x800458c4: "0"
+    0x800458fc: "1"
+    0x80045934: "2"
+  start_pos: 0x800457fc
+  end_pos: 0x80045968
+  kind: Known
+
 # intr
 - name: intr.call_f3
   signature: fn()

@@ -152,3 +152,15 @@
 - name: unknown22
   pos: 0x8006dd50
   ty: u32
+
+- name: card_table_path
+  desc: |-
+    Seems to be loaded into ram at `0x800b400c` without changing
+    it in any way. The whole file is loaded at this position.
+
+    First breakpoint (aside from before game startup) that breaks on the
+    ram location of the card table is with call stack
+      0x8004833c
+      0x801f7b80
+  pos: 0x80011958
+  ty: AsciiStr<12>
