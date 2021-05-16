@@ -880,48 +880,45 @@ fn render_effect_opt(ui: &mut egui::Ui, effect: &mut Option<Effect>) {
 			}) => {
 				// Calculate what the condition is doing to display to the user
 				// `<property> = ( <A> + <Y> ) + ( <C> <op> ( <B> + <X> ) )`
-				let explanation = {
-					// Special case some common equations
-					match (&*property, &*a, &*y, &*c, &*op, &*b, &*x) {
-						// `property += <c> <op> <x>`
-						(property, Some(a), 0, Some(c), op, None, x) if a == property => {
-							let op = op.operator_str();
-							format!("{property} += {c} {op} {x}")
-						},
+				let explanation = match (&*property, &*a, &*y, &*c, &*op, &*b, &*x) {
+					// `property += <c> <op> <x>`
+					(property, Some(a), 0, Some(c), op, None, x) if a == property => {
+						let op = op.operator_str();
+						format!("{property} += {c} {op} {x}")
+					},
 
-						// `property <op> = <b>`
-						(property, None, 0, Some(c), op, Some(b), 0) if property == c => {
-							let op = op.operator_str();
-							format!("{property} {op}= {b}")
-						},
+					// `property <op> = <b>`
+					(property, None, 0, Some(c), op, Some(b), 0) if property == c => {
+						let op = op.operator_str();
+						format!("{property} {op}= {b}")
+					},
 
-						// `property <op> = <x>`
-						(property, None, 0, Some(c), op, None, x) if c == property => {
-							let op = op.operator_str();
-							format!("{property} {op}= {x}")
-						},
+					// `property <op> = <x>`
+					(property, None, 0, Some(c), op, None, x) if c == property => {
+						let op = op.operator_str();
+						format!("{property} {op}= {x}")
+					},
 
-						// `property = <c>`
-						(property, None, 0, Some(c), EffectOperation::Addition, None, 0) => {
-							format!("{property} = {c}")
-						},
+					// `property = <c>`
+					(property, None, 0, Some(c), EffectOperation::Addition, None, 0) => {
+						format!("{property} = {c}")
+					},
 
-						// `property = <x | y>`
-						(property, None, 0, None, EffectOperation::Addition, None, num) |
-						(property, None, num, None, EffectOperation::Addition, None, 0) => {
-							format!("{property} = {num}")
-						},
+					// `property = <x | y>`
+					(property, None, 0, None, EffectOperation::Addition, None, num) |
+					(property, None, num, None, EffectOperation::Addition, None, 0) => {
+						format!("{property} = {num}")
+					},
 
-						// Else just fully format it
-						_ => {
-							let a = a.map_or("0", DigimonProperty::as_str);
-							let b = b.map_or("0", DigimonProperty::as_str);
-							let c = c.map_or("0", DigimonProperty::as_str);
-							let op = op.operator_str();
+					// Else just fully format it
+					_ => {
+						let a = a.map_or("0", DigimonProperty::as_str);
+						let b = b.map_or("0", DigimonProperty::as_str);
+						let c = c.map_or("0", DigimonProperty::as_str);
+						let op = op.operator_str();
 
-							format!("{property} = ({a} + {y}) + {c} {op} ({b} + {x})")
-						},
-					}
+						format!("{property} = ({a} + {y}) + {c} {op} ({b} + {x})")
+					},
 				};
 				ui.heading(explanation);
 
@@ -957,20 +954,6 @@ fn render_effect_opt(ui: &mut egui::Ui, effect: &mut Option<Effect>) {
 
 				ui.label("Attack");
 				self::render_attack_type(ui, attack);
-			},
-			Some(Effect::SetTempSlot { a, b, c, op }) => {
-				ui.heading("Set temp slot");
-				ui.vertical(|ui| {
-					ui.label("A");
-					self::render_digimon_property_opt(ui, a);
-					ui.label("B");
-					self::render_digimon_property_opt(ui, b);
-					ui.label("C");
-					self::render_digimon_property_opt(ui, c);
-
-					ui.label("Operation");
-					self::render_effect_operation(ui, op);
-				});
 			},
 			Some(Effect::MoveCards {
 				player,
@@ -1063,12 +1046,6 @@ fn render_effect_opt(ui: &mut egui::Ui, effect: &mut Option<Effect>) {
 					player: PlayerType::Player,
 					attack: AttackType::Circle,
 				};
-				const SET_TEMP_SLOT_DEFAULT: Effect = Effect::SetTempSlot {
-					a:  None,
-					b:  None,
-					c:  None,
-					op: EffectOperation::Addition,
-				};
 				const MOVE_CARDS_DEFAULT: Effect = Effect::MoveCards {
 					player:      PlayerType::Player,
 					source:      Slot::Hand,
@@ -1089,7 +1066,6 @@ fn render_effect_opt(ui: &mut egui::Ui, effect: &mut Option<Effect>) {
 
 				let is_change_property = effect.map_or(false, Effect::is_change_property);
 				let is_use_attack = effect.map_or(false, Effect::is_use_attack);
-				let is_set_temp_slot = effect.map_or(false, Effect::is_set_temp_slot);
 				let is_move_cards = effect.map_or(false, Effect::is_move_cards);
 				let is_shuffle_online_deck = effect.map_or(false, Effect::is_shuffle_online_deck);
 				let is_ko_digimon_revives = effect.map_or(false, Effect::is_ko_digimon_revives);
@@ -1107,12 +1083,6 @@ fn render_effect_opt(ui: &mut egui::Ui, effect: &mut Option<Effect>) {
 					.clicked() && !is_use_attack
 				{
 					*effect = Some(USE_ATTACK_DEFAULT);
-				}
-				if ui
-					.selectable_label(is_set_temp_slot, SET_TEMP_SLOT_DEFAULT.as_str())
-					.clicked() && !is_set_temp_slot
-				{
-					*effect = Some(SET_TEMP_SLOT_DEFAULT);
 				}
 				if ui
 					.selectable_label(is_move_cards, MOVE_CARDS_DEFAULT.as_str())

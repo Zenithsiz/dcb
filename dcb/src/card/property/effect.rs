@@ -28,12 +28,15 @@ pub enum Effect {
 	/// - `OwnCrossAttack`    / `OpnCrossAttack`   ,
 	/// - `OwnAttack`         / `OpnAttack`        ,
 	/// - `OwnLevel`          / `OpnLevel`         ,
+	/// - `TempSlot`
 	///
 	/// # Equation
 	/// This variant uses the following equation
 	/// to calculate the property:
 	///
 	/// `<property> = ( <A> + <Y> ) + ( <C> <op> ( <B> + <X> ) )`
+	// TODO: Check this is actually how it works, seems sometimes x is used
+	//       for some and y for others but never at the same time.
 	#[serde(rename = "Change property")]
 	#[allow(clippy::missing_docs_in_private_items)] // Explained the formula
 	ChangeProperty {
@@ -57,22 +60,6 @@ pub enum Effect {
 
 		/// Attack being forced to be used
 		attack: AttackType,
-	},
-
-	/// Set the temp slot
-	///
-	/// # Equation
-	/// This variant uses the following equation
-	/// to calculate the property:
-	///
-	/// `<temp slot> = <A> + (<B> <op> <C>)`
-	#[serde(rename = "Set temp slot")]
-	#[allow(clippy::missing_docs_in_private_items)] // Explained the formula
-	SetTempSlot {
-		a:  Option<DigimonProperty>,
-		b:  Option<DigimonProperty>,
-		c:  Option<DigimonProperty>,
-		op: EffectOperation,
 	},
 
 	/// Moves cards from a slot to another
@@ -164,7 +151,6 @@ impl Effect {
 		match self {
 			Effect::ChangeProperty { .. } => "Change property",
 			Effect::UseAttack { .. } => "Use attack",
-			Effect::SetTempSlot { .. } => "Set temp slot",
 			Effect::MoveCards { .. } => "Move cards",
 			Effect::ShuffleOnlineDeck { .. } => "Shuffle online deck",
 			Effect::VoidOpponentSupportEffect => "Void opponent support effect",
@@ -188,12 +174,6 @@ impl Effect {
 	#[must_use]
 	pub const fn is_use_attack(self) -> bool {
 		matches!(self, Self::UseAttack { .. })
-	}
-
-	/// Returns `true` if the effect is [`SetTempSlot`].
-	#[must_use]
-	pub const fn is_set_temp_slot(self) -> bool {
-		matches!(self, Self::SetTempSlot { .. })
 	}
 
 	/// Returns `true` if the effect is [`MoveCards`].
@@ -375,7 +355,7 @@ impl Bytes for Effect {
 		// And check what the effect type is
 		#[rustfmt::skip]
 		let effect = match bytes.effect_type {
-			0..=13 => Self::ChangeProperty {
+			0..=13 | 25 => Self::ChangeProperty {
 				// Note: unwrapping is fine here because we know that `effect_type_byte+1` is between 1 and 14 inclusive
 				property: DigimonProperty::from_bytes( &(bytes.effect_type+1) )
 					.expect("Unable to get digimon property from bytes"),
@@ -384,8 +364,6 @@ impl Bytes for Effect {
 
 			16 => Self::UseAttack{ player: Player  , attack: get_attack_type()? },
 			17 => Self::UseAttack{ player: Opponent, attack: get_attack_type()? },
-
-			25 => Self::SetTempSlot{ a: get_a()?, b: get_b()?, c: get_c()?, op: get_op()? },
 
 			26 => Self::MoveCards{ player: Player  , source: Hand, destination: OfflineDeck, count: y },
 			27 => Self::MoveCards{ player: Opponent, source: Hand, destination: OfflineDeck, count: y },
@@ -492,8 +470,8 @@ impl Bytes for Effect {
 				property.to_bytes(bytes.effect_type).into_ok();
 				*bytes.effect_type -= 1;
 
-				// If the effect type isn't within 0..=13, return Err
-				if !(0..=13).contains(bytes.effect_type) {
+				// If the effect type isn't within 0..=13 | 25, return Err
+				if !matches!(bytes.effect_type, 0..=13 | 25) {
 					return Err(ToBytesError::InvalidProperty { property });
 				}
 
@@ -513,14 +491,6 @@ impl Bytes for Effect {
 				};
 				set_attack_type(attack);
 			},
-
-			Self::SetTempSlot { a, b, c, op } => {
-				*bytes.effect_type = 25;
-				set_a(a);
-				set_b(b);
-				set_c(c);
-				op.to_bytes(bytes.op).into_ok();
-			}
 
 			Self::MoveCards { player, source, destination, count } => {
 				*bytes.effect_type = match (player, source, destination) {
