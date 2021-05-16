@@ -249,14 +249,17 @@ impl epi::App for CardEditor {
 		});
 
 		// For every screen, display it
-		egui::CentralPanel::default().show(ctx, |_| {
+		egui::CentralPanel::default().show(ctx, |ui| {
+			let screens_len = open_edit_screens.len();
 			for screen in open_edit_screens {
 				let card = Self::get_card_from_idx(
 					card_table.as_mut().expect("Had a selected card without a card table"),
 					screen.card_idx,
 				);
 
-				egui::SidePanel::left((screen as *const _, "panel"), 300.0).show(ctx, |ui| {
+				let total_available_size = ui.available_size();
+				let max_width = total_available_size.x / (screens_len as f32);
+				egui::SidePanel::left((screen as *const _, "panel"), max_width).show(ctx, |ui| {
 					// Header for the card
 					ui.vertical(|ui| {
 						ui.heading(card.name());
@@ -272,12 +275,14 @@ impl epi::App for CardEditor {
 						ui.separator();
 					});
 
-					self::render_card(
-						ui,
-						card,
-						&mut screen.cur_card_edit_state,
-						&mut screen.cur_card_edit_error,
-					);
+					egui::ScrollArea::auto_sized().show(ui, |ui| {
+						self::render_card(
+							ui,
+							card,
+							&mut screen.cur_card_edit_state,
+							&mut screen.cur_card_edit_error,
+						);
+					});
 				});
 			}
 		});
@@ -356,76 +361,74 @@ fn render_card(
 	ui: &mut egui::Ui, card: Card, cur_card_edit_state: &mut Option<CardEditState>,
 	cur_card_edit_error: &mut Option<String>,
 ) {
-	egui::ScrollArea::auto_sized().show(ui, |ui| {
-		match card {
-			Card::Digimon(digimon) => {
-				// Get the current card edit state as digimon
-				let edit_state = cur_card_edit_state
-					.get_or_insert_with(|| CardEditState::digimon(digimon))
-					.as_digimon_mut()
-					.expect("Edit state wasn't a digimon when a digimon was selected");
+	match card {
+		Card::Digimon(digimon) => {
+			// Get the current card edit state as digimon
+			let edit_state = cur_card_edit_state
+				.get_or_insert_with(|| CardEditState::digimon(digimon))
+				.as_digimon_mut()
+				.expect("Edit state wasn't a digimon when a digimon was selected");
 
-				// Get the hash of the edit state to compare against later.
-				let edit_state_start_hash = self::hash_of(edit_state);
+			// Get the hash of the edit state to compare against later.
+			let edit_state_start_hash = self::hash_of(edit_state);
 
-				// Then render it
-				self::render_digimon_card(ui, digimon, edit_state);
+			// Then render it
+			self::render_digimon_card(ui, digimon, edit_state);
 
-				// And try to apply if anything was changed
-				if self::hash_of(edit_state) != edit_state_start_hash {
-					*cur_card_edit_error = match edit_state.apply(digimon) {
-						Ok(()) => None,
-						Err(err) => Some(format!("Error: {:?}", err)),
-					};
-				}
-			},
-			Card::Item(item) => {
-				// Get the current card edit state as digimon
-				let edit_state = cur_card_edit_state
-					.get_or_insert_with(|| CardEditState::item(item))
-					.as_item_mut()
-					.expect("Edit state wasn't an item when an item was selected");
+			// And try to apply if anything was changed
+			if self::hash_of(edit_state) != edit_state_start_hash {
+				*cur_card_edit_error = match edit_state.apply(digimon) {
+					Ok(()) => None,
+					Err(err) => Some(format!("Error: {:?}", err)),
+				};
+			}
+		},
+		Card::Item(item) => {
+			// Get the current card edit state as digimon
+			let edit_state = cur_card_edit_state
+				.get_or_insert_with(|| CardEditState::item(item))
+				.as_item_mut()
+				.expect("Edit state wasn't an item when an item was selected");
 
-				// Get the hash of the edit state to compare against later.
-				let edit_state_start_hash = self::hash_of(edit_state);
+			// Get the hash of the edit state to compare against later.
+			let edit_state_start_hash = self::hash_of(edit_state);
 
-				// Then render it
-				self::render_item_card(ui, item, edit_state);
+			// Then render it
+			self::render_item_card(ui, item, edit_state);
 
-				// And try to apply if anything was changed
-				if self::hash_of(edit_state) != edit_state_start_hash {
-					*cur_card_edit_error = match edit_state.apply(item) {
-						Ok(()) => None,
-						Err(err) => Some(format!("Error: {:?}", err)),
-					};
-				}
-			},
-			Card::Digivolve(digivolve) => {
-				// Get the current card edit state as digimon
-				let edit_state = cur_card_edit_state
-					.get_or_insert_with(|| CardEditState::digivolve(digivolve))
-					.as_digivolve_mut()
-					.expect("Edit state wasn't a digivolve when a digivolve was selected");
+			// And try to apply if anything was changed
+			if self::hash_of(edit_state) != edit_state_start_hash {
+				*cur_card_edit_error = match edit_state.apply(item) {
+					Ok(()) => None,
+					Err(err) => Some(format!("Error: {:?}", err)),
+				};
+			}
+		},
+		Card::Digivolve(digivolve) => {
+			// Get the current card edit state as digimon
+			let edit_state = cur_card_edit_state
+				.get_or_insert_with(|| CardEditState::digivolve(digivolve))
+				.as_digivolve_mut()
+				.expect("Edit state wasn't a digivolve when a digivolve was selected");
 
-				// Get the hash of the edit state to compare against later.
-				let edit_state_start_hash = self::hash_of(edit_state);
+			// Get the hash of the edit state to compare against later.
+			let edit_state_start_hash = self::hash_of(edit_state);
 
-				// Then render it
-				self::render_digivolve_card(ui, digivolve, edit_state);
+			// Then render it
+			self::render_digivolve_card(ui, digivolve, edit_state);
 
-				// And try to apply if anything was changed
-				if self::hash_of(edit_state) != edit_state_start_hash {
-					*cur_card_edit_error = match edit_state.apply(digivolve) {
-						Ok(()) => None,
-						Err(err) => Some(format!("Error: {:?}", err)),
-					};
-				}
-			},
-		}
+			// And try to apply if anything was changed
+			if self::hash_of(edit_state) != edit_state_start_hash {
+				*cur_card_edit_error = match edit_state.apply(digivolve) {
+					Ok(()) => None,
+					Err(err) => Some(format!("Error: {:?}", err)),
+				};
+			}
+		},
+	}
 
-		// Add some space at bottom for cut-off stuff at the bottom
-		ui.add_space(400.0);
-	});
+	// Add some space at bottom for cut-off stuff at the bottom
+	ui.add_space(400.0);
 }
 
 /// Renders a digimon card
