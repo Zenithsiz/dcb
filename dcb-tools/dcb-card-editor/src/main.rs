@@ -28,6 +28,7 @@ use std::{
 	lazy::SyncLazy,
 	path::{Path, PathBuf},
 	sync::Mutex,
+	time::{Duration, SystemTime},
 };
 
 fn main() {
@@ -311,11 +312,23 @@ impl epi::App for CardEditor {
 					.set_type(MessageType::Info)
 					.show_alert()
 					.expect("Unable to alert user"),
-				Err(err) => MessageDialog::new()
-					.set_text(&format!("Unable to save file: {:?}", err))
-					.set_type(MessageType::Error)
-					.show_alert()
-					.expect("Unable to alert user"),
+				// If unable to save, save the state to disk just in case changes are lost
+				// TODO: Be able to load these backup files up
+				Err(err) => {
+					// Create backup
+					let time = SystemTime::now()
+						.duration_since(SystemTime::UNIX_EPOCH)
+						.as_ref()
+						.map_or(u64::MAX, Duration::as_secs);
+					let file = fs::File::create(&format!("cards-{time}.bak")).expect("Unable to create backup file");
+					serde_yaml::to_writer(file, &self.card_table).expect("Unable to write back up to file");
+
+					MessageDialog::new()
+						.set_text(&format!("Unable to save file: {:?}\n\nBackup made in file.", err))
+						.set_type(MessageType::Error)
+						.show_alert()
+						.expect("Unable to alert user");
+				},
 			}
 		}
 	}
