@@ -26,3 +26,4 @@ serde = { version = "1.0.120", features = ["derive"] }
 derive_more = "0.99.11"
 thiserror = "1.0.23"
 ref-cast = "1.0.6"
+strum = { version = "0.20.0", features = ["derive"] }

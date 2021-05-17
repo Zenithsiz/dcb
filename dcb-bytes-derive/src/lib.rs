@@ -86,3 +86,63 @@ pub fn proxy_sentinel_derive(input: proc_macro::TokenStream) -> proc_macro::Toke
 
 	output.into()
 }
+
+#[proc_macro_derive(Discriminant)]
+pub fn discriminant_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
+	let input = syn::parse_macro_input!(input as syn::ItemEnum);
+
+	let mut keys: Vec<&syn::Expr> = vec![];
+	let mut values: Vec<&syn::Ident> = vec![];
+	for variant in &input.variants {
+		values.push(&variant.ident);
+
+		match &variant.discriminant {
+			Some((_, expr)) => keys.push(expr),
+			None => panic!("All variants must have discriminants"),
+		}
+	}
+
+	let struct_name = input.ident;
+	let output = quote::quote!(
+		// TODO: Maybe just define this in `dcb_bytes` and reference it here instead?
+		/// Error type for [`Bytes::from_bytes`]
+		#[derive(PartialEq, Eq, Clone, Copy, Debug, ::thiserror::Error)]
+		pub enum FromBytesError {
+			/// Unknown value
+			#[error("Unknown byte {:#x}", byte)]
+			UnknownValue {
+				/// Unknown byte
+				byte: u8,
+			},
+		}
+
+		#[allow(clippy::diverging_sub_expression)] // Errors might be `!`
+		impl ::dcb_bytes::Bytes for #struct_name {
+			type ByteArray = u8;
+
+			type FromError = FromBytesError;
+			fn from_bytes(byte: &Self::ByteArray) -> Result<Self, Self::FromError> {
+				match *byte {
+					#(
+						byte if byte == #keys => Ok(Self::#values),
+					)*
+
+					byte => Err(FromBytesError::UnknownValue { byte }),
+				}
+			}
+
+			type ToError = !;
+			fn to_bytes(&self, byte: &mut Self::ByteArray) -> Result<(), Self::ToError> {
+				*byte = match &self {
+					#(
+						Self::#values => #keys,
+					)*
+				};
+
+				Ok(())
+			}
+		}
+	);
+
+	output.into()
+}

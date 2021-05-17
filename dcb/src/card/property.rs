@@ -1,19 +1,6 @@
 //! Card properties
 
 dcb_util::generate_enum_property_mod!(
-	pub mod slot {
-		/// A player's card slots
-		enum Slot
-		{
-			Hand   ("Hand"   ) => 0,
-			Dp     ("Dp"     ) => 1,
-			Online ("Online" ) => 2,
-			Offline("Offline") => 3,
-
-			_ => "Unknown byte {:#x} for a slot"
-		}
-	}
-
 	pub mod arrow_color {
 		/// A digimon effect's arrow color
 		enum ArrowColor
@@ -244,6 +231,7 @@ pub mod digivolve_effect;
 pub mod effect;
 pub mod effect_condition;
 pub mod moves; // Note: Can't be `move`, as it's a keyword
+pub mod slot;
 
 // Exports
 pub use arrow_color::ArrowColor;

@@ -33,6 +33,7 @@ use std::{
 	sync::Mutex,
 	time::{Duration, SystemTime},
 };
+use strum::IntoEnumIterator;
 
 fn main() {
 	// Crate the app and run it
@@ -637,7 +638,7 @@ fn render_slot(ui: &mut egui::Ui, cur_slot: &mut Slot) {
 	egui::ComboBox::from_id_source(cur_slot as *const _)
 		.selected_text(cur_slot.as_str())
 		.show_ui(ui, |ui| {
-			for &slot in Slot::ALL {
+			for slot in Slot::iter() {
 				ui.selectable_value(cur_slot, slot, slot.as_str());
 			}
 		});
