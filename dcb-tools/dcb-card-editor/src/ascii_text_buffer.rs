@@ -42,17 +42,11 @@ impl<const N: usize> AsRef<str> for AsciiTextBuffer<N> {
 //       as the byte index.
 impl<const N: usize> eframe::egui::widgets::TextBuffer for AsciiTextBuffer<N> {
 	fn insert_text(&mut self, text: &str, ch_idx: usize) -> usize {
-		let mut chars_inserted = 0;
-		for ch in text.chars() {
-			match AsciiChar::from_ascii(ch) {
-				Ok(ch) => match self.0.insert(ch_idx + chars_inserted, ch) {
-					Ok(_) => chars_inserted += 1,
-					Err(_) => break,
-				},
-				Err(_) => continue,
-			}
-		}
-		chars_inserted
+		text.chars()
+			.filter_map(|ch| AsciiChar::from_ascii(ch).ok())
+			.enumerate()
+			.take_while(|&(idx, ch)| self.0.insert(ch_idx + idx, ch).is_ok())
+			.count()
 	}
 
 	fn delete_text_range(&mut self, ch_range: std::ops::Range<usize>) {
