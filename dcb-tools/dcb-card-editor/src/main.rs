@@ -13,7 +13,7 @@ pub use ascii_text_buffer::AsciiTextBuffer;
 use anyhow::Context;
 use dcb::{
 	card::property::{
-		ArrowColor, AttackType, CrossMoveEffect, DigimonProperty, DigivolveEffect, Effect, EffectCondition,
+		ArrowColor, AttackType, CardType, CrossMoveEffect, DigimonProperty, DigivolveEffect, Effect, EffectCondition,
 		EffectConditionOperation, EffectOperation, Level, Move, PlayerType, Slot, Speciality,
 	},
 	CardTable,
@@ -29,6 +29,7 @@ use std::{
 	hash::{Hash, Hasher},
 	io::{self, Read, Seek},
 	lazy::SyncLazy,
+	ops::Range,
 	path::{Path, PathBuf},
 	sync::Mutex,
 	time::{Duration, SystemTime},
@@ -65,6 +66,9 @@ pub struct CardEditor {
 
 	/// All selected edit screens
 	open_edit_screens: Vec<EditScreen>,
+
+	/// swap screen
+	swap_screen: Option<SwapScreen>,
 }
 
 impl CardEditor {
@@ -110,20 +114,57 @@ impl CardEditor {
 		Ok(())
 	}
 
+	/// Returns the digimon's indexes
+	pub fn digimon_idxs(card_table: &CardTable) -> Range<usize> {
+		0..card_table.digimons.len()
+	}
+
+	/// Returns the item's indexes
+	pub fn item_idxs(card_table: &CardTable) -> Range<usize> {
+		card_table.digimons.len()..(card_table.digimons.len() + card_table.items.len())
+	}
+
+	/// Returns the digivolve's indexes
+	pub fn digivolve_idxs(card_table: &CardTable) -> Range<usize> {
+		(card_table.digimons.len() + card_table.items.len())..
+			(card_table.digimons.len() + card_table.items.len() + card_table.digivolves.len())
+	}
+
 	/// Returns a card given it's index
 	pub fn get_card_from_idx(card_table: &mut CardTable, idx: usize) -> Card {
 		let digimons_len = card_table.digimons.len();
 		let items_len = card_table.items.len();
-		let digivolves_len = card_table.digivolves.len();
 
-		if idx < digimons_len {
+		if Self::digimon_idxs(card_table).contains(&idx) {
 			Card::Digimon(&mut card_table.digimons[idx])
-		} else if idx < digimons_len + items_len {
+		} else if Self::item_idxs(card_table).contains(&idx) {
 			Card::Item(&mut card_table.items[idx - digimons_len])
-		} else if idx < digimons_len + items_len + digivolves_len {
+		} else if Self::digivolve_idxs(card_table).contains(&idx) {
 			Card::Digivolve(&mut card_table.digivolves[idx - digimons_len - items_len])
 		} else {
 			panic!("Invalid card index");
+		}
+	}
+
+	/// Swaps two cards in the card table
+	pub fn swap_cards(card_table: &mut CardTable, lhs_idx: usize, rhs_idx: usize) {
+		let digimon_idxs = Self::digimon_idxs(card_table);
+		let item_idxs = Self::item_idxs(card_table);
+		let digivolve_idxs = Self::digivolve_idxs(card_table);
+		let digimons_len = card_table.digimons.len();
+		let items_len = card_table.items.len();
+
+
+		if digimon_idxs.contains(&lhs_idx) && digimon_idxs.contains(&rhs_idx) {
+			card_table.digimons.swap(lhs_idx, rhs_idx);
+		} else if item_idxs.contains(&lhs_idx) && item_idxs.contains(&rhs_idx) {
+			card_table.items.swap(lhs_idx - digimons_len, rhs_idx - digimons_len);
+		} else if digivolve_idxs.contains(&lhs_idx) && digivolve_idxs.contains(&rhs_idx) {
+			card_table
+				.digivolves
+				.swap(lhs_idx - digimons_len - items_len, rhs_idx - digimons_len - items_len);
+		} else {
+			panic!("Invalid indexes {} & {}", lhs_idx, rhs_idx);
 		}
 	}
 }
@@ -136,6 +177,7 @@ impl Default for CardEditor {
 			card_table_hash:   None,
 			card_search:       String::new(),
 			open_edit_screens: vec![],
+			swap_screen:       None,
 		}
 	}
 }
@@ -148,6 +190,7 @@ impl epi::App for CardEditor {
 			card_table_hash,
 			card_search,
 			open_edit_screens,
+			swap_screen,
 		} = self;
 
 		// Top panel
@@ -207,8 +250,55 @@ impl epi::App for CardEditor {
 						frame.quit();
 					}
 				});
+
+				egui::menu::menu(ui, "Edit", |ui| {
+					if card_table.is_some() && ui.button("Swap").clicked() {
+						*swap_screen = Some(SwapScreen {
+							card_type: CardType::Digimon,
+							lhs_idx:   0,
+							rhs_idx:   0,
+						});
+					}
+				});
 			});
 		});
+
+		// Draw swap screen
+		if let (Some(screen), Some(card_table)) = (swap_screen.as_mut(), card_table.as_mut()) {
+			let mut close = false;
+			egui::Window::new("Swap screen").show(ctx, |ui| {
+				ui.horizontal(|ui| {
+					ui.label("Card type");
+					self::render_card_type(ui, &mut screen.card_type);
+				});
+
+				let range = match screen.card_type {
+					CardType::Digimon => Self::digimon_idxs(card_table),
+					CardType::Item => Self::item_idxs(card_table),
+					CardType::Digivolve => Self::digivolve_idxs(card_table),
+				};
+				screen.lhs_idx = screen.lhs_idx.clamp(range.start, range.end - 1);
+				screen.rhs_idx = screen.rhs_idx.clamp(range.start, range.end - 1);
+				let range = range.start..=(range.end - 1);
+
+				ui.horizontal(|ui| {
+					ui.label("Left");
+					ui.add(egui::Slider::new(&mut screen.lhs_idx, range.clone()));
+				});
+				ui.horizontal(|ui| {
+					ui.label("Right");
+					ui.add(egui::Slider::new(&mut screen.rhs_idx, range));
+				});
+				if ui.button("Swap").clicked() {
+					Self::swap_cards(card_table, screen.lhs_idx, screen.rhs_idx);
+					close = true;
+				}
+			});
+
+			if close {
+				*swap_screen = None;
+			}
+		}
 
 		egui::SidePanel::left("side_panel", 200.0).show(ctx, |ui| {
 			ui.heading("Card list");
@@ -227,6 +317,7 @@ impl epi::App for CardEditor {
 					.chain(card_table.items.iter().map(|item| item.name.as_str()))
 					.chain(card_table.digivolves.iter().map(|digivolve| digivolve.name.as_str()))
 					.enumerate()
+					.map(|(idx, name)| (idx, format!("{idx}. {name}")))
 					.filter(|(_, name)| self::contains_case_insensitive(name, card_search));
 
 				egui::ScrollArea::auto_sized().show(ui, |ui| {
@@ -330,6 +421,18 @@ impl epi::App for CardEditor {
 pub struct EditScreen {
 	/// Currently selected card
 	card_idx: usize,
+}
+
+/// A swap screen
+pub struct SwapScreen {
+	/// Card type
+	card_type: CardType,
+
+	/// Left idx
+	lhs_idx: usize,
+
+	/// Right idx
+	rhs_idx: usize,
 }
 
 /// Digimon, Item or digivolve
@@ -638,6 +741,17 @@ fn render_player_type(ui: &mut egui::Ui, cur_player: &mut PlayerType) {
 		.show_ui(ui, |ui| {
 			for player in PlayerType::iter() {
 				ui.selectable_value(cur_player, player, player.as_str());
+			}
+		});
+}
+
+/// Displays a card type
+fn render_card_type(ui: &mut egui::Ui, cur_card: &mut CardType) {
+	egui::ComboBox::from_id_source(cur_card as *const _)
+		.selected_text(cur_card.as_str())
+		.show_ui(ui, |ui| {
+			for card in CardType::iter() {
+				ui.selectable_value(cur_card, card, card.as_str());
 			}
 		});
 }
