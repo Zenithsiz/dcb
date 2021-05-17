@@ -22,5 +22,6 @@ members = [
 	"dcb-tools/model-set-extractor",
 	"dcb-tools/dcb-mkbin",
 	"dcb-tools/dcb-unbin",
+	"dcb-tools/dcb-unmsd",
 	"dcb-tools/dcb-card-editor",
 ]
