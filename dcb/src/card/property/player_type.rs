@@ -6,11 +6,11 @@
 #[derive(strum::IntoStaticStr, strum::Display, strum::EnumIter)]
 #[derive(dcb_bytes_derive::Discriminant)]
 pub enum PlayerType {
-	/// Opponent
-	Opponent = 0,
-
 	/// Player
-	Player   = 1,
+	Player   = 0,
+
+	/// Opponent
+	Opponent = 1,
 }
 
 impl PlayerType {
