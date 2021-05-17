@@ -14,6 +14,10 @@ dcb-cdrom-xa = { path = "../../dcb-cdrom-xa" }
 # Gui
 eframe = { git = "https://github.com/Zenithsiz/egui" }
 
+# Logging
+log = "0.4.14"
+simplelog = "0.10.0"
+
 # Error
 anyhow = "1.0.40"
 

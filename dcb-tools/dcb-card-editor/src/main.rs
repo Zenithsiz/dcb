@@ -36,6 +36,15 @@ use std::{
 use strum::IntoEnumIterator;
 
 fn main() {
+	// Initialize the logger
+	simplelog::TermLogger::init(
+		log::LevelFilter::Debug,
+		simplelog::Config::default(),
+		simplelog::TerminalMode::Stderr,
+		simplelog::ColorChoice::Auto,
+	)
+	.expect("Unable to initialize logger");
+
 	// Crate the app and run it
 	let app = CardEditor::default();
 	eframe::run_native(Box::new(app), NativeOptions::default());
