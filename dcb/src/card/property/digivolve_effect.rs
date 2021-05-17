@@ -6,61 +6,49 @@ use dcb_bytes::Bytes;
 /// A digivolve's effect
 #[derive(PartialEq, Eq, Clone, Copy, Hash, Debug)]
 #[derive(serde::Serialize, serde::Deserialize)]
+#[derive(strum::IntoStaticStr, strum::Display, strum::EnumIter)]
 pub enum DigivolveEffect {
 	/// Can digivolve regardless of own speciality,
 	/// level of digivolve points
+	#[strum(serialize = "Disregard speciality & level & dp")]
 	DisregardSpecialityLevelDP,
 
 	/// Can digivolve armor to champion or ultimate
+	#[strum(serialize = "Armor to champion or ultimate")]
 	ArmorToChampionUltimate,
 
 	/// Can digivolve regardless of speciality by adding 20 dp
+	#[strum(serialize = "Disregard speciality for 20 dp")]
 	DisregardSpecialityFor20DP,
 
 	/// Can digivolve at same level with dp, ignoring speciality
+	#[strum(serialize = "Same level without dp, ignoring speciality")]
 	SameLevelWithDPIgnoringSpeciality,
 
 	/// Can digivolve from rookie to ultimate
+	#[strum(serialize = "Rookie to ultimate")]
 	RookieToUltimate,
 
 	/// Downgrade armor to rookie
+	#[strum(serialize = "Downgrade armor to rookie")]
 	DowngradeArmorToRookie,
 
 	/// Can disregard dp.
 	/// Not possible in abnormal states
+	#[strum(serialize = "Disregard dp in non-abnormal states")]
 	DisregardDPInNonAbnormalStates,
 
 	/// Downgrade by a level.
 	/// Hp doubled when successful
+	#[strum(serialize = "Downgrade level with hp boost on success")]
 	DowngradeLevelWithHpBoostOnSuccess,
 }
 
 impl DigivolveEffect {
-	/// All of the effects
-	pub const ALL: &'static [Self] = &[
-		Self::DisregardSpecialityLevelDP,
-		Self::ArmorToChampionUltimate,
-		Self::DisregardSpecialityFor20DP,
-		Self::SameLevelWithDPIgnoringSpeciality,
-		Self::RookieToUltimate,
-		Self::DowngradeArmorToRookie,
-		Self::DisregardDPInNonAbnormalStates,
-		Self::DowngradeLevelWithHpBoostOnSuccess,
-	];
-
 	/// Return a script describing this effect
 	#[must_use]
-	pub const fn as_str(self) -> &'static str {
-		match self {
-			Self::DisregardSpecialityLevelDP => "Disregard speciality & level & dp",
-			Self::ArmorToChampionUltimate => "Armor to champion or ultimate",
-			Self::DisregardSpecialityFor20DP => "Disregard speciality for 20 dp",
-			Self::SameLevelWithDPIgnoringSpeciality => "Same level without dp, ignoring speciality",
-			Self::RookieToUltimate => "Rookie to ultimate",
-			Self::DowngradeArmorToRookie => "Downgrade armor to rookie",
-			Self::DisregardDPInNonAbnormalStates => "Disregard dp in non-abnormal states",
-			Self::DowngradeLevelWithHpBoostOnSuccess => "Downgrade level with hp boost on success",
-		}
+	pub fn as_str(self) -> &'static str {
+		self.into()
 	}
 }
 

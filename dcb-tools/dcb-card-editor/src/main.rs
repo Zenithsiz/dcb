@@ -560,7 +560,7 @@ fn render_attack_type(ui: &mut egui::Ui, cur_attack_type: &mut AttackType) {
 	egui::ComboBox::from_id_source(cur_attack_type as *const _)
 		.selected_text(cur_attack_type.as_str())
 		.show_ui(ui, |ui| {
-			for &attack_type in AttackType::ALL {
+			for attack_type in AttackType::iter() {
 				ui.selectable_value(cur_attack_type, attack_type, attack_type.as_str());
 			}
 		});
@@ -571,7 +571,7 @@ fn render_speciality(ui: &mut egui::Ui, cur_speciality: &mut Speciality) {
 	egui::ComboBox::from_id_source(cur_speciality as *const _)
 		.selected_text(cur_speciality.as_str())
 		.show_ui(ui, |ui| {
-			for &speciality in Speciality::ALL {
+			for speciality in Speciality::iter() {
 				ui.selectable_value(cur_speciality, speciality, speciality.as_str());
 			}
 		});
@@ -582,7 +582,7 @@ fn render_level(ui: &mut egui::Ui, cur_level: &mut Level) {
 	egui::ComboBox::from_id_source(cur_level as *const _)
 		.selected_text(cur_level.as_str())
 		.show_ui(ui, |ui| {
-			for &level in Level::ALL {
+			for level in Level::iter() {
 				ui.selectable_value(cur_level, level, level.as_str());
 			}
 		});
@@ -594,7 +594,7 @@ fn render_arrow_color_opt(ui: &mut egui::Ui, cur_color: &mut Option<ArrowColor>)
 	egui::ComboBox::from_id_source(cur_color as *const _)
 		.selected_text(to_str(*cur_color))
 		.show_ui(ui, |ui| {
-			for color in ArrowColor::ALL.iter().copied().map(Some).chain(std::iter::once(None)) {
+			for color in ArrowColor::iter().map(Some).chain(std::iter::once(None)) {
 				ui.selectable_value(cur_color, color, to_str(color));
 			}
 		});
@@ -605,7 +605,7 @@ fn render_effect_condition_operation(ui: &mut egui::Ui, cur_op: &mut EffectCondi
 	egui::ComboBox::from_id_source(cur_op as *const _)
 		.selected_text(cur_op.as_str())
 		.show_ui(ui, |ui| {
-			for &op in EffectConditionOperation::ALL {
+			for op in EffectConditionOperation::iter() {
 				ui.selectable_value(cur_op, op, op.as_str());
 			}
 		});
@@ -616,7 +616,7 @@ fn render_effect_operation(ui: &mut egui::Ui, cur_op: &mut EffectOperation) {
 	egui::ComboBox::from_id_source(cur_op as *const _)
 		.selected_text(cur_op.as_str())
 		.show_ui(ui, |ui| {
-			for &op in EffectOperation::ALL {
+			for op in EffectOperation::iter() {
 				ui.selectable_value(cur_op, op, op.as_str());
 			}
 		});
@@ -627,7 +627,7 @@ fn render_player_type(ui: &mut egui::Ui, cur_player: &mut PlayerType) {
 	egui::ComboBox::from_id_source(cur_player as *const _)
 		.selected_text(cur_player.as_str())
 		.show_ui(ui, |ui| {
-			for &player in PlayerType::ALL {
+			for player in PlayerType::iter() {
 				ui.selectable_value(cur_player, player, player.as_str());
 			}
 		});
@@ -649,7 +649,7 @@ fn render_digivolve_effect(ui: &mut egui::Ui, cur_effect: &mut DigivolveEffect) 
 	egui::ComboBox::from_id_source(cur_effect as *const _)
 		.selected_text(cur_effect.as_str())
 		.show_ui(ui, |ui| {
-			for &effect in DigivolveEffect::ALL {
+			for effect in DigivolveEffect::iter() {
 				ui.selectable_value(cur_effect, effect, effect.as_str());
 			}
 		});
@@ -668,9 +668,8 @@ fn render_digimon_property(ui: &mut egui::Ui, cur_property: &mut DigimonProperty
 			ui.text_edit_singleline(&mut *search);
 			ui.separator();
 
-			let properties = DigimonProperty::ALL
-				.iter()
-				.map(|&property| (property, property.as_str()))
+			let properties = DigimonProperty::iter()
+				.map(|property| (property, property.as_str()))
 				.filter(|(_, name)| self::contains_case_insensitive(name, &*search));
 
 			for (property, name) in properties {
@@ -698,9 +697,7 @@ fn render_digimon_property_opt(ui: &mut egui::Ui, cur_property: &mut Option<Digi
 			ui.text_edit_singleline(&mut *search);
 			ui.separator();
 
-			let properties = DigimonProperty::ALL
-				.iter()
-				.copied()
+			let properties = DigimonProperty::iter()
 				.map(Some)
 				.chain(std::iter::once(None))
 				.map(|property| (property, TO_STR(property)))
