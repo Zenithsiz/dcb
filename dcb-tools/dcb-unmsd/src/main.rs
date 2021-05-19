@@ -166,7 +166,14 @@ impl State {
 			(State::Menu { menu, buttons }, Command::FinishMenu) => {
 				println!(
 					"menu {menu:?}, {}",
-					buttons.iter().map(|button| button.as_str()).format(", ")
+					buttons
+						.iter()
+						.map(|button| dcb_util::DisplayWrapper::new(move |f| write!(
+							f,
+							"\"{}\"",
+							button.as_str().escape_debug()
+						)))
+						.format(", ")
 				);
 
 				*self = State::Start;
