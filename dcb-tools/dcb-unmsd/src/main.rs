@@ -19,7 +19,7 @@ use anyhow::Context;
 use byteorder::{ByteOrder, LittleEndian};
 use cli::CliData;
 use itertools::Itertools;
-use std::fs;
+use std::{collections::HashMap, convert::TryInto, fs};
 
 
 fn main() -> Result<(), anyhow::Error> {
@@ -45,6 +45,10 @@ fn main() -> Result<(), anyhow::Error> {
 		.iter()
 		.batching(|it| {
 			let pos = it.as_slice().as_ptr() as usize - contents.as_slice().as_ptr() as usize;
+			let pos = match pos.try_into() {
+				Ok(pos) => pos,
+				Err(_) => return Some(Err(anyhow::anyhow!("Position {:#x} didn't fit into a `u32`", pos))),
+			};
 			match Command::parse(it.as_slice()) {
 				Some(command) => {
 					it.advance_by(command.size())
@@ -66,10 +70,28 @@ fn main() -> Result<(), anyhow::Error> {
 
 	log::info!("Found {} commands", commands.len());
 
+	// Get all jumps
+	let mut last_label_number = 0;
+	let labels: HashMap<u32, String> = commands
+		.iter()
+		.filter_map(|(_, command)| match *command {
+			Command::Jump { addr, .. } => {
+				let num = last_label_number;
+				last_label_number += 1;
+				Some((addr, format!("label_{num}")))
+			},
+			_ => None,
+		})
+		.collect();
+
 	let mut state = State::Start;
 	for (pos, command) in commands {
+		if let Some(label) = labels.get(&pos) {
+			println!("{label}:");
+		};
+
 		state
-			.parse_next(command)
+			.parse_next(&labels, command)
 			.with_context(|| format!("Unable to parse command at {pos:#010x} in current context"))?;
 	}
 
@@ -96,7 +118,7 @@ pub enum State {
 
 impl State {
 	/// Parses the next command
-	pub fn parse_next(&mut self, command: Command) -> Result<(), anyhow::Error> {
+	pub fn parse_next(&mut self, labels: &HashMap<u32, String>, command: Command) -> Result<(), anyhow::Error> {
 		match (&mut *self, command) {
 			(State::Start, Command::DisplayBuffer) => println!("display_buffer"),
 			(State::Start, Command::WaitInput) => println!("wait_input"),
@@ -126,8 +148,9 @@ impl State {
 			) => {
 				println!("menu_choice_offsets {value0:#x}, {kind:#x}, {value1:#x}, {value2:#x}")
 			},
-			(State::Start, Command::Jump { value, kind, addr }) => {
-				println!("jump {value:#x}, {kind:#x}, {addr:#010x}")
+			(State::Start, Command::Jump { value, kind, addr }) => match labels.get(&addr) {
+				Some(label) => println!("jump {value:#x}, {kind:#x}, {label}"),
+				None => println!("jump {value:#x}, {kind:#x}, {addr:#010x}"),
 			},
 			(State::Start, Command::Unknown0a { value, kind }) => println!("unknown_0a {value:#x}, {kind:#x}"),
 			(State::Start, Command::OpenMenu { menu }) => *self = State::Menu { menu, buttons: vec![] },
