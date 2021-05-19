@@ -68,18 +68,18 @@ fn main() -> Result<(), anyhow::Error> {
 
 	let mut state = State::Start;
 	for (pos, command) in commands {
-		print!("{pos:#010x}: ");
-
 		state
 			.parse_next(command)
-			.context("Unable to parse command in current context")?;
+			.with_context(|| format!("Unable to parse command at {pos:#010x} in current context"))?;
 	}
+
+	state.finish().context("Unable to finish state")?;
 
 	Ok(())
 }
 
 /// State
-#[derive(PartialEq, Clone, Copy, Debug)]
+#[derive(PartialEq, Clone, Debug)]
 pub enum State {
 	/// Start
 	Start,
@@ -88,13 +88,16 @@ pub enum State {
 	Menu {
 		/// Current menu
 		menu: Menu,
+
+		/// All buttons
+		buttons: Vec<MenuButton>,
 	},
 }
 
 impl State {
 	/// Parses the next command
 	pub fn parse_next(&mut self, command: Command) -> Result<(), anyhow::Error> {
-		match (*self, command) {
+		match (&mut *self, command) {
 			(State::Start, Command::DisplayBuffer) => println!("display_buffer"),
 			(State::Start, Command::WaitInput) => println!("wait_input"),
 			(State::Start, Command::NewScreen) => println!("new_screen"),
@@ -127,10 +130,7 @@ impl State {
 				println!("jump {value:#x}, {kind:#x}, {addr:#010x}")
 			},
 			(State::Start, Command::Unknown0a { value, kind }) => println!("unknown_0a {value:#x}, {kind:#x}"),
-			(State::Start, Command::OpenMenu { menu }) => {
-				*self = State::Menu { menu };
-				println!("open_menu {menu:?}")
-			},
+			(State::Start, Command::OpenMenu { menu }) => *self = State::Menu { menu, buttons: vec![] },
 			(State::Start, Command::DisplayScene { value0, deck_id }) => match (value0, deck_id) {
 				(0x2, _) => println!("battle {deck_id:#x}"),
 
@@ -156,11 +156,15 @@ impl State {
 				(0x0, 0x1, 0xa) => println!("set_light_right_char {brightness:#x}"),
 				_ => println!("set_light {kind:#x}, {place:#x}, {brightness:#x}, {value:#x}"),
 			},
-			(State::Menu { .. }, Command::FinishMenu) => {
+			(State::Menu { menu, buttons }, Command::FinishMenu) => {
+				println!(
+					"menu {menu:?}, {}",
+					buttons.iter().map(|button| button.as_str()).format(", ")
+				);
+
 				*self = State::Start;
-				println!("finish_menu");
 			},
-			(State::Menu { menu }, Command::AddMenuOption { button }) => {
+			(State::Menu { menu, buttons }, Command::AddMenuOption { button }) => {
 				anyhow::ensure!(
 					menu.supports_button(button),
 					"Menu {:?} doesn't support button \"{}\"",
@@ -168,7 +172,7 @@ impl State {
 					button.as_str()
 				);
 
-				println!("\tadd_menu_option \"{}\"", button.as_str().escape_debug())
+				buttons.push(button)
 			},
 			(_, Command::FinishMenu) => anyhow::bail!("Can only call `finish_menu` when mid-menu"),
 			(_, Command::AddMenuOption { .. }) => anyhow::bail!("Can only call `add_menu_option` when mid-menu"),
@@ -176,6 +180,14 @@ impl State {
 			(State::Menu { .. }, command) => anyhow::bail!("Cannot execute command {:?} mid-menu", command),
 		}
 		Ok(())
+	}
+
+	/// Drops this state
+	pub fn finish(self) -> Result<(), anyhow::Error> {
+		match self {
+			State::Start => Ok(()),
+			State::Menu { .. } => anyhow::bail!("Must call `finish_menu` to finish menu"),
+		}
 	}
 }
 
