@@ -275,6 +275,33 @@ pub enum MenuButton {
 }
 
 impl MenuButton {
+	fn parse(value: u16) -> Option<Self> {
+		let button = match value {
+			0x0 => Self::PlayerRoom,
+			0x1 => Self::Menu,
+			0x2 => Self::BattleCafe,
+			0x3 => Self::BattleArena,
+			0x4 => Self::ExtraArena,
+			0x5 => Self::BeetArena,
+			0x6 => Self::HauntedArena,
+			0x7 => Self::FusionShop,
+			0x8 => Self::Yes,
+			0x9 => Self::No,
+			0x0c => Self::Talk,
+			0x0d => Self::Battle,
+			0x0e => Self::DeckData,
+			0x0f => Self::Save,
+			0x10 => Self::Yes,
+			0x11 => Self::No,
+			0x12 => Self::Cards,
+			0x13 => Self::Partner,
+			_ => return None,
+		};
+		Some(button)
+	}
+}
+
+impl MenuButton {
 	/// Returns a string representing this button
 	pub fn as_str(self) -> &'static str {
 		match self {
@@ -440,27 +467,7 @@ impl<'a> Command<'a> {
 				}
 				let value = LittleEndian::read_u16(slice.get(0x6..0x8)?);
 
-				let button = match value {
-					0x0 => MenuButton::PlayerRoom,
-					0x1 => MenuButton::Menu,
-					0x2 => MenuButton::BattleCafe,
-					0x3 => MenuButton::BattleArena,
-					0x4 => MenuButton::ExtraArena,
-					0x5 => MenuButton::BeetArena,
-					0x6 => MenuButton::HauntedArena,
-					0x7 => MenuButton::FusionShop,
-					0x8 => MenuButton::Yes,
-					0x9 => MenuButton::No,
-					0x0c => MenuButton::Talk,
-					0x0d => MenuButton::Battle,
-					0x0e => MenuButton::DeckData,
-					0x0f => MenuButton::Save,
-					0x10 => MenuButton::Yes,
-					0x11 => MenuButton::No,
-					0x12 => MenuButton::Cards,
-					0x13 => MenuButton::Partner,
-					_ => return None,
-				};
+				let button = MenuButton::parse(value)?;
 
 				Self::AddMenuOption { button }
 			},
