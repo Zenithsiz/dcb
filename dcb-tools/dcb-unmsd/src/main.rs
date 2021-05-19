@@ -7,7 +7,8 @@
 	bool_to_option,
 	assert_matches,
 	exact_size_is_empty,
-	iter_advance_by
+	iter_advance_by,
+	try_blocks
 )]
 
 // Modules
@@ -93,7 +94,7 @@ pub enum State {
 impl State {
 	/// Parses the next command
 	pub fn parse_next(&mut self, command: Command) -> Result<(), anyhow::Error> {
-		match (&*self, command) {
+		match (*self, command) {
 			(State::Start, Command::DisplayBuffer) => println!("display_buffer"),
 			(State::Start, Command::WaitInput) => println!("wait_input"),
 			(State::Start, Command::NewScreen) => println!("new_screen"),
@@ -159,8 +160,10 @@ impl State {
 				*self = State::Start;
 				println!("finish_menu");
 			},
-			(State::Menu { .. }, Command::AddMenuOption { value }) => {
-				println!("\tadd_menu_option {value:#x}");
+			(State::Menu { menu }, Command::AddMenuOption { button }) => {
+				anyhow::ensure!(button.menu() == menu, "Menu button didn't match current menu");
+
+				println!("\tadd_menu_option \"{}\"", button.as_str().escape_debug())
 			},
 			(_, Command::FinishMenu) => anyhow::bail!("Can only call `finish_menu` when mid-menu"),
 			(_, Command::AddMenuOption { .. }) => anyhow::bail!("Can only call `add_menu_option` when mid-menu"),
@@ -176,6 +179,79 @@ impl State {
 pub enum Menu {
 	Three,
 	Five,
+}
+
+/// Menu buttons
+#[derive(PartialEq, Clone, Copy, Debug)]
+pub enum MenuButton {
+	PlayerRoom   = 0x0,
+	Menu         = 0x1,
+	BattleCafe   = 0x2,
+	BattleArena  = 0x3,
+	ExtraArena   = 0x4,
+	BeetArena    = 0x5,
+	HauntedArena = 0x6,
+	FusionShop   = 0x7,
+	Yes5         = 0x8,
+	No5          = 0x9,
+	Talk         = 0x0c,
+	Battle       = 0x0d,
+	DeckData     = 0x0e,
+	Save         = 0x0f,
+	Yes3         = 0x10,
+	No3          = 0x11,
+	Cards        = 0x12,
+	Partner      = 0x13,
+}
+
+impl MenuButton {
+	/// Returns a string representing this button
+	pub fn as_str(self) -> &'static str {
+		match self {
+			Self::PlayerRoom => "Player's room",
+			Self::Menu => "Menu",
+			Self::BattleCafe => "Battle Cafe",
+			Self::BattleArena => "Battle Arena",
+			Self::ExtraArena => "Extra Arena",
+			Self::BeetArena => "Beet Arena",
+			Self::HauntedArena => "Haunted Arena",
+			Self::FusionShop => "Fusion shop",
+			Self::Yes5 => "Yes",
+			Self::No5 => "No",
+			Self::Talk => "Talk",
+			Self::Battle => "Battle",
+			Self::DeckData => "DeckData",
+			Self::Save => "Save",
+			Self::Yes3 => "Yes",
+			Self::No3 => "No",
+			Self::Cards => "Cards",
+			Self::Partner => "Partner",
+		}
+	}
+
+	/// Returns which menu this button may be used in
+	pub fn menu(self) -> Menu {
+		match self {
+			Self::PlayerRoom |
+			Self::Menu |
+			Self::BattleCafe |
+			Self::BattleArena |
+			Self::ExtraArena |
+			Self::BeetArena |
+			Self::HauntedArena |
+			Self::FusionShop |
+			Self::Yes5 |
+			Self::No5 => Menu::Five,
+			Self::Talk |
+			Self::Battle |
+			Self::DeckData |
+			Self::Save |
+			Self::Yes3 |
+			Self::No3 |
+			Self::Cards |
+			Self::Partner => Menu::Three,
+		}
+	}
 }
 
 /// Command
@@ -222,7 +298,7 @@ pub enum Command<'a> {
 	OpenMenu { menu: Menu },
 
 	/// Add menu option
-	AddMenuOption { value: u16 },
+	AddMenuOption { button: MenuButton },
 
 	/// Display scene
 	DisplayScene { value0: u8, deck_id: u16 },
@@ -320,29 +396,29 @@ impl<'a> Command<'a> {
 				}
 				let value = LittleEndian::read_u16(slice.get(0x6..0x8)?);
 
-				// value: Seems to depend on where you execute it?
-				//        Likely depends on what menu you're on
-
-				/*
-				let s = || {
-					let s = match value {
-						0x0 => "Player's room",
-						0x1 => "Menu",
-						0x2 => "Battle Cafe",
-						0x3 => "Battle Arena",
-						0x4 => "Extra Arena",
-						0x5 => "Beet Arena",
-						0x6 => "Haunted Arena",
-						0x7 => "Fusion shop",
-						0x8 => "Yes",
-						0x9 => "No",
-						_ => return None,
-					};
-					Some(s)
+				let button = match value {
+					0x0 => MenuButton::PlayerRoom,
+					0x1 => MenuButton::Menu,
+					0x2 => MenuButton::BattleCafe,
+					0x3 => MenuButton::BattleArena,
+					0x4 => MenuButton::ExtraArena,
+					0x5 => MenuButton::BeetArena,
+					0x6 => MenuButton::HauntedArena,
+					0x7 => MenuButton::FusionShop,
+					0x8 => MenuButton::Yes5,
+					0x9 => MenuButton::No5,
+					0x0c => MenuButton::Talk,
+					0x0d => MenuButton::Battle,
+					0x0e => MenuButton::DeckData,
+					0x0f => MenuButton::Save,
+					0x10 => MenuButton::Yes3,
+					0x11 => MenuButton::No3,
+					0x12 => MenuButton::Cards,
+					0x13 => MenuButton::Partner,
+					_ => return None,
 				};
-				*/
 
-				Self::AddMenuOption { value }
+				Self::AddMenuOption { button }
 			},
 			// Display scene?
 			[0x0b, 0x0, value0, 0x0] => {
