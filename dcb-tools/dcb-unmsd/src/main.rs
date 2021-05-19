@@ -1,7 +1,14 @@
 //! `.Msd` extractor
 
 // Features
-#![feature(array_chunks, format_args_capture, bool_to_option, assert_matches)]
+#![feature(
+	array_chunks,
+	format_args_capture,
+	bool_to_option,
+	assert_matches,
+	exact_size_is_empty,
+	iter_advance_by
+)]
 
 // Modules
 mod cli;
@@ -10,6 +17,7 @@ mod cli;
 use anyhow::Context;
 use byteorder::{ByteOrder, LittleEndian};
 use cli::CliData;
+use itertools::Itertools;
 use std::fs;
 
 
@@ -31,167 +39,395 @@ fn main() -> Result<(), anyhow::Error> {
 	// Skip header
 	contents.drain(..0x10);
 
-	let mut iter = contents.iter();
-	loop {
-		let pos = iter.as_slice().as_ptr() as usize - contents.as_slice().as_ptr() as usize;
+	// Parse all commands
+	let commands = contents
+		.iter()
+		.batching(|it| {
+			let pos = it.as_slice().as_ptr() as usize - contents.as_slice().as_ptr() as usize;
+			match Command::parse(it.as_slice()) {
+				Some(command) => {
+					it.advance_by(command.size())
+						.expect("Iterator had less elements than size of command");
+					Some(Ok((pos, command)))
+				},
+				None => match it.is_empty() {
+					true => None,
+					false => Some(Err(anyhow::anyhow!(
+						"Unable to parse command at {:#010x}: {:?}",
+						pos,
+						&it.as_slice()[..4]
+					))),
+				},
+			}
+		})
+		.collect::<Result<Vec<_>, anyhow::Error>>()
+		.context("Unable to parse commands")?;
+
+	log::info!("Found {} commands", commands.len());
+
+	let mut state = State::Start;
+	for (pos, command) in commands {
 		print!("{pos:#010x}: ");
 
-		match parse_command(iter.by_ref().copied()) {
-			Some(()) => continue,
-			None => break,
-		}
+		state
+			.parse_next(command)
+			.context("Unable to parse command in current context")?;
 	}
-
-	assert_eq!(iter.next(), None);
 
 	Ok(())
 }
 
-/// Parses the next command
-pub fn parse_command(mut iter: impl Iterator<Item = u8>) -> Option<()> {
-	match [iter.next()?, iter.next()?, iter.next()?, iter.next()?] {
-		[0x0a, 0x0, 0x4, 0x0] => println!("display_buffer"),
-		[0x0a, 0x0, 0x5, 0x0] => println!("wait_input"),
-		[0x0a, 0x0, 0x6, 0x0] => println!("new_screen"),
-		[0x0a, 0x0, 0x1, 0x0] => println!("finish_menu"),
-		[0x0a, 0x0, value, kind] => println!("unknown_0a {value:#x}, {kind:#x}"),
+/// State
+#[derive(PartialEq, Clone, Copy, Debug)]
+pub enum State {
+	/// Start
+	Start,
 
-		// Set buffer
-		[0x08, 0x0, kind, 0x0] => {
-			match kind {
-				0x4 => print!("set_text_buffer \""),
-				_ => print!("set_buffer {kind:#x}, \""),
-			}
-			let len = LittleEndian::read_u16(&[iter.next()?, iter.next()?]);
-			for n in 0..len {
-				let is_last = n == len - 1;
+	/// Menu
+	Menu {
+		/// Current menu
+		menu: Menu,
+	},
+}
 
-				match (iter.next()?, is_last) {
-					(0, true) => break,
-					(0, false) => log::warn!("Found null in non-last position of string"),
-					(ch, true) => log::warn!("Found non-null {ch:#x} in last position of string"),
-					(ch, false) => print!("{}", ch as char),
-				}
-			}
-
-			let pad_len = match (len + 2) % 4 {
-				0 => 0,
-				n => 4 - n,
-			};
-			for _ in 0..pad_len {
-				iter.next()?;
-			}
-
-			println!("\"");
-		},
-
-		// Set brightness
-		[0x0d, 0x0, kind, 0x0] => {
-			skip_0(&mut iter)?;
-			skip_0(&mut iter)?;
-			let place = LittleEndian::read_u16(&[iter.next()?, iter.next()?]);
-			skip_0(&mut iter)?;
-			skip_0(&mut iter)?;
-			let brightness = LittleEndian::read_u16(&[iter.next()?, iter.next()?]);
-			skip_0(&mut iter)?;
-			skip_0(&mut iter)?;
-			let value = LittleEndian::read_u16(&[iter.next()?, iter.next()?]);
-
-			match (kind, place, value) {
-				(0x0, 0x0, 0xa) => println!("set_light_left_char {brightness:#x}"),
-				(0x0, 0x1, 0xa) => println!("set_light_right_char {brightness:#x}"),
-				_ => println!("set_light {kind:#x}, {place:#x}, {brightness:#x}, {value:#x}"),
-			}
-		},
-
-		// Open menu
-		[0x0b, 0x0, 0x0, 0x0] => {
-			skip_0(&mut iter)?;
-			skip_0(&mut iter)?;
-			let value = LittleEndian::read_u16(&[iter.next()?, iter.next()?]);
-
-			// value: 0x61 0x78
-
-			println!("open_menu {value:#x}");
-		},
-		[0x0b, 0x0, 0x1, 0x0] => {
-			skip_0(&mut iter)?;
-			skip_0(&mut iter)?;
-			let value = LittleEndian::read_u16(&[iter.next()?, iter.next()?]);
-
-			println!("add_menu_option {value:#x}")
-		},
-
-		// Choice jump
-		[0x09, 0x0, value0, kind] => {
-			let value1 = LittleEndian::read_u32(&[iter.next()?, iter.next()?, iter.next()?, iter.next()?]);
-			let value2 = LittleEndian::read_u32(&[iter.next()?, iter.next()?, iter.next()?, iter.next()?]);
-
-			// value1: 0x3 0x5
-			// kind: 0x0 0x1
-
-			// value1: If 0x3, then buttons work normally
-			// value1: If 0x1, then buttons work reverse
-			// value1: If 0x5, they both choose "No"
-			// value1: If 0x7, they both choose "Yes"
-
-			// value2: If 0x0, they both choose "No"
-
-			println!("menu_choice_offsets {value0:#x}, {kind:#x}, {value1:#x}, {value2:#x}")
-		},
-
-		// Jump?
-		[0x05, 0x0, value, kind] => {
-			let addr = LittleEndian::read_u32(&[iter.next()?, iter.next()?, iter.next()?, iter.next()?]);
-
-			println!("jump {value:#x}, {kind:#x}, {addr:#010x}");
-		},
-
-		// Display scene?
-		[0x0b, 0x0, value0, 0x0] => {
-			skip_0(&mut iter)?;
-			skip_0(&mut iter)?;
-			let deck_id = LittleEndian::read_u16(&[iter.next()?, iter.next()?]);
-
-			// value0: 0x2 0x3 0x4 0x6 0x7 0x8 0x9 0xa 0xc 0xd 0xe 0xf 0x10 0x11 0x12 0x13 0x14 0x15
-
-			match (value0, deck_id) {
+impl State {
+	/// Parses the next command
+	pub fn parse_next(&mut self, command: Command) -> Result<(), anyhow::Error> {
+		match (&*self, command) {
+			(State::Start, Command::DisplayBuffer) => println!("display_buffer"),
+			(State::Start, Command::WaitInput) => println!("wait_input"),
+			(State::Start, Command::NewScreen) => println!("new_screen"),
+			(State::Start, Command::SetValue { var, value0, value1 }) => {
+				println!("set_value {var:#x}, {value0:#x}, {value1:#x}")
+			},
+			(
+				State::Start,
+				Command::Unknown07 {
+					value0,
+					kind,
+					value1,
+					value2,
+				},
+			) => {
+				println!("unknown_07 {value0:#x}, {kind:#x}, {value1:#x}, {value2:#x}")
+			},
+			(
+				State::Start,
+				Command::ChoiceJump {
+					value0,
+					kind,
+					value1,
+					value2,
+				},
+			) => {
+				println!("menu_choice_offsets {value0:#x}, {kind:#x}, {value1:#x}, {value2:#x}")
+			},
+			(State::Start, Command::Jump { value, kind, addr }) => {
+				println!("jump {value:#x}, {kind:#x}, {addr:#010x}")
+			},
+			(State::Start, Command::Unknown0a { value, kind }) => println!("unknown_0a {value:#x}, {kind:#x}"),
+			(State::Start, Command::OpenMenu { menu }) => {
+				*self = State::Menu { menu };
+				println!("open_menu {menu:?}")
+			},
+			(State::Start, Command::DisplayScene { value0, deck_id }) => match (value0, deck_id) {
 				(0x2, _) => println!("battle {deck_id:#x}"),
 
 				(0xf, 0x81) => println!("battle1"),
 				(0xe, 0x3c) => println!("battle2"),
 
 				_ => println!("display_scene {value0:#x}, {deck_id:#x}"),
-			}
-		},
+			},
+			(State::Start, Command::SetBuffer { kind, bytes }) => match kind {
+				0x4 => println!("set_text_buffer {bytes:?}"),
+				_ => println!("set_buffer {kind:#x} {bytes:?}"),
+			},
+			(
+				State::Start,
+				Command::SetBrightness {
+					kind,
+					place,
+					brightness,
+					value,
+				},
+			) => match (kind, place, value) {
+				(0x0, 0x0, 0xa) => println!("set_light_left_char {brightness:#x}"),
+				(0x0, 0x1, 0xa) => println!("set_light_right_char {brightness:#x}"),
+				_ => println!("set_light {kind:#x}, {place:#x}, {brightness:#x}, {value:#x}"),
+			},
+			(State::Menu { .. }, Command::FinishMenu) => {
+				*self = State::Start;
+				println!("finish_menu");
+			},
+			(State::Menu { .. }, Command::AddMenuOption { value }) => {
+				println!("\tadd_menu_option {value:#x}");
+			},
+			(_, Command::FinishMenu) => anyhow::bail!("Can only call `finish_menu` when mid-menu"),
+			(_, Command::AddMenuOption { .. }) => anyhow::bail!("Can only call `add_menu_option` when mid-menu"),
 
-		// Set variable
-		[0x07, 0x0, var, 0x0] => {
-			let value0 = LittleEndian::read_u32(&[iter.next()?, iter.next()?, iter.next()?, iter.next()?]);
-			let value1 = LittleEndian::read_u32(&[iter.next()?, iter.next()?, iter.next()?, iter.next()?]);
-
-			println!("set_value {var:#x}, {value0:#x}, {value1:#x}");
-		},
-
-		// ??
-		[0x07, 0x0, value0, kind] => {
-			let value1 = LittleEndian::read_u32(&[iter.next()?, iter.next()?, iter.next()?, iter.next()?]);
-			let value2 = LittleEndian::read_u32(&[iter.next()?, iter.next()?, iter.next()?, iter.next()?]);
-
-			println!("unknown_07 {value0:#x}, {kind:#x}, {value1:#x}, {value2:#x}");
-		},
-
-		[a, b, c, d] => println!("--- {a:02x} {b:02x} {c:02x} {d:02x}"),
+			(State::Menu { .. }, command) => anyhow::bail!("Cannot execute command {:?} mid-menu", command),
+		}
+		Ok(())
 	}
-
-	Some(())
 }
 
-fn skip_0(iter: &mut impl Iterator<Item = u8>) -> Option<()> {
-	match iter.next()? {
-		0 => (),
-		x => log::warn!("Found non-zero value: {x:#x}"),
-	};
+/// Menu
+#[derive(PartialEq, Clone, Copy, Debug)]
+pub enum Menu {
+	Three,
+	Five,
+}
 
-	Some(())
+/// Command
+#[derive(PartialEq, Clone, Debug)]
+pub enum Command<'a> {
+	/// Display buffer
+	DisplayBuffer,
+
+	/// Wait for input
+	WaitInput,
+
+	/// New screen
+	NewScreen,
+
+	/// Finish menu
+	FinishMenu,
+
+	/// Set value
+	SetValue { var: u8, value0: u32, value1: u32 },
+
+	/// Unknown07
+	Unknown07 {
+		value0: u8,
+		kind:   u8,
+		value1: u32,
+		value2: u32,
+	},
+
+	/// Choice jump
+	ChoiceJump {
+		value0: u8,
+		kind:   u8,
+		value1: u32,
+		value2: u32,
+	},
+
+	/// Jump
+	Jump { value: u8, kind: u8, addr: u32 },
+
+	/// Unknown 0a
+	Unknown0a { value: u8, kind: u8 },
+
+	/// Open menu
+	OpenMenu { menu: Menu },
+
+	/// Add menu option
+	AddMenuOption { value: u16 },
+
+	/// Display scene
+	DisplayScene { value0: u8, deck_id: u16 },
+
+	/// Set buffer
+	SetBuffer { kind: u8, bytes: &'a [u8] },
+
+	/// Set brightness
+	SetBrightness {
+		kind:       u8,
+		place:      u16,
+		brightness: u16,
+		value:      u16,
+	},
+}
+
+impl<'a> Command<'a> {
+	/// Parses a command
+	pub fn parse(slice: &'a [u8]) -> Option<Self> {
+		let command = match *slice.get(..0x4)? {
+			[0x0a, 0x0, 0x4, 0x0] => Self::DisplayBuffer,
+			[0x0a, 0x0, 0x5, 0x0] => Self::WaitInput,
+			[0x0a, 0x0, 0x6, 0x0] => Self::NewScreen,
+			[0x0a, 0x0, 0x1, 0x0] => Self::FinishMenu,
+			[0x0a, 0x0, value, kind] => Self::Unknown0a { value, kind },
+
+			// Set variable
+			[0x07, 0x0, var, 0x0] => {
+				let value0 = LittleEndian::read_u32(slice.get(0x4..0x8)?);
+				let value1 = LittleEndian::read_u32(slice.get(0x8..0xc)?);
+
+				Self::SetValue { var, value0, value1 }
+			},
+			[0x07, 0x0, value0, kind] => {
+				let value1 = LittleEndian::read_u32(slice.get(0x4..0x8)?);
+				let value2 = LittleEndian::read_u32(slice.get(0x8..0xc)?);
+
+				Self::Unknown07 {
+					value0,
+					kind,
+					value1,
+					value2,
+				}
+			},
+
+			// Choice jump
+			[0x09, 0x0, value0, kind] => {
+				let value1 = LittleEndian::read_u32(slice.get(0x4..0x8)?);
+				let value2 = LittleEndian::read_u32(slice.get(0x8..0xc)?);
+
+				// value1: 0x3 0x5
+				// kind: 0x0 0x1
+
+				// value1: If 0x3, then buttons work normally
+				// value1: If 0x1, then buttons work reverse
+				// value1: If 0x5, they both choose "No"
+				// value1: If 0x7, they both choose "Yes"
+
+				// value2: If 0x0, they both choose "No"
+
+				Self::ChoiceJump {
+					value0,
+					kind,
+					value1,
+					value2,
+				}
+			},
+
+			// Jump?
+			[0x05, 0x0, value, kind] => {
+				let addr = LittleEndian::read_u32(slice.get(0x4..0x8)?);
+
+				Self::Jump { value, kind, addr }
+			},
+
+			// Open menu
+			[0x0b, 0x0, 0x0, 0x0] => {
+				if slice.get(0x4..0x6)? != [0x0, 0x0] {
+					return None;
+				}
+				let value = LittleEndian::read_u16(slice.get(0x6..0x8)?);
+
+				// value: 0x61 0x78
+				let menu = match value {
+					0x61 => Menu::Three,
+					0x78 => Menu::Five,
+					_ => return None,
+				};
+
+				Self::OpenMenu { menu }
+			},
+			[0x0b, 0x0, 0x1, 0x0] => {
+				if slice.get(0x4..0x6)? != [0x0, 0x0] {
+					return None;
+				}
+				let value = LittleEndian::read_u16(slice.get(0x6..0x8)?);
+
+				// value: Seems to depend on where you execute it?
+				//        Likely depends on what menu you're on
+
+				/*
+				let s = || {
+					let s = match value {
+						0x0 => "Player's room",
+						0x1 => "Menu",
+						0x2 => "Battle Cafe",
+						0x3 => "Battle Arena",
+						0x4 => "Extra Arena",
+						0x5 => "Beet Arena",
+						0x6 => "Haunted Arena",
+						0x7 => "Fusion shop",
+						0x8 => "Yes",
+						0x9 => "No",
+						_ => return None,
+					};
+					Some(s)
+				};
+				*/
+
+				Self::AddMenuOption { value }
+			},
+			// Display scene?
+			[0x0b, 0x0, value0, 0x0] => {
+				if slice.get(0x4..0x6)? != [0x0, 0x0] {
+					return None;
+				}
+				let deck_id = LittleEndian::read_u16(slice.get(0x6..0x8)?);
+
+				// value0: 0x2 0x3 0x4 0x6 0x7 0x8 0x9 0xa 0xc 0xd 0xe 0xf 0x10 0x11 0x12 0x13 0x14 0x15
+
+				Self::DisplayScene { value0, deck_id }
+			},
+
+			// Set buffer
+			[0x08, 0x0, kind, 0x0] => {
+				let len = usize::from(LittleEndian::read_u16(slice.get(0x4..0x6)?));
+				if len == 0 {
+					return None;
+				}
+
+				let bytes = slice.get(0x6..(0x6 + len))?;
+
+
+				if bytes[0..(len - 1)].iter().any(|&ch| ch == 0) {
+					return None;
+				}
+				if bytes[len - 1] != 0 {
+					return None;
+				}
+
+				Self::SetBuffer {
+					kind,
+					bytes: &bytes[..(len - 1)],
+				}
+			},
+
+			// Set brightness
+			[0x0d, 0x0, kind, 0x0] => {
+				if slice.get(0x4..0x6)? != [0x0, 0x0] {
+					return None;
+				}
+				let place = LittleEndian::read_u16(slice.get(0x6..0x8)?);
+				if slice.get(0x8..0xa)? != [0x0, 0x0] {
+					return None;
+				}
+				let brightness = LittleEndian::read_u16(slice.get(0xa..0xc)?);
+				if slice.get(0xc..0xe)? != [0x0, 0x0] {
+					return None;
+				}
+				let value = LittleEndian::read_u16(slice.get(0xe..0x10)?);
+
+				Self::SetBrightness {
+					kind,
+					place,
+					brightness,
+					value,
+				}
+			},
+
+			_ => return None,
+		};
+
+		Some(command)
+	}
+
+	/// Returns this command's size
+	pub fn size(&self) -> usize {
+		match self {
+			Command::DisplayBuffer => 4,
+			Command::WaitInput => 4,
+			Command::NewScreen => 4,
+			Command::FinishMenu => 4,
+			Command::SetValue { .. } => 0xc,
+			Command::Unknown07 { .. } => 0xc,
+			Command::ChoiceJump { .. } => 0xc,
+			Command::Jump { .. } => 8,
+			Command::Unknown0a { .. } => 4,
+			Command::OpenMenu { .. } => 8,
+			Command::AddMenuOption { .. } => 8,
+			Command::DisplayScene { .. } => 8,
+			Command::SetBuffer { bytes, .. } => {
+				let len = bytes.len() + 2;
+				4 + len + (4 - len % 4)
+			},
+			Command::SetBrightness { .. } => 16,
+		}
+	}
 }
