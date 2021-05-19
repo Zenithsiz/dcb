@@ -139,9 +139,16 @@ impl State {
 
 				_ => println!("display_scene {value0:#x}, {deck_id:#x}"),
 			},
-			(State::Start, Command::SetBuffer { kind, bytes }) => match kind {
-				0x4 => println!("set_text_buffer {bytes:?}"),
-				_ => println!("set_buffer {kind:#x} {bytes:?}"),
+			(State::Start, Command::SetBuffer { kind, bytes }) => {
+				// Special case some bad bytes from the original game
+				let s = match bytes {
+					b"my idea\x82\x93 on you." => "my idea�� on you.",
+					_ => std::str::from_utf8(bytes).context("Unable to parse text buffer as utf-8")?,
+				};
+				match kind {
+					0x4 => println!("set_text_buffer \"{}\"", s.escape_debug()),
+					_ => println!("set_buffer {kind:#x}, \"{}\"", s.escape_debug()),
+				}
 			},
 			(
 				State::Start,
