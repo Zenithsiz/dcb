@@ -161,7 +161,12 @@ impl State {
 				println!("finish_menu");
 			},
 			(State::Menu { menu }, Command::AddMenuOption { button }) => {
-				anyhow::ensure!(button.menu() == menu, "Menu button didn't match current menu");
+				anyhow::ensure!(
+					menu.supports_button(button),
+					"Menu {:?} doesn't support button \"{}\"",
+					menu,
+					button.as_str()
+				);
 
 				println!("\tadd_menu_option \"{}\"", button.as_str().escape_debug())
 			},
@@ -181,6 +186,24 @@ pub enum Menu {
 	Five,
 }
 
+impl Menu {
+	/// Returns if a button may be used in this menu
+	pub fn supports_button(self, button: MenuButton) -> bool {
+		use MenuButton::*;
+		match self {
+			Self::Three => matches!(button, Talk | Battle | DeckData | Save | Yes | No | Cards | Partner),
+			Self::Five => matches!(
+				button,
+				PlayerRoom |
+					Menu | BattleCafe | BattleArena |
+					ExtraArena | BeetArena |
+					HauntedArena | FusionShop |
+					Yes | No
+			),
+		}
+	}
+}
+
 /// Menu buttons
 #[derive(PartialEq, Clone, Copy, Debug)]
 pub enum MenuButton {
@@ -192,14 +215,12 @@ pub enum MenuButton {
 	BeetArena    = 0x5,
 	HauntedArena = 0x6,
 	FusionShop   = 0x7,
-	Yes5         = 0x8,
-	No5          = 0x9,
+	Yes          = 0x8,
+	No           = 0x9,
 	Talk         = 0x0c,
 	Battle       = 0x0d,
 	DeckData     = 0x0e,
 	Save         = 0x0f,
-	Yes3         = 0x10,
-	No3          = 0x11,
 	Cards        = 0x12,
 	Partner      = 0x13,
 }
@@ -216,40 +237,14 @@ impl MenuButton {
 			Self::BeetArena => "Beet Arena",
 			Self::HauntedArena => "Haunted Arena",
 			Self::FusionShop => "Fusion shop",
-			Self::Yes5 => "Yes",
-			Self::No5 => "No",
+			Self::Yes => "Yes",
+			Self::No => "No",
 			Self::Talk => "Talk",
 			Self::Battle => "Battle",
 			Self::DeckData => "DeckData",
 			Self::Save => "Save",
-			Self::Yes3 => "Yes",
-			Self::No3 => "No",
 			Self::Cards => "Cards",
 			Self::Partner => "Partner",
-		}
-	}
-
-	/// Returns which menu this button may be used in
-	pub fn menu(self) -> Menu {
-		match self {
-			Self::PlayerRoom |
-			Self::Menu |
-			Self::BattleCafe |
-			Self::BattleArena |
-			Self::ExtraArena |
-			Self::BeetArena |
-			Self::HauntedArena |
-			Self::FusionShop |
-			Self::Yes5 |
-			Self::No5 => Menu::Five,
-			Self::Talk |
-			Self::Battle |
-			Self::DeckData |
-			Self::Save |
-			Self::Yes3 |
-			Self::No3 |
-			Self::Cards |
-			Self::Partner => Menu::Three,
 		}
 	}
 }
@@ -405,14 +400,14 @@ impl<'a> Command<'a> {
 					0x5 => MenuButton::BeetArena,
 					0x6 => MenuButton::HauntedArena,
 					0x7 => MenuButton::FusionShop,
-					0x8 => MenuButton::Yes5,
-					0x9 => MenuButton::No5,
+					0x8 => MenuButton::Yes,
+					0x9 => MenuButton::No,
 					0x0c => MenuButton::Talk,
 					0x0d => MenuButton::Battle,
 					0x0e => MenuButton::DeckData,
 					0x0f => MenuButton::Save,
-					0x10 => MenuButton::Yes3,
-					0x11 => MenuButton::No3,
+					0x10 => MenuButton::Yes,
+					0x11 => MenuButton::No,
 					0x12 => MenuButton::Cards,
 					0x13 => MenuButton::Partner,
 					_ => return None,
