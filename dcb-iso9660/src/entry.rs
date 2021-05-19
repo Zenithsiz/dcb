@@ -111,7 +111,7 @@ impl DirEntry {
 			},
 			Err(err) => Some(Err(ReadDirError::ParseEntry(err))),
 		})
-		.flat_map(Result::transpose)
+		.filter_map(Result::transpose)
 		.collect::<Result<Vec<_>, _>>()?;
 
 		Ok(Dir::new(dirs))

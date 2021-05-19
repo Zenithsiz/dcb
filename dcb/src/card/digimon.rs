@@ -230,8 +230,8 @@ impl Bytes for Digimon {
 			let (mut speciality_byte, mut level_byte) = (0u8, 0u8);
 
 			// Note: Buffers have 1 byte, so this can't fail
-			self.speciality.to_bytes(&mut speciality_byte)?;
-			self.level.to_bytes(&mut level_byte)?;
+			self.speciality.to_bytes(&mut speciality_byte).into_ok();
+			self.level.to_bytes(&mut level_byte).into_ok();
 
 			// Merge them
 			*bytes.speciality_level = (speciality_byte << 4u8) | level_byte;
