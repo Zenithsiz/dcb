@@ -72,14 +72,19 @@ fn main() -> Result<(), anyhow::Error> {
 
 	// Get all jumps
 	let mut last_label_number = 0;
+	let mut next_label = |name| {
+		let num = last_label_number;
+		last_label_number += 1;
+		format!("{name}_{num}")
+	};
 	let labels: HashMap<u32, String> = commands
 		.iter()
-		.filter_map(|(_, command)| match *command {
-			Command::Jump { addr, .. } => {
-				let num = last_label_number;
-				last_label_number += 1;
-				Some((addr, format!("label_{num}")))
-			},
+		.filter_map(|(pos, command)| match *command {
+			Command::Jump { addr, .. } => Some((addr, next_label("jump"))),
+			Command::DisplayScene {
+				value0: 0xf | 0xe,
+				value1,
+			} => Some((pos + 4 * u32::from(value1), next_label("scene"))),
 			_ => None,
 		})
 		.collect();
@@ -154,13 +159,12 @@ impl State {
 			},
 			(State::Start, Command::Unknown0a { value, kind }) => println!("unknown_0a {value:#x}, {kind:#x}"),
 			(State::Start, Command::OpenMenu { menu }) => *self = State::Menu { menu, buttons: vec![] },
-			(State::Start, Command::DisplayScene { value0, deck_id }) => match (value0, deck_id) {
-				(0x2, _) => println!("battle {deck_id:#x}"),
+			(State::Start, Command::DisplayScene { value0, value1 }) => match (value0, value1) {
+				(0x2, _) => println!("battle {value1:#x}"),
 
-				(0xf, 0x81) => println!("battle1"),
-				(0xe, 0x3c) => println!("battle2"),
-
-				_ => println!("display_scene {value0:#x}, {deck_id:#x}"),
+				(0xf, _) => println!("battle1 {value1:#x}"),
+				(0xe, _) => println!("battle2 {value1:#x}"),
+				_ => println!("display_scene {value0:#x}, {value1:#x}"),
 			},
 			(State::Start, Command::SetBuffer { kind, bytes }) => {
 				// Special case some bad bytes from the original game
@@ -372,7 +376,7 @@ pub enum Command<'a> {
 	AddMenuOption { button: MenuButton },
 
 	/// Display scene
-	DisplayScene { value0: u8, deck_id: u16 },
+	DisplayScene { value0: u8, value1: u16 },
 
 	/// Set buffer
 	SetBuffer { kind: u8, bytes: &'a [u8] },
@@ -476,11 +480,13 @@ impl<'a> Command<'a> {
 				if slice.get(0x4..0x6)? != [0x0, 0x0] {
 					return None;
 				}
-				let deck_id = LittleEndian::read_u16(slice.get(0x6..0x8)?);
+				let value1 = LittleEndian::read_u16(slice.get(0x6..0x8)?);
+
+				// If 0x2 is skipped, battle doesn't happen
 
 				// value0: 0x2 0x3 0x4 0x6 0x7 0x8 0x9 0xa 0xc 0xd 0xe 0xf 0x10 0x11 0x12 0x13 0x14 0x15
 
-				Self::DisplayScene { value0, deck_id }
+				Self::DisplayScene { value0, value1 }
 			},
 
 			// Set buffer
