@@ -185,9 +185,10 @@ impl State {
 					brightness,
 					value,
 				},
-			) => match (kind, place, value) {
-				(0x0, 0x0, 0xa) => println!("set_light_left_char {brightness:#x}"),
-				(0x0, 0x1, 0xa) => println!("set_light_right_char {brightness:#x}"),
+			) => match (kind, place, brightness, value) {
+				(0x0, 0x0, _, 0xa) => println!("set_light_left_char {brightness:#x}"),
+				(0x0, 0x1, _, 0xa) => println!("set_light_right_char {brightness:#x}"),
+				(0x1, _, 0xffff, 0xffff) => println!("set_light_unknown {place:#x}"),
 				_ => println!("set_light {kind:#x}, {place:#x}, {brightness:#x}, {value:#x}"),
 			},
 			(State::Menu { menu, buttons }, Command::FinishMenu) => {
