@@ -108,7 +108,7 @@ impl CardEditor {
 			.context("Unable to seek to card table")?;
 		let mut file = dcb_util::WriteTake::new(file, Self::CARD_TABLE_SIZE);
 
-		// Then parse it
+		// Then serialize it
 		card_table.serialize(&mut file).context("Unable to serialize table")?;
 
 		Ok(())
@@ -227,11 +227,15 @@ impl epi::App for CardEditor {
 					if ui.button("Save").clicked() {
 						match (&file_path, &card_table) {
 							(Some(file_path), Some(card_table)) => match Self::save_card_table(file_path, card_table) {
-								Ok(()) => MessageDialog::new()
-									.set_text("Successfully saved!")
-									.set_type(MessageType::Info)
-									.show_alert()
-									.expect("Unable to alert user"),
+								// After saving, update our hash
+								Ok(()) => {
+									*card_table_hash = Some(self::hash_of(card_table));
+									MessageDialog::new()
+										.set_text("Successfully saved!")
+										.set_type(MessageType::Info)
+										.show_alert()
+										.expect("Unable to alert user");
+								},
 								Err(err) => MessageDialog::new()
 									.set_text(&format!("Unable to save file: {:?}", err))
 									.set_type(MessageType::Error)
