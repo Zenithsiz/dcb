@@ -55,11 +55,8 @@ pub struct CardEditor {
 	/// File path
 	file_path: Option<PathBuf>,
 
-	/// Card table
-	card_table: Option<CardTable>,
-
-	/// Card table hash
-	card_table_hash: Option<u64>,
+	/// Loaded game
+	loaded_game: Option<LoadedGame>,
 
 	/// Card search
 	card_search: String,
@@ -173,8 +170,7 @@ impl Default for CardEditor {
 	fn default() -> Self {
 		Self {
 			file_path:         None,
-			card_table:        None,
-			card_table_hash:   None,
+			loaded_game:       None,
 			card_search:       String::new(),
 			open_edit_screens: vec![],
 			swap_screen:       None,
@@ -186,8 +182,7 @@ impl epi::App for CardEditor {
 	fn update(&mut self, ctx: &egui::CtxRef, frame: &mut epi::Frame<'_>) {
 		let Self {
 			file_path,
-			card_table,
-			card_table_hash,
+			loaded_game,
 			card_search,
 			open_edit_screens,
 			swap_screen,
@@ -209,10 +204,12 @@ impl epi::App for CardEditor {
 						// Then load the card table if we got a file
 						if let Some(file_path) = file_path {
 							match Self::parse_card_table(file_path) {
-								Ok(table) => {
-									let hash = self::hash_of(&table);
-									*card_table = Some(table);
-									*card_table_hash = Some(hash);
+								Ok(card_table) => {
+									let hash = self::hash_of(&card_table);
+									*loaded_game = Some(LoadedGame {
+										card_table,
+										saved_card_table_hash: hash,
+									});
 								},
 								Err(err) => MessageDialog::new()
 									.set_text(&format!("Unable to open file: {:?}", err))
@@ -225,22 +222,24 @@ impl epi::App for CardEditor {
 
 					// On save, if we have a file, save it to there, else tell error
 					if ui.button("Save").clicked() {
-						match (&file_path, &card_table) {
-							(Some(file_path), Some(card_table)) => match Self::save_card_table(file_path, card_table) {
-								// After saving, update our hash
-								Ok(()) => {
-									*card_table_hash = Some(self::hash_of(card_table));
-									MessageDialog::new()
-										.set_text("Successfully saved!")
-										.set_type(MessageType::Info)
+						match (&file_path, &mut *loaded_game) {
+							(Some(file_path), Some(loaded_game)) => {
+								match Self::save_card_table(file_path, &loaded_game.card_table) {
+									// After saving, update our hash
+									Ok(()) => {
+										loaded_game.saved_card_table_hash = self::hash_of(&loaded_game.card_table);
+										MessageDialog::new()
+											.set_text("Successfully saved!")
+											.set_type(MessageType::Info)
+											.show_alert()
+											.expect("Unable to alert user");
+									},
+									Err(err) => MessageDialog::new()
+										.set_text(&format!("Unable to save file: {:?}", err))
+										.set_type(MessageType::Error)
 										.show_alert()
-										.expect("Unable to alert user");
-								},
-								Err(err) => MessageDialog::new()
-									.set_text(&format!("Unable to save file: {:?}", err))
-									.set_type(MessageType::Error)
-									.show_alert()
-									.expect("Unable to alert user"),
+										.expect("Unable to alert user"),
+								}
 							},
 							_ => MessageDialog::new()
 								.set_text("You must first open a file to save")
@@ -256,7 +255,7 @@ impl epi::App for CardEditor {
 				});
 
 				egui::menu::menu(ui, "Edit", |ui| {
-					if card_table.is_some() && ui.button("Swap").clicked() {
+					if loaded_game.is_some() && ui.button("Swap").clicked() {
 						*swap_screen = Some(SwapScreen {
 							card_type: CardType::Digimon,
 							lhs_idx:   0,
@@ -268,7 +267,7 @@ impl epi::App for CardEditor {
 		});
 
 		// Draw swap screen
-		if let (Some(screen), Some(card_table)) = (swap_screen.as_mut(), card_table.as_mut()) {
+		if let (Some(screen), Some(loaded_game)) = (swap_screen.as_mut(), loaded_game.as_mut()) {
 			let mut close = false;
 			egui::Window::new("Swap screen").show(ctx, |ui| {
 				ui.horizontal(|ui| {
@@ -277,9 +276,9 @@ impl epi::App for CardEditor {
 				});
 
 				let range = match screen.card_type {
-					CardType::Digimon => Self::digimon_idxs(card_table),
-					CardType::Item => Self::item_idxs(card_table),
-					CardType::Digivolve => Self::digivolve_idxs(card_table),
+					CardType::Digimon => Self::digimon_idxs(&loaded_game.card_table),
+					CardType::Item => Self::item_idxs(&loaded_game.card_table),
+					CardType::Digivolve => Self::digivolve_idxs(&loaded_game.card_table),
 				};
 				screen.lhs_idx = screen.lhs_idx.clamp(range.start, range.end - 1);
 				screen.rhs_idx = screen.rhs_idx.clamp(range.start, range.end - 1);
@@ -294,7 +293,7 @@ impl epi::App for CardEditor {
 					ui.add(egui::Slider::new(&mut screen.rhs_idx, range));
 				});
 				if ui.button("Swap").clicked() {
-					Self::swap_cards(card_table, screen.lhs_idx, screen.rhs_idx);
+					Self::swap_cards(&mut loaded_game.card_table, screen.lhs_idx, screen.rhs_idx);
 					close = true;
 				}
 			});
@@ -312,14 +311,21 @@ impl epi::App for CardEditor {
 				ui.text_edit_singleline(card_search);
 			});
 
-			// If we have a card table, display all cards
-			if let Some(card_table) = &card_table {
-				let names = card_table
+			// If we have a loaded game, display all cards
+			if let Some(loaded_game) = &loaded_game {
+				let names = loaded_game
+					.card_table
 					.digimons
 					.iter()
 					.map(|digimon| digimon.name.as_str())
-					.chain(card_table.items.iter().map(|item| item.name.as_str()))
-					.chain(card_table.digivolves.iter().map(|digivolve| digivolve.name.as_str()))
+					.chain(loaded_game.card_table.items.iter().map(|item| item.name.as_str()))
+					.chain(
+						loaded_game
+							.card_table
+							.digivolves
+							.iter()
+							.map(|digivolve| digivolve.name.as_str()),
+					)
 					.enumerate()
 					.map(|(idx, name)| (idx, format!("{idx}. {name}")))
 					.filter(|(_, name)| self::contains_case_insensitive(name, card_search));
@@ -346,7 +352,10 @@ impl epi::App for CardEditor {
 			let screens_len = open_edit_screens.len();
 			for screen in open_edit_screens {
 				let card = Self::get_card_from_idx(
-					card_table.as_mut().expect("Had a selected card without a card table"),
+					&mut loaded_game
+						.as_mut()
+						.expect("Had a selected card without a card table")
+						.card_table,
 					screen.card_idx,
 				);
 
@@ -374,12 +383,16 @@ impl epi::App for CardEditor {
 
 	fn on_exit(&mut self) {
 		// Ask user if they want to save before leaving if they had any changes
-		let wants_to_save = match (&self.file_path, &self.card_table, self.card_table_hash) {
-			(Some(_), Some(table), Some(hash)) if self::hash_of(table) != hash => MessageDialog::new()
-				.set_text("Do you want to save?")
-				.set_type(MessageType::Warning)
-				.show_confirm()
-				.expect("Unable to ask user for confirmation"),
+		let wants_to_save = match (&self.file_path, &self.loaded_game) {
+			(Some(_), Some(loaded_game))
+				if self::hash_of(&loaded_game.card_table) != loaded_game.saved_card_table_hash =>
+			{
+				MessageDialog::new()
+					.set_text("Do you want to save?")
+					.set_type(MessageType::Warning)
+					.show_confirm()
+					.expect("Unable to ask user for confirmation")
+			},
 
 			// If we have no file or card table wasn't loaded, user won't want to save
 			_ => false,
@@ -387,7 +400,7 @@ impl epi::App for CardEditor {
 
 		if wants_to_save {
 			let file_path = self.file_path.as_ref().expect("No file path was set");
-			let card_table = self.card_table.as_ref().expect("No card table");
+			let card_table = &self.loaded_game.as_ref().expect("No card table").card_table;
 
 			match Self::save_card_table(file_path, card_table) {
 				Ok(()) => MessageDialog::new()
@@ -404,7 +417,11 @@ impl epi::App for CardEditor {
 						.as_ref()
 						.map_or(u64::MAX, Duration::as_secs);
 					let file = fs::File::create(&format!("cards-{time}.bak")).expect("Unable to create backup file");
-					serde_yaml::to_writer(file, &self.card_table).expect("Unable to write back up to file");
+					serde_yaml::to_writer(
+						file,
+						&self.loaded_game.as_ref().map(|loaded_game| &loaded_game.card_table),
+					)
+					.expect("Unable to write back up to file");
 
 					MessageDialog::new()
 						.set_text(&format!("Unable to save file: {:?}\n\nBackup made in file.", err))
@@ -437,6 +454,15 @@ pub struct SwapScreen {
 
 	/// Right idx
 	rhs_idx: usize,
+}
+
+/// Loaded game
+pub struct LoadedGame {
+	/// Card table
+	card_table: CardTable,
+
+	/// Original hash
+	saved_card_table_hash: u64,
 }
 
 /// Digimon, Item or digivolve
