@@ -16,6 +16,7 @@ log = "0.4.13"
 # Util
 byteorder = "1.4.2"
 chrono = "0.4.19"
+bit-vec = "0.6.3"
 
 # Derives
 thiserror = "1.0.23"

@@ -19,6 +19,12 @@ pub struct DirReader {
 }
 
 impl DirReader {
+	/// Creates a directory reader for the root directory
+	#[must_use]
+	pub const fn root() -> Self {
+		Self::new(0)
+	}
+
 	/// Creates a directory reader from it's sector
 	#[must_use]
 	pub const fn new(sector_pos: u32) -> Self {

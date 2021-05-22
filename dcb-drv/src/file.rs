@@ -6,7 +6,7 @@ use dcb_util::AsciiStrArr;
 use std::io::{self, SeekFrom};
 
 /// A file reader
-#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub struct FileReader {
 	/// File extension
 	extension: AsciiStrArr<0x3>,

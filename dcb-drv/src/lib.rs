@@ -1,6 +1,6 @@
 #![doc(include = "lib.md")]
 // Features
-#![feature(external_doc)]
+#![feature(external_doc, seek_stream_len)]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]
 // We'll disable the ones we don't need
@@ -58,6 +58,7 @@
 #![allow(clippy::map_err_ignore)]
 
 // Modules
+pub mod cursor;
 pub mod dir;
 pub mod error;
 pub mod file;
