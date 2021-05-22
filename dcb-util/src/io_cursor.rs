@@ -66,7 +66,7 @@ impl<T: Write + Seek> Write for IoCursor<T> {
 	}
 }
 
-impl<T: Read + Seek> Seek for IoCursor<T> {
+impl<T: Seek> Seek for IoCursor<T> {
 	fn seek(&mut self, pos: SeekFrom) -> io::Result<u64> {
 		match pos {
 			SeekFrom::Start(pos) => {

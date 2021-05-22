@@ -275,3 +275,27 @@ pub struct OpenFile<'a, T> {
 	/// Inner
 	inner: IoCursor<T>,
 }
+
+impl<'a, T: io::Seek + io::Read> io::Read for OpenFile<'a, T> {
+	fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+		self.inner.read(buf)
+	}
+}
+
+impl<'a, T: io::Seek> io::Seek for OpenFile<'a, T> {
+	fn seek(&mut self, pos: io::SeekFrom) -> io::Result<u64> {
+		// TODO: Allow file to expand beyond here too.
+		self.inner.seek(pos)
+	}
+}
+
+impl<'a, T: io::Seek + io::Write> io::Write for OpenFile<'a, T> {
+	fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+		// TODO: Allow file to expand beyond
+		self.inner.write(buf)
+	}
+
+	fn flush(&mut self) -> io::Result<()> {
+		self.inner.flush()
+	}
+}
