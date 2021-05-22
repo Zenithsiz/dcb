@@ -11,6 +11,7 @@ use std::{
 ///
 /// 'Slices' a piece of an inner cursor and only allows access
 /// to it.
+#[derive(Debug)]
 pub struct IoCursor<T> {
 	/// Inner value
 	inner: T,

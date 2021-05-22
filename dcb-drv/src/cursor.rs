@@ -4,13 +4,13 @@
 pub mod error;
 
 // Exports
-pub use error::NewError;
+pub use error::{NewError, OpenFileError};
 
 // Imports
 use crate::{dir::entry::DirEntryReaderKind, DirEntryReader, DirReader};
 use bit_vec::BitVec;
 use chrono::NaiveDateTime;
-use dcb_util::AsciiStrArr;
+use dcb_util::{AsciiStrArr, IoCursor};
 use std::{
 	convert::{TryFrom, TryInto},
 	io,
@@ -122,6 +122,53 @@ impl DrvFsCursor {
 	pub fn root_dir_mut(&mut self) -> &mut DirCursor {
 		&mut self.root_dir
 	}
+
+	/// Opens a file
+	pub fn open_file<T: io::Seek + io::Read>(
+		&mut self, cursor: T, mut path: &str,
+	) -> Result<OpenFile<T>, OpenFileError> {
+		let mut cur_dir = self.root_dir();
+		loop {
+			// Check if we need to go any more directories in
+			match path.split_once('\\') {
+				// If so, find the directory in the current directory
+				Some((dir, new_path)) => {
+					path = new_path;
+
+					cur_dir = match cur_dir
+						.entries
+						.iter()
+						.find(|entry| entry.name.as_str() == dir)
+						.map(|entry| &entry.kind)
+					{
+						Some(DirEntryCursorKind::Dir(dir)) => dir,
+						Some(_) => return Err(OpenFileError::FileDirEntries),
+						None => return Err(OpenFileError::FindFile),
+					};
+				},
+
+				// If not, open the file in the current directory
+				None => {
+					return match cur_dir
+						.entries
+						.iter()
+						.find(|entry| entry.name.as_str() == path)
+						.map(|entry| &entry.kind)
+					{
+						Some(DirEntryCursorKind::File(file)) => Ok(OpenFile {
+							inner: IoCursor::new(cursor, u64::from(file.sector_pos) * 0x800, u64::from(file.size))
+								.map_err(OpenFileError::OpenFile)?,
+							drive: self,
+						}),
+						Some(_) => Err(OpenFileError::OpenDir),
+						None => Err(OpenFileError::FindFile),
+					}
+				},
+			}
+		}
+
+		//
+	}
 }
 
 /// A directory
@@ -216,4 +263,15 @@ impl FileCursor {
 	pub const fn size(&self) -> &u32 {
 		&self.size
 	}
+}
+
+
+/// An opened file
+#[derive(Debug)]
+pub struct OpenFile<'a, T> {
+	/// Drive
+	drive: &'a mut DrvFsCursor,
+
+	/// Inner
+	inner: IoCursor<T>,
 }

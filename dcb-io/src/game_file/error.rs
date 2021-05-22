@@ -62,3 +62,26 @@ pub enum NewError {
 	#[error("Unable to create `P.DRV` cursor")]
 	CursorP(#[source] dcb_drv::cursor::NewError),
 }
+
+/// Error for [`GameFile::open_file`](super::GameFile::open_file)
+#[derive(Debug, thiserror::Error)]
+pub enum OpenFileError {
+	/// No drive specified
+	#[error("No drive specified")]
+	NoDrive,
+
+	/// Unknown drive specified
+	#[error("Unknown drive {drive} specified")]
+	UnknownDrive {
+		/// Drive found
+		drive: char,
+	},
+
+	/// Unable to open drive
+	#[error("Unable to open drive")]
+	OpenDrive(#[source] io::Error),
+
+	/// Unable to open file
+	#[error("Unable to open file")]
+	OpenFile(#[source] dcb_drv::cursor::OpenFileError),
+}

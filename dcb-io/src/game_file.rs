@@ -4,13 +4,15 @@
 
 // Modules
 pub mod error;
+pub mod path;
 
 // Exports
-pub use error::NewError;
+pub use error::{NewError, OpenFileError};
+pub use path::Path;
 
 // Imports
 use dcb_cdrom_xa::CdRomCursor;
-use dcb_drv::cursor::DrvFsCursor;
+use dcb_drv::cursor::{DrvFsCursor, OpenFile};
 use dcb_util::IoCursor;
 use std::io;
 
@@ -122,38 +124,84 @@ impl<T> GameFile<T> {
 
 // Drive getters
 impl<T: io::Seek> GameFile<T> {
-	/// Returns the `A.DRV` file
-	pub fn a_drv(&mut self) -> Result<IoCursor<&mut CdRomCursor<T>>, io::Error> {
-		IoCursor::new(&mut self.cdrom, Self::A_OFFSET, Self::A_SIZE)
+	/// Returns the `A.DRV` file alongside it's cursor
+	pub fn a_drv(&mut self) -> Result<(&mut DrvFsCursor, DriveCursor<&mut CdRomCursor<T>>), io::Error> {
+		match DriveCursor::new(&mut self.cdrom, Self::A_OFFSET, Self::A_SIZE) {
+			Ok(cursor) => Ok((&mut self.a_drv_cursor, cursor)),
+			Err(err) => Err(err),
+		}
 	}
 
-	/// Returns the `B.DRV` file
-	pub fn b_drv(&mut self) -> Result<IoCursor<&mut CdRomCursor<T>>, io::Error> {
-		IoCursor::new(&mut self.cdrom, Self::B_OFFSET, Self::B_SIZE)
+	/// Returns the `B.DRV` file alongside it's cursor
+	pub fn b_drv(&mut self) -> Result<(&mut DrvFsCursor, DriveCursor<&mut CdRomCursor<T>>), io::Error> {
+		match DriveCursor::new(&mut self.cdrom, Self::B_OFFSET, Self::B_SIZE) {
+			Ok(cursor) => Ok((&mut self.b_drv_cursor, cursor)),
+			Err(err) => Err(err),
+		}
 	}
 
-	/// Returns the `C.DRV` file
-	pub fn c_drv(&mut self) -> Result<IoCursor<&mut CdRomCursor<T>>, io::Error> {
-		IoCursor::new(&mut self.cdrom, Self::C_OFFSET, Self::C_SIZE)
+	/// Returns the `C.DRV` file alongside it's cursor
+	pub fn c_drv(&mut self) -> Result<(&mut DrvFsCursor, DriveCursor<&mut CdRomCursor<T>>), io::Error> {
+		match DriveCursor::new(&mut self.cdrom, Self::C_OFFSET, Self::C_SIZE) {
+			Ok(cursor) => Ok((&mut self.c_drv_cursor, cursor)),
+			Err(err) => Err(err),
+		}
 	}
 
-	/// Returns the `E.DRV` file
-	pub fn e_drv(&mut self) -> Result<IoCursor<&mut CdRomCursor<T>>, io::Error> {
-		IoCursor::new(&mut self.cdrom, Self::E_OFFSET, Self::E_SIZE)
+	/// Returns the `E.DRV` file alongside it's cursor
+	pub fn e_drv(&mut self) -> Result<(&mut DrvFsCursor, DriveCursor<&mut CdRomCursor<T>>), io::Error> {
+		match DriveCursor::new(&mut self.cdrom, Self::E_OFFSET, Self::E_SIZE) {
+			Ok(cursor) => Ok((&mut self.e_drv_cursor, cursor)),
+			Err(err) => Err(err),
+		}
 	}
 
-	/// Returns the `F.DRV` file
-	pub fn f_drv(&mut self) -> Result<IoCursor<&mut CdRomCursor<T>>, io::Error> {
-		IoCursor::new(&mut self.cdrom, Self::F_OFFSET, Self::F_SIZE)
+	/// Returns the `F.DRV` file alongside it's cursor
+	pub fn f_drv(&mut self) -> Result<(&mut DrvFsCursor, DriveCursor<&mut CdRomCursor<T>>), io::Error> {
+		match DriveCursor::new(&mut self.cdrom, Self::F_OFFSET, Self::F_SIZE) {
+			Ok(cursor) => Ok((&mut self.f_drv_cursor, cursor)),
+			Err(err) => Err(err),
+		}
 	}
 
-	/// Returns the `G.DRV` file
-	pub fn g_drv(&mut self) -> Result<IoCursor<&mut CdRomCursor<T>>, io::Error> {
-		IoCursor::new(&mut self.cdrom, Self::G_OFFSET, Self::G_SIZE)
+	/// Returns the `G.DRV` file alongside it's cursor
+	pub fn g_drv(&mut self) -> Result<(&mut DrvFsCursor, DriveCursor<&mut CdRomCursor<T>>), io::Error> {
+		match DriveCursor::new(&mut self.cdrom, Self::G_OFFSET, Self::G_SIZE) {
+			Ok(cursor) => Ok((&mut self.g_drv_cursor, cursor)),
+			Err(err) => Err(err),
+		}
 	}
 
-	/// Returns the `P.DRV` file
-	pub fn p_drv(&mut self) -> Result<IoCursor<&mut CdRomCursor<T>>, io::Error> {
-		IoCursor::new(&mut self.cdrom, Self::P_OFFSET, Self::P_SIZE)
+	/// Returns the `P.DRV` file alongside it's cursor
+	pub fn p_drv(&mut self) -> Result<(&mut DrvFsCursor, DriveCursor<&mut CdRomCursor<T>>), io::Error> {
+		match DriveCursor::new(&mut self.cdrom, Self::P_OFFSET, Self::P_SIZE) {
+			Ok(cursor) => Ok((&mut self.p_drv_cursor, cursor)),
+			Err(err) => Err(err),
+		}
 	}
 }
+
+// Files
+impl<T: io::Seek + io::Read> GameFile<T> {
+	/// Opens a file
+	pub fn open_file(&mut self, path: &Path) -> Result<OpenFile<DriveCursor<&mut CdRomCursor<T>>>, OpenFileError> {
+		// Check the drive we're accessing.
+		let (drive, path) = path.drive().ok_or(OpenFileError::NoDrive)?;
+		let (cursor, drive) = match drive.as_char() {
+			'A' => self.a_drv().map_err(OpenFileError::OpenDrive)?,
+			'B' => self.b_drv().map_err(OpenFileError::OpenDrive)?,
+			'C' => self.c_drv().map_err(OpenFileError::OpenDrive)?,
+			'E' => self.e_drv().map_err(OpenFileError::OpenDrive)?,
+			'F' => self.f_drv().map_err(OpenFileError::OpenDrive)?,
+			'G' => self.g_drv().map_err(OpenFileError::OpenDrive)?,
+			'P' => self.p_drv().map_err(OpenFileError::OpenDrive)?,
+			drive => return Err(OpenFileError::UnknownDrive { drive }),
+		};
+
+		// Then get the path from the drive
+		cursor.open_file(drive, path.as_str()).map_err(OpenFileError::OpenFile)
+	}
+}
+
+/// Driver cursor
+pub type DriveCursor<T> = IoCursor<T>;

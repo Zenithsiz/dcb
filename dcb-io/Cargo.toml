@@ -18,6 +18,8 @@ log = "0.4.13"
 # Util
 byteorder = "1.4.2"
 chrono = "0.4.19"
+ascii = "1.0.0"
+ref-cast = "1.0.6"
 
 # Derives
 thiserror = "1.0.23"

@@ -3,7 +3,7 @@
 use crate::dir::reader::{ReadEntriesError, ReadEntryError};
 use std::io;
 
-/// Error for [`Dir::read_entries`](super::Dir::read_entries)
+/// Error for [`DrvFsCursor::new`](super::DrvFsCursor::new)
 #[derive(Debug, thiserror::Error)]
 pub enum NewError {
 	/// Unable to get file size
@@ -31,4 +31,24 @@ pub enum NewError {
 		#[source]
 		err: ReadEntryError,
 	},
+}
+
+/// Error for [`DrvFsCursor::open_file`](super::DrvFsCursor::open_file)
+#[derive(Debug, thiserror::Error)]
+pub enum OpenFileError {
+	/// Unable to find file
+	#[error("Unable to find file")]
+	FindFile,
+
+	/// Cannot open directory
+	#[error("Cannot open directory")]
+	OpenDir,
+
+	/// Attempted to use file as directory
+	#[error("Cannot check directory entries of a file")]
+	FileDirEntries,
+
+	/// Unable to open file
+	#[error("Unable to open file")]
+	OpenFile(#[source] io::Error),
 }
