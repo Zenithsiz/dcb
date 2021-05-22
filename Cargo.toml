@@ -24,4 +24,5 @@ members = [
 	"dcb-tools/dcb-unbin",
 	"dcb-tools/dcb-unmsd",
 	"dcb-tools/dcb-card-editor",
+	"dcb-tools/dcb-file-editor",
 ]

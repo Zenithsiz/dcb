@@ -1,0 +1,33 @@
+[package]
+name = "dcb-file-editor"
+version = "0.1.1"
+authors = ["Filipe Rodrigues <filipejacintorodrigues1@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+# Dcb
+dcb = { path = "../../dcb" }
+dcb-bytes = { path = "../../dcb-bytes" }
+dcb-util = { path = "../../dcb-util" }
+dcb-cdrom-xa = { path = "../../dcb-cdrom-xa" }
+dcb-drv = { path = "../../dcb-drv" }
+
+# Gui
+eframe = { git = "https://github.com/Zenithsiz/egui" }
+
+# Logging
+log = "0.4.14"
+simplelog = "0.10.0"
+
+# Error
+anyhow = "1.0.40"
+
+# Utils
+native-dialog = "0.5.5"
+either = "1.6.1"
+ref-cast = "1.0.6"
+derive_more = "0.99.13"
+strum = { version = "0.20.0", features = ["derive"] }
+
+# Serde
+serde_yaml = "0.8.17"
