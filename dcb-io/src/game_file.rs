@@ -123,37 +123,37 @@ impl<T> GameFile<T> {
 // Drive getters
 impl<T: io::Seek> GameFile<T> {
 	/// Returns the `A.DRV` file
-	pub fn a_drv(cdrom: &mut CdRomCursor<T>) -> Result<IoCursor<&mut CdRomCursor<T>>, io::Error> {
-		IoCursor::new(cdrom, Self::A_OFFSET, Self::A_SIZE)
+	pub fn a_drv(&mut self) -> Result<IoCursor<&mut CdRomCursor<T>>, io::Error> {
+		IoCursor::new(&mut self.cdrom, Self::A_OFFSET, Self::A_SIZE)
 	}
 
 	/// Returns the `B.DRV` file
-	pub fn b_drv(cdrom: &mut CdRomCursor<T>) -> Result<IoCursor<&mut CdRomCursor<T>>, io::Error> {
-		IoCursor::new(cdrom, Self::B_OFFSET, Self::B_SIZE)
+	pub fn b_drv(&mut self) -> Result<IoCursor<&mut CdRomCursor<T>>, io::Error> {
+		IoCursor::new(&mut self.cdrom, Self::B_OFFSET, Self::B_SIZE)
 	}
 
 	/// Returns the `C.DRV` file
-	pub fn c_drv(cdrom: &mut CdRomCursor<T>) -> Result<IoCursor<&mut CdRomCursor<T>>, io::Error> {
-		IoCursor::new(cdrom, Self::C_OFFSET, Self::C_SIZE)
+	pub fn c_drv(&mut self) -> Result<IoCursor<&mut CdRomCursor<T>>, io::Error> {
+		IoCursor::new(&mut self.cdrom, Self::C_OFFSET, Self::C_SIZE)
 	}
 
 	/// Returns the `E.DRV` file
-	pub fn e_drv(cdrom: &mut CdRomCursor<T>) -> Result<IoCursor<&mut CdRomCursor<T>>, io::Error> {
-		IoCursor::new(cdrom, Self::E_OFFSET, Self::E_SIZE)
+	pub fn e_drv(&mut self) -> Result<IoCursor<&mut CdRomCursor<T>>, io::Error> {
+		IoCursor::new(&mut self.cdrom, Self::E_OFFSET, Self::E_SIZE)
 	}
 
 	/// Returns the `F.DRV` file
-	pub fn f_drv(cdrom: &mut CdRomCursor<T>) -> Result<IoCursor<&mut CdRomCursor<T>>, io::Error> {
-		IoCursor::new(cdrom, Self::F_OFFSET, Self::F_SIZE)
+	pub fn f_drv(&mut self) -> Result<IoCursor<&mut CdRomCursor<T>>, io::Error> {
+		IoCursor::new(&mut self.cdrom, Self::F_OFFSET, Self::F_SIZE)
 	}
 
 	/// Returns the `G.DRV` file
-	pub fn g_drv(cdrom: &mut CdRomCursor<T>) -> Result<IoCursor<&mut CdRomCursor<T>>, io::Error> {
-		IoCursor::new(cdrom, Self::G_OFFSET, Self::G_SIZE)
+	pub fn g_drv(&mut self) -> Result<IoCursor<&mut CdRomCursor<T>>, io::Error> {
+		IoCursor::new(&mut self.cdrom, Self::G_OFFSET, Self::G_SIZE)
 	}
 
 	/// Returns the `P.DRV` file
-	pub fn p_drv(cdrom: &mut CdRomCursor<T>) -> Result<IoCursor<&mut CdRomCursor<T>>, io::Error> {
-		IoCursor::new(cdrom, Self::P_OFFSET, Self::P_SIZE)
+	pub fn p_drv(&mut self) -> Result<IoCursor<&mut CdRomCursor<T>>, io::Error> {
+		IoCursor::new(&mut self.cdrom, Self::P_OFFSET, Self::P_SIZE)
 	}
 }
