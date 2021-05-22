@@ -8,6 +8,7 @@ use std::{
 
 /// A cursor over a cdrom-xa file.
 // TODO: Repair sector headers and edc/ecc after writing
+#[derive(PartialEq, Clone, Debug)]
 pub struct CdRomCursor<T> {
 	/// Underlying reader/writer
 	inner: T,
