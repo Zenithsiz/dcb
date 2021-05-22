@@ -42,8 +42,8 @@ pub struct GameFile<T> {
 	p_drv_cursor: DrvFsCursor,
 }
 
-// Constructors
-impl<T: io::Read + io::Seek> GameFile<T> {
+// Constants
+impl<T> GameFile<T> {
 	/// `A.DRV` Offset
 	pub const A_OFFSET: u64 = 0xa1000;
 	/// `A.DRV` Size
@@ -72,7 +72,10 @@ impl<T: io::Read + io::Seek> GameFile<T> {
 	pub const P_OFFSET: u64 = 0xc000;
 	/// `P.DRV` Size
 	pub const P_SIZE: u64 = 0x95000;
+}
 
+// Constructors
+impl<T: io::Read + io::Seek> GameFile<T> {
 	/// Creates a new game file
 	pub fn new(mut cdrom: CdRomCursor<T>) -> Result<Self, NewError> {
 		let mut a_drv = IoCursor::new(&mut cdrom, Self::A_OFFSET, Self::A_SIZE).map_err(NewError::OpenA)?;
@@ -107,7 +110,18 @@ impl<T: io::Read + io::Seek> GameFile<T> {
 			p_drv_cursor,
 		})
 	}
+}
 
+// Getters
+impl<T> GameFile<T> {
+	/// Returns the cdrom associated with this game file
+	pub fn cdrom(&mut self) -> &mut CdRomCursor<T> {
+		&mut self.cdrom
+	}
+}
+
+// Drive getters
+impl<T: io::Seek> GameFile<T> {
 	/// Returns the `A.DRV` file
 	pub fn a_drv(cdrom: &mut CdRomCursor<T>) -> Result<IoCursor<&mut CdRomCursor<T>>, io::Error> {
 		IoCursor::new(cdrom, Self::A_OFFSET, Self::A_SIZE)
@@ -141,12 +155,5 @@ impl<T: io::Read + io::Seek> GameFile<T> {
 	/// Returns the `P.DRV` file
 	pub fn p_drv(cdrom: &mut CdRomCursor<T>) -> Result<IoCursor<&mut CdRomCursor<T>>, io::Error> {
 		IoCursor::new(cdrom, Self::P_OFFSET, Self::P_SIZE)
-	}
-}
-
-impl<T> GameFile<T> {
-	/// Returns the cdrom associated with this game file
-	pub fn cdrom(&mut self) -> &mut CdRomCursor<T> {
-		&mut self.cdrom
 	}
 }
