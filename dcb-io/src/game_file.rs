@@ -74,6 +74,41 @@ impl<T> GameFile<T> {
 	pub const P_OFFSET: u64 = 0xc000;
 	/// `P.DRV` Size
 	pub const P_SIZE: u64 = 0x95000;
+
+	/// Get a reference to the game file's a drv cursor.
+	pub const fn a_drv_cursor(&self) -> &DrvFsCursor {
+		&self.a_drv_cursor
+	}
+
+	/// Get a reference to the game file's b drv cursor.
+	pub const fn b_drv_cursor(&self) -> &DrvFsCursor {
+		&self.b_drv_cursor
+	}
+
+	/// Get a reference to the game file's c drv cursor.
+	pub const fn c_drv_cursor(&self) -> &DrvFsCursor {
+		&self.c_drv_cursor
+	}
+
+	/// Get a reference to the game file's e drv cursor.
+	pub const fn e_drv_cursor(&self) -> &DrvFsCursor {
+		&self.e_drv_cursor
+	}
+
+	/// Get a reference to the game file's f drv cursor.
+	pub const fn f_drv_cursor(&self) -> &DrvFsCursor {
+		&self.f_drv_cursor
+	}
+
+	/// Get a reference to the game file's g drv cursor.
+	pub const fn g_drv_cursor(&self) -> &DrvFsCursor {
+		&self.g_drv_cursor
+	}
+
+	/// Get a reference to the game file's p drv cursor.
+	pub const fn p_drv_cursor(&self) -> &DrvFsCursor {
+		&self.p_drv_cursor
+	}
 }
 
 // Constructors

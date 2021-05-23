@@ -11,18 +11,14 @@
 	hash_drain_filter
 )]
 
+// Imports
 use anyhow::Context;
 use dcb_cdrom_xa::CdRomCursor;
-use dcb_drv::cursor::{DirEntryCursorKind, DrvFsCursor};
-// Imports
+use dcb_drv::cursor::DirEntryCursorKind;
+use dcb_io::GameFile;
 use eframe::{egui, epi, NativeOptions};
 use native_dialog::{FileDialog, MessageDialog, MessageType};
-use std::{
-	fs,
-	io::{self, Write},
-	mem,
-	path::PathBuf,
-};
+use std::{fs, io::Write, mem, path::PathBuf};
 
 fn main() {
 	// Initialize the logger
@@ -94,8 +90,9 @@ impl epi::App for FileEditor {
 									.write(true)
 									.open(file_path)
 									.context("Unable to open file")?;
-								*loaded_game =
-									Some(LoadedGame::new(CdRomCursor::new(file)).context("Unable to load all files")?);
+								let cdrom = CdRomCursor::new(file);
+								let game_file = GameFile::new(cdrom).context("Unable to load game file")?;
+								*loaded_game = Some(LoadedGame { game_file });
 							};
 
 							if let Err(err) = res {
@@ -172,7 +169,7 @@ impl epi::App for FileEditor {
 						ui.label("A.DRV");
 						ui.separator();
 						show_dir(
-							loaded_game.a_drv_cursor.root_dir(),
+							loaded_game.game_file.a_drv_cursor().root_dir(),
 							ui,
 							file_search,
 							"A:\\",
@@ -183,7 +180,7 @@ impl epi::App for FileEditor {
 						ui.label("B.DRV");
 						ui.separator();
 						show_dir(
-							loaded_game.b_drv_cursor.root_dir(),
+							loaded_game.game_file.b_drv_cursor().root_dir(),
 							ui,
 							file_search,
 							"B:\\",
@@ -194,7 +191,7 @@ impl epi::App for FileEditor {
 						ui.label("C.DRV");
 						ui.separator();
 						show_dir(
-							loaded_game.c_drv_cursor.root_dir(),
+							loaded_game.game_file.c_drv_cursor().root_dir(),
 							ui,
 							file_search,
 							"C:\\",
@@ -205,7 +202,7 @@ impl epi::App for FileEditor {
 						ui.label("E.DRV");
 						ui.separator();
 						show_dir(
-							loaded_game.e_drv_cursor.root_dir(),
+							loaded_game.game_file.e_drv_cursor().root_dir(),
 							ui,
 							file_search,
 							"E:\\",
@@ -216,7 +213,7 @@ impl epi::App for FileEditor {
 						ui.label("F.DRV");
 						ui.separator();
 						show_dir(
-							loaded_game.f_drv_cursor.root_dir(),
+							loaded_game.game_file.f_drv_cursor().root_dir(),
 							ui,
 							file_search,
 							"F:\\",
@@ -227,7 +224,7 @@ impl epi::App for FileEditor {
 						ui.label("G.DRV");
 						ui.separator();
 						show_dir(
-							loaded_game.g_drv_cursor.root_dir(),
+							loaded_game.game_file.g_drv_cursor().root_dir(),
 							ui,
 							file_search,
 							"G:\\",
@@ -238,7 +235,7 @@ impl epi::App for FileEditor {
 						ui.label("P.DRV");
 						ui.separator();
 						show_dir(
-							loaded_game.p_drv_cursor.root_dir(),
+							loaded_game.game_file.p_drv_cursor().root_dir(),
 							ui,
 							file_search,
 							"P:\\",
@@ -289,7 +286,7 @@ impl epi::App for FileEditor {
 	fn on_exit(&mut self) {
 		// Flush the file if we have it
 		if let Some(loaded_game) = &mut self.loaded_game {
-			let _ = loaded_game.file.flush();
+			let _ = loaded_game.game_file.cdrom().flush();
 		}
 	}
 
@@ -376,136 +373,8 @@ impl Default for SwapFileStatus {
 
 /// Loaded game
 pub struct LoadedGame {
-	/// File
-	file: CdRomCursor<fs::File>,
-
-	/// `A.DRV` cursor
-	a_drv_cursor: DrvFsCursor,
-
-	/// `B.DRV` cursor
-	b_drv_cursor: DrvFsCursor,
-
-	/// `C.DRV` cursor
-	c_drv_cursor: DrvFsCursor,
-
-	/// `E.DRV` cursor
-	e_drv_cursor: DrvFsCursor,
-
-	/// `F.DRV` cursor
-	f_drv_cursor: DrvFsCursor,
-
-	/// `G.DRV` cursor
-	g_drv_cursor: DrvFsCursor,
-
-	/// `P.DRV` cursor
-	p_drv_cursor: DrvFsCursor,
-}
-
-impl LoadedGame {
-	/// `A.DRV` Offset
-	pub const A_OFFSET: u64 = 0xa1000;
-	/// `A.DRV` Size
-	pub const A_SIZE: u64 = 0xa78800;
-	/// `B.DRV` Offset
-	pub const B_OFFSET: u64 = 0xb19800;
-	/// `B.DRV` Size
-	pub const B_SIZE: u64 = 0x17ea800;
-	/// `C.DRV` Offset
-	pub const C_OFFSET: u64 = 0x2304000;
-	/// `C.DRV` Size
-	pub const C_SIZE: u64 = 0xb6c000;
-	/// `E.DRV` Offset
-	pub const E_OFFSET: u64 = 0x2e70000;
-	/// `E.DRV` Size
-	pub const E_SIZE: u64 = 0x1886800;
-	/// `F.DRV` Offset
-	pub const F_OFFSET: u64 = 0x46f6800;
-	/// `F.DRV` SIze
-	pub const F_SIZE: u64 = 0xf2f800;
-	/// `G.DRV` Offset
-	pub const G_OFFSET: u64 = 0x5626000;
-	/// `G.DRV` Size
-	pub const G_SIZE: u64 = 0x293000;
-	/// `P.DRV` Offset
-	pub const P_OFFSET: u64 = 0xc000;
-	/// `P.DRV` Size
-	pub const P_SIZE: u64 = 0x95000;
-
-	pub fn new(mut file: CdRomCursor<fs::File>) -> Result<Self, anyhow::Error> {
-		let mut a_drv = LoadedGame::a_drv(&mut file).context("Unable to open `A.DRV` file")?;
-		let a_drv_cursor = DrvFsCursor::new(&mut a_drv).context("Unable to parse `A.DRV` file")?;
-		mem::drop(a_drv);
-
-		let mut b_drv = LoadedGame::b_drv(&mut file).context("Unable to open `B.DRV` file")?;
-		let b_drv_cursor = DrvFsCursor::new(&mut b_drv).context("Unable to parse `B.DRV` file")?;
-		mem::drop(b_drv);
-
-		let mut c_drv = LoadedGame::c_drv(&mut file).context("Unable to open `C.DRV` file")?;
-		let c_drv_cursor = DrvFsCursor::new(&mut c_drv).context("Unable to parse `C.DRV` file")?;
-		mem::drop(c_drv);
-
-		let mut e_drv = LoadedGame::e_drv(&mut file).context("Unable to open `E.DRV` file")?;
-		let e_drv_cursor = DrvFsCursor::new(&mut e_drv).context("Unable to parse `E.DRV` file")?;
-		mem::drop(e_drv);
-
-		let mut f_drv = LoadedGame::f_drv(&mut file).context("Unable to open `F.DRV` file")?;
-		let f_drv_cursor = DrvFsCursor::new(&mut f_drv).context("Unable to parse `F.DRV` file")?;
-		mem::drop(f_drv);
-
-		let mut g_drv = LoadedGame::g_drv(&mut file).context("Unable to open `G.DRV` file")?;
-		let g_drv_cursor = DrvFsCursor::new(&mut g_drv).context("Unable to parse `G.DRV` file")?;
-		mem::drop(g_drv);
-
-		let mut p_drv = LoadedGame::p_drv(&mut file).context("Unable to open `P.DRV` file")?;
-		let p_drv_cursor = DrvFsCursor::new(&mut p_drv).context("Unable to parse `P.DRV` file")?;
-		mem::drop(p_drv);
-
-		Ok(Self {
-			file,
-			a_drv_cursor,
-			b_drv_cursor,
-			c_drv_cursor,
-			e_drv_cursor,
-			f_drv_cursor,
-			g_drv_cursor,
-			p_drv_cursor,
-		})
-	}
-
-	/// Returns the `A.DRV` file
-	pub fn a_drv(file: &mut CdRomCursor<fs::File>) -> Result<impl io::Read + io::Write + io::Seek + '_, io::Error> {
-		dcb_util::IoCursor::new(file, Self::A_OFFSET, Self::A_SIZE)
-	}
-
-	/// Returns the `B.DRV` file
-	pub fn b_drv(file: &mut CdRomCursor<fs::File>) -> Result<impl io::Read + io::Write + io::Seek + '_, io::Error> {
-		dcb_util::IoCursor::new(file, Self::B_OFFSET, Self::B_SIZE)
-	}
-
-	/// Returns the `C.DRV` file
-	pub fn c_drv(file: &mut CdRomCursor<fs::File>) -> Result<impl io::Read + io::Write + io::Seek + '_, io::Error> {
-		dcb_util::IoCursor::new(file, Self::C_OFFSET, Self::C_SIZE)
-	}
-
-	/// Returns the `E.DRV` file
-	pub fn e_drv(file: &mut CdRomCursor<fs::File>) -> Result<impl io::Read + io::Write + io::Seek + '_, io::Error> {
-		dcb_util::IoCursor::new(file, Self::E_OFFSET, Self::E_SIZE)
-	}
-
-	/// Returns the `F.DRV` file
-	pub fn f_drv(file: &mut CdRomCursor<fs::File>) -> Result<impl io::Read + io::Write + io::Seek + '_, io::Error> {
-		dcb_util::IoCursor::new(file, Self::F_OFFSET, Self::F_SIZE)
-	}
-
-	/// Returns the `G.DRV` file
-	pub fn g_drv(file: &mut CdRomCursor<fs::File>) -> Result<impl io::Read + io::Write + io::Seek + '_, io::Error> {
-		dcb_util::IoCursor::new(file, Self::G_OFFSET, Self::G_SIZE)
-	}
-
-	/// Returns the `P.DRV` file
-	pub fn p_drv(file: &mut CdRomCursor<fs::File>) -> Result<impl io::Read + io::Write + io::Seek + '_, io::Error> {
-		dcb_util::IoCursor::new(file, Self::P_OFFSET, Self::P_SIZE)
-	}
+	/// Game file
+	game_file: GameFile<fs::File>,
 }
 
 /// Checks if string `pattern` is contained in `haystack` without
