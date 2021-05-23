@@ -250,20 +250,22 @@ impl epi::App for FileEditor {
 			egui::Window::new("Swap screen").show(ctx, |ui| {
 				ui.horizontal(|ui| {
 					ui.label(swap_window.first.as_str().unwrap_or("None"));
-					if !swap_window.first.is_setting() && ui.button("Set").clicked() {
-						swap_window.first.make_setting();
-					}
-					if swap_window.first.is_setting() && ui.button("Setting").clicked() {
-						swap_window.first.make_not_setting();
+					let text = match swap_window.first.is_setting() {
+						true => "...",
+						false => "Set",
+					};
+					if ui.button(text).clicked() {
+						swap_window.first.toggle();
 					}
 				});
 				ui.horizontal(|ui| {
 					ui.label(swap_window.second.as_str().unwrap_or("None"));
-					if !swap_window.second.is_setting() && ui.button("Set").clicked() {
-						swap_window.second.make_setting();
-					}
-					if swap_window.second.is_setting() && ui.button("Setting").clicked() {
-						swap_window.second.make_not_setting();
+					let text = match swap_window.second.is_setting() {
+						true => "...",
+						false => "Set",
+					};
+					if ui.button(text).clicked() {
+						swap_window.second.toggle();
 					}
 				});
 
@@ -319,23 +321,15 @@ pub enum SwapFileStatus {
 }
 
 impl SwapFileStatus {
-	/// Sets this status to `Setting`
-	pub fn make_setting(&mut self) {
+	/// Toggles the current setting
+	pub fn toggle(&mut self) {
 		*self = match mem::take(self) {
 			Self::Unset => Self::Setting(None),
-			status @ Self::Setting(_) => status,
-			Self::Set(s) => Self::Setting(Some(s)),
-		};
-	}
-
-	/// Sets this status from `Setting` to another
-	pub fn make_not_setting(&mut self) {
-		*self = match mem::take(self) {
 			Self::Setting(s) => match s {
 				Some(s) => Self::Set(s),
 				None => Self::Unset,
 			},
-			_ => unreachable!(),
+			Self::Set(s) => Self::Setting(Some(s)),
 		};
 	}
 
