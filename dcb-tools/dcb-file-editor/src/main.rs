@@ -130,18 +130,18 @@ impl epi::App for FileEditor {
 			if let Some(loaded_game) = loaded_game.as_mut() {
 				egui::ScrollArea::auto_sized().show(ui, |ui| {
 					fn show_dir(
-						dir: &dcb_drv::cursor::DirCursor, ui: &mut egui::Ui, file_search: &str, dir_path: &str,
+						dir: &dcb_drv::cursor::DirCursor, dir_path: &str, ui: &mut egui::Ui, file_search: &str,
 						swap_window: &mut Option<SwapWindow>,
 					) {
 						for entry in dir.entries() {
 							match &entry.kind() {
 								DirEntryCursorKind::Dir(dir) => {
 									let dir_path = format!("{dir_path}{}\\", entry.name());
-									ui.group(|ui| {
-										ui.label(entry.name().as_str());
-										ui.separator();
-										show_dir(dir, ui, file_search, &dir_path, swap_window);
-									});
+									egui::CollapsingHeader::new(entry.name())
+										.id_source(dir as *const _)
+										.show(ui, |ui| {
+											show_dir(dir, &dir_path, ui, file_search, swap_window);
+										});
 								},
 								DirEntryCursorKind::File(file) => {
 									let filename = format!("{}.{}", entry.name(), file.extension());
@@ -165,83 +165,27 @@ impl epi::App for FileEditor {
 						}
 					}
 
-					ui.group(|ui| {
-						ui.label("A.DRV");
-						ui.separator();
-						show_dir(
-							loaded_game.game_file.a_drv_cursor().root_dir(),
-							ui,
-							file_search,
-							"A:\\",
-							swap_window,
-						);
-					});
-					ui.group(|ui| {
-						ui.label("B.DRV");
-						ui.separator();
-						show_dir(
-							loaded_game.game_file.b_drv_cursor().root_dir(),
-							ui,
-							file_search,
-							"B:\\",
-							swap_window,
-						);
-					});
-					ui.group(|ui| {
-						ui.label("C.DRV");
-						ui.separator();
-						show_dir(
-							loaded_game.game_file.c_drv_cursor().root_dir(),
-							ui,
-							file_search,
-							"C:\\",
-							swap_window,
-						);
-					});
-					ui.group(|ui| {
-						ui.label("E.DRV");
-						ui.separator();
-						show_dir(
-							loaded_game.game_file.e_drv_cursor().root_dir(),
-							ui,
-							file_search,
-							"E:\\",
-							swap_window,
-						);
-					});
-					ui.group(|ui| {
-						ui.label("F.DRV");
-						ui.separator();
-						show_dir(
-							loaded_game.game_file.f_drv_cursor().root_dir(),
-							ui,
-							file_search,
-							"F:\\",
-							swap_window,
-						);
-					});
-					ui.group(|ui| {
-						ui.label("G.DRV");
-						ui.separator();
-						show_dir(
-							loaded_game.game_file.g_drv_cursor().root_dir(),
-							ui,
-							file_search,
-							"G:\\",
-							swap_window,
-						);
-					});
-					ui.group(|ui| {
-						ui.label("P.DRV");
-						ui.separator();
-						show_dir(
-							loaded_game.game_file.p_drv_cursor().root_dir(),
-							ui,
-							file_search,
-							"P:\\",
-							swap_window,
-						);
-					});
+					let a_dir = loaded_game.game_file.a_drv_cursor().root_dir();
+					let b_dir = loaded_game.game_file.b_drv_cursor().root_dir();
+					let c_dir = loaded_game.game_file.c_drv_cursor().root_dir();
+					let e_dir = loaded_game.game_file.e_drv_cursor().root_dir();
+					let f_dir = loaded_game.game_file.f_drv_cursor().root_dir();
+					let g_dir = loaded_game.game_file.g_drv_cursor().root_dir();
+					let p_dir = loaded_game.game_file.p_drv_cursor().root_dir();
+					egui::CollapsingHeader::new("A:\\")
+						.show(ui, |ui| show_dir(a_dir, "A:\\", ui, file_search, swap_window));
+					egui::CollapsingHeader::new("B:\\")
+						.show(ui, |ui| show_dir(b_dir, "B:\\", ui, file_search, swap_window));
+					egui::CollapsingHeader::new("C:\\")
+						.show(ui, |ui| show_dir(c_dir, "C:\\", ui, file_search, swap_window));
+					egui::CollapsingHeader::new("E:\\")
+						.show(ui, |ui| show_dir(e_dir, "E:\\", ui, file_search, swap_window));
+					egui::CollapsingHeader::new("F:\\")
+						.show(ui, |ui| show_dir(f_dir, "F:\\", ui, file_search, swap_window));
+					egui::CollapsingHeader::new("G:\\")
+						.show(ui, |ui| show_dir(g_dir, "G:\\", ui, file_search, swap_window));
+					egui::CollapsingHeader::new("P:\\")
+						.show(ui, |ui| show_dir(p_dir, "P:\\", ui, file_search, swap_window));
 				});
 			}
 		});
