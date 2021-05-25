@@ -1,6 +1,7 @@
 //! Errors
 
-use crate::dir::reader::{ReadEntriesError, ReadEntryError};
+// Imports
+use crate::new::ptr::{FileCursorError, ReadEntriesError, ReadEntryError};
 use std::io;
 
 /// Error for [`DrvFsCursor::new`](super::DrvFsCursor::new)
@@ -50,5 +51,5 @@ pub enum OpenFileError {
 
 	/// Unable to open file
 	#[error("Unable to open file")]
-	OpenFile(#[source] io::Error),
+	OpenFile(#[source] FileCursorError),
 }

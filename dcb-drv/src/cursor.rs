@@ -7,7 +7,10 @@ pub mod error;
 pub use error::{NewError, OpenFileError};
 
 // Imports
-use crate::{dir::entry::DirEntryReaderKind, DirEntryReader, DirReader};
+use crate::new::{
+	ptr::{DirPtr, FilePtr},
+	DirEntry, DirEntryKind,
+};
 use bit_vec::BitVec;
 use chrono::NaiveDateTime;
 use dcb_util::{AsciiStrArr, IoCursor};
@@ -28,82 +31,74 @@ pub struct DrvFsCursor {
 
 impl DrvFsCursor {
 	/// Creates a new filesystem cursor
-	pub fn new<R: io::Read + io::Seek>(reader: &mut R) -> Result<Self, NewError> {
+	pub fn new<T: io::Read + io::Seek>(cursor: &mut T) -> Result<Self, NewError> {
 		/// Helper function that sets sector status given a directory
 		fn iter_file_tree<R: io::Read + io::Seek>(
-			cursor: &mut R, dir: DirReader, sector_status: &mut BitVec,
+			cursor: &mut R, dir_ptr: DirPtr, sector_status: &mut BitVec,
 		) -> Result<DirCursor, NewError> {
 			// Read all entries
-			// TODO: Avoid allocations by going through all entries twice.
-			let entries_reader: Vec<DirEntryReader> = dir
-				.read_entries(cursor)
+			let entries: Vec<DirEntry> = dir_ptr
+				.entries(cursor)
 				.map_err(|err| NewError::ReadDir {
-					sector_pos: dir.sector_pos(),
+					sector_pos: dir_ptr.sector_pos,
 					err,
 				})?
 				.collect::<Result<_, _>>()
 				.map_err(|err| NewError::ReadDirEntry {
-					sector_pos: dir.sector_pos(),
+					sector_pos: dir_ptr.sector_pos,
 					err,
 				})?;
 
 			// Set the entries of the directory as filled
-			let dir_sector = usize::try_from(dir.sector_pos()).expect("Sector position didn't fit into `usize`");
-			let dir_sectors_len = ((entries_reader.len() + 0x1) * 0x20 + 0x7ff) / 0x800;
+			let dir_sector = usize::try_from(dir_ptr.sector_pos).expect("Sector position didn't fit into `usize`");
+			let dir_sectors_len = ((entries.len() + 0x1) * 0x20 + 0x7ff) / 0x800;
 			for n in 0..dir_sectors_len {
 				sector_status.set(dir_sector + n, true);
 			}
 
-			// Then add all entries
-			let mut entries = vec![];
-			for entry in entries_reader {
-				let kind = match *entry.kind() {
-					DirEntryReaderKind::Dir(dir) => {
-						let dir = iter_file_tree(cursor, dir, sector_status)?;
+			// Then convert all dir entries to our entries
+			let entries = entries
+				.into_iter()
+				.map(|entry| {
+					let kind = match entry.kind {
+						DirEntryKind::Dir { ptr } => {
+							let dir = iter_file_tree(cursor, ptr, sector_status)?;
 
-						DirEntryCursorKind::Dir(dir)
-					},
-					DirEntryReaderKind::File(file) => {
-						// Set the file as filled
-						let file_sector =
-							usize::try_from(file.sector_pos()).expect("Sector position didn't fit into `usize`");
-						let file_sectors_len =
-							usize::try_from((file.size() + 0x7ff) / 0x800).expect("File size didn't fit into `usize`");
-						for n in 0..file_sectors_len {
-							sector_status.set(file_sector + n, true);
-						}
+							DirEntryCursorKind::Dir(dir)
+						},
+						DirEntryKind::File { extension, ptr } => {
+							// Set the file as filled
+							let file_sector =
+								usize::try_from(ptr.sector_pos).expect("Sector position didn't fit into `usize`");
+							let file_sectors_len =
+								usize::try_from((ptr.size + 0x7ff) / 0x800).expect("File size didn't fit into `usize`");
+							for n in 0..file_sectors_len {
+								sector_status.set(file_sector + n, true);
+							}
 
-						DirEntryCursorKind::File(FileCursor {
-							extension:  *file.extension(),
-							sector_pos: file.sector_pos(),
-							size:       file.size(),
-						})
-					},
-				};
+							DirEntryCursorKind::File(FileCursor { extension, ptr })
+						},
+					};
 
-				let entry = DirEntryCursor {
-					name: *entry.name(),
-					date: entry.date(),
-					kind,
-				};
-				entries.push(entry);
-			}
+					Ok(DirEntryCursor {
+						name: entry.name,
+						date: entry.date,
+						kind,
+					})
+				})
+				.collect::<Result<_, _>>()?;
 
-			Ok(DirCursor {
-				sector_pos: dir.sector_pos(),
-				entries,
-			})
+			Ok(DirCursor { entries })
 		}
 
-		// Go through all directories and files and create a status
-		let size: usize = reader
+		// Parse the full filesystem, accumulating the status
+		let size: usize = cursor
 			.stream_len()
 			.map_err(NewError::FileSize)?
 			.try_into()
 			.expect("File size didn't fit into `usize`");
 		let mut sector_status = BitVec::from_elem((size + 0x7ff) / 0x800, false);
-
-		let root_dir = iter_file_tree(reader, DirReader::new(0), &mut sector_status)?;
+		let root_dir = iter_file_tree(cursor, DirPtr::root(), &mut sector_status)?;
 
 		Ok(Self {
 			root_dir,
@@ -156,8 +151,7 @@ impl DrvFsCursor {
 						.map(|entry| &entry.kind)
 					{
 						Some(DirEntryCursorKind::File(file)) => Ok(OpenFile {
-							inner: IoCursor::new(cursor, u64::from(file.sector_pos) * 0x800, u64::from(file.size))
-								.map_err(OpenFileError::OpenFile)?,
+							inner: file.ptr.cursor(cursor).map_err(OpenFileError::OpenFile)?,
 							drive: self,
 						}),
 						Some(_) => Err(OpenFileError::OpenDir),
@@ -166,17 +160,12 @@ impl DrvFsCursor {
 				},
 			}
 		}
-
-		//
 	}
 }
 
 /// A directory
 #[derive(PartialEq, Clone, Debug)]
 pub struct DirCursor {
-	/// Sector position
-	sector_pos: u32,
-
 	/// All entries
 	entries: Vec<DirEntryCursor>,
 }
@@ -238,11 +227,8 @@ pub struct FileCursor {
 	/// Extension
 	extension: AsciiStrArr<0x3>,
 
-	/// Sector position
-	sector_pos: u32,
-
-	/// Size
-	size: u32,
+	/// File pointer
+	ptr: FilePtr,
 }
 
 impl FileCursor {
@@ -252,16 +238,10 @@ impl FileCursor {
 		&self.extension
 	}
 
-	/// Get a reference to the file cursor's sector pos.
+	/// Returns the pointer of this file cursor
 	#[must_use]
-	pub const fn sector_pos(&self) -> &u32 {
-		&self.sector_pos
-	}
-
-	/// Get a reference to the file cursor's size.
-	#[must_use]
-	pub const fn size(&self) -> &u32 {
-		&self.size
+	pub const fn ptr(&self) -> FilePtr {
+		self.ptr
 	}
 }
 
