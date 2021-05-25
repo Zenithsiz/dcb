@@ -7,8 +7,8 @@ pub mod error;
 pub use error::{NewError, OpenFileError};
 
 // Imports
-use crate::new::{
-	ptr::{DirPtr, FilePtr},
+use crate::{
+	DirPtr, FilePtr,
 	DirEntry, DirEntryKind,
 };
 use bit_vec::BitVec;

@@ -28,5 +28,5 @@ pub enum ReadEntryError {
 
 	/// Unable to parse entry
 	#[error("Unable to parse entry")]
-	ParseEntry(#[source] crate::new::entry::FromBytesError),
+	ParseEntry(#[source] crate::entry::FromBytesError),
 }

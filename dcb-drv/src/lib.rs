@@ -60,14 +60,17 @@
 // Modules
 pub mod cursor;
 pub mod dir;
+pub mod entry;
 pub mod error;
 pub mod file;
-pub mod new;
+pub mod ptr;
 
 // Exports
 pub use dir::{DirEntryWriter, DirWriter, DirWriterLister};
+pub use entry::{DirEntry, DirEntryKind};
 pub use error::WriteFsError;
 pub use file::FileWriter;
+pub use ptr::{DirPtr, FilePtr};
 
 // Imports
 use std::io;

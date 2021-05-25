@@ -1,7 +1,7 @@
 //! Errors
 
 // Imports
-use crate::new::ptr::{FileCursorError, ReadEntriesError, ReadEntryError};
+use crate::ptr::{FileCursorError, ReadEntriesError, ReadEntryError};
 use std::io;
 
 /// Error for [`DrvFsCursor::new`](super::DrvFsCursor::new)

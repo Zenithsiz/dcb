@@ -6,7 +6,7 @@ mod cli;
 // Imports
 use anyhow::Context;
 use cli::CliData;
-use dcb_drv::new::{ptr::DirPtr, DirEntryKind};
+use dcb_drv::{DirEntryKind, DirPtr};
 use std::{
 	fs, io,
 	path::{Path, PathBuf},
