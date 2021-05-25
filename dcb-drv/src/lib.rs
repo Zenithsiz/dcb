@@ -65,24 +65,12 @@ pub mod file;
 pub mod new;
 
 // Exports
-pub use dir::{DirEntryReader, DirEntryWriter, DirReader, DirWriter, DirWriterLister};
+pub use dir::{DirEntryWriter, DirWriter, DirWriterLister};
 pub use error::WriteFsError;
-pub use file::{FileReader, FileWriter};
+pub use file::FileWriter;
 
 // Imports
 use std::io;
-
-/// Filesystem reader
-#[derive(PartialEq, Eq, Clone, Debug)]
-pub struct DrvFsReader;
-
-impl DrvFsReader {
-	/// Returns the root directory of this filesystem
-	#[must_use]
-	pub const fn root() -> DirReader {
-		DirReader::new(0)
-	}
-}
 
 /// Filesystem writer
 pub struct DrvFsWriter;

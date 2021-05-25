@@ -6,7 +6,7 @@ mod cli;
 // Imports
 use anyhow::Context;
 use cli::CliData;
-use dcb_drv::{dir::entry::DirEntryReaderKind, DirReader, DrvFsReader};
+use dcb_drv::new::{ptr::DirPtr, DirEntryKind};
 use std::{
 	fs, io,
 	path::{Path, PathBuf},
@@ -45,7 +45,7 @@ fn main() -> Result<(), anyhow::Error> {
 			.with_context(|| format!("Unable to create directory {}", output_dir.display()))?;
 
 		// Then extract the tree
-		if let Err(err) = self::extract_tree(&mut input_file, &DrvFsReader::root(), &output_dir, &cli_data) {
+		if let Err(err) = self::extract_tree(&mut input_file, DirPtr::root(), &output_dir, &cli_data) {
 			log::error!("Unable to extract files from {}: {:?}", input_file_path.display(), err);
 		}
 
@@ -65,12 +65,12 @@ fn main() -> Result<(), anyhow::Error> {
 
 /// Extracts a `.drv` file from a reader and starting directory
 fn extract_tree<R: io::Read + io::Seek>(
-	reader: &mut R, dir: &DirReader, path: &Path, cli_data: &CliData,
+	reader: &mut R, dir_ptr: DirPtr, path: &Path, cli_data: &CliData,
 ) -> Result<(), anyhow::Error> {
 	// Get all entries
 	// Note: We need to collect to free the reader so it can seek to the next files.
-	let entries: Vec<_> = dir
-		.read_entries(reader)
+	let entries: Vec<_> = dir_ptr
+		.entries(reader)
 		.with_context(|| format!("Unable to get directory entries of {}", path.display()))?
 		.collect();
 
@@ -79,27 +79,22 @@ fn extract_tree<R: io::Read + io::Seek>(
 		// If we can't read it, return Err
 		let entry = entry.with_context(|| format!("Unable to read directory entry of {}", path.display()))?;
 
-		// Get the filename and new path
-		let name = match entry.kind() {
-			DirEntryReaderKind::File(file) => format!("{}.{}", entry.name(), file.extension()),
-			DirEntryReaderKind::Dir(_) => entry.name().to_string(),
-		};
-		let path = path.join(name);
-
 		// Create the date
 		// Note: `.DRV` only supports second precision.
-		let time = filetime::FileTime::from_unix_time(entry.date().timestamp(), 0);
+		let time = filetime::FileTime::from_unix_time(entry.date.timestamp(), 0);
 
 		// Then check it's type
-		match entry.kind() {
+		match entry.kind {
 			// If it's a file, create the file and write all contents
-			DirEntryReaderKind::File(file) => {
+			DirEntryKind::File { extension, ptr } => {
+				let path = path.join(format!("{}.{}", entry.name, extension));
+
 				// Log the file and it's size
 				if !cli_data.quiet {
 					println!(
 						"{} ({}B)",
 						path.display(),
-						size_format::SizeFormatterSI::new(u64::from(file.size()))
+						size_format::SizeFormatterSI::new(u64::from(ptr.size))
 					);
 				}
 
@@ -109,8 +104,8 @@ fn extract_tree<R: io::Read + io::Seek>(
 				}
 
 				// Get the file's reader.
-				let mut file_reader = file
-					.reader(reader)
+				let mut file_reader = ptr
+					.cursor(&mut *reader)
 					.with_context(|| format!("Unable to read file {}", path.display()))?;
 
 				// Then create the output file and copy.
@@ -130,7 +125,9 @@ fn extract_tree<R: io::Read + io::Seek>(
 			},
 
 			// If it's a directory, create it and recurse for all it's entries
-			DirEntryReaderKind::Dir(dir) => {
+			DirEntryKind::Dir { ptr } => {
+				let path = path.join(entry.name.as_str());
+
 				// Log the directory
 				if !cli_data.quiet {
 					println!("{}/", path.display());
@@ -139,12 +136,12 @@ fn extract_tree<R: io::Read + io::Seek>(
 				// Create the directory and recurse over it
 				dcb_util::try_create_folder(&path)
 					.with_context(|| format!("Unable to create directory {}", path.display()))?;
-				self::extract_tree(reader, dir, &path, &cli_data)
+				self::extract_tree(reader, ptr, &path, &cli_data)
 					.with_context(|| format!("Unable to extract directory {}", path.display()))?;
 
 				// Then set it's date
 				// Note: We must do this *after* extracting the tree, else the time
-				//       will be updated.
+				//       will be updated when we insert files into it.
 				if let Err(err) = filetime::set_file_mtime(&path, time) {
 					log::warn!(
 						"Unable to write date for directory {}: {}",
