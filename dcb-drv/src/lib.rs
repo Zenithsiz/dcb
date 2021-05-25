@@ -1,6 +1,6 @@
 #![doc(include = "lib.md")]
 // Features
-#![feature(external_doc, seek_stream_len)]
+#![feature(external_doc, seek_stream_len, try_blocks)]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]
 // We'll disable the ones we don't need
@@ -62,6 +62,7 @@ pub mod cursor;
 pub mod dir;
 pub mod error;
 pub mod file;
+pub mod new;
 
 // Exports
 pub use dir::{DirEntryReader, DirEntryWriter, DirReader, DirWriter, DirWriterLister};
