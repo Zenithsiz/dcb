@@ -30,3 +30,16 @@ pub enum ReadEntryError {
 	#[error("Unable to parse entry")]
 	ParseEntry(#[source] crate::entry::FromBytesError),
 }
+
+
+/// Error for [`DirPtr::write_entries`](super::DirPtr::write_entries)
+#[derive(Debug, thiserror::Error)]
+pub enum WriteEntriesError {
+	/// Unable to seek to directory
+	#[error("Unable to seek to directory")]
+	Seek(#[source] io::Error),
+
+	/// Unable to write all directory entries
+	#[error("Unable to write directory entries")]
+	WriteEntry(#[source] io::Error),
+}

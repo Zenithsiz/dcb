@@ -4,9 +4,11 @@
 pub mod error;
 
 // Exports
+pub use error::{FileCursorError, ReadEntriesError, ReadEntryError, WriteEntriesError};
+
+// Imports
 use super::DirEntry;
 use dcb_util::IoCursor;
-pub use error::{FileCursorError, ReadEntriesError, ReadEntryError};
 use std::io::{self, SeekFrom};
 
 /// File pointer
@@ -52,7 +54,7 @@ impl DirPtr {
 	}
 
 	/// Returns an iterator over all entries in this directory
-	pub fn entries<R: io::Read + io::Seek>(
+	pub fn read_entries<R: io::Read + io::Seek>(
 		self, reader: &mut R,
 	) -> Result<impl Iterator<Item = Result<DirEntry, ReadEntryError>> + '_, ReadEntriesError> {
 		// Seek to the sector
@@ -73,5 +75,25 @@ impl DirPtr {
 		});
 
 		Ok(iter)
+	}
+
+	/// Writes a list of entries to a writer
+	pub fn write_entries<W: io::Seek + io::Write>(
+		self, writer: &mut W, entries: impl IntoIterator<Item = DirEntry>,
+	) -> Result<(), WriteEntriesError> {
+		// Seek to the sector
+		self.seek_to(writer).map_err(WriteEntriesError::Seek)?;
+
+		// For each entry, write it
+		for entry in entries {
+			// Put the entry into bytes
+			let mut entry_bytes = [0; 0x20];
+			entry.to_bytes(&mut entry_bytes);
+
+			// Then write it
+			writer.write_all(&entry_bytes).map_err(WriteEntriesError::WriteEntry)?;
+		}
+
+		Ok(())
 	}
 }

@@ -10,6 +10,7 @@ pub use lister::DirWriterLister;
 
 // Imports
 use super::entry::DirEntryWriterKind;
+use crate::{DirEntry, DirEntryKind, DirPtr, FilePtr};
 use std::{
 	convert::TryFrom,
 	io::{self, SeekFrom},
@@ -66,11 +67,33 @@ impl<L: DirWriterLister> DirWriter<L> {
 		// For each entry, write it and add it to our directory bytes
 		for entry in self.entries {
 			// Get the entry
-			let entry = entry.map_err(WriteEntriesError::GetEntry)?;
+			let entry: crate::DirEntryWriter<L> = entry.map_err(WriteEntriesError::GetEntry)?;
 
 			// Write the entry on our directory
 			let mut entry_bytes = [0; 0x20];
-			entry.to_bytes(&mut entry_bytes, cur_sector_pos);
+			{
+				let entry = DirEntry {
+					name: entry.name,
+					date: entry.date,
+					kind: match &entry.kind {
+						DirEntryWriterKind::File(file) => DirEntryKind::File {
+							extension: file.extension,
+							ptr:       FilePtr {
+								sector_pos: cur_sector_pos,
+								size:       file.size(),
+							},
+						},
+						DirEntryWriterKind::Dir(_) => DirEntryKind::Dir {
+							ptr: DirPtr {
+								sector_pos: cur_sector_pos,
+							},
+						},
+					},
+				};
+				entry.to_bytes(&mut entry_bytes);
+			}
+
+			//entry.to_bytes(&mut entry_bytes, cur_sector_pos);
 			entries_bytes.extend_from_slice(&entry_bytes);
 
 			// Seek to the entry
@@ -79,7 +102,7 @@ impl<L: DirWriterLister> DirWriter<L> {
 				.map_err(WriteEntriesError::SeekToEntry)?;
 
 			// Write the entry on the file
-			let sector_size = match entry.into_kind() {
+			let sector_size = match entry.kind {
 				DirEntryWriterKind::File(file) => {
 					let size = file.size();
 					file.write(writer).map_err(WriteEntriesError::WriteFile)?;

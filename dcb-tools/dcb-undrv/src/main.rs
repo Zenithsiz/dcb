@@ -70,7 +70,7 @@ fn extract_tree<R: io::Read + io::Seek>(
 	// Get all entries
 	// Note: We need to collect to free the reader so it can seek to the next files.
 	let entries: Vec<_> = dir_ptr
-		.entries(reader)
+		.read_entries(reader)
 		.with_context(|| format!("Unable to get directory entries of {}", path.display()))?
 		.collect();
 

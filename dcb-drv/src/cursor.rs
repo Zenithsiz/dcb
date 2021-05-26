@@ -7,10 +7,7 @@ pub mod error;
 pub use error::{NewError, OpenFileError};
 
 // Imports
-use crate::{
-	DirPtr, FilePtr,
-	DirEntry, DirEntryKind,
-};
+use crate::{DirEntry, DirEntryKind, DirPtr, FilePtr};
 use bit_vec::BitVec;
 use chrono::NaiveDateTime;
 use dcb_util::{AsciiStrArr, IoCursor};
@@ -38,7 +35,7 @@ impl DrvFsCursor {
 		) -> Result<DirCursor, NewError> {
 			// Read all entries
 			let entries: Vec<DirEntry> = dir_ptr
-				.entries(cursor)
+				.read_entries(cursor)
 				.map_err(|err| NewError::ReadDir {
 					sector_pos: dir_ptr.sector_pos,
 					err,

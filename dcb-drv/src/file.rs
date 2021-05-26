@@ -8,13 +8,13 @@ use std::io;
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub struct FileWriter<R: io::Read> {
 	/// File extension
-	extension: AsciiStrArr<0x3>,
+	pub extension: AsciiStrArr<0x3>,
 
 	/// Reader
-	reader: R,
+	pub reader: R,
 
 	/// Size
-	size: u32,
+	pub size: u32,
 }
 
 impl<R: io::Read> FileWriter<R> {
