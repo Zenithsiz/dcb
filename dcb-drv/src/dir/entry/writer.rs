@@ -57,15 +57,4 @@ impl<L: DirWriterLister> DirEntryWriter<L> {
 	pub fn new(name: AsciiStrArr<0x10>, date: NaiveDateTime, kind: DirEntryWriterKind<L>) -> Self {
 		Self { name, date, kind }
 	}
-
-	/// Returns this entry's size
-	///
-	/// For directories this simply returns the directory size itself,
-	/// _not_ the sum of the sizes of it's entries.
-	pub fn size(&self) -> u32 {
-		match &self.kind {
-			DirEntryWriterKind::File(file) => file.size(),
-			DirEntryWriterKind::Dir(dir) => dir.size(),
-		}
-	}
 }

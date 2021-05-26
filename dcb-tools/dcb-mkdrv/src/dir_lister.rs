@@ -79,11 +79,6 @@ impl DirLister {
 impl DirWriterLister for DirLister {
 	type Error = NextError;
 	type FileReader = fs::File;
-
-	fn entries_len(&self) -> u32 {
-		// Note: We makes sure it's less than `u32::MAX` in the constructor
-		self.entries.len().try_into().expect("Too many entries")
-	}
 }
 
 impl IntoIterator for DirLister {

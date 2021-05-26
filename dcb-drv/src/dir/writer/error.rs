@@ -34,11 +34,7 @@ pub enum WriteEntriesError<E: std::error::Error + 'static> {
 	#[error("Unable to write directory")]
 	WriteDir(#[source] Box<Self>),
 
-	/// Unable to seek to directory entries
-	#[error("Unable to seek to directory entries")]
-	SeekEntries(#[source] io::Error),
-
 	/// Unable to write all directory entries
 	#[error("Unable to write directory entries")]
-	WriteEntries(#[source] io::Error),
+	WriteEntries(#[source] crate::ptr::WriteEntriesError),
 }

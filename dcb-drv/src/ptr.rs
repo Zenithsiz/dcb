@@ -22,6 +22,12 @@ pub struct FilePtr {
 }
 
 impl FilePtr {
+	/// Creates a new file pointer
+	#[must_use]
+	pub const fn new(sector_pos: u32, size: u32) -> Self {
+		Self { sector_pos, size }
+	}
+
 	/// Seeks to this directory on a cursor
 	pub fn seek_to<T: io::Seek>(self, cursor: &mut T) -> Result<u64, io::Error> {
 		cursor.seek(SeekFrom::Start(u64::from(self.sector_pos) * 0x800))
@@ -42,6 +48,12 @@ pub struct DirPtr {
 }
 
 impl DirPtr {
+	/// Creates a new directory pointer
+	#[must_use]
+	pub const fn new(sector_pos: u32) -> Self {
+		Self { sector_pos }
+	}
+
 	/// Returns the root directory pointer
 	#[must_use]
 	pub const fn root() -> Self {

@@ -33,7 +33,4 @@ where
 
 	/// Error type for each entry
 	type Error: std::error::Error + 'static;
-
-	/// Returns the number of entries in this lister
-	fn entries_len(&self) -> u32;
 }
