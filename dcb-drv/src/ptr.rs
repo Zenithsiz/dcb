@@ -40,8 +40,21 @@ impl FilePtr {
 	}
 }
 
+impl PartialOrd for FilePtr {
+	fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+		Some(self.cmp(other))
+	}
+}
+
+impl Ord for FilePtr {
+	fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+		// Only compare sector position
+		self.sector_pos.cmp(&other.sector_pos)
+	}
+}
+
 /// Directory pointer
-#[derive(PartialEq, Eq, Clone, Copy, Debug)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Debug)]
 pub struct DirPtr {
 	/// Sector position
 	pub sector_pos: u32,

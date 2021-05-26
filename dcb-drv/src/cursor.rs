@@ -12,6 +12,7 @@ use bit_vec::BitVec;
 use chrono::NaiveDateTime;
 use dcb_util::{AsciiStrArr, IoCursor};
 use std::{
+	collections::BTreeSet,
 	convert::{TryFrom, TryInto},
 	io,
 };
@@ -24,6 +25,12 @@ pub struct DrvFsCursor {
 
 	/// All sectors' status
 	sector_status: BitVec,
+
+	/// All files
+	files: BTreeSet<FilePtr>,
+
+	/// All directories
+	dirs: BTreeSet<DirPtr>,
 }
 
 impl DrvFsCursor {
@@ -31,23 +38,24 @@ impl DrvFsCursor {
 	pub fn new<T: io::Read + io::Seek>(cursor: &mut T) -> Result<Self, NewError> {
 		/// Helper function that sets sector status given a directory
 		fn iter_file_tree<R: io::Read + io::Seek>(
-			cursor: &mut R, dir_ptr: DirPtr, sector_status: &mut BitVec,
+			cursor: &mut R, ptr: DirPtr, sector_status: &mut BitVec, files: &mut BTreeSet<FilePtr>,
+			dirs: &mut BTreeSet<DirPtr>,
 		) -> Result<DirCursor, NewError> {
 			// Read all entries
-			let entries: Vec<DirEntry> = dir_ptr
+			let entries: Vec<DirEntry> = ptr
 				.read_entries(cursor)
 				.map_err(|err| NewError::ReadDir {
-					sector_pos: dir_ptr.sector_pos,
+					sector_pos: ptr.sector_pos,
 					err,
 				})?
 				.collect::<Result<_, _>>()
 				.map_err(|err| NewError::ReadDirEntry {
-					sector_pos: dir_ptr.sector_pos,
+					sector_pos: ptr.sector_pos,
 					err,
 				})?;
 
 			// Set the entries of the directory as filled
-			let dir_sector = usize::try_from(dir_ptr.sector_pos).expect("Sector position didn't fit into `usize`");
+			let dir_sector = usize::try_from(ptr.sector_pos).expect("Sector position didn't fit into `usize`");
 			let dir_sectors_len = ((entries.len() + 0x1) * 0x20 + 0x7ff) / 0x800;
 			for n in 0..dir_sectors_len {
 				sector_status.set(dir_sector + n, true);
@@ -59,7 +67,10 @@ impl DrvFsCursor {
 				.map(|entry| {
 					let kind = match entry.kind {
 						DirEntryKind::Dir { ptr } => {
-							let dir = iter_file_tree(cursor, ptr, sector_status)?;
+							// Add this directory
+							dirs.insert(ptr);
+
+							let dir = iter_file_tree(cursor, ptr, sector_status, files, dirs)?;
 
 							DirEntryCursorKind::Dir(dir)
 						},
@@ -72,6 +83,10 @@ impl DrvFsCursor {
 							for n in 0..file_sectors_len {
 								sector_status.set(file_sector + n, true);
 							}
+
+							// Add this file
+							// TODO: Maybe allow hard link in the future?
+							assert!(files.insert(ptr), "Two files on file lead to the same storage");
 
 							DirEntryCursorKind::File(FileCursor { extension, ptr })
 						},
@@ -95,11 +110,15 @@ impl DrvFsCursor {
 			.try_into()
 			.expect("File size didn't fit into `usize`");
 		let mut sector_status = BitVec::from_elem((size + 0x7ff) / 0x800, false);
-		let root_dir = iter_file_tree(cursor, DirPtr::root(), &mut sector_status)?;
+		let mut files = BTreeSet::new();
+		let mut dirs = BTreeSet::new();
+		let root_dir = iter_file_tree(cursor, DirPtr::root(), &mut sector_status, &mut files, &mut dirs)?;
 
 		Ok(Self {
 			root_dir,
 			sector_status,
+			files,
+			dirs,
 		})
 	}
 
