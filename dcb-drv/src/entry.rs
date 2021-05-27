@@ -1,4 +1,4 @@
-//! Directory entry
+#![doc(include = "entry.md")]
 
 // Modules
 pub mod error;

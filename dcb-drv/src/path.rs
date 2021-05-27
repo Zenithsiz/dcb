@@ -1,10 +1,14 @@
 //! Paths
+//!
+//! See the [`Path`] type for more details.
 
 // Imports
 use ascii::{AsciiChar, AsciiStr};
 use ref_cast::RefCast;
 
 /// A path
+///
+/// Paths are separated by a backslash, `\`.
 #[derive(Debug)]
 #[derive(ref_cast::RefCast)]
 #[repr(transparent)]
@@ -43,7 +47,7 @@ impl Path {
 
 	/// Returns an iterator over all components of this path
 	#[must_use]
-	pub const fn components(&self) -> Components<'_> {
+	pub const fn components(&self) -> Components {
 		Components { path: self, idx: 0 }
 	}
 

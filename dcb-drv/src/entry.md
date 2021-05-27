@@ -1,5 +1,9 @@
 # Directory entry
 
+Every directory entry must be aligned to a `2048` (`0x800`) byte sector, including
+both files and directories, but may span however many sectors it needs (excluding files
+which have a max size of ~`4 GiB` and thus a max sector size of `2097152` sectors).
+
 # Layout
 
 Each directory entry has the following layout:
@@ -15,5 +19,5 @@ Each directory entry has the following layout:
 
 # Limitations
 
-The max size for a file is `u32::MAX` bytes, but the filesystem itself can hold `2^43` bytes in total, as each
+The max size for a file is `u32::MAX` bytes, but the filesystem itself can hold `8 TiB` (`2^43` bytes) in total, as each
 directory and file position is identified by sector.

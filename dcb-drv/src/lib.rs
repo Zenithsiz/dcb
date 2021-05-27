@@ -59,6 +59,7 @@
 
 // Modules
 pub mod cursor;
+pub mod dir;
 pub mod entry;
 pub mod path;
 pub mod ptr;
