@@ -107,9 +107,8 @@ pub enum SwapFilesError {
 	/// Unable to open drive
 	#[error("Unable to open drive")]
 	OpenDrive(#[source] io::Error),
-	/*
+
 	/// Unable to swap files
 	#[error("Unable to swap files")]
 	SwapFiles(#[source] dcb_drv::cursor::SwapFilesError),
-	*/
 }

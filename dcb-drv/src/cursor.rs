@@ -4,17 +4,17 @@
 pub mod error;
 
 // Exports
-pub use error::{NewError, OpenFileError};
+pub use error::{FindError, NewError, OpenFileError, SwapFilesError};
 
 // Imports
-use crate::{DirEntry, DirEntryKind, DirPtr, FilePtr};
+use crate::{DirEntry, DirEntryKind, DirPtr, FilePtr, Path};
 use bit_vec::BitVec;
 use chrono::NaiveDateTime;
 use dcb_util::{AsciiStrArr, IoCursor};
 use std::{
 	collections::BTreeSet,
 	convert::{TryFrom, TryInto},
-	io,
+	io::{self, SeekFrom},
 };
 
 /// Filesystem cursor
@@ -100,7 +100,7 @@ impl DrvFsCursor {
 				})
 				.collect::<Result<_, _>>()?;
 
-			Ok(DirCursor { entries })
+			Ok(DirCursor { ptr, entries })
 		}
 
 		// Parse the full filesystem, accumulating the status
@@ -135,53 +135,168 @@ impl DrvFsCursor {
 	}
 
 	/// Opens a file
-	pub fn open_file<T: io::Seek + io::Read>(
-		&mut self, cursor: T, mut path: &str,
-	) -> Result<OpenFile<T>, OpenFileError> {
-		let mut cur_dir = self.root_dir();
-		loop {
-			// Check if we need to go any more directories in
-			match path.split_once('\\') {
-				// If so, find the directory in the current directory
-				Some((dir, new_path)) => {
-					path = new_path;
+	pub fn open_file<T: io::Seek + io::Read>(&mut self, cursor: T, path: &Path) -> Result<OpenFile<T>, OpenFileError> {
+		let file = match self
+			.root_dir_mut()
+			.find_mut(path)
+			.map(|entry| &mut entry.kind)
+			.map_err(OpenFileError::FindFile)?
+		{
+			DirEntryCursorKind::File(file) => file,
+			_ => return Err(OpenFileError::OpenDir),
+		};
 
-					cur_dir = match cur_dir
-						.entries
-						.iter()
-						.find(|entry| entry.name.as_str() == dir)
-						.map(|entry| &entry.kind)
-					{
-						Some(DirEntryCursorKind::Dir(dir)) => dir,
-						Some(_) => return Err(OpenFileError::FileDirEntries),
-						None => return Err(OpenFileError::FindFile),
-					};
-				},
 
-				// If not, open the file in the current directory
-				None => {
-					return match cur_dir
-						.entries
-						.iter()
-						.find(|entry| entry.name.as_str() == path)
-						.map(|entry| &entry.kind)
-					{
-						Some(DirEntryCursorKind::File(file)) => Ok(OpenFile {
-							inner: file.ptr.cursor(cursor).map_err(OpenFileError::OpenFile)?,
-							drive: self,
-						}),
-						Some(_) => Err(OpenFileError::OpenDir),
-						None => Err(OpenFileError::FindFile),
-					}
-				},
+		Ok(OpenFile {
+			inner: file.ptr.cursor(cursor).map_err(OpenFileError::OpenFile)?,
+			drive: self,
+		})
+	}
+
+	/// Swaps two files
+	#[allow(clippy::too_many_lines)] // TODO: Refactor
+	pub fn swap_files<T: io::Seek + io::Write>(
+		&mut self, cursor: &mut T, lhs_path: &Path, rhs_path: &Path,
+	) -> Result<(), SwapFilesError> {
+		// If both paths are equal, return Error
+		if lhs_path == rhs_path {
+			return Err(SwapFilesError::BothPathsEqual);
+		}
+
+		// Get the common ancestor between both paths
+		let (common_path, lhs_path, rhs_path) = lhs_path.common_ancestor(rhs_path);
+		let (lhs_common_entry_name, lhs_path) = lhs_path.split_first().ok_or(SwapFilesError::SwapDirs)?;
+		let (rhs_common_entry_name, rhs_path) = rhs_path.split_first().ok_or(SwapFilesError::SwapDirs)?;
+
+		// Get the directory at the common point
+		let common_dir: &mut DirCursor = self
+			.root_dir_mut()
+			.find_mut(common_path)
+			.map_err(SwapFilesError::FindCommonPath)?
+			.kind
+			.as_dir_mut()
+			.ok_or(SwapFilesError::CommonPathFile)?;
+
+		// Then find each common entry separately
+		let mut lhs_common_entry = None;
+		let mut rhs_common_entry = None;
+		for (idx, entry) in common_dir.entries.iter_mut().enumerate() {
+			// If we found them, set them
+			match entry.name.as_str() {
+				name if name == lhs_common_entry_name.as_str() => lhs_common_entry = Some((idx, entry)),
+				name if name == rhs_common_entry_name.as_str() => rhs_common_entry = Some((idx, entry)),
+				_ => continue,
+			}
+
+			// If we got them both
+			if lhs_common_entry.is_some() && rhs_common_entry.is_some() {
+				break;
 			}
 		}
+
+		// Then get the directories
+		let (lhs_common_entry_idx, lhs_common_entry) = lhs_common_entry.ok_or(SwapFilesError::CommonPathLhsEntry)?;
+		let (rhs_common_entry_idx, rhs_common_entry) = rhs_common_entry.ok_or(SwapFilesError::CommonPathRhsEntry)?;
+
+		// Then find the directory of the files to swap
+		let (lhs_dir_ptr, lhs_dir_idx, lhs_file) = match lhs_path.split_last() {
+			Some((lhs_dir_path, lhs_filename)) => {
+				let lhs_dir_entry = lhs_common_entry
+					.kind
+					.as_dir_mut()
+					.ok_or(SwapFilesError::LhsFileDirEntries)?
+					.find_mut(lhs_dir_path)
+					.map_err(SwapFilesError::FindLhs)?;
+				let lhs_dir = lhs_dir_entry
+					.kind
+					.as_dir_mut()
+					.ok_or(SwapFilesError::LhsFileDirEntries)?;
+
+				let (lhs_dir_idx, lhs_entry) = lhs_dir
+					.entries
+					.iter_mut()
+					.enumerate()
+					.find(|(_, entry)| entry.name.as_str() == lhs_filename.as_str())
+					.ok_or(SwapFilesError::FindLhsFile)?;
+
+				let lhs_file = lhs_entry.kind.as_file_mut().ok_or(SwapFilesError::SwapDirs)?;
+
+				(lhs_dir.ptr, lhs_dir_idx, lhs_file)
+			},
+			// If we don't have at least 2 components, the parent is the common dir
+			None => (
+				common_dir.ptr,
+				lhs_common_entry_idx,
+				lhs_common_entry.kind.as_file_mut().ok_or(SwapFilesError::SwapDirs)?,
+			),
+		};
+		let (rhs_dir_ptr, rhs_dir_idx, rhs_file) = match rhs_path.split_last() {
+			Some((rhs_dir_path, rhs_filename)) => {
+				let rhs_dir_entry = rhs_common_entry
+					.kind
+					.as_dir_mut()
+					.ok_or(SwapFilesError::LhsFileDirEntries)?
+					.find_mut(rhs_dir_path)
+					.map_err(SwapFilesError::FindLhs)?;
+				let rhs_dir = rhs_dir_entry
+					.kind
+					.as_dir_mut()
+					.ok_or(SwapFilesError::LhsFileDirEntries)?;
+
+				let (rhs_dir_idx, rhs_entry) = rhs_dir
+					.entries
+					.iter_mut()
+					.enumerate()
+					.find(|(_, entry)| entry.name.as_str() == rhs_filename.as_str())
+					.ok_or(SwapFilesError::FindLhsFile)?;
+
+				let rhs_file = rhs_entry.kind.as_file_mut().ok_or(SwapFilesError::SwapDirs)?;
+
+				(rhs_dir.ptr, rhs_dir_idx, rhs_file)
+			},
+			// If we don't have at least 2 components, the parent is the common dir
+			None => (
+				common_dir.ptr,
+				rhs_common_entry_idx,
+				rhs_common_entry.kind.as_file_mut().ok_or(SwapFilesError::SwapDirs)?,
+			),
+		};
+
+
+		// Swap the paths on disk
+		lhs_dir_ptr.seek_to(cursor).map_err(SwapFilesError::SeekLhsEntry)?;
+		cursor
+			.seek(SeekFrom::Current(
+				0x20 * i64::try_from(lhs_dir_idx).expect("Entry number didn't fit into `i64`") + 0x4,
+			))
+			.map_err(SwapFilesError::SeekLhsEntry)?;
+		cursor
+			.write(&rhs_file.ptr.sector_pos.to_le_bytes())
+			.map_err(SwapFilesError::WriteLhsEntry)?;
+
+		rhs_dir_ptr.seek_to(cursor).map_err(SwapFilesError::SeekRhsEntry)?;
+		cursor
+			.seek(SeekFrom::Current(
+				0x20 * i64::try_from(rhs_dir_idx).expect("Entry number didn't fit into `i64`") + 0x4,
+			))
+			.map_err(SwapFilesError::SeekLhsEntry)?;
+		cursor
+			.write(&lhs_file.ptr.sector_pos.to_le_bytes())
+			.map_err(SwapFilesError::WriteLhsEntry)?;
+
+		// Then swap the pointers
+		std::mem::swap(&mut lhs_file.ptr, &mut rhs_file.ptr);
+
+		Ok(())
 	}
 }
 
 /// A directory
 #[derive(PartialEq, Clone, Debug)]
 pub struct DirCursor {
+	/// Dir pointer
+	ptr: DirPtr,
+
 	/// All entries
 	entries: Vec<DirEntryCursor>,
 }
@@ -191,6 +306,42 @@ impl DirCursor {
 	#[must_use]
 	pub fn entries(&self) -> &[DirEntryCursor] {
 		&self.entries
+	}
+
+	/// Returns all entries mutably
+	#[must_use]
+	pub fn entries_mut(&mut self) -> &mut [DirEntryCursor] {
+		&mut self.entries
+	}
+
+	/// Finds a directory entry from within this directory
+	pub fn find_mut(&mut self, path: &Path) -> Result<&mut DirEntryCursor, FindError> {
+		let mut cur_dir = self;
+
+		let mut components = path.components().peekable();
+		while let Some((_, entry_name)) = components.next() {
+			let entry = cur_dir
+				.entries
+				.iter_mut()
+				.find(|entry| entry.name.as_str() == entry_name.as_str())
+				.ok_or(FindError::FindFile)?;
+
+			// If we don't have anything next, return the entry
+			if components.peek().is_none() {
+				return Ok(entry);
+			}
+
+			match &mut entry.kind {
+				// If we got a file return error
+				DirEntryCursorKind::File(_) => return Err(FindError::FileDirEntries),
+
+				// If we got a directory, continue
+				DirEntryCursorKind::Dir(dir) => cur_dir = dir,
+			};
+		}
+
+		// If we get here, the path was empty
+		Err(FindError::EmptyPath)
 	}
 }
 
@@ -235,6 +386,24 @@ pub enum DirEntryCursorKind {
 
 	/// File
 	File(FileCursor),
+}
+
+impl DirEntryCursorKind {
+	/// Returns this entry kind as a directory
+	pub fn as_dir_mut(&mut self) -> Option<&mut DirCursor> {
+		match self {
+			Self::Dir(v) => Some(v),
+			_ => None,
+		}
+	}
+
+	/// Returns this entry kind as a file
+	pub fn as_file_mut(&mut self) -> Option<&mut FileCursor> {
+		match self {
+			Self::File(v) => Some(v),
+			_ => None,
+		}
+	}
 }
 
 /// A file cursor

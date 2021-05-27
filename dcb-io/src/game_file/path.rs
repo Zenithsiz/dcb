@@ -25,10 +25,10 @@ impl Path {
 
 	/// Returns this path's drive and remaining path, if any
 	#[must_use]
-	pub fn drive(&self) -> Option<(AsciiChar, &Self)> {
+	pub fn drive(&self) -> Option<(AsciiChar, &dcb_drv::Path)> {
 		match self.0.as_slice() {
 			[drive, AsciiChar::Colon, AsciiChar::BackSlash, rest @ ..] if drive.is_alphabetic() => {
-				Some((*drive, Self::new(rest.into())))
+				Some((*drive, dcb_drv::Path::new(rest.into())))
 			},
 			_ => None,
 		}
