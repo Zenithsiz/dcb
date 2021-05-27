@@ -3,16 +3,15 @@
 // Modules
 pub mod error;
 
+use dcb_drv::{DirEntryWriter, DirEntryWriterKind, DirWriter, DirWriterLister};
 // Exports
 pub use error::{NewError, NextError, ReadEntryError};
 
 // Imports
-use dcb_drv::{dir::entry::DirEntryWriterKind, DirEntryWriter, DirWriter, DirWriterLister, FileWriter};
 use std::{
 	cmp::Ordering,
 	convert::{TryFrom, TryInto},
 	fs,
-	io::Seek,
 	path::{Path, PathBuf},
 	time::SystemTime,
 };
@@ -110,12 +109,7 @@ impl IntoIterator for DirLister {
 			// Check if it's a directory or file
 			let kind = match entry.metadata.is_dir() {
 				false => {
-					let mut file = fs::File::open(&entry.path).map_err(NextError::OpenFile)?;
-					let size = file
-						.stream_len()
-						.map_err(NextError::FileSize)?
-						.try_into()
-						.map_err(|_err| NextError::FileTooBig)?;
+					let reader = fs::File::open(&entry.path).map_err(NextError::OpenFile)?;
 					let extension = entry
 						.path
 						.extension()
@@ -123,10 +117,9 @@ impl IntoIterator for DirLister {
 						.try_into()
 						.map_err(NextError::InvalidFileExtension)?;
 
-					println!("{} ({} bytes)", entry.path.display(), size);
+					println!("{}", entry.path.display());
 
-					let file = FileWriter::new(extension, file, size);
-					DirEntryWriterKind::File(file)
+					DirEntryWriterKind::File { extension, reader }
 				},
 				true => {
 					let entries = Self::new(&entry.path).map_err(NextError::OpenDir)?;
@@ -138,7 +131,7 @@ impl IntoIterator for DirLister {
 				},
 			};
 
-			Ok(DirEntryWriter::new(name, date, kind))
+			Ok(DirEntryWriter { name, date, kind })
 		})
 	}
 }

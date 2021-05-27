@@ -9,7 +9,7 @@ mod dir_lister;
 
 // Imports
 use anyhow::Context;
-use dcb_drv::DrvFsWriter;
+use dcb_drv::{DirPtr, DirWriter};
 use std::{fs, path::Path};
 
 
@@ -39,7 +39,9 @@ fn pack_filesystem(input_dir: &Path, output_file: &Path) -> Result<(), anyhow::E
 	// Create the filesystem writer
 	let root_entries =
 		dir_lister::DirLister::new(input_dir).context("Unable to create new dir lister for root directory")?;
-	DrvFsWriter::write_fs(&mut output_file, root_entries).context("Unable to write filesystem")?;
+	DirWriter::new(root_entries)
+		.write(DirPtr::root(), &mut output_file)
+		.context("Unable to write filesystem")?;
 
 	// Then pad the file to a sector `2048` if it isn't already
 	let len = output_file

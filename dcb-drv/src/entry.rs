@@ -33,6 +33,20 @@ pub enum DirEntryKind {
 	},
 }
 
+impl DirEntryKind {
+	/// Creates a file kind
+	#[must_use]
+	pub const fn file(extension: AsciiStrArr<0x3>, ptr: FilePtr) -> Self {
+		Self::File { extension, ptr }
+	}
+
+	/// Creates a directory kind
+	#[must_use]
+	pub const fn dir(ptr: DirPtr) -> Self {
+		Self::Dir { ptr }
+	}
+}
+
 /// A directory entry
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub struct DirEntry {

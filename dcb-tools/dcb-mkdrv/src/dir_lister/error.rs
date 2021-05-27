@@ -66,14 +66,6 @@ pub enum NextError {
 	#[error("Unable to open file")]
 	OpenFile(#[source] io::Error),
 
-	/// Unable to get file size
-	#[error("Unable to get file size")]
-	FileSize(#[source] io::Error),
-
-	/// File was too big
-	#[error("File was too big")]
-	FileTooBig,
-
 	/// Unable to open directory
 	#[error("Unable to open directory")]
 	OpenDir(#[source] self::NewError),

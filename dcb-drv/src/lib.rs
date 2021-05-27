@@ -59,36 +59,13 @@
 
 // Modules
 pub mod cursor;
-pub mod dir;
 pub mod entry;
-pub mod error;
-pub mod file;
 pub mod path;
 pub mod ptr;
+pub mod writer;
 
 // Exports
-pub use dir::{DirEntryWriter, DirWriter, DirWriterLister};
 pub use entry::{DirEntry, DirEntryKind};
-pub use error::WriteFsError;
-pub use file::FileWriter;
 pub use path::Path;
 pub use ptr::{DirPtr, FilePtr};
-
-// Imports
-use std::io;
-
-/// Filesystem writer
-pub struct DrvFsWriter;
-
-impl DrvFsWriter {
-	/// Creates a `.DRV` filesystem
-	pub fn write_fs<W: io::Write + io::Seek, L: DirWriterLister>(
-		writer: &mut W, root_entries: L,
-	) -> Result<(), WriteFsError<L::Error>> {
-		// Get the root and write it
-		let root = DirWriter::new(root_entries);
-		root.write_entries(writer).map_err(WriteFsError::RootDir)?;
-
-		Ok(())
-	}
-}
+pub use writer::{DirEntryWriter, DirEntryWriterKind, DirWriter, DirWriterLister};
