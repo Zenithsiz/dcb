@@ -3,15 +3,17 @@
 // Modules
 pub mod error;
 
-use dcb_drv::{DirEntryWriter, DirEntryWriterKind, DirWriter, DirWriterLister};
 // Exports
 pub use error::{NewError, NextError, ReadEntryError};
 
 // Imports
+use dcb_drv::{DirEntryWriter, DirEntryWriterKind, DirWriter, DirWriterLister};
+use itertools::{Itertools, Position};
 use std::{
 	cmp::Ordering,
 	convert::{TryFrom, TryInto},
 	fs,
+	io::Seek,
 	path::{Path, PathBuf},
 	time::SystemTime,
 };
@@ -21,6 +23,9 @@ use std::{
 pub struct DirLister {
 	/// All entries
 	entries: Vec<DirEntry>,
+
+	/// Depth
+	depth: usize,
 }
 
 /// Directory entry
@@ -35,7 +40,7 @@ pub struct DirEntry {
 
 impl DirLister {
 	/// Creates a new iterator from a path
-	pub fn new(path: &Path) -> Result<Self, NewError> {
+	pub fn new(path: &Path, depth: usize) -> Result<Self, NewError> {
 		// Read the directory entries
 		let mut entries = fs::read_dir(path)
 			.map_err(|err| NewError::ReadDir(path.to_path_buf(), err))?
@@ -48,11 +53,6 @@ impl DirLister {
 			})
 			.collect::<Result<Vec<_>, _>>()
 			.map_err(|err| NewError::ReadEntries(path.to_path_buf(), err))?;
-
-		// If there are too many entries, return Err
-		if u32::try_from(entries.len()).is_err() {
-			return Err(NewError::TooManyEntries);
-		}
 
 		// Then sort them by type and then name
 		entries.sort_by(|lhs, rhs| {
@@ -71,7 +71,7 @@ impl DirLister {
 			lhs.path.file_name().cmp(&rhs.path.file_name())
 		});
 
-		Ok(Self { entries })
+		Ok(Self { entries, depth })
 	}
 }
 
@@ -83,10 +83,18 @@ impl DirWriterLister for DirLister {
 impl IntoIterator for DirLister {
 	type Item = Result<DirEntryWriter<Self>, <Self as DirWriterLister>::Error>;
 
-	type IntoIter = impl Iterator<Item = Self::Item>;
+	type IntoIter = impl Iterator<Item = Self::Item> + ExactSizeIterator;
 
 	fn into_iter(self) -> Self::IntoIter {
-		self.entries.into_iter().map(|entry| {
+		let depth = self.depth;
+		self.entries.into_iter().with_position().map(move |entry| {
+			let (entry, is_last) = {
+				match entry {
+					Position::First(entry) | Position::Middle(entry) => (entry, false),
+					Position::Last(entry) | Position::Only(entry) => (entry, true),
+				}
+			};
+
 			// Read the entry and it's metadata
 			let name = entry
 				.path
@@ -109,20 +117,43 @@ impl IntoIterator for DirLister {
 			// Check if it's a directory or file
 			let kind = match entry.metadata.is_dir() {
 				false => {
-					let reader = fs::File::open(&entry.path).map_err(NextError::OpenFile)?;
+					let mut reader = fs::File::open(&entry.path).map_err(NextError::OpenFile)?;
 					let extension = entry
 						.path
 						.extension()
 						.ok_or(NextError::NoFileExtension)?
 						.try_into()
 						.map_err(NextError::InvalidFileExtension)?;
+					let size = reader.stream_len().ok();
 
-					println!("{}", entry.path.display());
+					let prefix = dcb_util::DisplayWrapper::new(|f| {
+						match depth {
+							0 => (),
+							_ => {
+								for _ in 0..(depth - 1) {
+									write!(f, "│   ")?;
+								}
+								match is_last {
+									true => write!(f, "└──")?,
+									false => write!(f, "├──")?,
+								};
+							},
+						}
+
+						Ok(())
+					});
+
+					let size = dcb_util::DisplayWrapper::new(|f| match size {
+						Some(size) => write!(f, "{}B", size_format::SizeFormatterSI::new(size)),
+						None => write!(f, "Unknown Size"),
+					});
+
+					println!("{}{} ({})", prefix, name, size,);
 
 					DirEntryWriterKind::File { extension, reader }
 				},
 				true => {
-					let entries = Self::new(&entry.path).map_err(NextError::OpenDir)?;
+					let entries = Self::new(&entry.path, depth + 1).map_err(NextError::OpenDir)?;
 
 					println!("{} ({} entries)", entry.path.display(), entries.entries.len());
 

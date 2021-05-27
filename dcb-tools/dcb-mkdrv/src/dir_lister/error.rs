@@ -13,10 +13,6 @@ pub enum NewError {
 	/// Unable to read entry
 	#[error("Unable to read entry in {}", _0.display())]
 	ReadEntries(PathBuf, #[source] ReadEntryError),
-
-	/// Too many entries in directory
-	#[error("Too many entries in directory")]
-	TooManyEntries,
 }
 
 /// Error for [`DirList::new`](super::DirLister::new)'s entry reading

@@ -10,7 +10,9 @@ use std::{
 };
 
 /// A directory lister
-pub trait DirWriterLister: Sized + IntoIterator<Item = Result<DirEntryWriter<Self>, Self::Error>> {
+pub trait DirWriterLister:
+	Sized + IntoIterator<Item = Result<DirEntryWriter<Self>, Self::Error>, IntoIter: ExactSizeIterator>
+{
 	/// File type
 	type FileReader: io::Read;
 
@@ -69,11 +71,7 @@ impl<L: DirWriterLister> DirWriter<L> {
 		// Note: We on the directory after this directory.
 		// Note: `+1` for the null entry.
 		// Note: `+2047` is to pad this directory to the next sector, if not empty.
-		let entries: Vec<DirEntryWriter<L>> = self
-			.entries
-			.into_iter()
-			.collect::<Result<_, _>>()
-			.map_err(WriteDirError::GetEntry)?;
+		let entries = self.entries.into_iter();
 		let entries_len: u32 = entries
 			.len()
 			.try_into()
@@ -82,8 +80,10 @@ impl<L: DirWriterLister> DirWriter<L> {
 
 		// Write each entry and map it so we can write it later
 		let entries: Vec<_> = entries
-			.into_iter()
 			.map(|entry| {
+				// Get the entry
+				let entry = entry.map_err(WriteDirError::GetEntry)?;
+
 				// Seek to the entry
 				writer
 					.seek(SeekFrom::Start(u64::from(cur_sector_pos) * 2048))

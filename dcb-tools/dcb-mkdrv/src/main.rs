@@ -26,19 +26,19 @@ fn main() -> Result<(), anyhow::Error> {
 	let cli::CliData { input_dir, output_file } = cli::CliData::new();
 
 	// Try to pack the filesystem
-	self::pack_filesystem(&input_dir, &output_file).context("Unable to pack `drv` file")?;
+	self::write_fs(&input_dir, &output_file).context("Unable to pack `drv` file")?;
 
 	Ok(())
 }
 
-/// Extracts a `.drv` file to `output_dir`.
-fn pack_filesystem(input_dir: &Path, output_file: &Path) -> Result<(), anyhow::Error> {
+/// Writes a `.drv` filesystem to `output_file`.
+pub fn write_fs(input_dir: &Path, output_file: &Path) -> Result<(), anyhow::Error> {
 	// Create the output file
 	let mut output_file = fs::File::create(output_file).context("Unable to create output file")?;
 
 	// Create the filesystem writer
 	let root_entries =
-		dir_lister::DirLister::new(input_dir).context("Unable to create new dir lister for root directory")?;
+		dir_lister::DirLister::new(input_dir, 0).context("Unable to create new dir lister for root directory")?;
 	DirWriter::new(root_entries)
 		.write(DirPtr::root(), &mut output_file)
 		.context("Unable to write filesystem")?;

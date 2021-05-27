@@ -1,6 +1,6 @@
 #![doc(include = "lib.md")]
 // Features
-#![feature(external_doc, seek_stream_len, try_blocks)]
+#![feature(external_doc, seek_stream_len, try_blocks, associated_type_bounds)]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]
 // We'll disable the ones we don't need

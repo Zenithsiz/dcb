@@ -54,12 +54,9 @@ impl CliData {
 		let output_file = match matches.value_of("OUTPUT") {
 			Some(output) => PathBuf::from(output),
 			None => {
-				let extension = match input_dir.extension() {
-					Some(extension) => format!("{}.drv", extension.to_string_lossy()),
-					None => "drv".to_string(),
-				};
-
-				input_dir.with_extension(extension)
+				let mut path = input_dir.clone().into_os_string();
+				path.push(".drv");
+				PathBuf::from(path)
 			},
 		};
 
