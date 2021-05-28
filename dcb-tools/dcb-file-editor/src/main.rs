@@ -11,14 +11,17 @@
 	hash_drain_filter
 )]
 
+// Modules
+pub mod tree;
+
 // Imports
 use anyhow::Context;
 use dcb_cdrom_xa::CdRomCursor;
-use dcb_drv::cursor::DirEntryCursorKind;
 use dcb_io::GameFile;
 use eframe::{egui, epi, NativeOptions};
 use native_dialog::{FileDialog, MessageDialog, MessageType};
 use std::{fs, io::Write, mem, path::PathBuf};
+use tree::FsTree;
 
 fn main() {
 	// Initialize the logger
@@ -91,8 +94,33 @@ impl epi::App for FileEditor {
 									.open(file_path)
 									.context("Unable to open file")?;
 								let cdrom = CdRomCursor::new(file);
-								let game_file = GameFile::new(cdrom).context("Unable to load game file")?;
-								*loaded_game = Some(LoadedGame { game_file });
+								let mut game_file = GameFile::new(cdrom);
+
+								let mut a_reader = game_file.a_drv().context("Unable to get `a` drive")?;
+								let a_tree = FsTree::new(&mut a_reader).context("Unable to load `a` drive")?;
+								let mut b_reader = game_file.b_drv().context("Unable to get `b` drive")?;
+								let b_tree = FsTree::new(&mut b_reader).context("Unable to load `b` drive")?;
+								let mut c_reader = game_file.c_drv().context("Unable to get `c` drive")?;
+								let c_tree = FsTree::new(&mut c_reader).context("Unable to load `c` drive")?;
+								let mut e_reader = game_file.e_drv().context("Unable to get `e` drive")?;
+								let e_tree = FsTree::new(&mut e_reader).context("Unable to load `e` drive")?;
+								let mut f_reader = game_file.f_drv().context("Unable to get `f` drive")?;
+								let f_tree = FsTree::new(&mut f_reader).context("Unable to load `f` drive")?;
+								let mut g_reader = game_file.g_drv().context("Unable to get `g` drive")?;
+								let g_tree = FsTree::new(&mut g_reader).context("Unable to load `g` drive")?;
+								let mut p_reader = game_file.p_drv().context("Unable to get `p` drive")?;
+								let p_tree = FsTree::new(&mut p_reader).context("Unable to load `p` drive")?;
+
+								*loaded_game = Some(LoadedGame {
+									game_file,
+									a_tree,
+									b_tree,
+									c_tree,
+									e_tree,
+									f_tree,
+									g_tree,
+									p_tree,
+								});
 							};
 
 							if let Err(err) = res {
@@ -129,63 +157,27 @@ impl epi::App for FileEditor {
 			// If we have a loaded game, display all files
 			if let Some(loaded_game) = loaded_game.as_mut() {
 				egui::ScrollArea::auto_sized().show(ui, |ui| {
-					fn show_dir(
-						dir: &dcb_drv::cursor::DirCursor, dir_path: &str, ui: &mut egui::Ui, file_search: &str,
-						swap_window: &mut Option<SwapWindow>,
-					) {
-						for entry in dir.entries() {
-							match &entry.kind() {
-								DirEntryCursorKind::Dir(dir) => {
-									let dir_path = format!("{dir_path}{}\\", entry.name());
-									egui::CollapsingHeader::new(entry.name())
-										.id_source(dir as *const _)
-										.show(ui, |ui| {
-											show_dir(dir, &dir_path, ui, file_search, swap_window);
-										});
-								},
-								DirEntryCursorKind::File(file) => {
-									let filename = format!("{}.{}", entry.name(), file.extension());
-									let path = format!("{dir_path}{filename}");
-									if !self::contains_case_insensitive(&filename, file_search) {
-										continue;
-									}
-
-									if ui.button(&filename).clicked() {
-										if let Some(swap_window) = swap_window {
-											if swap_window.first.is_setting() {
-												swap_window.first = SwapFileStatus::Set(path.clone());
-											}
-											if swap_window.second.is_setting() {
-												swap_window.second = SwapFileStatus::Set(path);
-											}
-										}
-									}
-								},
+					let mut ctx = tree::DisplayCtx {
+						search_str:    &file_search,
+						on_file_click: |path: &str| {
+							if let Some(swap_window) = swap_window {
+								if swap_window.first.is_setting() {
+									swap_window.first = SwapFileStatus::Set(path.to_owned());
+								}
+								if swap_window.second.is_setting() {
+									swap_window.second = SwapFileStatus::Set(path.to_owned());
+								}
 							}
-						}
-					}
+						},
+					};
 
-					let a_dir = loaded_game.game_file.a_drv_cursor().root_dir();
-					let b_dir = loaded_game.game_file.b_drv_cursor().root_dir();
-					let c_dir = loaded_game.game_file.c_drv_cursor().root_dir();
-					let e_dir = loaded_game.game_file.e_drv_cursor().root_dir();
-					let f_dir = loaded_game.game_file.f_drv_cursor().root_dir();
-					let g_dir = loaded_game.game_file.g_drv_cursor().root_dir();
-					let p_dir = loaded_game.game_file.p_drv_cursor().root_dir();
-					egui::CollapsingHeader::new("A:\\")
-						.show(ui, |ui| show_dir(a_dir, "A:\\", ui, file_search, swap_window));
-					egui::CollapsingHeader::new("B:\\")
-						.show(ui, |ui| show_dir(b_dir, "B:\\", ui, file_search, swap_window));
-					egui::CollapsingHeader::new("C:\\")
-						.show(ui, |ui| show_dir(c_dir, "C:\\", ui, file_search, swap_window));
-					egui::CollapsingHeader::new("E:\\")
-						.show(ui, |ui| show_dir(e_dir, "E:\\", ui, file_search, swap_window));
-					egui::CollapsingHeader::new("F:\\")
-						.show(ui, |ui| show_dir(f_dir, "F:\\", ui, file_search, swap_window));
-					egui::CollapsingHeader::new("G:\\")
-						.show(ui, |ui| show_dir(g_dir, "G:\\", ui, file_search, swap_window));
-					egui::CollapsingHeader::new("P:\\")
-						.show(ui, |ui| show_dir(p_dir, "P:\\", ui, file_search, swap_window));
+					egui::CollapsingHeader::new("A:\\").show(ui, |ui| loaded_game.a_tree.display(ui, "A:\\", &mut ctx));
+					egui::CollapsingHeader::new("B:\\").show(ui, |ui| loaded_game.b_tree.display(ui, "B:\\", &mut ctx));
+					egui::CollapsingHeader::new("C:\\").show(ui, |ui| loaded_game.c_tree.display(ui, "C:\\", &mut ctx));
+					egui::CollapsingHeader::new("E:\\").show(ui, |ui| loaded_game.e_tree.display(ui, "E:\\", &mut ctx));
+					egui::CollapsingHeader::new("F:\\").show(ui, |ui| loaded_game.f_tree.display(ui, "F:\\", &mut ctx));
+					egui::CollapsingHeader::new("G:\\").show(ui, |ui| loaded_game.g_tree.display(ui, "G:\\", &mut ctx));
+					egui::CollapsingHeader::new("P:\\").show(ui, |ui| loaded_game.p_tree.display(ui, "P:\\", &mut ctx));
 				});
 			}
 		});
@@ -313,18 +305,25 @@ impl Default for SwapFileStatus {
 pub struct LoadedGame {
 	/// Game file
 	game_file: GameFile<fs::File>,
-}
 
-/// Checks if string `pattern` is contained in `haystack` without
-/// checking for case
-pub fn contains_case_insensitive(mut haystack: &str, pattern: &str) -> bool {
-	loop {
-		match haystack.get(..pattern.len()) {
-			Some(s) => match s.eq_ignore_ascii_case(pattern) {
-				true => return true,
-				false => haystack = &haystack[1..],
-			},
-			None => return false,
-		}
-	}
+	/// `A` drive tree
+	a_tree: FsTree,
+
+	/// `B` drive tree
+	b_tree: FsTree,
+
+	/// `C` drive tree
+	c_tree: FsTree,
+
+	/// `E` drive tree
+	e_tree: FsTree,
+
+	/// `F` drive tree
+	f_tree: FsTree,
+
+	/// `G` drive tree
+	g_tree: FsTree,
+
+	/// `P` drive tree
+	p_tree: FsTree,
 }

@@ -7,12 +7,10 @@ pub mod error;
 pub mod path;
 
 // Exports
-pub use error::{NewError, OpenFileError, SwapFilesError};
 pub use path::Path;
 
 // Imports
 use dcb_cdrom_xa::CdRomCursor;
-use dcb_drv::cursor::{DrvFsCursor, OpenFile};
 use dcb_util::IoCursor;
 use std::io;
 
@@ -21,27 +19,6 @@ use std::io;
 pub struct GameFile<T> {
 	/// CD-Rom
 	cdrom: CdRomCursor<T>,
-
-	/// `A.DRV` cursor
-	a_drv_cursor: DrvFsCursor,
-
-	/// `B.DRV` cursor
-	b_drv_cursor: DrvFsCursor,
-
-	/// `C.DRV` cursor
-	c_drv_cursor: DrvFsCursor,
-
-	/// `E.DRV` cursor
-	e_drv_cursor: DrvFsCursor,
-
-	/// `F.DRV` cursor
-	f_drv_cursor: DrvFsCursor,
-
-	/// `G.DRV` cursor
-	g_drv_cursor: DrvFsCursor,
-
-	/// `P.DRV` cursor
-	p_drv_cursor: DrvFsCursor,
 }
 
 // Constants
@@ -74,78 +51,13 @@ impl<T> GameFile<T> {
 	pub const P_OFFSET: u64 = 0xc000;
 	/// `P.DRV` Size
 	pub const P_SIZE: u64 = 0x95000;
-
-	/// Get a reference to the game file's a drv cursor.
-	pub const fn a_drv_cursor(&self) -> &DrvFsCursor {
-		&self.a_drv_cursor
-	}
-
-	/// Get a reference to the game file's b drv cursor.
-	pub const fn b_drv_cursor(&self) -> &DrvFsCursor {
-		&self.b_drv_cursor
-	}
-
-	/// Get a reference to the game file's c drv cursor.
-	pub const fn c_drv_cursor(&self) -> &DrvFsCursor {
-		&self.c_drv_cursor
-	}
-
-	/// Get a reference to the game file's e drv cursor.
-	pub const fn e_drv_cursor(&self) -> &DrvFsCursor {
-		&self.e_drv_cursor
-	}
-
-	/// Get a reference to the game file's f drv cursor.
-	pub const fn f_drv_cursor(&self) -> &DrvFsCursor {
-		&self.f_drv_cursor
-	}
-
-	/// Get a reference to the game file's g drv cursor.
-	pub const fn g_drv_cursor(&self) -> &DrvFsCursor {
-		&self.g_drv_cursor
-	}
-
-	/// Get a reference to the game file's p drv cursor.
-	pub const fn p_drv_cursor(&self) -> &DrvFsCursor {
-		&self.p_drv_cursor
-	}
 }
 
 // Constructors
 impl<T: io::Read + io::Seek> GameFile<T> {
 	/// Creates a new game file
-	pub fn new(mut cdrom: CdRomCursor<T>) -> Result<Self, NewError> {
-		let mut a_drv = IoCursor::new(&mut cdrom, Self::A_OFFSET, Self::A_SIZE).map_err(NewError::OpenA)?;
-		let a_drv_cursor = DrvFsCursor::new(&mut a_drv).map_err(NewError::CursorA)?;
-
-		let mut b_drv = IoCursor::new(&mut cdrom, Self::B_OFFSET, Self::B_SIZE).map_err(NewError::OpenB)?;
-		let b_drv_cursor = DrvFsCursor::new(&mut b_drv).map_err(NewError::CursorB)?;
-
-		let mut c_drv = IoCursor::new(&mut cdrom, Self::C_OFFSET, Self::C_SIZE).map_err(NewError::OpenC)?;
-		let c_drv_cursor = DrvFsCursor::new(&mut c_drv).map_err(NewError::CursorC)?;
-
-		let mut e_drv = IoCursor::new(&mut cdrom, Self::E_OFFSET, Self::E_SIZE).map_err(NewError::OpenE)?;
-		let e_drv_cursor = DrvFsCursor::new(&mut e_drv).map_err(NewError::CursorE)?;
-
-		let mut f_drv = IoCursor::new(&mut cdrom, Self::F_OFFSET, Self::F_SIZE).map_err(NewError::OpenF)?;
-		let f_drv_cursor = DrvFsCursor::new(&mut f_drv).map_err(NewError::CursorF)?;
-
-		let mut g_drv = IoCursor::new(&mut cdrom, Self::G_OFFSET, Self::G_SIZE).map_err(NewError::OpenG)?;
-		let g_drv_cursor = DrvFsCursor::new(&mut g_drv).map_err(NewError::CursorG)?;
-
-		let mut p_drv = IoCursor::new(&mut cdrom, Self::P_OFFSET, Self::P_SIZE).map_err(NewError::OpenP)?;
-		let p_drv_cursor = DrvFsCursor::new(&mut p_drv).map_err(NewError::CursorP)?;
-
-		Ok(Self {
-			cdrom,
-			a_drv_cursor,
-			b_drv_cursor,
-			c_drv_cursor,
-			e_drv_cursor,
-			f_drv_cursor,
-			g_drv_cursor,
-			p_drv_cursor,
-		})
+	pub fn new(cdrom: CdRomCursor<T>) -> Self {
+		Self { cdrom }
 	}
 }
 
@@ -160,106 +72,59 @@ impl<T> GameFile<T> {
 // Drive getters
 impl<T: io::Seek> GameFile<T> {
 	/// Returns the `A.DRV` file alongside it's cursor
-	pub fn a_drv(&mut self) -> Result<(&mut DrvFsCursor, DriveCursor<&mut CdRomCursor<T>>), io::Error> {
+	pub fn a_drv(&mut self) -> Result<DriveCursor<&mut CdRomCursor<T>>, io::Error> {
 		match DriveCursor::new(&mut self.cdrom, Self::A_OFFSET, Self::A_SIZE) {
-			Ok(cursor) => Ok((&mut self.a_drv_cursor, cursor)),
+			Ok(cursor) => Ok(cursor),
 			Err(err) => Err(err),
 		}
 	}
 
 	/// Returns the `B.DRV` file alongside it's cursor
-	pub fn b_drv(&mut self) -> Result<(&mut DrvFsCursor, DriveCursor<&mut CdRomCursor<T>>), io::Error> {
+	pub fn b_drv(&mut self) -> Result<DriveCursor<&mut CdRomCursor<T>>, io::Error> {
 		match DriveCursor::new(&mut self.cdrom, Self::B_OFFSET, Self::B_SIZE) {
-			Ok(cursor) => Ok((&mut self.b_drv_cursor, cursor)),
+			Ok(cursor) => Ok(cursor),
 			Err(err) => Err(err),
 		}
 	}
 
 	/// Returns the `C.DRV` file alongside it's cursor
-	pub fn c_drv(&mut self) -> Result<(&mut DrvFsCursor, DriveCursor<&mut CdRomCursor<T>>), io::Error> {
+	pub fn c_drv(&mut self) -> Result<DriveCursor<&mut CdRomCursor<T>>, io::Error> {
 		match DriveCursor::new(&mut self.cdrom, Self::C_OFFSET, Self::C_SIZE) {
-			Ok(cursor) => Ok((&mut self.c_drv_cursor, cursor)),
+			Ok(cursor) => Ok(cursor),
 			Err(err) => Err(err),
 		}
 	}
 
 	/// Returns the `E.DRV` file alongside it's cursor
-	pub fn e_drv(&mut self) -> Result<(&mut DrvFsCursor, DriveCursor<&mut CdRomCursor<T>>), io::Error> {
+	pub fn e_drv(&mut self) -> Result<DriveCursor<&mut CdRomCursor<T>>, io::Error> {
 		match DriveCursor::new(&mut self.cdrom, Self::E_OFFSET, Self::E_SIZE) {
-			Ok(cursor) => Ok((&mut self.e_drv_cursor, cursor)),
+			Ok(cursor) => Ok(cursor),
 			Err(err) => Err(err),
 		}
 	}
 
 	/// Returns the `F.DRV` file alongside it's cursor
-	pub fn f_drv(&mut self) -> Result<(&mut DrvFsCursor, DriveCursor<&mut CdRomCursor<T>>), io::Error> {
+	pub fn f_drv(&mut self) -> Result<DriveCursor<&mut CdRomCursor<T>>, io::Error> {
 		match DriveCursor::new(&mut self.cdrom, Self::F_OFFSET, Self::F_SIZE) {
-			Ok(cursor) => Ok((&mut self.f_drv_cursor, cursor)),
+			Ok(cursor) => Ok(cursor),
 			Err(err) => Err(err),
 		}
 	}
 
 	/// Returns the `G.DRV` file alongside it's cursor
-	pub fn g_drv(&mut self) -> Result<(&mut DrvFsCursor, DriveCursor<&mut CdRomCursor<T>>), io::Error> {
+	pub fn g_drv(&mut self) -> Result<DriveCursor<&mut CdRomCursor<T>>, io::Error> {
 		match DriveCursor::new(&mut self.cdrom, Self::G_OFFSET, Self::G_SIZE) {
-			Ok(cursor) => Ok((&mut self.g_drv_cursor, cursor)),
+			Ok(cursor) => Ok(cursor),
 			Err(err) => Err(err),
 		}
 	}
 
 	/// Returns the `P.DRV` file alongside it's cursor
-	pub fn p_drv(&mut self) -> Result<(&mut DrvFsCursor, DriveCursor<&mut CdRomCursor<T>>), io::Error> {
+	pub fn p_drv(&mut self) -> Result<DriveCursor<&mut CdRomCursor<T>>, io::Error> {
 		match DriveCursor::new(&mut self.cdrom, Self::P_OFFSET, Self::P_SIZE) {
-			Ok(cursor) => Ok((&mut self.p_drv_cursor, cursor)),
+			Ok(cursor) => Ok(cursor),
 			Err(err) => Err(err),
 		}
-	}
-}
-
-// Files
-impl<T: io::Seek + io::Read> GameFile<T> {
-	/// Opens a file
-	pub fn open_file(&mut self, path: &Path) -> Result<OpenFile<DriveCursor<&mut CdRomCursor<T>>>, OpenFileError> {
-		// Check the drive we're accessing.
-		let (drive, path) = path.drive().ok_or(OpenFileError::NoDrive)?;
-		let (cursor, drive) = match drive.as_char() {
-			'A' => self.a_drv().map_err(OpenFileError::OpenDrive)?,
-			'B' => self.b_drv().map_err(OpenFileError::OpenDrive)?,
-			'C' => self.c_drv().map_err(OpenFileError::OpenDrive)?,
-			'E' => self.e_drv().map_err(OpenFileError::OpenDrive)?,
-			'F' => self.f_drv().map_err(OpenFileError::OpenDrive)?,
-			'G' => self.g_drv().map_err(OpenFileError::OpenDrive)?,
-			'P' => self.p_drv().map_err(OpenFileError::OpenDrive)?,
-			drive => return Err(OpenFileError::UnknownDrive { drive }),
-		};
-
-		// Then get the path from the drive
-		cursor.open_file(drive, path).map_err(OpenFileError::OpenFile)
-	}
-}
-
-impl<T: io::Seek + io::Write> GameFile<T> {
-	/// Swaps two files
-	pub fn swap_files(&mut self, lhs: &Path, rhs: &Path) -> Result<(), SwapFilesError> {
-		// Check the drive we're accessing.
-		let (lhs_drive, lhs_path) = lhs.drive().ok_or(SwapFilesError::NoDrive)?;
-		let (rhs_drive, rhs_path) = rhs.drive().ok_or(SwapFilesError::NoDrive)?;
-		let (cursor, mut drive) = match (lhs_drive.as_char(), rhs_drive.as_char()) {
-			('A', 'A') => self.a_drv().map_err(SwapFilesError::OpenDrive)?,
-			('B', 'B') => self.b_drv().map_err(SwapFilesError::OpenDrive)?,
-			('C', 'C') => self.c_drv().map_err(SwapFilesError::OpenDrive)?,
-			('E', 'E') => self.e_drv().map_err(SwapFilesError::OpenDrive)?,
-			('F', 'F') => self.f_drv().map_err(SwapFilesError::OpenDrive)?,
-			('G', 'G') => self.g_drv().map_err(SwapFilesError::OpenDrive)?,
-			('P', 'P') => self.p_drv().map_err(SwapFilesError::OpenDrive)?,
-			(drive, _) if lhs_drive == rhs_drive => return Err(SwapFilesError::UnknownDrive { drive }),
-			_ => return Err(SwapFilesError::AcrossDrives),
-		};
-
-		// Then swap both files
-		cursor
-			.swap_files(&mut drive, lhs_path, rhs_path)
-			.map_err(SwapFilesError::SwapFiles)
 	}
 }
 

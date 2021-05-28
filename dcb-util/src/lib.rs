@@ -72,6 +72,7 @@ pub mod map_box;
 pub mod next_from_bytes;
 pub mod null_ascii_string;
 pub mod signed_hex;
+pub mod string_contains_case_insensitive;
 pub mod write_take;
 //pub mod peekable_iter;
 
@@ -89,6 +90,7 @@ pub use map_box::MapBoxResult;
 pub use next_from_bytes::NextFromBytes;
 pub use null_ascii_string::NullAsciiString;
 pub use signed_hex::SignedHex;
+pub use string_contains_case_insensitive::StrContainsCaseInsensitive;
 pub use write_take::WriteTake;
 //pub use peekable_iter::PeekableIter;
 
