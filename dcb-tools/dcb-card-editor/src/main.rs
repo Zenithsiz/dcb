@@ -189,7 +189,7 @@ impl epi::App for CardEditor {
 		} = self;
 
 		// Top panel
-		egui::TopPanel::top("top_panel").show(ctx, |ui| {
+		egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
 			egui::menu::bar(ui, |ui| {
 				egui::menu::menu(ui, "File", |ui| {
 					// On open, ask the user and open the file
@@ -303,7 +303,7 @@ impl epi::App for CardEditor {
 			}
 		}
 
-		egui::SidePanel::left("side_panel", 200.0).show(ctx, |ui| {
+		egui::SidePanel::left("side_panel").show(ctx, |ui| {
 			ui.heading("Card list");
 
 			ui.vertical(|ui| {
@@ -359,24 +359,26 @@ impl epi::App for CardEditor {
 					screen.card_idx,
 				);
 
-				let total_available_size = ui.available_size();
-				let max_width = total_available_size.x / (screens_len as f32);
-				egui::SidePanel::left((screen as *const _, "panel"), max_width).show(ctx, |ui| {
-					// Header for the card
-					ui.vertical(|ui| {
-						ui.heading(card.name());
-						ui.label(match card {
-							Card::Digimon(_) => "Digimon",
-							Card::Item(_) => "Item",
-							Card::Digivolve(_) => "Digivolve",
+				let total_available_width = ui.available_width();
+				let default_width = total_available_width / (screens_len as f32);
+				egui::SidePanel::left((screen as *const _, "panel", default_width.to_bits()))
+					.default_width(default_width)
+					.show(ctx, |ui| {
+						// Header for the card
+						ui.vertical(|ui| {
+							ui.heading(card.name());
+							ui.label(match card {
+								Card::Digimon(_) => "Digimon",
+								Card::Item(_) => "Item",
+								Card::Digivolve(_) => "Digivolve",
+							});
+							ui.separator();
 						});
-						ui.separator();
-					});
 
-					egui::ScrollArea::auto_sized().show(ui, |ui| {
-						self::render_card(ui, card);
+						egui::ScrollArea::auto_sized().show(ui, |ui| {
+							self::render_card(ui, card);
+						});
 					});
-				});
 			}
 		});
 	}

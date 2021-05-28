@@ -49,7 +49,7 @@ impl<const N: usize> eframe::egui::widgets::TextBuffer for AsciiTextBuffer<N> {
 			.count()
 	}
 
-	fn delete_text_range(&mut self, ch_range: std::ops::Range<usize>) {
+	fn delete_char_range(&mut self, ch_range: std::ops::Range<usize>) {
 		self.0.drain_range(ch_range);
 	}
 }

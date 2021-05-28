@@ -12,7 +12,7 @@ dcb-util = { path = "../../dcb-util" }
 dcb-cdrom-xa = { path = "../../dcb-cdrom-xa" }
 
 # Gui
-eframe = { git = "https://github.com/Zenithsiz/egui" }
+eframe = { git = "https://github.com/emilk/egui" }
 
 # Logging
 log = "0.4.14"

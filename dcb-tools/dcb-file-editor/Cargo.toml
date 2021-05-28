@@ -14,7 +14,7 @@ dcb-drv = { path = "../../dcb-drv" }
 dcb-io = { path = "../../dcb-io" }
 
 # Gui
-eframe = { git = "https://github.com/Zenithsiz/egui" }
+eframe = { git = "https://github.com/emilk/egui" }
 
 # Logging
 log = "0.4.14"

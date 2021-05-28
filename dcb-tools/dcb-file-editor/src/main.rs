@@ -73,7 +73,7 @@ impl epi::App for FileEditor {
 		} = self;
 
 		// Top panel
-		egui::TopPanel::top("top_panel").show(ctx, |ui| {
+		egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
 			egui::menu::bar(ui, |ui| {
 				egui::menu::menu(ui, "File", |ui| {
 					// On open, ask the user and open the file
@@ -146,7 +146,7 @@ impl epi::App for FileEditor {
 			});
 		});
 
-		egui::SidePanel::left("side_panel", 400.0).show(ctx, |ui| {
+		egui::SidePanel::left("side_panel").show(ctx, |ui| {
 			ui.heading("File list");
 
 			ui.vertical(|ui| {
