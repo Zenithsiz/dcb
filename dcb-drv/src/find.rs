@@ -9,7 +9,7 @@ pub fn find_entry<R: io::Seek + io::Read>(reader: &mut R, path: &Path) -> Result
 	let mut cur_dir_ptr = DirPtr::root();
 
 	let mut components = path.components().peekable();
-	while let Some((_, entry_name)) = components.next() {
+	while let Some(entry_name) = components.next() {
 		// Find the entry
 		let (_, entry) = cur_dir_ptr
 			.find_entry(reader, entry_name.as_ascii())

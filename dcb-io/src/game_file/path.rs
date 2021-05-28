@@ -17,6 +17,12 @@ impl Path {
 		Self::ref_cast(path)
 	}
 
+	/// Creates a new path from a string
+	#[must_use]
+	pub fn from_ascii(path: &str) -> Option<&Self> {
+		AsciiStr::from_ascii(path).map(Self::new).ok()
+	}
+
 	/// Returns this path as a string
 	#[must_use]
 	pub fn as_str(&self) -> &str {

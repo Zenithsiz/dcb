@@ -17,7 +17,7 @@ pub mod tree;
 // Imports
 use anyhow::Context;
 use dcb_cdrom_xa::CdRomCursor;
-use dcb_io::GameFile;
+use dcb_io::{game_file::Path, GameFile};
 use eframe::{egui, epi, NativeOptions};
 use native_dialog::{FileDialog, MessageDialog, MessageType};
 use std::{fs, io::Write, mem, path::PathBuf};
@@ -182,7 +182,7 @@ impl epi::App for FileEditor {
 			}
 		});
 
-		if let Some(swap_window) = swap_window {
+		if let (Some(swap_window), Some(loaded_game)) = (swap_window, loaded_game) {
 			egui::Window::new("Swap screen").show(ctx, |ui| {
 				ui.horizontal(|ui| {
 					ui.label(swap_window.first.as_str().unwrap_or("None"));
@@ -207,8 +207,21 @@ impl epi::App for FileEditor {
 
 				if ui.button("Swap").clicked() {
 					match (&swap_window.first, &swap_window.second) {
-						(SwapFileStatus::Set(_first), SwapFileStatus::Set(_second)) => {
-							todo!()
+						(SwapFileStatus::Set(lhs), SwapFileStatus::Set(rhs)) => {
+							let lhs = Path::from_ascii(lhs).expect("Lhs path wasn't valid");
+							let rhs = Path::from_ascii(rhs).expect("Rhs path wasn't valid");
+
+							if let Err(err) = loaded_game
+								.game_file
+								.swap_files(lhs, rhs)
+								.context("Unable to swap files")
+							{
+								MessageDialog::new()
+									.set_text(&format!("Unable to swap files: {:?}", err))
+									.set_type(MessageType::Error)
+									.show_alert()
+									.expect("Unable to alert user");
+							}
 						},
 						_ => MessageDialog::new()
 							.set_text("You must set both files before swapping")

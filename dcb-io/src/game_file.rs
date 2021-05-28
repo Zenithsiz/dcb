@@ -7,6 +7,7 @@ pub mod error;
 pub mod path;
 
 // Exports
+pub use error::SwapFilesError;
 pub use path::Path;
 
 // Imports
@@ -125,6 +126,30 @@ impl<T: io::Seek> GameFile<T> {
 			Ok(cursor) => Ok(cursor),
 			Err(err) => Err(err),
 		}
+	}
+}
+
+/// Operations
+impl<T: io::Seek + io::Read + io::Write> GameFile<T> {
+	/// Swaps two files
+	pub fn swap_files(&mut self, lhs: &Path, rhs: &Path) -> Result<(), SwapFilesError> {
+		// Check the drive we're accessing.
+		let (lhs_drive, lhs_path) = lhs.drive().ok_or(SwapFilesError::NoDrive)?;
+		let (rhs_drive, rhs_path) = rhs.drive().ok_or(SwapFilesError::NoDrive)?;
+		let mut cursor = match (lhs_drive.as_char(), rhs_drive.as_char()) {
+			('A', 'A') => self.a_drv().map_err(SwapFilesError::OpenDrive)?,
+			('B', 'B') => self.b_drv().map_err(SwapFilesError::OpenDrive)?,
+			('C', 'C') => self.c_drv().map_err(SwapFilesError::OpenDrive)?,
+			('E', 'E') => self.e_drv().map_err(SwapFilesError::OpenDrive)?,
+			('F', 'F') => self.f_drv().map_err(SwapFilesError::OpenDrive)?,
+			('G', 'G') => self.g_drv().map_err(SwapFilesError::OpenDrive)?,
+			('P', 'P') => self.p_drv().map_err(SwapFilesError::OpenDrive)?,
+			(drive, _) if lhs_drive == rhs_drive => return Err(SwapFilesError::UnknownDrive { drive }),
+			_ => return Err(SwapFilesError::AcrossDrives),
+		};
+
+		// Then swap both files
+		dcb_drv::swap_files(&mut cursor, lhs_path, rhs_path).map_err(SwapFilesError::SwapFiles)
 	}
 }
 

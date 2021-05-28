@@ -51,68 +51,46 @@ impl Path {
 		self.len() == 0
 	}
 
-	/// Returns an iterator over all components of this path
+	/// Trims leading slashes
 	#[must_use]
-	pub const fn components(&self) -> Components {
-		Components { path: self, idx: 0 }
+	pub fn trim_leading(mut self: &Self) -> &Self {
+		while let [AsciiChar::BackSlash, path @ ..] = self.0.as_slice() {
+			self = Path::new(path.into());
+		}
+
+		self
 	}
 
-	/// Returns the common ancestor between this path and another, as well as the rest
+	/// Trims trailing slashes
 	#[must_use]
-	pub fn common_ancestor<'a>(&'a self, other: &'a Self) -> (&'a Self, &'a Self, &'a Self) {
-		// While both components are equal, continue them
-		let mut lhs = self.components();
-		let mut rhs = other.components();
-
-		loop {
-			match (lhs.next(), rhs.next()) {
-				// If the paths are equal, continue
-				// Note: Indexes may not be equal due to normalization
-				(Some((_, lhs)), Some((_, rhs))) if lhs == rhs => continue,
-
-				// If they're not, return the common part
-				(Some((lhs_idx, _)), Some((rhs_idx, _))) => {
-					break (
-						Self::new(&self.0[..lhs_idx]),
-						Self::new(&self.0[lhs_idx..]),
-						Self::new(&other.0[rhs_idx..]),
-					)
-				},
-
-				(Some((lhs_idx, _)), _) => {
-					break (
-						Self::new(&self.0[..lhs_idx]),
-						Self::new(&self.0[lhs_idx..]),
-						Self::empty(),
-					)
-				},
-				(_, Some((rhs_idx, _))) => {
-					break (
-						Self::new(&other.0[..rhs_idx]),
-						Self::empty(),
-						Self::new(&other.0[rhs_idx..]),
-					)
-				},
-
-				// Else they're equal, return ourself
-				(None, None) => break (self, Self::empty(), Self::empty()),
-			}
+	pub fn trim_trailing(mut self: &Self) -> &Self {
+		while let [path @ .., AsciiChar::BackSlash] = self.0.as_slice() {
+			self = Path::new(path.into());
 		}
+
+		self
+	}
+
+	/// Returns an iterator over all components of this path
+	#[must_use]
+	pub fn components(&self) -> Components {
+		Components::new(self)
 	}
 
 	/// Splits this path at it's first component
 	#[must_use]
 	pub fn split_first(&self) -> Option<(&AsciiStr, &Self)> {
 		let mut components = self.components();
-		let (_, first) = components.next()?;
+		let first = components.next()?;
 		Some((first.as_ascii(), components.path))
 	}
 
 	/// Splits this path at it's last component
 	#[must_use]
 	pub fn split_last(&self) -> Option<(&Self, &AsciiStr)> {
-		let (idx, _) = self.components().last()?;
-		Some((Self::new(&self.0[..idx]), &self.0[idx..]))
+		let last = self.components().last()?;
+		let start = &self.0[..(self.len() - last.len())];
+		Some((Self::new(start), last.as_ascii()))
 	}
 }
 
@@ -126,7 +104,7 @@ impl PartialEq for Path {
 			match (lhs.next(), rhs.next()) {
 				// If the paths are equal, continue
 				// Note: Indexes may not be equal due to normalization
-				(Some((_, lhs)), Some((_, rhs))) if lhs == rhs => continue,
+				(Some(lhs), Some(rhs)) if lhs == rhs => continue,
 
 				// If we got to the end, return true
 				(None, None) => break true,
@@ -139,27 +117,28 @@ impl PartialEq for Path {
 }
 
 /// Components of a path
+#[derive(PartialEq, Clone, Debug)]
 pub struct Components<'a> {
 	/// Remaining path
 	path: &'a Path,
+}
 
-	/// Current index
-	idx: usize,
+impl<'a> Components<'a> {
+	/// Creates new components
+	pub(self) fn new(path: &'a Path) -> Self {
+		// Trim all trailing `\`
+		Self {
+			path: path.trim_trailing(),
+		}
+	}
 }
 
 impl<'a> Iterator for Components<'a> {
-	type Item = (usize, &'a Path);
+	type Item = &'a Path;
 
 	fn next(&mut self) -> Option<Self::Item> {
-		// Trim any '\' at the start
-		let start_idx = self
-			.path
-			.0
-			.chars()
-			.position(|ch| ch != AsciiChar::BackSlash)
-			.unwrap_or(0);
-		self.path = Path::new(&self.path.0[start_idx..]);
-		self.idx += start_idx;
+		// Trim all leading `\`
+		self.path = self.path.trim_leading();
 
 		// Then split at the first `\` we find
 		let (path, rest) = match self.path.0.chars().position(|ch| ch == AsciiChar::BackSlash) {
@@ -168,11 +147,7 @@ impl<'a> Iterator for Components<'a> {
 			None => return None,
 		};
 
-		let idx = self.idx;
-
 		self.path = rest;
-		self.idx += path.len();
-
-		Some((idx, path))
+		Some(path)
 	}
 }

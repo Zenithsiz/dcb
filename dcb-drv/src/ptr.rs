@@ -10,6 +10,7 @@ pub use error::{
 
 // Imports
 use super::DirEntry;
+use crate::DirEntryKind;
 use ascii::AsciiStr;
 use dcb_util::IoCursor;
 use std::{
@@ -112,13 +113,28 @@ impl DirPtr {
 	pub fn find_entry<R: io::Read + io::Seek>(
 		self, reader: &mut R, entry_name: &AsciiStr,
 	) -> Result<(usize, DirEntry), FindEntryError> {
+		let (filename, extension) = entry_name
+			.as_str()
+			.split_once('.')
+			.map_or((entry_name.as_str(), None), |(filename, extension)| {
+				(filename, Some(extension))
+			});
+
 		self.read_entries(reader)
 			.map_err(FindEntryError::SeekDir)?
 			.enumerate()
 			.find_map(|(idx, entry)| match entry {
-				Ok(entry) => match entry.name.as_ascii() == entry_name {
-					true => Some(Ok((idx, entry))),
-					false => None,
+				Ok(entry) => {
+					let is_match = entry.name.as_str() == filename &&
+						match entry.kind {
+							DirEntryKind::Dir { .. } => extension.is_none(),
+							DirEntryKind::File { extension: ext, .. } => extension == Some(ext.as_str()),
+						};
+
+					match is_match {
+						true => Some(Ok((idx, entry))),
+						false => None,
+					}
 				},
 				Err(err) => Some(Err(err)),
 			})
