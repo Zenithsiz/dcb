@@ -7,11 +7,12 @@ pub mod error;
 pub mod path;
 
 // Exports
-pub use error::SwapFilesError;
+pub use error::{OpenFileError, SwapFilesError};
 pub use path::Path;
 
 // Imports
 use dcb_cdrom_xa::CdRomCursor;
+use dcb_drv::DirEntryKind;
 use dcb_util::IoCursor;
 use std::io;
 
@@ -129,7 +130,33 @@ impl<T: io::Seek> GameFile<T> {
 	}
 }
 
-/// Operations
+// Files
+impl<T: io::Seek + io::Read> GameFile<T> {
+	/// Opens a file
+	pub fn open_file(&mut self, path: &Path) -> Result<FileCursor<DriveCursor<&mut CdRomCursor<T>>>, OpenFileError> {
+		// Check the drive we're accessing.
+		let (drive, path) = path.drive().ok_or(OpenFileError::NoDrive)?;
+		let mut cursor = match drive.as_char() {
+			'A' => self.a_drv().map_err(OpenFileError::OpenDrive)?,
+			'B' => self.b_drv().map_err(OpenFileError::OpenDrive)?,
+			'C' => self.c_drv().map_err(OpenFileError::OpenDrive)?,
+			'E' => self.e_drv().map_err(OpenFileError::OpenDrive)?,
+			'F' => self.f_drv().map_err(OpenFileError::OpenDrive)?,
+			'G' => self.g_drv().map_err(OpenFileError::OpenDrive)?,
+			'P' => self.p_drv().map_err(OpenFileError::OpenDrive)?,
+			drive => return Err(OpenFileError::UnknownDrive { drive }),
+		};
+
+		// Then get the entry
+		let entry = dcb_drv::find_entry(&mut cursor, path).map_err(OpenFileError::FindFile)?;
+
+		match entry.kind {
+			DirEntryKind::File { ptr, .. } => ptr.cursor(cursor).map_err(OpenFileError::OpenFile),
+			_ => Err(OpenFileError::FoundDir),
+		}
+	}
+}
+
 impl<T: io::Seek + io::Read + io::Write> GameFile<T> {
 	/// Swaps two files
 	pub fn swap_files(&mut self, lhs: &Path, rhs: &Path) -> Result<(), SwapFilesError> {
@@ -155,3 +182,7 @@ impl<T: io::Seek + io::Read + io::Write> GameFile<T> {
 
 /// Driver cursor
 pub type DriveCursor<T> = IoCursor<T>;
+
+/// File cursor
+// TODO: Make proper file cursor in `dcb-drv` that allows expanding
+pub type FileCursor<T> = IoCursor<T>;
