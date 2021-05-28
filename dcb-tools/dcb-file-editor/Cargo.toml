@@ -12,6 +12,7 @@ dcb-util = { path = "../../dcb-util" }
 dcb-cdrom-xa = { path = "../../dcb-cdrom-xa" }
 dcb-drv = { path = "../../dcb-drv" }
 dcb-io = { path = "../../dcb-io" }
+dcb-tim = { path = "../../dcb-tim" }
 
 # Gui
 eframe = { git = "https://github.com/emilk/egui" }

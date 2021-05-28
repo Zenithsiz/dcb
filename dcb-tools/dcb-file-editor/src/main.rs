@@ -18,7 +18,11 @@ pub mod tree;
 use anyhow::Context;
 use dcb_cdrom_xa::CdRomCursor;
 use dcb_io::{game_file::Path, GameFile};
-use eframe::{egui, epi, NativeOptions};
+use dcb_tim::Tim;
+use eframe::{
+	egui::{self, Color32, TextureId},
+	epi, NativeOptions,
+};
 use native_dialog::{FileDialog, MessageDialog, MessageType};
 use std::{fs, io::Write, mem, path::PathBuf};
 use tree::FsTree;
@@ -50,15 +54,19 @@ pub struct FileEditor {
 
 	/// Swap window
 	swap_window: Option<SwapWindow>,
+
+	/// Preview panel
+	preview_panel: Option<PreviewPanel>,
 }
 
 impl Default for FileEditor {
 	fn default() -> Self {
 		Self {
-			file_path:   None,
-			loaded_game: None,
-			file_search: String::new(),
-			swap_window: None,
+			file_path:     None,
+			loaded_game:   None,
+			file_search:   String::new(),
+			swap_window:   None,
+			preview_panel: None,
 		}
 	}
 }
@@ -70,6 +78,7 @@ impl epi::App for FileEditor {
 			loaded_game,
 			file_search,
 			swap_window,
+			preview_panel,
 		} = self;
 
 		// Top panel
@@ -157,7 +166,8 @@ impl epi::App for FileEditor {
 			// If we have a loaded game, display all files
 			if let Some(loaded_game) = loaded_game.as_mut() {
 				egui::ScrollArea::auto_sized().show(ui, |ui| {
-					let mut ctx = tree::DisplayCtx {
+					let mut preview_path = None;
+					let mut display_ctx = tree::DisplayCtx {
 						search_str:    &file_search,
 						on_file_click: |path: &str| {
 							if let Some(swap_window) = swap_window {
@@ -168,19 +178,90 @@ impl epi::App for FileEditor {
 									swap_window.second = SwapFileStatus::Set(path.to_owned());
 								}
 							}
+
+							preview_path = Some(path.to_owned());
 						},
 					};
 
-					egui::CollapsingHeader::new("A:\\").show(ui, |ui| loaded_game.a_tree.display(ui, "A:\\", &mut ctx));
-					egui::CollapsingHeader::new("B:\\").show(ui, |ui| loaded_game.b_tree.display(ui, "B:\\", &mut ctx));
-					egui::CollapsingHeader::new("C:\\").show(ui, |ui| loaded_game.c_tree.display(ui, "C:\\", &mut ctx));
-					egui::CollapsingHeader::new("E:\\").show(ui, |ui| loaded_game.e_tree.display(ui, "E:\\", &mut ctx));
-					egui::CollapsingHeader::new("F:\\").show(ui, |ui| loaded_game.f_tree.display(ui, "F:\\", &mut ctx));
-					egui::CollapsingHeader::new("G:\\").show(ui, |ui| loaded_game.g_tree.display(ui, "G:\\", &mut ctx));
-					egui::CollapsingHeader::new("P:\\").show(ui, |ui| loaded_game.p_tree.display(ui, "P:\\", &mut ctx));
+					egui::CollapsingHeader::new("A:\\")
+						.show(ui, |ui| loaded_game.a_tree.display(ui, "A:\\", &mut display_ctx));
+					egui::CollapsingHeader::new("B:\\")
+						.show(ui, |ui| loaded_game.b_tree.display(ui, "B:\\", &mut display_ctx));
+					egui::CollapsingHeader::new("C:\\")
+						.show(ui, |ui| loaded_game.c_tree.display(ui, "C:\\", &mut display_ctx));
+					egui::CollapsingHeader::new("E:\\")
+						.show(ui, |ui| loaded_game.e_tree.display(ui, "E:\\", &mut display_ctx));
+					egui::CollapsingHeader::new("F:\\")
+						.show(ui, |ui| loaded_game.f_tree.display(ui, "F:\\", &mut display_ctx));
+					egui::CollapsingHeader::new("G:\\")
+						.show(ui, |ui| loaded_game.g_tree.display(ui, "G:\\", &mut display_ctx));
+					egui::CollapsingHeader::new("P:\\")
+						.show(ui, |ui| loaded_game.p_tree.display(ui, "P:\\", &mut display_ctx));
+
+					if let Some(path) = preview_path {
+						let panel: Result<_, anyhow::Error> = match path {
+							path if path.ends_with(".TIM") => {
+								try {
+									// Deserialize the tim
+									let path = Path::from_ascii(&path).context("Unable to create path")?;
+									let mut file =
+										loaded_game.game_file.open_file(path).context("Unable to open file")?;
+									let image = Tim::deserialize(&mut file).context("Unable to parse file")?;
+
+									// Then create a texture with it
+									let [width, height] = image.size();
+									let colors: Box<[_]> = image
+										.colors()
+										.context("Unable to get image colors")?
+										.to_vec()
+										.into_iter()
+										.map(|[r, g, b, a]| Color32::from_rgba_premultiplied(r, g, b, a))
+										.collect();
+									let texture_id = frame
+										.tex_allocator()
+										.alloc_srgba_premultiplied((width, height), &*colors);
+
+									Some(PreviewPanel::Tim { image, texture_id })
+								}
+							},
+							_ => Ok(None),
+						};
+
+						// Drop previous images, if they exist
+						#[allow(clippy::single_match)] // We'll have more in the future
+						match *preview_panel {
+							Some(PreviewPanel::Tim { texture_id, .. }) => frame.tex_allocator().free(texture_id),
+							_ => (),
+						}
+
+						match panel {
+							Ok(panel) => *preview_panel = panel,
+							Err(err) => {
+								*preview_panel = Some(PreviewPanel::Error {
+									err: format!("{err:?}"),
+								})
+							},
+						}
+					}
 				});
 			}
 		});
+
+		if let Some(preview_panel) = preview_panel {
+			egui::CentralPanel::default().show(ctx, |ui| match *preview_panel {
+				PreviewPanel::Tim { texture_id, ref image } => {
+					egui::ScrollArea::auto_sized().show(ui, |ui| {
+						ui.image(texture_id, image.size().map(|dim| dim as f32));
+					});
+				},
+				PreviewPanel::Error { ref err } => {
+					ui.group(|ui| {
+						ui.heading("Error");
+						ui.label(err);
+					});
+				},
+			});
+		}
 
 		if let (Some(swap_window), Some(loaded_game)) = (swap_window, loaded_game) {
 			egui::Window::new("Swap screen").show(ctx, |ui| {
@@ -254,6 +335,25 @@ pub struct SwapWindow {
 
 	/// Second file
 	second: SwapFileStatus,
+}
+
+/// Preview panel
+#[derive(PartialEq, Clone)]
+pub enum PreviewPanel {
+	/// Tim image
+	Tim {
+		/// Image
+		image: Tim,
+
+		/// Texture id
+		texture_id: TextureId,
+	},
+
+	/// Error
+	Error {
+		/// Error
+		err: String,
+	},
 }
 
 /// Status of a file being swapped
