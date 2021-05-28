@@ -33,6 +33,12 @@ impl Path {
 		self.0.as_str()
 	}
 
+	/// Returns this path as an ascii string
+	#[must_use]
+	pub const fn as_ascii(&self) -> &AsciiStr {
+		&self.0
+	}
+
 	/// Returns this path's length
 	#[must_use]
 	pub fn len(&self) -> usize {
@@ -96,17 +102,17 @@ impl Path {
 
 	/// Splits this path at it's first component
 	#[must_use]
-	pub fn split_first(&self) -> Option<(&Self, &Self)> {
+	pub fn split_first(&self) -> Option<(&AsciiStr, &Self)> {
 		let mut components = self.components();
 		let (_, first) = components.next()?;
-		Some((first, components.path))
+		Some((first.as_ascii(), components.path))
 	}
 
 	/// Splits this path at it's last component
 	#[must_use]
-	pub fn split_last(&self) -> Option<(&Self, &Self)> {
+	pub fn split_last(&self) -> Option<(&Self, &AsciiStr)> {
 		let (idx, _) = self.components().last()?;
-		Some((Self::new(&self.0[..idx]), Self::new(&self.0[idx..])))
+		Some((Self::new(&self.0[..idx]), &self.0[idx..]))
 	}
 }
 

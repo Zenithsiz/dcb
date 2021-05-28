@@ -58,15 +58,18 @@
 #![allow(clippy::map_err_ignore)]
 
 // Modules
-pub mod cursor;
 pub mod dir;
 pub mod entry;
+pub mod find;
 pub mod path;
 pub mod ptr;
+pub mod swap;
 pub mod writer;
 
 // Exports
 pub use entry::{DirEntry, DirEntryKind};
+pub use find::find_entry;
 pub use path::Path;
 pub use ptr::{DirPtr, FilePtr};
+pub use swap::swap_files;
 pub use writer::{DirEntryWriter, DirEntryWriterKind, DirWriter, DirWriterLister};

@@ -4,12 +4,18 @@
 pub mod error;
 
 // Exports
-pub use error::{FileCursorError, ReadEntriesError, ReadEntryError, WriteEntriesError};
+pub use error::{
+	FileCursorError, FindEntryError, ReadEntriesError, ReadEntryError, WriteEntriesError, WriteEntryError,
+};
 
 // Imports
 use super::DirEntry;
+use ascii::AsciiStr;
 use dcb_util::IoCursor;
-use std::io::{self, SeekFrom};
+use std::{
+	convert::TryFrom,
+	io::{self, SeekFrom},
+};
 
 /// File pointer
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -102,6 +108,24 @@ impl DirPtr {
 		Ok(iter)
 	}
 
+	/// Finds an entry
+	pub fn find_entry<R: io::Read + io::Seek>(
+		self, reader: &mut R, entry_name: &AsciiStr,
+	) -> Result<(usize, DirEntry), FindEntryError> {
+		self.read_entries(reader)
+			.map_err(FindEntryError::SeekDir)?
+			.enumerate()
+			.find_map(|(idx, entry)| match entry {
+				Ok(entry) => match entry.name.as_ascii() == entry_name {
+					true => Some(Ok((idx, entry))),
+					false => None,
+				},
+				Err(err) => Some(Err(err)),
+			})
+			.ok_or(FindEntryError::FindEntry)?
+			.map_err(FindEntryError::ReadEntry)
+	}
+
 	/// Writes a list of entries to a writer
 	pub fn write_entries<W: io::Seek + io::Write>(
 		self, writer: &mut W, entries: impl IntoIterator<Item = DirEntry>,
@@ -120,5 +144,26 @@ impl DirPtr {
 		}
 
 		Ok(())
+	}
+
+	/// Writes a single entry to this directory
+	pub fn write_entry<W: io::Seek + io::Write>(
+		self, writer: &mut W, entry: &DirEntry, idx: usize,
+	) -> Result<(), WriteEntryError> {
+		// Seek to the sector and then to the entry
+		// TODO: Maybe do this in one seek
+		self.seek_to(writer).map_err(WriteEntryError::Seek)?;
+		writer
+			.seek(SeekFrom::Current(
+				0x20 * i64::try_from(idx).expect("Entry index didn't fit into `usize`"),
+			))
+			.map_err(WriteEntryError::Seek)?;
+
+		// Then write the entry
+		let mut entry_bytes = [0; 0x20];
+		entry.to_bytes(&mut entry_bytes);
+
+		// Then write it
+		writer.write_all(&entry_bytes).map_err(WriteEntryError::WriteEntry)
 	}
 }

@@ -45,6 +45,24 @@ impl DirEntryKind {
 	pub const fn dir(ptr: DirPtr) -> Self {
 		Self::Dir { ptr }
 	}
+
+	/// Returns this kind as a file pointer
+	#[must_use]
+	pub const fn as_file_ptr(&self) -> Option<FilePtr> {
+		match *self {
+			Self::File { ptr, .. } => Some(ptr),
+			_ => None,
+		}
+	}
+
+	/// Returns this kind as a directory pointer
+	#[must_use]
+	pub const fn as_dir_ptr(&self) -> Option<DirPtr> {
+		match *self {
+			Self::Dir { ptr } => Some(ptr),
+			_ => None,
+		}
+	}
 }
 
 /// A directory entry

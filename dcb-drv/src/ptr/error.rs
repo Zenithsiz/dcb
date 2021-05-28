@@ -43,3 +43,31 @@ pub enum WriteEntriesError {
 	#[error("Unable to write directory entries")]
 	WriteEntry(#[source] io::Error),
 }
+
+/// Error for [`DirPtr::write_entry`](super::DirPtr::write_entry)
+#[derive(Debug, thiserror::Error)]
+pub enum WriteEntryError {
+	/// Unable to seek to directory
+	#[error("Unable to seek to directory")]
+	Seek(#[source] io::Error),
+
+	/// Unable to write all directory entries
+	#[error("Unable to write directory entries")]
+	WriteEntry(#[source] io::Error),
+}
+
+/// Error for [`DirPtr::find_entry`](super::DirPtr::find_entry)
+#[derive(Debug, thiserror::Error)]
+pub enum FindEntryError {
+	/// Unable to seek to directory
+	#[error("Unable to seek to directory")]
+	SeekDir(#[source] ReadEntriesError),
+
+	/// Unable to read entry
+	#[error("Unable to read entry")]
+	ReadEntry(#[source] ReadEntryError),
+
+	/// Unable to find entry
+	#[error("Unable to find entry")]
+	FindEntry,
+}
