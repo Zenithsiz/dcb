@@ -60,4 +60,10 @@ impl Color {
 			},
 		]
 	}
+
+	/// Converts this color to a `[u8; 4]` rgba
+	#[must_use]
+	pub const fn to_rgba(self) -> [u8; 4] {
+		[self.r, self.g, self.b, if self.stp { 255 } else { 0 }]
+	}
 }

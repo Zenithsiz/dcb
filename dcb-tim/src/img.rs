@@ -70,7 +70,7 @@ impl Colors {
 					.map(|value| {
 						#[bitmatch]
 						let "aaaa_bbbb" = value.map_err(DeserializeError::ReadColors)?;
-						Ok([a, b].map(usize::from))
+						Ok([b, a].map(usize::from))
 					})
 					.collect::<Result<Vec<[usize; 2]>, _>>()?
 					.into_iter()
