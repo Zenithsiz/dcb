@@ -16,6 +16,7 @@ pub mod tree;
 
 // Imports
 use anyhow::Context;
+use byteorder::{LittleEndian, ReadBytesExt};
 use dcb_cdrom_xa::CdRomCursor;
 use dcb_io::{game_file::Path, GameFile};
 use dcb_tim::Tim;
@@ -24,7 +25,12 @@ use eframe::{
 	epi, NativeOptions,
 };
 use native_dialog::{FileDialog, MessageDialog, MessageType};
-use std::{fs, io::Write, mem, path::PathBuf};
+use std::{
+	fs,
+	io::{Seek, SeekFrom, Write},
+	mem,
+	path::PathBuf,
+};
 use tree::FsTree;
 
 fn main() {
@@ -230,6 +236,67 @@ impl epi::App for FileEditor {
 									Some(PreviewPanel::Tim { image, textures })
 								}
 							},
+							path if path.ends_with(".TIS") => {
+								try {
+									// Deserialize the tim
+									let path = Path::from_ascii(&path).context("Unable to create path")?;
+									let mut file =
+										loaded_game.game_file.open_file(path).context("Unable to open file")?;
+
+									let magic = file.read_u16::<LittleEndian>().context("Unable to read magic")?;
+
+									if magic != 0x7054 {
+										Err(anyhow::anyhow!("Magic {:#06x} was wrong", magic))?;
+									}
+
+									let entries_len: u16 =
+										file.read_u16::<LittleEndian>().context("Unable to read entries len")?;
+
+									let entries = (0..entries_len)
+										.map(|idx| {
+											file.read_u32::<LittleEndian>()
+												.with_context(|| format!("Unable to read entry {idx}"))
+										})
+										.collect::<Result<Vec<_>, _>>()?;
+
+									// Then read all tim files
+									let images = entries
+										.into_iter()
+										.map(|entry| {
+											let pos = 4 * entry;
+											file.seek(SeekFrom::Start(u64::from(pos)))
+												.context("Unable to seek to image")?;
+
+											let image = Tim::deserialize(&mut file)
+												.with_context(|| format!("Unable to parse file at {pos:#x}"))?;
+
+											// Then create a texture with it
+											let [width, height] = image.size();
+											let textures = (0..image.pallettes())
+												.map(|pallette| {
+													let colors: Box<[_]> = image
+														.colors(Some(pallette))
+														.context("Unable to get image colors")?
+														.to_vec()
+														.into_iter()
+														.map(|[r, g, b, a]| {
+															Color32::from_rgba_premultiplied(r, g, b, a)
+														})
+														.collect();
+													let texture_id = frame
+														.tex_allocator()
+														.alloc_srgba_premultiplied((width, height), &*colors);
+													Ok(texture_id)
+												})
+												.collect::<Result<_, anyhow::Error>>()?;
+
+											Ok((image, textures))
+										})
+										.collect::<Result<Vec<_>, anyhow::Error>>()?;
+
+									Some(PreviewPanel::Tis { images })
+								}
+							},
 							_ => Ok(None),
 						};
 
@@ -264,6 +331,16 @@ impl epi::App for FileEditor {
 						for &texture_id in textures {
 							ui.image(texture_id, image.size().map(|dim| dim as f32));
 							ui.separator();
+						}
+					});
+				},
+				PreviewPanel::Tis { images } => {
+					egui::ScrollArea::auto_sized().show(ui, |ui| {
+						for (image, textures) in images {
+							for &texture_id in textures {
+								ui.image(texture_id, image.size().map(|dim| dim as f32));
+								ui.separator();
+							}
 						}
 					});
 				},
@@ -372,6 +449,12 @@ pub enum PreviewPanel {
 
 		/// All textures
 		textures: Vec<TextureId>,
+	},
+
+	/// Tim collection
+	Tis {
+		/// Images
+		images: Vec<(Tim, Vec<TextureId>)>,
 	},
 
 	/// Error
