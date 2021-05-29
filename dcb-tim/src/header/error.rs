@@ -10,4 +10,8 @@ pub enum FromBytesError {
 	/// Invalid version
 	#[error("Invalid version {_0:#x}")]
 	InvalidVersion(u8),
+
+	/// Unknown flag
+	#[error("Unknown flag {_0:#010x}")]
+	UnknownFlag(u32),
 }

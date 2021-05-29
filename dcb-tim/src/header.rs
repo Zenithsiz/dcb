@@ -26,6 +26,7 @@ impl Bytes for Header {
 	type FromError = FromBytesError;
 	type ToError = !;
 
+	#[bitmatch::bitmatch]
 	fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError> {
 		let bytes = array_split!(bytes,
 			tag    :  0x1,
@@ -46,14 +47,18 @@ impl Bytes for Header {
 
 		// Else parse the flags
 		let flags = LittleEndian::read_u32(bytes.flags);
-		let bbp = match flags & 0b11 {
+		let (bbp, clut_present) = #[bitmatch]
+		match flags {
+			"0000_0000_0000_0000_0000_0000_0000_c0bb" => (b, c != 0),
+			_ => return Err(FromBytesError::UnknownFlag(flags)),
+		};
+		let bbp = match bbp {
 			0b00 => BitsPerPixel::Index4Bit,
 			0b01 => BitsPerPixel::Index8Bit,
 			0b10 => BitsPerPixel::Color16Bit,
 			0b11 => BitsPerPixel::Color24Bit,
 			_ => unreachable!(),
 		};
-		let clut_present = flags & 0b1000 != 0;
 
 		Ok(Self { bbp, clut_present })
 	}
