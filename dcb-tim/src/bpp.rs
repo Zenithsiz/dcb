@@ -2,17 +2,22 @@
 
 /// Bits per pixel
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
+#[derive(derive_more::Display)]
 pub enum BitsPerPixel {
 	/// 4-bit indexed
+	#[display(fmt = "4-bit")]
 	Index4Bit,
 
 	/// 8-bit indexed
+	#[display(fmt = "8-bit")]
 	Index8Bit,
 
 	/// 16-bit color
+	#[display(fmt = "16-bit")]
 	Color16Bit,
 
 	/// 24-bit color
+	#[display(fmt = "24-bit")]
 	Color24Bit,
 }
 

@@ -17,6 +17,7 @@ log = "0.4.13"
 byteorder = "1.4.2"
 bitmatch = "0.1.1"
 int-conv = "0.1.4"
+derive_more = "0.99.14"
 
 # Derives
 thiserror = "1.0.23"

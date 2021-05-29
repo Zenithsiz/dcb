@@ -16,21 +16,15 @@ pub mod tree;
 
 // Imports
 use anyhow::Context;
-use byteorder::{LittleEndian, ReadBytesExt};
 use dcb_cdrom_xa::CdRomCursor;
 use dcb_io::{game_file::Path, GameFile};
-use dcb_tim::Tim;
+use dcb_tim::{Tim, Tis};
 use eframe::{
 	egui::{self, Color32, TextureId},
 	epi, NativeOptions,
 };
 use native_dialog::{FileDialog, MessageDialog, MessageType};
-use std::{
-	fs,
-	io::{Seek, SeekFrom, Write},
-	mem,
-	path::PathBuf,
-};
+use std::{fs, io::Write, mem, path::PathBuf};
 use tree::FsTree;
 
 fn main() {
@@ -238,39 +232,18 @@ impl epi::App for FileEditor {
 							},
 							path if path.ends_with(".TIS") => {
 								try {
-									// Deserialize the tim
+									// Deserialize the tis
 									let path = Path::from_ascii(&path).context("Unable to create path")?;
 									let mut file =
 										loaded_game.game_file.open_file(path).context("Unable to open file")?;
+									let images: Tis = Tis::deserialize(&mut file).context("Unable to parse file")?;
 
-									let magic = file.read_u16::<LittleEndian>().context("Unable to read magic")?;
-
-									if magic != 0x7054 {
-										Err(anyhow::anyhow!("Magic {:#06x} was wrong", magic))?;
-									}
-
-									let entries_len: u16 =
-										file.read_u16::<LittleEndian>().context("Unable to read entries len")?;
-
-									let entries = (0..entries_len)
-										.map(|idx| {
-											file.read_u32::<LittleEndian>()
-												.with_context(|| format!("Unable to read entry {idx}"))
-										})
-										.collect::<Result<Vec<_>, _>>()?;
-
-									// Then read all tim files
-									let images = entries
+									// Then create all textures
+									let images = images
+										.tims
 										.into_iter()
-										.map(|entry| {
-											let pos = 4 * entry;
-											file.seek(SeekFrom::Start(u64::from(pos)))
-												.context("Unable to seek to image")?;
-
-											let image = Tim::deserialize(&mut file)
-												.with_context(|| format!("Unable to parse file at {pos:#x}"))?;
-
-											// Then create a texture with it
+										.map(|image| {
+											// Create a texture with it
 											let [width, height] = image.size();
 											let textures = (0..image.pallettes())
 												.map(|pallette| {

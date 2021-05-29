@@ -36,10 +36,16 @@ impl Img {
 		let header: Header = Header::from_bytes(&header_bytes).into_ok();
 
 		// If the width and height don't match the length, return Err
+		// Note: The unscaled width should the one used to check the length, not the scaled
 		let pixels_len = header.length - 0xc;
-		let [scaled_width, scaled_height] = bpp.scale_size(header.size);
-		if pixels_len != usize::from(scaled_width) * usize::from(scaled_height) {
-			return Err(DeserializeError::SizePixelsMismatch);
+		let [width, height] = header.size;
+		if pixels_len != usize::from(width) * usize::from(height) * 2 {
+			return Err(DeserializeError::SizePixelsMismatch {
+				width,
+				height,
+				bpp,
+				pixels_len,
+			});
 		}
 
 		// Then decode the pixels
