@@ -3,7 +3,7 @@
 // Imports
 use std::io;
 
-/// Error type for [`Img::deserialize`](super::Img::deserialize)
+/// Error type for [`Clut::deserialize`](super::Clut::deserialize)
 #[derive(Debug, thiserror::Error)]
 pub enum DeserializeError {
 	/// Unable to read header

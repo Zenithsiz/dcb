@@ -9,7 +9,7 @@ pub use error::DeserializeError;
 pub use header::Header;
 
 // Imports
-use crate::{header::BitsPerPixel, Color};
+use crate::{BitsPerPixel, Color};
 use byteorder::{LittleEndian, ReadBytesExt};
 use dcb_bytes::Bytes;
 use std::io;
@@ -20,14 +20,14 @@ pub struct Img {
 	/// Header
 	pub header: Header,
 
-	/// Colors
-	pub colors: Colors,
+	/// Pixels
+	pub pixels: Pixels,
 }
 
 impl Img {
 	/// Deserializes an image
 	#[bitmatch::bitmatch]
-	pub fn deserialize<R: io::Read>(reader: &mut R, bbp: BitsPerPixel) -> Result<Self, DeserializeError> {
+	pub fn deserialize<R: io::Read>(reader: &mut R, bpp: BitsPerPixel) -> Result<Self, DeserializeError> {
 		// Read and parse the header
 		let mut header_bytes = [0u8; 0xc];
 		reader
@@ -35,15 +35,29 @@ impl Img {
 			.map_err(DeserializeError::ReadHeader)?;
 		let header: Header = Header::from_bytes(&header_bytes).into_ok();
 
-		let colors = Colors::deserialize(reader, header.length - 0xc, bbp)?;
+		// If the width and height don't match the length, return Err
+		let pixels_len = header.length - 0xc;
+		let [scaled_width, scaled_height] = bpp.scale_size(header.size);
+		if pixels_len != usize::from(scaled_width) * usize::from(scaled_height) {
+			return Err(DeserializeError::SizePixelsMismatch);
+		}
 
-		Ok(Self { header, colors })
+		// Then decode the pixels
+		let pixels = Pixels::deserialize(reader, pixels_len, bpp).map_err(DeserializeError::ReadColors)?;
+
+		Ok(Self { header, pixels })
+	}
+
+	/// Returns if this image is indexed
+	#[must_use]
+	pub const fn is_indexed(&self) -> bool {
+		self.pixels.is_indexed()
 	}
 }
 
-/// Colors
+/// All pixels within an image
 #[derive(PartialEq, Clone, Debug)]
-pub enum Colors {
+pub enum Pixels {
 	/// 4-bit indexed
 	Index4Bit(Box<[usize]>),
 
@@ -57,58 +71,50 @@ pub enum Colors {
 	Color24Bit(Box<[Color]>),
 }
 
-impl Colors {
-	/// Reads colors given a bbp
+impl Pixels {
+	/// Deserializes all pixels within `reader`.
 	#[bitmatch::bitmatch]
 	pub(self) fn deserialize<R: io::Read>(
-		reader: &mut R, length: usize, bbp: BitsPerPixel,
-	) -> Result<Self, DeserializeError> {
-		let colors = match bbp {
+		reader: &mut R, pixels_len: usize, bpp: BitsPerPixel,
+	) -> Result<Self, io::Error> {
+		let colors = match bpp {
 			BitsPerPixel::Index4Bit => Self::Index4Bit(
 				<&mut R as io::Read>::bytes(reader)
-					.take(length)
+					.take(pixels_len)
 					.map(|value| {
 						#[bitmatch]
-						let "aaaa_bbbb" = value.map_err(DeserializeError::ReadColors)?;
+						let "aaaa_bbbb" = value?;
 						Ok([b, a].map(usize::from))
 					})
-					.collect::<Result<Vec<[usize; 2]>, _>>()?
+					.collect::<Result<Vec<[usize; 2]>, io::Error>>()?
 					.into_iter()
 					.flatten()
 					.collect(),
 			),
 			BitsPerPixel::Index8Bit => Self::Index8Bit(
 				<&mut R as io::Read>::bytes(reader)
-					.take(length)
-					.map(|value| value.map(usize::from).map_err(DeserializeError::ReadColors))
+					.take(pixels_len)
+					.map(|value| value.map(usize::from))
 					.collect::<Result<_, _>>()?,
 			),
 			BitsPerPixel::Color16Bit => Self::Color16Bit(
-				(0..length / 2)
+				(0..pixels_len / 2)
 					.map(|_| {
-						let value = reader
-							.read_u16::<LittleEndian>()
-							.map_err(DeserializeError::ReadColors)?;
+						let value = reader.read_u16::<LittleEndian>()?;
 						Ok(Color::from_16bit(value))
 					})
-					.collect::<Result<_, _>>()?,
+					.collect::<Result<_, io::Error>>()?,
 			),
 			BitsPerPixel::Color24Bit => Self::Color24Bit(
-				(0..length / 2)
+				(0..pixels_len / 3)
 					.map(|_| {
-						let byte1 = reader
-							.read_u16::<LittleEndian>()
-							.map_err(DeserializeError::ReadColors)?;
-						let byte2 = reader
-							.read_u16::<LittleEndian>()
-							.map_err(DeserializeError::ReadColors)?;
-						let byte3 = reader
-							.read_u16::<LittleEndian>()
-							.map_err(DeserializeError::ReadColors)?;
+						let byte1 = reader.read_u16::<LittleEndian>()?;
+						let byte2 = reader.read_u16::<LittleEndian>()?;
+						let byte3 = reader.read_u16::<LittleEndian>()?;
 
 						Ok(Color::from_24bit([byte1, byte2, byte3]))
 					})
-					.collect::<Result<Vec<_>, _>>()?
+					.collect::<Result<Vec<_>, io::Error>>()?
 					.into_iter()
 					.flatten()
 					.collect(),
@@ -116,5 +122,22 @@ impl Colors {
 		};
 
 		Ok(colors)
+	}
+
+	/// Returns the bpp associated with these pixels
+	#[must_use]
+	pub const fn bpp(&self) -> BitsPerPixel {
+		match self {
+			Self::Index4Bit(_) => BitsPerPixel::Index4Bit,
+			Self::Index8Bit(_) => BitsPerPixel::Index8Bit,
+			Self::Color16Bit(_) => BitsPerPixel::Color16Bit,
+			Self::Color24Bit(_) => BitsPerPixel::Color24Bit,
+		}
+	}
+
+	/// Returns if these pixels are indexed
+	#[must_use]
+	pub const fn is_indexed(&self) -> bool {
+		self.bpp().is_indexed()
 	}
 }

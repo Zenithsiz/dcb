@@ -22,6 +22,10 @@ pub enum DeserializeError {
 	/// Unable to deserialize image
 	#[error("Unable to deserialize image")]
 	DeserializeImg(#[source] img::DeserializeError),
+
+	/// Indexed image had no clut
+	#[error("Indexed image had no clut")]
+	IndexMissingClut,
 }
 
 /// Error type for [`Tim::colors`](super::Tim::colors)

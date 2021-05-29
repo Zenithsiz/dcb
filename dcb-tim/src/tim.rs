@@ -1,4 +1,4 @@
-//! Tim
+#![doc(include = "tim.md")]
 
 // Modules
 pub mod error;
@@ -7,7 +7,7 @@ pub mod error;
 pub use error::{ColorsError, DeserializeError};
 
 // Imports
-use crate::{img::Colors, Clut, Color, Header, Img};
+use crate::{img::Pixels, Clut, Color, Header, Img};
 use dcb_bytes::Bytes;
 use std::io;
 
@@ -34,10 +34,16 @@ impl Tim {
 		// If we have a clut, read it
 		let clut = header
 			.clut_present
-			.then(|| Clut::deserialize(reader).map_err(DeserializeError::DeserializeClut))
-			.transpose()?;
+			.then(|| Clut::deserialize(reader))
+			.transpose()
+			.map_err(DeserializeError::DeserializeClut)?;
 
-		let img = Img::deserialize(reader, header.bbp).map_err(DeserializeError::DeserializeImg)?;
+		let img = Img::deserialize(reader, header.bpp).map_err(DeserializeError::DeserializeImg)?;
+
+		// If this is indexed, return `Err` if we don't have a clut table
+		if img.is_indexed() && clut.is_none() {
+			return Err(DeserializeError::IndexMissingClut);
+		}
 
 		Ok(Self { clut, img })
 	}
@@ -46,11 +52,11 @@ impl Tim {
 	#[must_use]
 	pub fn size(&self) -> [usize; 2] {
 		let [width, height] = self.img.header.size.map(usize::from);
-		let width = match &self.img.colors {
-			Colors::Index4Bit(_) => width * 4,
-			Colors::Index8Bit(_) => width * 2,
-			Colors::Color16Bit(_) => width,
-			Colors::Color24Bit(_) => todo!(),
+		let width = match &self.img.pixels {
+			Pixels::Index4Bit(_) => width * 4,
+			Pixels::Index8Bit(_) => width * 2,
+			Pixels::Color16Bit(_) => width,
+			Pixels::Color24Bit(_) => todo!(),
 		};
 
 		[width, height]
@@ -59,15 +65,14 @@ impl Tim {
 	/// Returns the number of pallettes
 	#[must_use]
 	pub fn pallettes(&self) -> usize {
-		match &self.img.colors {
-			Colors::Index4Bit(_) => self.clut.as_ref().map_or(0, |clut| (clut.colors.len() + 15) / 16),
-			Colors::Index8Bit(_) => self.clut.as_ref().map_or(0, |clut| (clut.colors.len() + 255) / 256),
-			Colors::Color16Bit(_) | Colors::Color24Bit(_) => 0,
+		match &self.img.pixels {
+			Pixels::Index4Bit(_) => self.clut.as_ref().map_or(0, |clut| (clut.colors.len() + 15) / 16),
+			Pixels::Index8Bit(_) => self.clut.as_ref().map_or(0, |clut| (clut.colors.len() + 255) / 256),
+			Pixels::Color16Bit(_) | Pixels::Color24Bit(_) => 0,
 		}
 	}
 
 	/// Returns all colors
-	// TODO: Index checking
 	pub fn colors(&self, pallette: Option<usize>) -> Result<Box<[[u8; 4]]>, ColorsError> {
 		// If the pallette is invalid, return Err
 		let pallette = match pallette {
@@ -75,8 +80,8 @@ impl Tim {
 			_ => pallette.unwrap_or(0),
 		};
 
-		let colors: Vec<_> = match &self.img.colors {
-			Colors::Index4Bit(idxs) => {
+		let colors: Vec<_> = match &self.img.pixels {
+			Pixels::Index4Bit(idxs) => {
 				let clut = self.clut.as_ref().ok_or(ColorsError::MissingClut)?;
 				idxs.iter()
 					.map(|&idx| clut.colors.get(16 * pallette + idx).copied())
@@ -86,7 +91,7 @@ impl Tim {
 					.map(Color::to_rgba)
 					.collect()
 			},
-			Colors::Index8Bit(idxs) => {
+			Pixels::Index8Bit(idxs) => {
 				let clut = self.clut.as_ref().ok_or(ColorsError::MissingClut)?;
 				idxs.iter()
 					.map(|&idx| clut.colors.get(256 * pallette + idx).copied())
@@ -96,7 +101,7 @@ impl Tim {
 					.map(Color::to_rgba)
 					.collect()
 			},
-			Colors::Color16Bit(colors) | Colors::Color24Bit(colors) => {
+			Pixels::Color16Bit(colors) | Pixels::Color24Bit(colors) => {
 				colors.iter().copied().map(Color::to_rgba).collect()
 			},
 		};

@@ -50,7 +50,7 @@ impl Bytes for Header {
 	}
 
 	fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError> {
-		let _bytes = array_split_mut!(bytes,
+		let bytes = array_split_mut!(bytes,
 			length: [0x4],
 			x     : [0x2],
 			y     : [0x2],
@@ -58,6 +58,15 @@ impl Bytes for Header {
 			height: [0x2],
 		);
 
-		todo!();
+		let [x, y] = self.pos;
+		let [width, height] = self.size;
+		let length = u32::from(width) * u32::from(height) * 2;
+		LittleEndian::write_u32(bytes.length, length);
+		LittleEndian::write_u16(bytes.x, x);
+		LittleEndian::write_u16(bytes.y, y);
+		LittleEndian::write_u16(bytes.width, width);
+		LittleEndian::write_u16(bytes.height, height);
+
+		Ok(())
 	}
 }

@@ -1,7 +1,6 @@
-//! `.tim` files
-
+#![doc(include = "lib.md")]
 // Features
-#![feature(never_type, unwrap_infallible, array_chunks, array_map)]
+#![feature(never_type, unwrap_infallible, array_chunks, array_map, external_doc)]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]
 // We'll disable the ones we don't need
@@ -59,6 +58,7 @@
 #![allow(clippy::map_err_ignore)]
 
 // Modules
+pub mod bpp;
 pub mod clut;
 pub mod color;
 pub mod header;
@@ -66,6 +66,7 @@ pub mod img;
 pub mod tim;
 
 // Exports
+pub use bpp::BitsPerPixel;
 pub use clut::Clut;
 pub use color::Color;
 pub use header::Header;

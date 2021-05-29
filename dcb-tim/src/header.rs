@@ -7,6 +7,7 @@ pub mod error;
 pub use error::FromBytesError;
 
 // Imports
+use crate::BitsPerPixel;
 use byteorder::{ByteOrder, LittleEndian};
 use dcb_bytes::Bytes;
 use dcb_util::{array_split, array_split_mut};
@@ -15,7 +16,7 @@ use dcb_util::{array_split, array_split_mut};
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub struct Header {
 	/// Bits per pixel
-	pub bbp: BitsPerPixel,
+	pub bpp: BitsPerPixel,
 
 	/// Clut present
 	pub clut_present: bool,
@@ -47,12 +48,12 @@ impl Bytes for Header {
 
 		// Else parse the flags
 		let flags = LittleEndian::read_u32(bytes.flags);
-		let (bbp, clut_present) = #[bitmatch]
+		let (bpp, clut_present) = #[bitmatch]
 		match flags {
 			"0000_0000_0000_0000_0000_0000_0000_c0bb" => (b, c != 0),
 			_ => return Err(FromBytesError::UnknownFlag(flags)),
 		};
-		let bbp = match bbp {
+		let bpp = match bpp {
 			0b00 => BitsPerPixel::Index4Bit,
 			0b01 => BitsPerPixel::Index8Bit,
 			0b10 => BitsPerPixel::Color16Bit,
@@ -60,7 +61,7 @@ impl Bytes for Header {
 			_ => unreachable!(),
 		};
 
-		Ok(Self { bbp, clut_present })
+		Ok(Self { bpp, clut_present })
 	}
 
 	fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError> {
@@ -76,32 +77,16 @@ impl Bytes for Header {
 		*bytes.version = 0x0;
 
 		// Then write the flags
-		let bbp = match self.bbp {
+		let bpp = match self.bpp {
 			BitsPerPixel::Index4Bit => 0b00,
 			BitsPerPixel::Index8Bit => 0b01,
 			BitsPerPixel::Color16Bit => 0b10,
 			BitsPerPixel::Color24Bit => 0b11,
 		};
 		let clut_present = if self.clut_present { 0b1000 } else { 0 };
-		LittleEndian::write_u32(bytes.flags, bbp | clut_present);
+		LittleEndian::write_u32(bytes.flags, bpp | clut_present);
 
 
 		Ok(())
 	}
-}
-
-/// Bits per pixel
-#[derive(PartialEq, Eq, Clone, Copy, Debug)]
-pub enum BitsPerPixel {
-	/// 4-bit indexed
-	Index4Bit,
-
-	/// 8-bit indexed
-	Index8Bit,
-
-	/// 16-bit color
-	Color16Bit,
-
-	/// 24-bit color
-	Color24Bit,
 }
