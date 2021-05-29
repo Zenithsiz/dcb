@@ -12,24 +12,17 @@
 )]
 
 // Modules
+pub mod preview_panel;
 pub mod tree;
 
 // Imports
 use anyhow::Context;
 use dcb_cdrom_xa::CdRomCursor;
 use dcb_io::{game_file::Path, GameFile};
-use dcb_tim::{Tim, Tis};
-use eframe::{
-	egui::{self, Color32, TextureId},
-	epi, NativeOptions,
-};
+use eframe::{egui, epi, NativeOptions};
 use native_dialog::{FileDialog, MessageDialog, MessageType};
-use std::{
-	fs,
-	io::{BufReader, Write},
-	mem,
-	path::PathBuf,
-};
+use preview_panel::PreviewPanel;
+use std::{fs, io::Write, mem, path::PathBuf};
 use tree::FsTree;
 
 fn main() {
@@ -204,138 +197,25 @@ impl epi::App for FileEditor {
 						.show(ui, |ui| loaded_game.p_tree.display(ui, "P:\\", &mut display_ctx));
 
 					if let Some(path) = preview_path {
-						let panel: Result<_, anyhow::Error> = match path {
-							path if path.ends_with(".TIM") => {
-								try {
-									// Deserialize the tim
-									let path = Path::from_ascii(&path).context("Unable to create path")?;
-									let mut file =
-										loaded_game.game_file.open_file(path).context("Unable to open file")?;
-									let image: Tim = Tim::deserialize(&mut file).context("Unable to parse file")?;
-
-									// Then create a texture with it
-									let [width, height] = image.size();
-									let textures = (0..image.pallettes())
-										.map(|pallette| {
-											let colors: Box<[_]> = image
-												.colors(Some(pallette))
-												.context("Unable to get image colors")?
-												.to_vec()
-												.into_iter()
-												.map(|[r, g, b, a]| Color32::from_rgba_premultiplied(r, g, b, a))
-												.collect();
-											let texture_id = frame
-												.tex_allocator()
-												.alloc_srgba_premultiplied((width, height), &*colors);
-											Ok(texture_id)
-										})
-										.collect::<Result<_, anyhow::Error>>()?;
-
-
-									Some(PreviewPanel::Tim { image, textures })
-								}
-							},
-							path if path.ends_with(".TIS") => {
-								try {
-									// Deserialize the tis
-									let path = Path::from_ascii(&path).context("Unable to create path")?;
-									let file = loaded_game.game_file.open_file(path).context("Unable to open file")?;
-									let mut file = BufReader::new(file);
-									let images: Tis = Tis::deserialize(&mut file).context("Unable to parse file")?;
-
-									// Then create all textures
-									let images = images
-										.tims
-										.into_iter()
-										.map(|image| {
-											// Create a texture with it
-											let [width, height] = image.size();
-											let textures = (0..image.pallettes())
-												.map(|pallette| {
-													let colors: Box<[_]> = image
-														.colors(Some(pallette))
-														.context("Unable to get image colors")?
-														.to_vec()
-														.into_iter()
-														.map(|[r, g, b, a]| {
-															Color32::from_rgba_premultiplied(r, g, b, a)
-														})
-														.collect();
-													let texture_id = frame
-														.tex_allocator()
-														.alloc_srgba_premultiplied((width, height), &*colors);
-													Ok(texture_id)
-												})
-												.collect::<Result<_, anyhow::Error>>()?;
-
-											Ok((image, textures))
-										})
-										.collect::<Result<Vec<_>, anyhow::Error>>()?;
-
-									Some(PreviewPanel::Tis { images })
-								}
-							},
-							_ => Ok(None),
-						};
+						let panel = PreviewPanel::new(loaded_game, &path, frame.tex_allocator())
+							.context("Unable to preview file");
 
 						// Drop previous images, if they exist
-						#[allow(clippy::single_match)] // We'll have more in the future
-						match &*preview_panel {
-							Some(PreviewPanel::Tim { textures, .. }) => {
-								for &texture_id in textures {
-									frame.tex_allocator().free(texture_id);
-								}
-							},
-							Some(PreviewPanel::Tis { images }) => {
-								for (_, textures) in images {
-									for &texture_id in textures {
-										frame.tex_allocator().free(texture_id);
-									}
-								}
-							},
-							_ => (),
+						if let Some(preview_panel) = preview_panel {
+							preview_panel.drop_textures(frame.tex_allocator());
 						}
 
-						match panel {
-							Ok(panel) => *preview_panel = panel,
-							Err(err) => {
-								*preview_panel = Some(PreviewPanel::Error {
-									err: format!("{err:?}"),
-								})
-							},
-						}
+						*preview_panel = panel.unwrap_or_else(|err| {
+							let err = format!("{err:?}");
+							Some(PreviewPanel::Error { err })
+						});
 					}
 				});
 			}
 		});
 
 		if let Some(preview_panel) = preview_panel {
-			egui::CentralPanel::default().show(ctx, |ui| match &*preview_panel {
-				PreviewPanel::Tim { textures, image } => {
-					egui::ScrollArea::auto_sized().show(ui, |ui| {
-						for &texture_id in textures {
-							ui.image(texture_id, image.size().map(|dim| dim as f32));
-							ui.separator();
-						}
-					});
-				},
-				PreviewPanel::Tis { images } => {
-					egui::ScrollArea::auto_sized().show(ui, |ui| {
-						for (image, textures) in images {
-							for &texture_id in textures {
-								ui.image(texture_id, image.size().map(|dim| dim as f32));
-								ui.separator();
-							}
-						}
-					});
-				},
-				PreviewPanel::Error { err } => {
-					ui.group(|ui| {
-						ui.heading("Error");
-						ui.label(err);
-					});
-				},
-			});
+			preview_panel.display(ctx);
 		}
 
 		if let (Some(swap_window), Some(loaded_game)) = (swap_window, loaded_game) {
@@ -422,31 +302,6 @@ pub struct SwapWindow {
 
 	/// Second file
 	second: SwapFileStatus,
-}
-
-/// Preview panel
-#[derive(PartialEq, Clone)]
-pub enum PreviewPanel {
-	/// Tim image
-	Tim {
-		/// Image
-		image: Tim,
-
-		/// All textures
-		textures: Vec<TextureId>,
-	},
-
-	/// Tim collection
-	Tis {
-		/// Images
-		images: Vec<(Tim, Vec<TextureId>)>,
-	},
-
-	/// Error
-	Error {
-		/// Error
-		err: String,
-	},
 }
 
 /// Status of a file being swapped
