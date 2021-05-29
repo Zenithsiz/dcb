@@ -16,42 +16,48 @@ pub struct FsTree {
 impl FsTree {
 	/// Creates a new tree
 	pub fn new<R: io::Seek + io::Read>(reader: &mut R) -> Result<Self, anyhow::Error> {
-		/// Helper function to parse a directory
-		fn parse_dir<R: io::Read + io::Seek>(reader: &mut R, ptr: DirPtr) -> Result<TreeDir, anyhow::Error> {
-			// Read all entries
-			let entries: Vec<DirEntry> = ptr
-				.read_entries(reader)
-				.with_context(|| format!("Unable to read entries for {:#x}", ptr.sector_pos))?
-				.collect::<Result<_, _>>()
-				.with_context(|| format!("Unable to read entry for {:#x}", ptr.sector_pos))?;
-
-			// Then convert all dir entries to our entries
-			let entries = entries
-				.into_iter()
-				.map(|entry| {
-					let kind = match entry.kind {
-						DirEntryKind::Dir { ptr } => {
-							let dir = parse_dir(reader, ptr)?;
-							TreeDirEntryKind::Dir(dir)
-						},
-						DirEntryKind::File { extension, ptr } => TreeDirEntryKind::File { extension, ptr },
-					};
-
-					Ok(TreeDirEntry { name: entry.name, kind })
-				})
-				.collect::<Result<_, anyhow::Error>>()?;
-
-			Ok(TreeDir { entries })
-		}
-
 		// Parse the root directory
-		let root = parse_dir(reader, DirPtr::root())?;
+		let root = Self::parse_dir(reader, DirPtr::root())?;
 
 		Ok(Self { root })
 	}
 
+	/// Reloads this tree
+	pub fn reload<R: io::Seek + io::Read>(&mut self, reader: &mut R) -> Result<(), anyhow::Error> {
+		self.root = Self::parse_dir(reader, DirPtr::root())?;
+
+		Ok(())
+	}
+
+	/// Helper function to parse a directory
+	fn parse_dir<R: io::Read + io::Seek>(reader: &mut R, ptr: DirPtr) -> Result<TreeDir, anyhow::Error> {
+		// Read all entries
+		let entries: Vec<DirEntry> = ptr
+			.read_entries(reader)
+			.with_context(|| format!("Unable to read entries for {:#x}", ptr.sector_pos))?
+			.collect::<Result<_, _>>()
+			.with_context(|| format!("Unable to read entry for {:#x}", ptr.sector_pos))?;
+
+		// Then convert all dir entries to our entries
+		let entries = entries
+			.into_iter()
+			.map(|entry| {
+				let kind = match entry.kind {
+					DirEntryKind::Dir { ptr } => {
+						let dir = Self::parse_dir(reader, ptr)?;
+						TreeDirEntryKind::Dir(dir)
+					},
+					DirEntryKind::File { extension, ptr } => TreeDirEntryKind::File { extension, ptr },
+				};
+
+				Ok(TreeDirEntry { name: entry.name, kind })
+			})
+			.collect::<Result<_, anyhow::Error>>()?;
+
+		Ok(TreeDir { entries })
+	}
+
 	/// Displays this tree
-	/// Displays this directory
 	pub fn display(&self, ui: &mut egui::Ui, start_path: &str, ctx: &mut DisplayCtx<impl FnMut(&str)>) {
 		self.root.display(ui, start_path, ctx);
 	}

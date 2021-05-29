@@ -292,16 +292,28 @@ impl epi::App for FileEditor {
 							let lhs = Path::from_ascii(lhs).expect("Lhs path wasn't valid");
 							let rhs = Path::from_ascii(rhs).expect("Rhs path wasn't valid");
 
-							if let Err(err) = loaded_game
-								.game_file
-								.swap_files(lhs, rhs)
-								.context("Unable to swap files")
-							{
-								MessageDialog::new()
+							let res: Result<_, anyhow::Error> = try {
+								loaded_game
+									.game_file
+									.swap_files(lhs, rhs)
+									.context("Unable to swap files")?;
+
+								loaded_game.reload().context("Unable to reload the game")?;
+							};
+
+							match res {
+								Ok(()) => {
+									MessageDialog::new()
+										.set_text("Successfully swapped!")
+										.set_type(MessageType::Info)
+										.show_alert()
+										.expect("Unable to alert user");
+								},
+								Err(err) => MessageDialog::new()
 									.set_text(&format!("Unable to swap files: {:?}", err))
 									.set_type(MessageType::Error)
 									.show_alert()
-									.expect("Unable to alert user");
+									.expect("Unable to alert user"),
 							}
 						},
 						_ => MessageDialog::new()
@@ -439,4 +451,33 @@ pub struct LoadedGame {
 
 	/// `P` drive tree
 	p_tree: FsTree,
+}
+
+impl LoadedGame {
+	/// Reloads the game
+	pub fn reload(&mut self) -> Result<(), anyhow::Error> {
+		self.a_tree
+			.reload(&mut self.game_file.a_drv().context("Unable to get `A` drive")?)
+			.context("Unable to reload `A` drive")?;
+		self.b_tree
+			.reload(&mut self.game_file.b_drv().context("Unable to get `B` drive")?)
+			.context("Unable to reload `B` drive")?;
+		self.c_tree
+			.reload(&mut self.game_file.c_drv().context("Unable to get `C` drive")?)
+			.context("Unable to reload `C` drive")?;
+		self.e_tree
+			.reload(&mut self.game_file.e_drv().context("Unable to get `E` drive")?)
+			.context("Unable to reload `E` drive")?;
+		self.f_tree
+			.reload(&mut self.game_file.f_drv().context("Unable to get `F` drive")?)
+			.context("Unable to reload `F` drive")?;
+		self.g_tree
+			.reload(&mut self.game_file.g_drv().context("Unable to get `G` drive")?)
+			.context("Unable to reload `G` drive")?;
+		self.p_tree
+			.reload(&mut self.game_file.p_drv().context("Unable to get `P` drive")?)
+			.context("Unable to reload `P` drive")?;
+
+		Ok(())
+	}
 }
