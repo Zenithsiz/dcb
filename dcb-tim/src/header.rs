@@ -36,7 +36,7 @@ impl Bytes for Header {
 			flags  : [0x4],
 		);
 
-		// If the magic is wrong, return
+		// If the tag is wrong, return
 		if *bytes.tag != 0x10 {
 			return Err(FromBytesError::InvalidTag(*bytes.tag));
 		}

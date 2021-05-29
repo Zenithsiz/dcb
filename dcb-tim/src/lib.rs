@@ -64,6 +64,7 @@ pub mod color;
 pub mod header;
 pub mod img;
 pub mod tim;
+pub mod tis;
 
 // Exports
 pub use bpp::BitsPerPixel;
@@ -72,3 +73,4 @@ pub use color::Color;
 pub use header::Header;
 pub use img::Img;
 pub use tim::Tim;
+pub use tis::Tis;
