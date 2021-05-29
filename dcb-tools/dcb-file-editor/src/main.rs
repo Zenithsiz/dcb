@@ -24,7 +24,12 @@ use eframe::{
 	epi, NativeOptions,
 };
 use native_dialog::{FileDialog, MessageDialog, MessageType};
-use std::{fs, io::Write, mem, path::PathBuf};
+use std::{
+	fs,
+	io::{BufReader, Write},
+	mem,
+	path::PathBuf,
+};
 use tree::FsTree;
 
 fn main() {
@@ -234,8 +239,8 @@ impl epi::App for FileEditor {
 								try {
 									// Deserialize the tis
 									let path = Path::from_ascii(&path).context("Unable to create path")?;
-									let mut file =
-										loaded_game.game_file.open_file(path).context("Unable to open file")?;
+									let file = loaded_game.game_file.open_file(path).context("Unable to open file")?;
+									let mut file = BufReader::new(file);
 									let images: Tis = Tis::deserialize(&mut file).context("Unable to parse file")?;
 
 									// Then create all textures
@@ -275,10 +280,17 @@ impl epi::App for FileEditor {
 
 						// Drop previous images, if they exist
 						#[allow(clippy::single_match)] // We'll have more in the future
-						match preview_panel {
+						match &*preview_panel {
 							Some(PreviewPanel::Tim { textures, .. }) => {
-								for &mut texture_id in textures {
+								for &texture_id in textures {
 									frame.tex_allocator().free(texture_id);
+								}
+							},
+							Some(PreviewPanel::Tis { images }) => {
+								for (_, textures) in images {
+									for &texture_id in textures {
+										frame.tex_allocator().free(texture_id);
+									}
 								}
 							},
 							_ => (),
