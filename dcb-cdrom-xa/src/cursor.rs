@@ -90,7 +90,7 @@ impl<R: Seek> Seek for CdRomCursor<R> {
 	fn seek(&mut self, pos: SeekFrom) -> Result<u64, io::Error> {
 		// Then check what position they want us to go
 		let pos = match pos {
-			SeekFrom::Start(pos) => 0x930 * pos / 0x800 + 0x18,
+			SeekFrom::Start(pos) => 0x930 * (pos / 0x800) + 0x18 + (pos % 0x800),
 			SeekFrom::End(_) => todo!("Seek from end isn't supported yet"),
 			SeekFrom::Current(offset) => {
 				// Seek to the next valid position before offsetting
