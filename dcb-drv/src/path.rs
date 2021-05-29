@@ -88,7 +88,15 @@ impl Path {
 	/// Splits this path at it's last component
 	#[must_use]
 	pub fn split_last(&self) -> Option<(&Self, &AsciiStr)> {
-		let last = self.components().last()?;
+		// Get the last component
+		let (idx, last) = self.components().enumerate().last()?;
+
+		// If it was the start component, return
+		if idx == 0 {
+			return None;
+		}
+
+		// Else separate them
 		let start = &self.0[..(self.len() - last.len())];
 		Some((Self::new(start), last.as_ascii()))
 	}
