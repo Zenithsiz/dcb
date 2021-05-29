@@ -206,22 +206,28 @@ impl epi::App for FileEditor {
 									let path = Path::from_ascii(&path).context("Unable to create path")?;
 									let mut file =
 										loaded_game.game_file.open_file(path).context("Unable to open file")?;
-									let image = Tim::deserialize(&mut file).context("Unable to parse file")?;
+									let image: Tim = Tim::deserialize(&mut file).context("Unable to parse file")?;
 
 									// Then create a texture with it
 									let [width, height] = image.size();
-									let colors: Box<[_]> = image
-										.colors()
-										.context("Unable to get image colors")?
-										.to_vec()
-										.into_iter()
-										.map(|[r, g, b, a]| Color32::from_rgba_premultiplied(r, g, b, a))
-										.collect();
-									let texture_id = frame
-										.tex_allocator()
-										.alloc_srgba_premultiplied((width, height), &*colors);
+									let textures = (0..image.pallettes())
+										.map(|pallette| {
+											let colors: Box<[_]> = image
+												.colors(Some(pallette))
+												.context("Unable to get image colors")?
+												.to_vec()
+												.into_iter()
+												.map(|[r, g, b, a]| Color32::from_rgba_premultiplied(r, g, b, a))
+												.collect();
+											let texture_id = frame
+												.tex_allocator()
+												.alloc_srgba_premultiplied((width, height), &*colors);
+											Ok(texture_id)
+										})
+										.collect::<Result<_, anyhow::Error>>()?;
 
-									Some(PreviewPanel::Tim { image, texture_id })
+
+									Some(PreviewPanel::Tim { image, textures })
 								}
 							},
 							_ => Ok(None),
@@ -229,8 +235,12 @@ impl epi::App for FileEditor {
 
 						// Drop previous images, if they exist
 						#[allow(clippy::single_match)] // We'll have more in the future
-						match *preview_panel {
-							Some(PreviewPanel::Tim { texture_id, .. }) => frame.tex_allocator().free(texture_id),
+						match preview_panel {
+							Some(PreviewPanel::Tim { textures, .. }) => {
+								for &mut texture_id in textures {
+									frame.tex_allocator().free(texture_id);
+								}
+							},
 							_ => (),
 						}
 
@@ -248,13 +258,16 @@ impl epi::App for FileEditor {
 		});
 
 		if let Some(preview_panel) = preview_panel {
-			egui::CentralPanel::default().show(ctx, |ui| match *preview_panel {
-				PreviewPanel::Tim { texture_id, ref image } => {
+			egui::CentralPanel::default().show(ctx, |ui| match &*preview_panel {
+				PreviewPanel::Tim { textures, image } => {
 					egui::ScrollArea::auto_sized().show(ui, |ui| {
-						ui.image(texture_id, image.size().map(|dim| dim as f32));
+						for &texture_id in textures {
+							ui.image(texture_id, image.size().map(|dim| dim as f32));
+							ui.separator();
+						}
 					});
 				},
-				PreviewPanel::Error { ref err } => {
+				PreviewPanel::Error { err } => {
 					ui.group(|ui| {
 						ui.heading("Error");
 						ui.label(err);
@@ -357,8 +370,8 @@ pub enum PreviewPanel {
 		/// Image
 		image: Tim,
 
-		/// Texture id
-		texture_id: TextureId,
+		/// All textures
+		textures: Vec<TextureId>,
 	},
 
 	/// Error

@@ -30,4 +30,12 @@ pub enum ColorsError {
 	/// Missing clut with indexes colors
 	#[error("Missing clut with indexed colors")]
 	MissingClut,
+
+	/// Invalid pallette
+	#[error("Invalid pallette")]
+	InvalidPallette,
+
+	/// Color is out of bounds
+	#[error("Color out of bounds")]
+	ColorOutOfBounds,
 }

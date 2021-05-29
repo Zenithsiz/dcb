@@ -56,17 +56,45 @@ impl Tim {
 		[width, height]
 	}
 
+	/// Returns the number of pallettes
+	#[must_use]
+	pub fn pallettes(&self) -> usize {
+		match &self.img.colors {
+			Colors::Index4Bit(_) => self.clut.as_ref().map_or(0, |clut| (clut.colors.len() + 15) / 16),
+			Colors::Index8Bit(_) => self.clut.as_ref().map_or(0, |clut| (clut.colors.len() + 255) / 256),
+			Colors::Color16Bit(_) | Colors::Color24Bit(_) => 0,
+		}
+	}
+
 	/// Returns all colors
 	// TODO: Index checking
-	pub fn colors(&self) -> Result<Box<[[u8; 4]]>, ColorsError> {
+	pub fn colors(&self, pallette: Option<usize>) -> Result<Box<[[u8; 4]]>, ColorsError> {
+		// If the pallette is invalid, return Err
+		let pallette = match pallette {
+			Some(pallette) if pallette >= self.pallettes() => return Err(ColorsError::InvalidPallette),
+			_ => pallette.unwrap_or(0),
+		};
+
 		let colors: Vec<_> = match &self.img.colors {
 			Colors::Index4Bit(idxs) => {
 				let clut = self.clut.as_ref().ok_or(ColorsError::MissingClut)?;
-				idxs.iter().map(|&idx| clut.colors[idx]).map(Color::to_rgba).collect()
+				idxs.iter()
+					.map(|&idx| clut.colors.get(16 * pallette + idx).copied())
+					.collect::<Option<Vec<_>>>()
+					.ok_or(ColorsError::ColorOutOfBounds)?
+					.into_iter()
+					.map(Color::to_rgba)
+					.collect()
 			},
 			Colors::Index8Bit(idxs) => {
 				let clut = self.clut.as_ref().ok_or(ColorsError::MissingClut)?;
-				idxs.iter().map(|&idx| clut.colors[idx]).map(Color::to_rgba).collect()
+				idxs.iter()
+					.map(|&idx| clut.colors.get(256 * pallette + idx).copied())
+					.collect::<Option<Vec<_>>>()
+					.ok_or(ColorsError::ColorOutOfBounds)?
+					.into_iter()
+					.map(Color::to_rgba)
+					.collect()
 			},
 			Colors::Color16Bit(colors) | Colors::Color24Bit(colors) => {
 				colors.iter().copied().map(Color::to_rgba).collect()
