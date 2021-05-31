@@ -20,6 +20,7 @@ pub mod swap_window;
 // Imports
 use anyhow::Context;
 use dcb_cdrom_xa::CdRomCursor;
+use dcb_util::task;
 use eframe::{egui, epi, NativeOptions};
 use game_file::GameFile;
 use native_dialog::{FileDialog, MessageDialog, MessageType};
@@ -49,6 +50,9 @@ pub struct FileEditor {
 	/// Game file
 	game_file: Option<GameFile>,
 
+	/// Game file future
+	game_file_future: Option<task::ValueFuture<Result<GameFile, anyhow::Error>>>,
+
 	/// File search
 	file_search: String,
 
@@ -62,11 +66,12 @@ pub struct FileEditor {
 impl Default for FileEditor {
 	fn default() -> Self {
 		Self {
-			file_path:     None,
-			game_file:     None,
-			file_search:   String::new(),
-			swap_window:   None,
-			preview_panel: None,
+			file_path:        None,
+			game_file:        None,
+			game_file_future: None,
+			file_search:      String::new(),
+			swap_window:      None,
+			preview_panel:    None,
 		}
 	}
 }
@@ -76,17 +81,32 @@ impl epi::App for FileEditor {
 		let Self {
 			file_path,
 			game_file,
+			game_file_future,
 			file_search,
 			swap_window,
 			preview_panel,
 		} = self;
+
+		// If the game file finished loading, get it
+		if let Some(fut) = game_file_future {
+			if let Some(res) = fut.get() {
+				*game_file_future = None;
+				match res {
+					Ok(game) => *game_file = Some(game),
+					Err(err) => self::alert_error(&format!("Unable to open file: {:?}", err)),
+				};
+			}
+		}
 
 		// Top panel
 		egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
 			egui::menu::bar(ui, |ui| {
 				egui::menu::menu(ui, "File", |ui| {
 					// On open, ask the user and open the file
-					if ui.button("Open").clicked() {
+					if ui
+						.add(egui::Button::new("Open").enabled(game_file_future.is_none()))
+						.clicked()
+					{
 						// Ask the user for the file
 						let cur_dir_path = std::env::current_dir().expect("Unable to get current directory path");
 						*file_path = FileDialog::new()
@@ -96,8 +116,8 @@ impl epi::App for FileEditor {
 							.expect("Unable to ask user for file");
 
 						// Then open the file
-						if let Some(file_path) = file_path {
-							let res: Result<_, anyhow::Error> = try {
+						if let Some(file_path) = file_path.clone() {
+							*game_file_future = Some(task::spawn(move || {
 								let file = fs::File::with_options()
 									.read(true)
 									.write(true)
@@ -106,12 +126,8 @@ impl epi::App for FileEditor {
 								let cdrom = CdRomCursor::new(file);
 								let file = dcb_io::GameFile::new(cdrom);
 
-								*game_file = Some(GameFile::new(file).context("Unable to load game")?);
-							};
-
-							if let Err(err) = res {
-								self::alert_error(&format!("Unable to open file: {:?}", err));
-							}
+								GameFile::new(file).context("Unable to load game")
+							}));
 						}
 					}
 
