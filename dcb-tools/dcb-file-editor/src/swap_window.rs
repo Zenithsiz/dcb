@@ -5,7 +5,6 @@ use crate::LoadedGame;
 use anyhow::Context;
 use dcb_io::game_file::Path;
 use eframe::egui;
-use native_dialog::{MessageDialog, MessageType};
 use std::mem;
 
 /// Swap window
@@ -61,25 +60,11 @@ impl SwapWindow {
 						};
 
 						match res {
-							Ok(()) => {
-								MessageDialog::new()
-									.set_text("Successfully swapped!")
-									.set_type(MessageType::Info)
-									.show_alert()
-									.expect("Unable to alert user");
-							},
-							Err(err) => MessageDialog::new()
-								.set_text(&format!("Unable to swap files: {:?}", err))
-								.set_type(MessageType::Error)
-								.show_alert()
-								.expect("Unable to alert user"),
+							Ok(()) => crate::alert_info("Successfully swapped!"),
+							Err(err) => crate::alert_error(&format!("Unable to swap files: {:?}", err)),
 						}
 					},
-					_ => MessageDialog::new()
-						.set_text("You must set both files before swapping")
-						.set_type(MessageType::Warning)
-						.show_alert()
-						.expect("Unable to alert user"),
+					_ => crate::alert_warn("You must set both files before swapping"),
 				}
 			}
 		});

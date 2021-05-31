@@ -111,11 +111,7 @@ impl epi::App for FileEditor {
 							};
 
 							if let Err(err) = res {
-								MessageDialog::new()
-									.set_text(&format!("Unable to open file: {:?}", err))
-									.set_type(MessageType::Error)
-									.show_alert()
-									.expect("Unable to alert user");
+								self::alert_error(&format!("Unable to open file: {:?}", err));
 							}
 						}
 					}
@@ -185,11 +181,7 @@ impl epi::App for FileEditor {
 		if let Some(loaded_game) = &mut self.loaded_game {
 			match loaded_game.game_file_mut().cdrom().flush() {
 				Ok(()) => (),
-				Err(err) => MessageDialog::new()
-					.set_text(&format!("Unable to flush file tod isk: {:?}", err))
-					.set_type(MessageType::Error)
-					.show_alert()
-					.expect("Unable to alert user"),
+				Err(err) => self::alert_error(&format!("Unable to flush file tod isk: {:?}", err)),
 			}
 		}
 	}
@@ -197,4 +189,31 @@ impl epi::App for FileEditor {
 	fn name(&self) -> &str {
 		"Dcb file editor"
 	}
+}
+
+/// Alerts an error to the user
+fn alert_error(msg: &str) {
+	MessageDialog::new()
+		.set_text(msg)
+		.set_type(MessageType::Error)
+		.show_alert()
+		.expect("Unable to alert user")
+}
+
+/// Alerts a warning to the user
+fn alert_warn(msg: &str) {
+	MessageDialog::new()
+		.set_text(msg)
+		.set_type(MessageType::Warning)
+		.show_alert()
+		.expect("Unable to alert user")
+}
+
+/// Alerts info to the user
+fn alert_info(msg: &str) {
+	MessageDialog::new()
+		.set_text(msg)
+		.set_type(MessageType::Info)
+		.show_alert()
+		.expect("Unable to alert user")
 }
