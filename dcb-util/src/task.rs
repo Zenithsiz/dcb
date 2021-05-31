@@ -9,7 +9,7 @@ use std::{
 };
 
 /// Spawns a task and returns a future for awaiting it's value
-pub fn spawn<T: Send>(f: impl FnOnce() -> T + Send) -> ValueFuture<T> {
+pub fn spawn<T: Send + 'static>(f: impl FnOnce() -> T + Send + 'static) -> ValueFuture<T> {
 	// Create the value mutex
 	let mutex = Arc::new(Mutex::new(None));
 	let future = ValueFuture {
@@ -18,8 +18,9 @@ pub fn spawn<T: Send>(f: impl FnOnce() -> T + Send) -> ValueFuture<T> {
 	};
 
 	// Spawn the task
-	rayon::scope(move |_| {
-		*mutex.lock().expect("Poisoned") = Some(f());
+	rayon::spawn(move || {
+		let value = f();
+		*mutex.lock().expect("Poisoned") = Some(value);
 	});
 
 	// And return the future

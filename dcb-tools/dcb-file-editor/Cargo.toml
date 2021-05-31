@@ -6,7 +6,6 @@ edition = "2018"
 
 [dependencies]
 # Dcb
-dcb = { path = "../../dcb" }
 dcb-bytes = { path = "../../dcb-bytes" }
 dcb-util = { path = "../../dcb-util" }
 dcb-cdrom-xa = { path = "../../dcb-cdrom-xa" }
