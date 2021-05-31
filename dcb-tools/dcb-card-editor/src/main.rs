@@ -1223,6 +1223,8 @@ fn render_effect_opt(ui: &mut egui::Ui, effect: &mut Option<Effect>) {
 				{
 					*effect = Some(ATTACK_FIRST_DEFAULT);
 				}
+
+				ui.selectable_value(effect, None, "None");
 			});
 	});
 }
