@@ -13,16 +13,18 @@
 
 // Modules
 pub mod preview_panel;
+pub mod swap_window;
 pub mod tree;
 
 // Imports
 use anyhow::Context;
 use dcb_cdrom_xa::CdRomCursor;
-use dcb_io::{game_file::Path, GameFile};
+use dcb_io::GameFile;
 use eframe::{egui, epi, NativeOptions};
 use native_dialog::{FileDialog, MessageDialog, MessageType};
 use preview_panel::PreviewPanel;
-use std::{fs, io::Write, mem, path::PathBuf};
+use std::{fs, io::Write, path::PathBuf};
+use swap_window::SwapWindow;
 use tree::FsTree;
 
 fn main() {
@@ -168,15 +170,12 @@ impl epi::App for FileEditor {
 					let mut display_ctx = tree::DisplayCtx {
 						search_str:    &file_search,
 						on_file_click: |path: &str| {
+							// If we have a swap window, call it's on file click
 							if let Some(swap_window) = swap_window {
-								if swap_window.first.is_setting() {
-									swap_window.first = SwapFileStatus::Set(path.to_owned());
-								}
-								if swap_window.second.is_setting() {
-									swap_window.second = SwapFileStatus::Set(path.to_owned());
-								}
+								swap_window.on_file_click(path);
 							}
 
+							// Then set the path to preview
 							preview_path = Some(path.to_owned());
 						},
 					};
@@ -219,66 +218,7 @@ impl epi::App for FileEditor {
 		}
 
 		if let (Some(swap_window), Some(loaded_game)) = (swap_window, loaded_game) {
-			egui::Window::new("Swap screen").show(ctx, |ui| {
-				ui.horizontal(|ui| {
-					ui.label(swap_window.first.as_str().unwrap_or("None"));
-					let text = match swap_window.first.is_setting() {
-						true => "...",
-						false => "Set",
-					};
-					if ui.button(text).clicked() {
-						swap_window.first.toggle();
-					}
-				});
-				ui.horizontal(|ui| {
-					ui.label(swap_window.second.as_str().unwrap_or("None"));
-					let text = match swap_window.second.is_setting() {
-						true => "...",
-						false => "Set",
-					};
-					if ui.button(text).clicked() {
-						swap_window.second.toggle();
-					}
-				});
-
-				if ui.button("Swap").clicked() {
-					match (&swap_window.first, &swap_window.second) {
-						(SwapFileStatus::Set(lhs), SwapFileStatus::Set(rhs)) => {
-							let lhs = Path::from_ascii(lhs).expect("Lhs path wasn't valid");
-							let rhs = Path::from_ascii(rhs).expect("Rhs path wasn't valid");
-
-							let res: Result<_, anyhow::Error> = try {
-								loaded_game
-									.game_file
-									.swap_files(lhs, rhs)
-									.context("Unable to swap files")?;
-
-								loaded_game.reload().context("Unable to reload the game")?;
-							};
-
-							match res {
-								Ok(()) => {
-									MessageDialog::new()
-										.set_text("Successfully swapped!")
-										.set_type(MessageType::Info)
-										.show_alert()
-										.expect("Unable to alert user");
-								},
-								Err(err) => MessageDialog::new()
-									.set_text(&format!("Unable to swap files: {:?}", err))
-									.set_type(MessageType::Error)
-									.show_alert()
-									.expect("Unable to alert user"),
-							}
-						},
-						_ => MessageDialog::new()
-							.set_text("You must set both files before swapping")
-							.set_type(MessageType::Warning)
-							.show_alert()
-							.expect("Unable to alert user"),
-					}
-				}
-			});
+			swap_window.display(ctx, loaded_game)
 		}
 	}
 
@@ -293,74 +233,6 @@ impl epi::App for FileEditor {
 		"Dcb file editor"
 	}
 }
-
-/// Swap window
-#[derive(PartialEq, Clone, Default)]
-pub struct SwapWindow {
-	/// First file
-	first: SwapFileStatus,
-
-	/// Second file
-	second: SwapFileStatus,
-}
-
-/// Status of a file being swapped
-#[derive(PartialEq, Clone)]
-pub enum SwapFileStatus {
-	/// Unset
-	Unset,
-
-	/// Setting
-	Setting(Option<String>),
-
-	/// Set
-	Set(String),
-}
-
-impl SwapFileStatus {
-	/// Toggles the current setting
-	pub fn toggle(&mut self) {
-		*self = match mem::take(self) {
-			Self::Unset => Self::Setting(None),
-			Self::Setting(s) => match s {
-				Some(s) => Self::Set(s),
-				None => Self::Unset,
-			},
-			Self::Set(s) => Self::Setting(Some(s)),
-		};
-	}
-
-	/// Returns this status as a string
-	pub fn as_str(&self) -> Option<&str> {
-		match self {
-			Self::Setting(s) => s.as_deref(),
-			Self::Set(s) => Some(s),
-			_ => None,
-		}
-	}
-
-	/// Returns `true` if the swap_file_status is [`Setting`].
-	pub fn is_setting(&self) -> bool {
-		matches!(self, Self::Setting(..))
-	}
-
-	/// Returns `true` if the swap_file_status is [`Set`].
-	pub fn is_set(&self) -> bool {
-		matches!(self, Self::Set(..))
-	}
-
-	/// Returns `true` if the swap_file_status is [`Unset`].
-	pub fn is_unset(&self) -> bool {
-		matches!(self, Self::Unset)
-	}
-}
-
-impl Default for SwapFileStatus {
-	fn default() -> Self {
-		Self::Unset
-	}
-}
-
 
 /// Loaded game
 pub struct LoadedGame {
