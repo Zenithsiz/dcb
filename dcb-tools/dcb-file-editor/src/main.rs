@@ -12,10 +12,10 @@
 )]
 
 // Modules
+pub mod drv_tree;
 pub mod loaded_game;
 pub mod preview_panel;
 pub mod swap_window;
-pub mod tree;
 
 // Imports
 use anyhow::Context;
@@ -140,9 +140,27 @@ impl epi::App for FileEditor {
 				ui.text_edit_singleline(file_search);
 			});
 
-			// If we have a loaded game, display all files
+			// If we have a loaded game, display it and update the preview
 			if let Some(loaded_game) = loaded_game.as_mut() {
-				loaded_game.display(frame, ui, file_search, swap_window, preview_panel);
+				egui::ScrollArea::auto_sized().show(ui, |ui| {
+					let results = loaded_game.display(ui, file_search, swap_window);
+
+					// Update the preview if a new file was clicked
+					if let Some(path) = results.preview_path {
+						let panel = PreviewPanel::new(loaded_game, &path, frame.tex_allocator())
+							.context("Unable to preview file");
+
+						// Drop previous images, if they exist
+						if let Some(preview_panel) = preview_panel {
+							preview_panel.drop_textures(frame.tex_allocator());
+						}
+
+						*preview_panel = panel.unwrap_or_else(|err| {
+							let err = format!("{err:?}");
+							Some(PreviewPanel::Error { err })
+						});
+					}
+				});
 			}
 		});
 

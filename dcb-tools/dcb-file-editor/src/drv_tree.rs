@@ -7,13 +7,13 @@ use dcb_util::{AsciiStrArr, StrContainsCaseInsensitive};
 use eframe::egui;
 use std::io;
 
-/// Filesystem tree
-pub struct FsTree {
+/// Drv tree
+pub struct DrvTree {
 	/// Root directory
 	root: TreeDir,
 }
 
-impl FsTree {
+impl DrvTree {
 	/// Creates a new tree
 	pub fn new<R: io::Seek + io::Read>(reader: &mut R) -> Result<Self, anyhow::Error> {
 		// Parse the root directory
