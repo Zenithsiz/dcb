@@ -16,24 +16,15 @@ use std::{io::BufReader, sync::Arc};
 #[derive(PartialEq, Clone)]
 pub enum PreviewPanel {
 	/// Tim image
-	Tim {
-		/// Image
-		tim: Tim,
-
-		/// All textures
-		pallettes: Vec<TextureId>,
-
-		/// Current pallette
-		cur_pallette: usize,
-	},
+	Tim(TimDisplay),
 
 	/// Tim collection
 	Tis {
-		/// Images
-		tims: Vec<(Tim, Vec<TextureId>, usize)>,
+		/// All tims
+		tims: Vec<TimDisplay>,
 
-		/// Current image
-		cur_image: usize,
+		/// Current tim
+		cur_tim: usize,
 	},
 
 	/// Error
@@ -50,14 +41,14 @@ impl PreviewPanel {
 	/// Drops all textures in this panel
 	pub fn drop_textures(&mut self, tex_allocator: &mut dyn TextureAllocator) {
 		match self {
-			PreviewPanel::Tim { pallettes, .. } => {
-				for texture_id in pallettes.drain(..) {
+			PreviewPanel::Tim(tim) => {
+				for texture_id in tim.pallettes.drain(..) {
 					tex_allocator.free(texture_id);
 				}
 			},
 			PreviewPanel::Tis { tims, .. } => {
-				for (_, textures, _) in tims {
-					for texture_id in textures.drain(..) {
+				for tim in tims {
+					for texture_id in tim.pallettes.drain(..) {
 						tex_allocator.free(texture_id);
 					}
 				}
@@ -69,8 +60,8 @@ impl PreviewPanel {
 	/// Forgets all textures in this panel without freeing them
 	pub fn forget_textures(&mut self) {
 		match self {
-			PreviewPanel::Tim { pallettes, .. } => {
-				pallettes.drain(..);
+			PreviewPanel::Tim(tim) => {
+				tim.pallettes.drain(..);
 			},
 			PreviewPanel::Tis { tims, .. } => {
 				tims.drain(..);
@@ -82,30 +73,23 @@ impl PreviewPanel {
 	/// Displays this panel
 	pub fn display(&mut self, ctx: &egui::CtxRef) {
 		egui::CentralPanel::default().show(ctx, |ui| match self {
-			Self::Tim {
-				ref pallettes,
-				ref tim,
-				cur_pallette,
-			} => {
-				self::display_tim(ctx, ui, pallettes, cur_pallette, tim);
+			Self::Tim(tim) => {
+				tim.display(ctx, ui);
 			},
-			Self::Tis { tims, cur_image } => {
+			Self::Tis { tims, cur_tim } => {
 				egui::ScrollArea::auto_sized().show(ui, |ui| {
 					egui::TopBottomPanel::bottom(tims as *const _).show(ctx, |ui| {
 						ui.label("Image");
 						ui.horizontal_wrapped(|ui| {
 							for n in 0..tims.len() {
-								if ui.selectable_label(*cur_image == n, format!("{n}")).clicked() {
-									*cur_image = n;
+								if ui.selectable_label(*cur_tim == n, format!("{n}")).clicked() {
+									*cur_tim = n;
 								}
 							}
 						});
 					});
 
-					{
-						let (ref tim, ref pallettes, cur_pallette) = &mut tims[*cur_image];
-						self::display_tim(ctx, ui, pallettes, cur_pallette, tim);
-					}
+					tims[*cur_tim].display(ctx, ui);
 				});
 			},
 			Self::Error { ref err } => {
@@ -123,8 +107,8 @@ impl Drop for PreviewPanel {
 	fn drop(&mut self) {
 		// Make sure we don't have any textures remaining
 		let textures_len = match self {
-			PreviewPanel::Tim { pallettes, .. } => pallettes.len(),
-			PreviewPanel::Tis { tims, .. } => tims.iter().map(|(_, pallettes, _)| pallettes.len()).sum(),
+			PreviewPanel::Tim(tim) => tim.pallettes.len(),
+			PreviewPanel::Tis { tims, .. } => tims.iter().map(|tim| tim.pallettes.len()).sum(),
 			_ => 0,
 		};
 
@@ -227,7 +211,7 @@ impl PreviewPanelBuilder {
 	pub fn build(self, tex_allocator: &mut dyn TextureAllocator) -> PreviewPanel {
 		let res: Result<_, anyhow::Error> = try {
 			match self {
-				Self::Tim { tim, pallette_pixels } => PreviewPanel::Tim {
+				Self::Tim { tim, pallette_pixels } => PreviewPanel::Tim(TimDisplay {
 					pallettes: pallette_pixels
 						.into_iter()
 						.map(|pixels| {
@@ -237,23 +221,23 @@ impl PreviewPanelBuilder {
 						.collect(),
 					tim,
 					cur_pallette: 0,
-				},
+				}),
 				Self::Tis { tims } => PreviewPanel::Tis {
-					tims:      tims
+					tims:    tims
 						.into_iter()
 						.map(|(tim, pallette_pixels)| {
 							let [width, height] = tim.size();
-							Ok((
+							Ok(TimDisplay {
 								tim,
-								pallette_pixels
+								pallettes: pallette_pixels
 									.into_iter()
 									.map(|pixels| tex_allocator.alloc_srgba_premultiplied((width, height), &*pixels))
 									.collect(),
-								0,
-							))
+								cur_pallette: 0,
+							})
 						})
 						.collect::<Result<Vec<_>, anyhow::Error>>()?,
-					cur_image: 0,
+					cur_tim: 0,
 				},
 				Self::Error { err } => PreviewPanel::Error { err },
 				Self::Empty => PreviewPanel::Empty,
@@ -266,20 +250,35 @@ impl PreviewPanelBuilder {
 	}
 }
 
-/// Displays a tim along with it's pallettes
-fn display_tim(ctx: &egui::CtxRef, ui: &mut egui::Ui, pallettes: &[TextureId], cur_pallette: &mut usize, tim: &Tim) {
-	egui::TopBottomPanel::bottom(tim as *const _).show(ctx, |ui| {
-		ui.label("Pallette");
-		ui.horizontal_wrapped(|ui| {
-			for n in 0..pallettes.len() {
-				if ui.selectable_label(*cur_pallette == n, format!("{n}")).clicked() {
-					*cur_pallette = n;
-				}
-			}
-		});
-	});
+/// Tim display
+#[derive(PartialEq, Clone)]
+pub struct TimDisplay {
+	/// Image
+	tim: Tim,
 
-	egui::ScrollArea::auto_sized().show(ui, |ui| {
-		ui.image(pallettes[*cur_pallette], tim.size().map(|dim| dim as f32));
-	});
+	/// All textures
+	pallettes: Vec<TextureId>,
+
+	/// Current pallette
+	cur_pallette: usize,
+}
+
+impl TimDisplay {
+	/// Displays a tim along with it's pallettes
+	fn display(&mut self, ctx: &egui::CtxRef, ui: &mut egui::Ui) {
+		egui::TopBottomPanel::bottom(&self.tim as *const _).show(ctx, |ui| {
+			ui.label("Pallette");
+			ui.horizontal_wrapped(|ui| {
+				for n in 0..self.pallettes.len() {
+					if ui.selectable_label(self.cur_pallette == n, format!("{n}")).clicked() {
+						self.cur_pallette = n;
+					}
+				}
+			});
+		});
+
+		egui::ScrollArea::auto_sized().show(ui, |ui| {
+			ui.image(self.pallettes[self.cur_pallette], self.tim.size().map(|dim| dim as f32));
+		});
+	}
 }
