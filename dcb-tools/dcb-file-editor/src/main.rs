@@ -88,6 +88,7 @@ impl epi::App for FileEditor {
 				egui::menu::menu(ui, "File", |ui| {
 					// On open, ask the user and open the file
 					if ui.button("Open").clicked() {
+						// Ask the user for the file
 						let cur_dir_path = std::env::current_dir().expect("Unable to get current directory path");
 						*file_path = FileDialog::new()
 							.set_location(&cur_dir_path)
@@ -174,6 +175,12 @@ impl epi::App for FileEditor {
 	}
 
 	fn on_exit(&mut self) {
+		// Forget all images we have
+		// TODO: Somehow get a frame here to drop them?
+		if let Some(preview_panel) = &mut self.preview_panel {
+			preview_panel.forget_textures();
+		}
+
 		// Flush the file if we have it
 		if let Some(loaded_game) = &mut self.loaded_game {
 			match loaded_game.game_file_mut().cdrom().flush() {

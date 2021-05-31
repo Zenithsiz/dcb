@@ -105,6 +105,19 @@ impl PreviewPanel {
 		}
 	}
 
+	/// Forgets all textures in this panel without freeing them
+	pub fn forget_textures(&mut self) {
+		match self {
+			PreviewPanel::Tim { pallettes, .. } => {
+				pallettes.drain(..);
+			},
+			PreviewPanel::Tis { images } => {
+				images.drain(..);
+			},
+			_ => (),
+		}
+	}
+
 	/// Displays this panel
 	pub fn display(&self, ctx: &egui::CtxRef) {
 		egui::CentralPanel::default().show(ctx, |ui| match self {
