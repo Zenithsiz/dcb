@@ -5,14 +5,13 @@ use crate::{
 	swap_window::SwapWindow,
 };
 use anyhow::Context;
-use dcb_io::GameFile;
 use eframe::egui;
 use std::fs;
 
-/// Loaded game
-pub struct LoadedGame {
+/// Game file
+pub struct GameFile {
 	/// Game file
-	game_file: GameFile<fs::File>,
+	game_file: dcb_io::GameFile<fs::File>,
 
 	/// `A` drive tree
 	a_tree: DrvTree,
@@ -36,9 +35,9 @@ pub struct LoadedGame {
 	p_tree: DrvTree,
 }
 
-impl LoadedGame {
+impl GameFile {
 	/// Creates a new game
-	pub fn new(mut game_file: GameFile<fs::File>) -> Result<Self, anyhow::Error> {
+	pub fn new(mut game_file: dcb_io::GameFile<fs::File>) -> Result<Self, anyhow::Error> {
 		let mut a_reader = game_file.a_drv().context("Unable to get `a` drive")?;
 		let a_tree = DrvTree::new(&mut a_reader).context("Unable to load `a` drive")?;
 		let mut b_reader = game_file.b_drv().context("Unable to get `b` drive")?;
@@ -122,8 +121,8 @@ impl LoadedGame {
 		DisplayResults { preview_path }
 	}
 
-	/// Get a mutable reference to the loaded game's game file.
-	pub fn game_file_mut(&mut self) -> &mut GameFile<fs::File> {
+	/// Returns a mutable reference to the underlying game file
+	pub fn game_file_mut(&mut self) -> &mut dcb_io::GameFile<fs::File> {
 		&mut self.game_file
 	}
 }

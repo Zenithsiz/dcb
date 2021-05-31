@@ -1,7 +1,7 @@
 //! Preview panel
 
 // Imports
-use crate::LoadedGame;
+use crate::GameFile;
 use anyhow::Context;
 use dcb_io::game_file::Path;
 use dcb_tim::{Tim, Tis};
@@ -39,13 +39,13 @@ pub enum PreviewPanel {
 impl PreviewPanel {
 	/// Creates a preview panel
 	pub fn new(
-		loaded_game: &mut LoadedGame, path: &str, tex_allocator: &mut dyn TextureAllocator,
+		game_file: &mut GameFile, path: &str, tex_allocator: &mut dyn TextureAllocator,
 	) -> Result<Option<Self>, anyhow::Error> {
 		let panel = match path {
 			path if path.ends_with(".TIM") => {
 				// Deserialize the tim
 				let path = Path::from_ascii(&path).context("Unable to create path")?;
-				let mut file = loaded_game
+				let mut file = game_file
 					.game_file_mut()
 					.open_file(path)
 					.context("Unable to open file")?;
@@ -59,7 +59,7 @@ impl PreviewPanel {
 			path if path.ends_with(".TIS") => {
 				// Deserialize the tis
 				let path = Path::from_ascii(&path).context("Unable to create path")?;
-				let file = loaded_game
+				let file = game_file
 					.game_file_mut()
 					.open_file(path)
 					.context("Unable to open file")?;

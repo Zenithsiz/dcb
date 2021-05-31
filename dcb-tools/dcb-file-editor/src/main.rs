@@ -13,16 +13,15 @@
 
 // Modules
 pub mod drv_tree;
-pub mod loaded_game;
+pub mod game_file;
 pub mod preview_panel;
 pub mod swap_window;
 
 // Imports
 use anyhow::Context;
 use dcb_cdrom_xa::CdRomCursor;
-use dcb_io::GameFile;
 use eframe::{egui, epi, NativeOptions};
-use loaded_game::LoadedGame;
+use game_file::GameFile;
 use native_dialog::{FileDialog, MessageDialog, MessageType};
 use preview_panel::PreviewPanel;
 use std::{fs, io::Write, path::PathBuf};
@@ -47,8 +46,8 @@ pub struct FileEditor {
 	/// File path
 	file_path: Option<PathBuf>,
 
-	/// Loaded game
-	loaded_game: Option<LoadedGame>,
+	/// Game file
+	game_file: Option<GameFile>,
 
 	/// File search
 	file_search: String,
@@ -64,7 +63,7 @@ impl Default for FileEditor {
 	fn default() -> Self {
 		Self {
 			file_path:     None,
-			loaded_game:   None,
+			game_file:     None,
 			file_search:   String::new(),
 			swap_window:   None,
 			preview_panel: None,
@@ -76,7 +75,7 @@ impl epi::App for FileEditor {
 	fn update(&mut self, ctx: &egui::CtxRef, frame: &mut epi::Frame<'_>) {
 		let Self {
 			file_path,
-			loaded_game,
+			game_file,
 			file_search,
 			swap_window,
 			preview_panel,
@@ -105,9 +104,9 @@ impl epi::App for FileEditor {
 									.open(file_path)
 									.context("Unable to open file")?;
 								let cdrom = CdRomCursor::new(file);
-								let game_file = GameFile::new(cdrom);
+								let file = dcb_io::GameFile::new(cdrom);
 
-								*loaded_game = Some(LoadedGame::new(game_file).context("Unable to load game")?);
+								*game_file = Some(GameFile::new(file).context("Unable to load game")?);
 							};
 
 							if let Err(err) = res {
@@ -122,7 +121,7 @@ impl epi::App for FileEditor {
 				});
 
 				egui::menu::menu(ui, "Edit", |ui| {
-					if loaded_game.is_some() && ui.button("Swap").clicked() {
+					if game_file.is_some() && ui.button("Swap").clicked() {
 						*swap_window = Some(SwapWindow::default())
 					}
 				});
@@ -137,14 +136,14 @@ impl epi::App for FileEditor {
 				ui.text_edit_singleline(file_search);
 			});
 
-			// If we have a loaded game, display it and update the preview
-			if let Some(loaded_game) = loaded_game.as_mut() {
+			// If we have a game file, display it and update the preview
+			if let Some(game_file) = game_file.as_mut() {
 				egui::ScrollArea::auto_sized().show(ui, |ui| {
-					let results = loaded_game.display(ui, file_search, swap_window);
+					let results = game_file.display(ui, file_search, swap_window);
 
 					// Update the preview if a new file was clicked
 					if let Some(path) = results.preview_path {
-						let panel = PreviewPanel::new(loaded_game, &path, frame.tex_allocator())
+						let panel = PreviewPanel::new(game_file, &path, frame.tex_allocator())
 							.context("Unable to preview file");
 
 						// Drop previous images, if they exist
@@ -165,8 +164,8 @@ impl epi::App for FileEditor {
 			preview_panel.display(ctx);
 		}
 
-		if let (Some(swap_window), Some(loaded_game)) = (swap_window, loaded_game) {
-			swap_window.display(ctx, loaded_game)
+		if let (Some(swap_window), Some(game_file)) = (swap_window, game_file) {
+			swap_window.display(ctx, game_file)
 		}
 	}
 
@@ -178,8 +177,8 @@ impl epi::App for FileEditor {
 		}
 
 		// Flush the file if we have it
-		if let Some(loaded_game) = &mut self.loaded_game {
-			match loaded_game.game_file_mut().cdrom().flush() {
+		if let Some(game_file) = &mut self.game_file {
+			match game_file.game_file_mut().cdrom().flush() {
 				Ok(()) => (),
 				Err(err) => self::alert_error(&format!("Unable to flush file tod isk: {:?}", err)),
 			}

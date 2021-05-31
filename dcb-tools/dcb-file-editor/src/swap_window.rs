@@ -1,7 +1,7 @@
 //! Swap window
 
 // Imports
-use crate::LoadedGame;
+use crate::GameFile;
 use anyhow::Context;
 use dcb_io::game_file::Path;
 use eframe::egui;
@@ -29,7 +29,7 @@ impl SwapWindow {
 	}
 
 	/// Displays this swap window
-	pub fn display(&mut self, ctx: &egui::CtxRef, loaded_game: &mut LoadedGame) {
+	pub fn display(&mut self, ctx: &egui::CtxRef, game_file: &mut GameFile) {
 		egui::Window::new("Swap screen").show(ctx, |ui| {
 			ui.horizontal(|ui| {
 				ui.label(self.first.as_str().unwrap_or("None"));
@@ -51,12 +51,12 @@ impl SwapWindow {
 						let rhs = Path::from_ascii(rhs).expect("Rhs path wasn't valid");
 
 						let res: Result<_, anyhow::Error> = try {
-							loaded_game
+							game_file
 								.game_file_mut()
 								.swap_files(lhs, rhs)
 								.context("Unable to swap files")?;
 
-							loaded_game.reload().context("Unable to reload the game")?;
+							game_file.reload().context("Unable to reload the game")?;
 						};
 
 						match res {
