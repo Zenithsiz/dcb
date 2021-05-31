@@ -11,7 +11,7 @@ use eframe::{
 	egui::{self, Color32, TextureId},
 	epi::TextureAllocator,
 };
-use std::{io::BufReader, sync::Arc};
+use std::{collections::BTreeMap, io::BufReader, sync::Arc};
 
 /// Preview panel
 #[derive(PartialEq, Clone)]
@@ -29,7 +29,7 @@ pub enum PreviewPanel {
 	},
 
 	/// Pak
-	Pak { paks: Vec<String> },
+	Pak(PakDisplay),
 
 	/// Error
 	Error {
@@ -96,11 +96,8 @@ impl PreviewPanel {
 					tims[*cur_tim].display(ctx, ui);
 				});
 			},
-			Self::Pak { ref paks } => {
-				for pak in paks {
-					ui.label(pak);
-					ui.separator();
-				}
+			Self::Pak(ref paks) => {
+				paks.display(ui);
 			},
 			Self::Error { ref err } => {
 				ui.group(|ui| {
@@ -140,7 +137,7 @@ pub enum PreviewPanelBuilder {
 	Tis { tims: Vec<(Tim, Vec<Box<[Color32]>>)> },
 
 	/// Pak
-	Pak { paks: Vec<String> },
+	Pak(PakDisplay),
 
 	/// Error
 	Error { err: String },
@@ -218,34 +215,30 @@ impl PreviewPanelBuilder {
 						let mut file = BufReader::new(file);
 						let mut pak = PakFileReader::new(&mut file);
 
-						let paks = (0..)
-							.map_while(move |idx| {
-								use dcb_pak::header::Kind;
+						let mut paks: BTreeMap<u16, Vec<_>> = BTreeMap::new();
 
-								let entry = match pak.next_entry() {
-									Ok(Some(entry)) => entry,
-									Ok(None) => return None,
-									Err(err) => return Some(Err(err)),
-								};
+						while let Some(entry) = pak.next_entry().transpose() {
+							use dcb_pak::header::Kind;
 
-								let header = entry.header();
-								let extension = match header.kind {
-									Kind::Model3DSet => "m3s",
-									Kind::Unknown1 => "un1",
-									Kind::GameScript => "msd",
-									Kind::Animation2D => "a2d",
-									Kind::Unknown2 => "un2",
-									Kind::FileContents => "bin",
-									Kind::AudioSeq => "seq",
-									Kind::AudioVh => "vh",
-									Kind::AudioVb => "vb",
-								};
-								Some(Ok(format!("{}.{}", idx, extension)))
-							})
-							.collect::<Result<Vec<_>, _>>()
-							.context("Unable to read all entries")?;
+							let entry = entry.context("Unable to get entry")?;
 
-						Self::Pak { paks }
+							let header = entry.header();
+							let extension = match header.kind {
+								Kind::Model3DSet => "m3s",
+								Kind::Unknown1 => "un1",
+								Kind::GameScript => "msd",
+								Kind::Animation2D => "a2d",
+								Kind::Unknown2 => "un2",
+								Kind::FileContents => "bin",
+								Kind::AudioSeq => "seq",
+								Kind::AudioVh => "vh",
+								Kind::AudioVb => "vb",
+							};
+
+							paks.entry(header.id).or_default().push(extension);
+						}
+
+						Self::Pak(PakDisplay { paks })
 					},
 					_ => Self::Empty,
 				}
@@ -289,7 +282,7 @@ impl PreviewPanelBuilder {
 						.collect::<Result<Vec<_>, anyhow::Error>>()?,
 					cur_tim: 0,
 				},
-				Self::Pak { paks } => PreviewPanel::Pak { paks },
+				Self::Pak(paks) => PreviewPanel::Pak(paks),
 				Self::Error { err } => PreviewPanel::Error { err },
 				Self::Empty => PreviewPanel::Empty,
 			}
@@ -331,5 +324,24 @@ impl TimDisplay {
 		egui::ScrollArea::auto_sized().show(ui, |ui| {
 			ui.image(self.pallettes[self.cur_pallette], self.tim.size().map(|dim| dim as f32));
 		});
+	}
+}
+
+/// Pak display
+#[derive(PartialEq, Clone)]
+pub struct PakDisplay {
+	paks: BTreeMap<u16, Vec<&'static str>>,
+}
+
+impl PakDisplay {
+	/// Displays this pak
+	fn display(&self, ui: &mut egui::Ui) {
+		for (id, extensions) in &self.paks {
+			ui.label(format!("{id}"));
+			for &extension in extensions {
+				ui.label(extension);
+			}
+			ui.separator();
+		}
 	}
 }
