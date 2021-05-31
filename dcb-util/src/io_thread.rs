@@ -152,11 +152,21 @@ impl<'a, T: io::Seek + io::Read> io::Read for &'a IoThread<T> {
 }
 
 impl<'a, T: io::Seek + io::Write> io::Write for &'a IoThread<T> {
-	fn write(&mut self, _buf: &[u8]) -> io::Result<usize> {
-		todo!()
+	// TODO: Properly update buffer instead of discarding everything and writing directly to disk
+	fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+		// Discard state
+		let mut state = self.state().borrow_mut();
+		state.buffer.clear();
+
+		let mut inner = self.inner.lock_unwrap();
+		inner.seek(SeekFrom::Start(state.base_seek + state.offset))?;
+		let bytes_written = inner.write(buf)?;
+		state.offset += u64::try_from(bytes_written).expect("Unable to get `usize` as `u64`");
+
+		Ok(bytes_written)
 	}
 
 	fn flush(&mut self) -> io::Result<()> {
-		todo!()
+		self.inner.lock_unwrap().flush()
 	}
 }
