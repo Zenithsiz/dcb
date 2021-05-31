@@ -33,13 +33,13 @@ impl SwapWindow {
 		egui::Window::new("Swap screen").show(ctx, |ui| {
 			ui.horizontal(|ui| {
 				ui.label(self.first.as_str().unwrap_or("None"));
-				if ui.button(self.second.button_label()).clicked() {
+				if ui.button(self.first.button_label()).clicked() {
 					self.first.toggle();
 				}
 			});
 			ui.horizontal(|ui| {
 				ui.label(self.second.as_str().unwrap_or("None"));
-				if ui.button(self.first.button_label()).clicked() {
+				if ui.button(self.second.button_label()).clicked() {
 					self.second.toggle();
 				}
 			});
