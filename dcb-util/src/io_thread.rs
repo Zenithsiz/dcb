@@ -15,6 +15,7 @@ use thread_local::ThreadLocal;
 ///
 /// This type allows a stream to be read / written to from multiple threads
 /// each with their own seek pointer.
+#[derive(Debug)]
 pub struct IoThread<T> {
 	/// Inner
 	inner: Mutex<T>,
