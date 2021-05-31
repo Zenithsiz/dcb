@@ -5,11 +5,18 @@ use crate::GameFile;
 use anyhow::Context;
 use dcb_io::game_file::Path;
 use dcb_tim::{Tim, Tis};
+use dcb_util::{
+	task::{self, ValueFuture},
+	MutexPoison,
+};
 use eframe::{
 	egui::{self, Color32, TextureId},
 	epi::TextureAllocator,
 };
-use std::io::BufReader;
+use std::{
+	io::BufReader,
+	sync::{Arc, Mutex},
+};
 
 /// Preview panel
 #[derive(PartialEq, Clone)]
@@ -17,7 +24,7 @@ pub enum PreviewPanel {
 	/// Tim image
 	Tim {
 		/// Image
-		image: Tim,
+		tim: Tim,
 
 		/// All textures
 		pallettes: Vec<TextureId>,
@@ -26,7 +33,7 @@ pub enum PreviewPanel {
 	/// Tim collection
 	Tis {
 		/// Images
-		images: Vec<(Tim, Vec<TextureId>)>,
+		tims: Vec<(Tim, Vec<TextureId>)>,
 	},
 
 	/// Error
@@ -34,58 +41,12 @@ pub enum PreviewPanel {
 		/// Error
 		err: String,
 	},
+
+	/// Empty
+	Empty,
 }
 
 impl PreviewPanel {
-	/// Creates a preview panel
-	pub fn new(
-		game_file: &mut GameFile, path: &str, tex_allocator: &mut dyn TextureAllocator,
-	) -> Result<Option<Self>, anyhow::Error> {
-		let panel = match path {
-			path if path.ends_with(".TIM") => {
-				// Deserialize the tim
-				let path = Path::from_ascii(&path).context("Unable to create path")?;
-				let mut file = game_file
-					.game_file_mut()
-					.open_file(path)
-					.context("Unable to open file")?;
-				let image: Tim = Tim::deserialize(&mut file).context("Unable to parse file")?;
-
-				// Then create all pallettes
-				let pallettes = create_image_pallettes(&image, tex_allocator)?;
-
-				Self::Tim { image, pallettes }
-			},
-			path if path.ends_with(".TIS") => {
-				// Deserialize the tis
-				let path = Path::from_ascii(&path).context("Unable to create path")?;
-				let file = game_file
-					.game_file_mut()
-					.open_file(path)
-					.context("Unable to open file")?;
-				let mut file = BufReader::new(file);
-				let images: Tis = Tis::deserialize(&mut file).context("Unable to parse file")?;
-
-				// Then create all images
-				let images = images
-					.tims
-					.into_iter()
-					.map(|image| {
-						let pallettes = create_image_pallettes(&image, tex_allocator)
-							.context("Unable to create image pallettes")?;
-
-						Ok((image, pallettes))
-					})
-					.collect::<Result<Vec<_>, anyhow::Error>>()?;
-
-				Self::Tis { images }
-			},
-			_ => return Ok(None),
-		};
-
-		Ok(Some(panel))
-	}
-
 	/// Drops all textures in this panel
 	pub fn drop_textures(&mut self, tex_allocator: &mut dyn TextureAllocator) {
 		match self {
@@ -94,8 +55,8 @@ impl PreviewPanel {
 					tex_allocator.free(texture_id);
 				}
 			},
-			PreviewPanel::Tis { images } => {
-				for (_, textures) in images {
+			PreviewPanel::Tis { tims } => {
+				for (_, textures) in tims {
 					for texture_id in textures.drain(..) {
 						tex_allocator.free(texture_id);
 					}
@@ -111,8 +72,8 @@ impl PreviewPanel {
 			PreviewPanel::Tim { pallettes, .. } => {
 				pallettes.drain(..);
 			},
-			PreviewPanel::Tis { images } => {
-				images.drain(..);
+			PreviewPanel::Tis { tims } => {
+				tims.drain(..);
 			},
 			_ => (),
 		}
@@ -121,17 +82,17 @@ impl PreviewPanel {
 	/// Displays this panel
 	pub fn display(&self, ctx: &egui::CtxRef) {
 		egui::CentralPanel::default().show(ctx, |ui| match self {
-			Self::Tim { pallettes, image } => {
+			Self::Tim { pallettes, tim } => {
 				egui::ScrollArea::auto_sized().show(ui, |ui| {
 					for &texture_id in pallettes {
-						ui.image(texture_id, image.size().map(|dim| dim as f32));
+						ui.image(texture_id, tim.size().map(|dim| dim as f32));
 						ui.separator();
 					}
 				});
 			},
-			Self::Tis { images } => {
+			Self::Tis { tims } => {
 				egui::ScrollArea::auto_sized().show(ui, |ui| {
-					for (image, pallettes) in images {
+					for (image, pallettes) in tims {
 						for &texture_id in pallettes {
 							ui.image(texture_id, image.size().map(|dim| dim as f32));
 							ui.separator();
@@ -145,6 +106,7 @@ impl PreviewPanel {
 					ui.label(err);
 				});
 			},
+			Self::Empty => (),
 		});
 	}
 }
@@ -152,35 +114,149 @@ impl PreviewPanel {
 impl Drop for PreviewPanel {
 	fn drop(&mut self) {
 		// Make sure we don't have any textures remaining
-		match self {
-			PreviewPanel::Tim { pallettes, .. } => assert_eq!(pallettes.len(), 0),
-			PreviewPanel::Tis { images } => {
-				for (_, pallettes) in images {
-					assert_eq!(pallettes.len(), 0)
-				}
-			},
-			PreviewPanel::Error { .. } => {},
+		let textures_len = match self {
+			PreviewPanel::Tim { pallettes, .. } => pallettes.len(),
+			PreviewPanel::Tis { tims } => tims.iter().map(|(_, pallettes)| pallettes.len()).sum(),
+			_ => 0,
 		};
+
+		if textures_len != 0 {
+			log::warn!("Leaking {} textures", textures_len);
+		}
 	}
 }
 
-/// Creates all pallettes for an image
-fn create_image_pallettes(
-	image: &Tim, tex_allocator: &mut dyn TextureAllocator,
-) -> Result<Vec<TextureId>, anyhow::Error> {
-	let [width, height] = image.size();
-	let textures = (0..image.pallettes())
-		.map(|pallette| {
-			let colors: Box<[_]> = image
-				.colors(Some(pallette))
-				.context("Unable to get image colors")?
-				.to_vec()
-				.into_iter()
-				.map(|[r, g, b, a]| Color32::from_rgba_premultiplied(r, g, b, a))
-				.collect();
-			let texture_id = tex_allocator.alloc_srgba_premultiplied((width, height), &*colors);
-			Ok(texture_id)
+/// Preview panel builder
+pub enum PreviewPanelBuilder {
+	/// Tim image
+	Tim {
+		tim:             Tim,
+		pallette_pixels: Vec<Box<[Color32]>>,
+	},
+
+	/// Tis images
+	Tis { tims: Vec<(Tim, Vec<Box<[Color32]>>)> },
+
+	/// Error
+	Error { err: String },
+
+	/// Empty
+	Empty,
+}
+
+impl PreviewPanelBuilder {
+	/// Creates a new builder for a preview Panel
+	pub fn new(game_file: Arc<Mutex<GameFile>>, path: String) -> ValueFuture<Self> {
+		task::spawn(move || {
+			let res: Result<_, anyhow::Error> = try {
+				match path {
+					path if path.ends_with(".TIM") => {
+						// Deserialize the tim
+						let path = Path::from_ascii(&path).context("Unable to create path")?;
+						let mut game_file = game_file.lock_unwrap();
+						let mut file = game_file
+							.game_file_mut()
+							.open_file(path)
+							.context("Unable to open file")?;
+						let tim = Tim::deserialize(&mut file).context("Unable to parse file")?;
+
+						let pallette_pixels: Vec<Box<[_]>> = (0..tim.pallettes())
+							.map(|pallette| {
+								let pixels = tim
+									.colors(Some(pallette))
+									.context("Unable to get image colors")?
+									.to_vec()
+									.into_iter()
+									.map(|[r, g, b, a]| Color32::from_rgba_premultiplied(r, g, b, a))
+									.collect();
+								Ok(pixels)
+							})
+							.collect::<Result<_, anyhow::Error>>()
+							.context("Unable to get all pallette colors")?;
+
+						Self::Tim { tim, pallette_pixels }
+					},
+					path if path.ends_with(".TIS") => {
+						// Deserialize the tis
+						let path = Path::from_ascii(&path).context("Unable to create path")?;
+						let mut game_file = game_file.lock_unwrap();
+						let file = game_file
+							.game_file_mut()
+							.open_file(path)
+							.context("Unable to open file")?;
+						let mut file = BufReader::new(file);
+						let tis: Tis = Tis::deserialize(&mut file).context("Unable to parse file")?;
+
+						let tims = tis
+							.tims
+							.into_iter()
+							.map(|tim| {
+								let pallette_pixels: Vec<Box<[_]>> = (0..tim.pallettes())
+									.map(|pallette| {
+										let pixels = tim
+											.colors(Some(pallette))
+											.context("Unable to get image colors")?
+											.to_vec()
+											.into_iter()
+											.map(|[r, g, b, a]| Color32::from_rgba_premultiplied(r, g, b, a))
+											.collect();
+										Ok(pixels)
+									})
+									.collect::<Result<_, anyhow::Error>>()
+									.context("Unable to get all pallette colors")?;
+								Ok((tim, pallette_pixels))
+							})
+							.collect::<Result<_, anyhow::Error>>()
+							.context("Unable to create images")?;
+
+						Self::Tis { tims }
+					},
+					_ => Self::Empty,
+				}
+			};
+
+			res.unwrap_or_else(|err| Self::Error {
+				err: format!("{err:?}"),
+			})
 		})
-		.collect::<Result<_, anyhow::Error>>()?;
-	Ok(textures)
+	}
+
+	/// Builds the preview panel
+	pub fn build(self, tex_allocator: &mut dyn TextureAllocator) -> PreviewPanel {
+		let res: Result<_, anyhow::Error> = try {
+			match self {
+				Self::Tim { tim, pallette_pixels } => PreviewPanel::Tim {
+					pallettes: pallette_pixels
+						.into_iter()
+						.map(|pixels| {
+							let [width, height] = tim.size();
+							tex_allocator.alloc_srgba_premultiplied((width, height), &*pixels)
+						})
+						.collect(),
+					tim,
+				},
+				Self::Tis { tims } => PreviewPanel::Tis {
+					tims: tims
+						.into_iter()
+						.map(|(tim, pallette_pixels)| {
+							let [width, height] = tim.size();
+							Ok((
+								tim,
+								pallette_pixels
+									.into_iter()
+									.map(|pixels| tex_allocator.alloc_srgba_premultiplied((width, height), &*pixels))
+									.collect(),
+							))
+						})
+						.collect::<Result<Vec<_>, anyhow::Error>>()?,
+				},
+				Self::Error { err } => PreviewPanel::Error { err },
+				Self::Empty => PreviewPanel::Empty,
+			}
+		};
+
+		res.unwrap_or_else(|err| PreviewPanel::Error {
+			err: format!("{err:?}"),
+		})
+	}
 }
