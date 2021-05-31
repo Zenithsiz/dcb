@@ -22,3 +22,7 @@ serde = { version = "1.0.120", features = ["derive"] }
 # Derives
 thiserror = "1.0.23"
 ref-cast = "1.0.6"
+
+# Thread
+rayon = "1.5.1"
+futures = "0.3.15"
