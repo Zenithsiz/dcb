@@ -1,4 +1,4 @@
-//! Threading utils
+//! Tasks
 
 // Imports
 use std::{
@@ -8,7 +8,7 @@ use std::{
 	task::Poll,
 };
 
-/// Spawns a thread and returns a future for awaiting it's value
+/// Spawns a task and returns a future for awaiting it's value
 pub fn spawn<T: Send + 'static>(f: impl FnOnce() -> T + Send + 'static) -> ValueFuture<T> {
 	// Create the value mutex
 	let mutex = Arc::new(Mutex::new(None));
@@ -17,7 +17,7 @@ pub fn spawn<T: Send + 'static>(f: impl FnOnce() -> T + Send + 'static) -> Value
 		exhausted: false,
 	};
 
-	// Spawn the thread
+	// Spawn the task
 	rayon::spawn(move || {
 		*mutex.lock().expect("Poisoned") = Some(f());
 	});
@@ -26,7 +26,7 @@ pub fn spawn<T: Send + 'static>(f: impl FnOnce() -> T + Send + 'static) -> Value
 	future
 }
 
-/// Thread value future
+/// Value future
 pub struct ValueFuture<T> {
 	/// Underlying value
 	value: Arc<Mutex<Option<T>>>,

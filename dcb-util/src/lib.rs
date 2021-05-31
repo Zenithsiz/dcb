@@ -73,7 +73,7 @@ pub mod next_from_bytes;
 pub mod null_ascii_string;
 pub mod signed_hex;
 pub mod string_contains_case_insensitive;
-pub mod thread;
+pub mod task;
 pub mod write_take;
 //pub mod peekable_iter;
 
