@@ -4,6 +4,7 @@
 use crate::GameFile;
 use anyhow::Context;
 use dcb_io::game_file::Path;
+use dcb_pak::PakFileReader;
 use dcb_tim::{Tim, Tis};
 use dcb_util::task::{self, ValueFuture};
 use eframe::{
@@ -26,6 +27,9 @@ pub enum PreviewPanel {
 		/// Current tim
 		cur_tim: usize,
 	},
+
+	/// Pak
+	Pak { paks: Vec<String> },
 
 	/// Error
 	Error {
@@ -92,6 +96,12 @@ impl PreviewPanel {
 					tims[*cur_tim].display(ctx, ui);
 				});
 			},
+			Self::Pak { ref paks } => {
+				for pak in paks {
+					ui.label(pak);
+					ui.separator();
+				}
+			},
 			Self::Error { ref err } => {
 				ui.group(|ui| {
 					ui.heading("Error");
@@ -128,6 +138,9 @@ pub enum PreviewPanelBuilder {
 
 	/// Tis images
 	Tis { tims: Vec<(Tim, Vec<Box<[Color32]>>)> },
+
+	/// Pak
+	Pak { paks: Vec<String> },
 
 	/// Error
 	Error { err: String },
@@ -197,6 +210,43 @@ impl PreviewPanelBuilder {
 
 						Self::Tis { tims }
 					},
+					path if path.ends_with(".PAK") => {
+						// Deserialize the pak
+						let path = Path::from_ascii(&path).context("Unable to create path")?;
+						let mut game_file = game_file.game_file();
+						let file = game_file.open_file(path).context("Unable to open file")?;
+						let mut file = BufReader::new(file);
+						let mut pak = PakFileReader::new(&mut file);
+
+						let paks = (0..)
+							.map_while(move |idx| {
+								use dcb_pak::header::Kind;
+
+								let entry = match pak.next_entry() {
+									Ok(Some(entry)) => entry,
+									Ok(None) => return None,
+									Err(err) => return Some(Err(err)),
+								};
+
+								let header = entry.header();
+								let extension = match header.kind {
+									Kind::Model3DSet => "m3s",
+									Kind::Unknown1 => "un1",
+									Kind::GameScript => "msd",
+									Kind::Animation2D => "a2d",
+									Kind::Unknown2 => "un2",
+									Kind::FileContents => "bin",
+									Kind::AudioSeq => "seq",
+									Kind::AudioVh => "vh",
+									Kind::AudioVb => "vb",
+								};
+								Some(Ok(format!("{}.{}", idx, extension)))
+							})
+							.collect::<Result<Vec<_>, _>>()
+							.context("Unable to read all entries")?;
+
+						Self::Pak { paks }
+					},
 					_ => Self::Empty,
 				}
 			};
@@ -239,6 +289,7 @@ impl PreviewPanelBuilder {
 						.collect::<Result<Vec<_>, anyhow::Error>>()?,
 					cur_tim: 0,
 				},
+				Self::Pak { paks } => PreviewPanel::Pak { paks },
 				Self::Error { err } => PreviewPanel::Error { err },
 				Self::Empty => PreviewPanel::Empty,
 			}

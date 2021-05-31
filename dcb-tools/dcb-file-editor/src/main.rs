@@ -8,7 +8,8 @@
 	once_cell,
 	never_type,
 	try_blocks,
-	hash_drain_filter
+	hash_drain_filter,
+	iter_map_while
 )]
 
 // Modules
