@@ -175,8 +175,10 @@ impl epi::App for FileEditor {
 			}
 		});
 
+		// Then draw the preview panel
 		preview_panel.display(ctx);
 
+		// And swap window
 		if let (Some(swap_window), Some(game_file)) = (swap_window, game_file) {
 			swap_window.display(ctx, &*game_file)
 		}

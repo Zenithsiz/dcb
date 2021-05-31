@@ -22,12 +22,18 @@ pub enum PreviewPanel {
 
 		/// All textures
 		pallettes: Vec<TextureId>,
+
+		/// Current pallette
+		cur_pallette: usize,
 	},
 
 	/// Tim collection
 	Tis {
 		/// Images
-		tims: Vec<(Tim, Vec<TextureId>)>,
+		tims: Vec<(Tim, Vec<TextureId>, usize)>,
+
+		/// Current image
+		cur_image: usize,
 	},
 
 	/// Error
@@ -49,8 +55,8 @@ impl PreviewPanel {
 					tex_allocator.free(texture_id);
 				}
 			},
-			PreviewPanel::Tis { tims } => {
-				for (_, textures) in tims {
+			PreviewPanel::Tis { tims, .. } => {
+				for (_, textures, _) in tims {
 					for texture_id in textures.drain(..) {
 						tex_allocator.free(texture_id);
 					}
@@ -66,7 +72,7 @@ impl PreviewPanel {
 			PreviewPanel::Tim { pallettes, .. } => {
 				pallettes.drain(..);
 			},
-			PreviewPanel::Tis { tims } => {
+			PreviewPanel::Tis { tims, .. } => {
 				tims.drain(..);
 			},
 			_ => (),
@@ -74,27 +80,35 @@ impl PreviewPanel {
 	}
 
 	/// Displays this panel
-	pub fn display(&self, ctx: &egui::CtxRef) {
+	pub fn display(&mut self, ctx: &egui::CtxRef) {
 		egui::CentralPanel::default().show(ctx, |ui| match self {
-			Self::Tim { pallettes, tim } => {
+			Self::Tim {
+				ref pallettes,
+				ref tim,
+				cur_pallette,
+			} => {
+				self::display_tim(ctx, ui, pallettes, cur_pallette, tim);
+			},
+			Self::Tis { tims, cur_image } => {
 				egui::ScrollArea::auto_sized().show(ui, |ui| {
-					for &texture_id in pallettes {
-						ui.image(texture_id, tim.size().map(|dim| dim as f32));
-						ui.separator();
+					egui::TopBottomPanel::bottom(tims as *const _).show(ctx, |ui| {
+						ui.label("Image");
+						ui.horizontal_wrapped(|ui| {
+							for n in 0..tims.len() {
+								if ui.selectable_label(*cur_image == n, format!("{n}")).clicked() {
+									*cur_image = n;
+								}
+							}
+						});
+					});
+
+					{
+						let (ref tim, ref pallettes, cur_pallette) = &mut tims[*cur_image];
+						self::display_tim(ctx, ui, pallettes, cur_pallette, tim);
 					}
 				});
 			},
-			Self::Tis { tims } => {
-				egui::ScrollArea::auto_sized().show(ui, |ui| {
-					for (image, pallettes) in tims {
-						for &texture_id in pallettes {
-							ui.image(texture_id, image.size().map(|dim| dim as f32));
-							ui.separator();
-						}
-					}
-				});
-			},
-			Self::Error { err } => {
+			Self::Error { ref err } => {
 				ui.group(|ui| {
 					ui.heading("Error");
 					ui.label(err);
@@ -110,7 +124,7 @@ impl Drop for PreviewPanel {
 		// Make sure we don't have any textures remaining
 		let textures_len = match self {
 			PreviewPanel::Tim { pallettes, .. } => pallettes.len(),
-			PreviewPanel::Tis { tims } => tims.iter().map(|(_, pallettes)| pallettes.len()).sum(),
+			PreviewPanel::Tis { tims, .. } => tims.iter().map(|(_, pallettes, _)| pallettes.len()).sum(),
 			_ => 0,
 		};
 
@@ -222,9 +236,10 @@ impl PreviewPanelBuilder {
 						})
 						.collect(),
 					tim,
+					cur_pallette: 0,
 				},
 				Self::Tis { tims } => PreviewPanel::Tis {
-					tims: tims
+					tims:      tims
 						.into_iter()
 						.map(|(tim, pallette_pixels)| {
 							let [width, height] = tim.size();
@@ -234,9 +249,11 @@ impl PreviewPanelBuilder {
 									.into_iter()
 									.map(|pixels| tex_allocator.alloc_srgba_premultiplied((width, height), &*pixels))
 									.collect(),
+								0,
 							))
 						})
 						.collect::<Result<Vec<_>, anyhow::Error>>()?,
+					cur_image: 0,
 				},
 				Self::Error { err } => PreviewPanel::Error { err },
 				Self::Empty => PreviewPanel::Empty,
@@ -247,4 +264,22 @@ impl PreviewPanelBuilder {
 			err: format!("{err:?}"),
 		})
 	}
+}
+
+/// Displays a tim along with it's pallettes
+fn display_tim(ctx: &egui::CtxRef, ui: &mut egui::Ui, pallettes: &[TextureId], cur_pallette: &mut usize, tim: &Tim) {
+	egui::TopBottomPanel::bottom(tim as *const _).show(ctx, |ui| {
+		ui.label("Pallette");
+		ui.horizontal_wrapped(|ui| {
+			for n in 0..pallettes.len() {
+				if ui.selectable_label(*cur_pallette == n, format!("{n}")).clicked() {
+					*cur_pallette = n;
+				}
+			}
+		});
+	});
+
+	egui::ScrollArea::auto_sized().show(ui, |ui| {
+		ui.image(pallettes[*cur_pallette], tim.size().map(|dim| dim as f32));
+	});
 }
