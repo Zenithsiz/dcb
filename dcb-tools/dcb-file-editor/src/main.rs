@@ -12,6 +12,7 @@
 )]
 
 // Modules
+pub mod loaded_game;
 pub mod preview_panel;
 pub mod swap_window;
 pub mod tree;
@@ -21,11 +22,11 @@ use anyhow::Context;
 use dcb_cdrom_xa::CdRomCursor;
 use dcb_io::GameFile;
 use eframe::{egui, epi, NativeOptions};
+use loaded_game::LoadedGame;
 use native_dialog::{FileDialog, MessageDialog, MessageType};
 use preview_panel::PreviewPanel;
 use std::{fs, io::Write, path::PathBuf};
 use swap_window::SwapWindow;
-use tree::FsTree;
 
 fn main() {
 	// Initialize the logger
@@ -103,33 +104,9 @@ impl epi::App for FileEditor {
 									.open(file_path)
 									.context("Unable to open file")?;
 								let cdrom = CdRomCursor::new(file);
-								let mut game_file = GameFile::new(cdrom);
+								let game_file = GameFile::new(cdrom);
 
-								let mut a_reader = game_file.a_drv().context("Unable to get `a` drive")?;
-								let a_tree = FsTree::new(&mut a_reader).context("Unable to load `a` drive")?;
-								let mut b_reader = game_file.b_drv().context("Unable to get `b` drive")?;
-								let b_tree = FsTree::new(&mut b_reader).context("Unable to load `b` drive")?;
-								let mut c_reader = game_file.c_drv().context("Unable to get `c` drive")?;
-								let c_tree = FsTree::new(&mut c_reader).context("Unable to load `c` drive")?;
-								let mut e_reader = game_file.e_drv().context("Unable to get `e` drive")?;
-								let e_tree = FsTree::new(&mut e_reader).context("Unable to load `e` drive")?;
-								let mut f_reader = game_file.f_drv().context("Unable to get `f` drive")?;
-								let f_tree = FsTree::new(&mut f_reader).context("Unable to load `f` drive")?;
-								let mut g_reader = game_file.g_drv().context("Unable to get `g` drive")?;
-								let g_tree = FsTree::new(&mut g_reader).context("Unable to load `g` drive")?;
-								let mut p_reader = game_file.p_drv().context("Unable to get `p` drive")?;
-								let p_tree = FsTree::new(&mut p_reader).context("Unable to load `p` drive")?;
-
-								*loaded_game = Some(LoadedGame {
-									game_file,
-									a_tree,
-									b_tree,
-									c_tree,
-									e_tree,
-									f_tree,
-									g_tree,
-									p_tree,
-								});
+								*loaded_game = Some(LoadedGame::new(game_file).context("Unable to load game")?);
 							};
 
 							if let Err(err) = res {
@@ -165,51 +142,7 @@ impl epi::App for FileEditor {
 
 			// If we have a loaded game, display all files
 			if let Some(loaded_game) = loaded_game.as_mut() {
-				egui::ScrollArea::auto_sized().show(ui, |ui| {
-					let mut preview_path = None;
-					let mut display_ctx = tree::DisplayCtx {
-						search_str:    &file_search,
-						on_file_click: |path: &str| {
-							// If we have a swap window, call it's on file click
-							if let Some(swap_window) = swap_window {
-								swap_window.on_file_click(path);
-							}
-
-							// Then set the path to preview
-							preview_path = Some(path.to_owned());
-						},
-					};
-
-					egui::CollapsingHeader::new("A:\\")
-						.show(ui, |ui| loaded_game.a_tree.display(ui, "A:\\", &mut display_ctx));
-					egui::CollapsingHeader::new("B:\\")
-						.show(ui, |ui| loaded_game.b_tree.display(ui, "B:\\", &mut display_ctx));
-					egui::CollapsingHeader::new("C:\\")
-						.show(ui, |ui| loaded_game.c_tree.display(ui, "C:\\", &mut display_ctx));
-					egui::CollapsingHeader::new("E:\\")
-						.show(ui, |ui| loaded_game.e_tree.display(ui, "E:\\", &mut display_ctx));
-					egui::CollapsingHeader::new("F:\\")
-						.show(ui, |ui| loaded_game.f_tree.display(ui, "F:\\", &mut display_ctx));
-					egui::CollapsingHeader::new("G:\\")
-						.show(ui, |ui| loaded_game.g_tree.display(ui, "G:\\", &mut display_ctx));
-					egui::CollapsingHeader::new("P:\\")
-						.show(ui, |ui| loaded_game.p_tree.display(ui, "P:\\", &mut display_ctx));
-
-					if let Some(path) = preview_path {
-						let panel = PreviewPanel::new(loaded_game, &path, frame.tex_allocator())
-							.context("Unable to preview file");
-
-						// Drop previous images, if they exist
-						if let Some(preview_panel) = preview_panel {
-							preview_panel.drop_textures(frame.tex_allocator());
-						}
-
-						*preview_panel = panel.unwrap_or_else(|err| {
-							let err = format!("{err:?}");
-							Some(PreviewPanel::Error { err })
-						});
-					}
-				});
+				loaded_game.display(frame, ui, file_search, swap_window, preview_panel);
 			}
 		});
 
@@ -225,67 +158,18 @@ impl epi::App for FileEditor {
 	fn on_exit(&mut self) {
 		// Flush the file if we have it
 		if let Some(loaded_game) = &mut self.loaded_game {
-			let _ = loaded_game.game_file.cdrom().flush();
+			match loaded_game.game_file_mut().cdrom().flush() {
+				Ok(()) => (),
+				Err(err) => MessageDialog::new()
+					.set_text(&format!("Unable to flush file tod isk: {:?}", err))
+					.set_type(MessageType::Error)
+					.show_alert()
+					.expect("Unable to alert user"),
+			}
 		}
 	}
 
 	fn name(&self) -> &str {
 		"Dcb file editor"
-	}
-}
-
-/// Loaded game
-pub struct LoadedGame {
-	/// Game file
-	game_file: GameFile<fs::File>,
-
-	/// `A` drive tree
-	a_tree: FsTree,
-
-	/// `B` drive tree
-	b_tree: FsTree,
-
-	/// `C` drive tree
-	c_tree: FsTree,
-
-	/// `E` drive tree
-	e_tree: FsTree,
-
-	/// `F` drive tree
-	f_tree: FsTree,
-
-	/// `G` drive tree
-	g_tree: FsTree,
-
-	/// `P` drive tree
-	p_tree: FsTree,
-}
-
-impl LoadedGame {
-	/// Reloads the game
-	pub fn reload(&mut self) -> Result<(), anyhow::Error> {
-		self.a_tree
-			.reload(&mut self.game_file.a_drv().context("Unable to get `A` drive")?)
-			.context("Unable to reload `A` drive")?;
-		self.b_tree
-			.reload(&mut self.game_file.b_drv().context("Unable to get `B` drive")?)
-			.context("Unable to reload `B` drive")?;
-		self.c_tree
-			.reload(&mut self.game_file.c_drv().context("Unable to get `C` drive")?)
-			.context("Unable to reload `C` drive")?;
-		self.e_tree
-			.reload(&mut self.game_file.e_drv().context("Unable to get `E` drive")?)
-			.context("Unable to reload `E` drive")?;
-		self.f_tree
-			.reload(&mut self.game_file.f_drv().context("Unable to get `F` drive")?)
-			.context("Unable to reload `F` drive")?;
-		self.g_tree
-			.reload(&mut self.game_file.g_drv().context("Unable to get `G` drive")?)
-			.context("Unable to reload `G` drive")?;
-		self.p_tree
-			.reload(&mut self.game_file.p_drv().context("Unable to get `P` drive")?)
-			.context("Unable to reload `P` drive")?;
-
-		Ok(())
 	}
 }

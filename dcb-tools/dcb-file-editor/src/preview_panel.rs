@@ -45,7 +45,10 @@ impl PreviewPanel {
 			path if path.ends_with(".TIM") => {
 				// Deserialize the tim
 				let path = Path::from_ascii(&path).context("Unable to create path")?;
-				let mut file = loaded_game.game_file.open_file(path).context("Unable to open file")?;
+				let mut file = loaded_game
+					.game_file_mut()
+					.open_file(path)
+					.context("Unable to open file")?;
 				let image: Tim = Tim::deserialize(&mut file).context("Unable to parse file")?;
 
 				// Then create all pallettes
@@ -56,7 +59,10 @@ impl PreviewPanel {
 			path if path.ends_with(".TIS") => {
 				// Deserialize the tis
 				let path = Path::from_ascii(&path).context("Unable to create path")?;
-				let file = loaded_game.game_file.open_file(path).context("Unable to open file")?;
+				let file = loaded_game
+					.game_file_mut()
+					.open_file(path)
+					.context("Unable to open file")?;
 				let mut file = BufReader::new(file);
 				let images: Tis = Tis::deserialize(&mut file).context("Unable to parse file")?;
 
