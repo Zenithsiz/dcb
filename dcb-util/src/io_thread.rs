@@ -58,6 +58,7 @@ struct ThreadState {
 
 impl ThreadState {
 	/// Returns the base seek as a usize
+	#[allow(dead_code)] // Will be used once proper implementations are used.
 	fn base_seek_usize(&self) -> usize {
 		self.base_seek.try_into().expect("`u64` didn't fit into `usize`")
 	}
