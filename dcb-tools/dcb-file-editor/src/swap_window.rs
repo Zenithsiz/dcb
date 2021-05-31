@@ -29,7 +29,7 @@ impl SwapWindow {
 	}
 
 	/// Displays this swap window
-	pub fn display(&mut self, ctx: &egui::CtxRef, game_file: &mut GameFile) {
+	pub fn display(&mut self, ctx: &egui::CtxRef, game_file: &GameFile) {
 		egui::Window::new("Swap screen").show(ctx, |ui| {
 			ui.horizontal(|ui| {
 				ui.label(self.first.as_str().unwrap_or("None"));

@@ -19,17 +19,12 @@ pub mod swap_window;
 
 // Imports
 use anyhow::Context;
-use dcb_util::{task, MutexPoison};
+use dcb_util::task;
 use eframe::{egui, epi, NativeOptions};
 use game_file::GameFile;
 use native_dialog::{FileDialog, MessageDialog, MessageType};
 use preview_panel::{PreviewPanel, PreviewPanelBuilder};
-use std::{
-	fs,
-	io::Write,
-	path::PathBuf,
-	sync::{Arc, Mutex},
-};
+use std::{fs, io::Write, path::PathBuf, sync::Arc};
 use swap_window::SwapWindow;
 
 fn main() {
@@ -52,7 +47,7 @@ pub struct FileEditor {
 	file_path: Option<PathBuf>,
 
 	/// Game file
-	game_file: Option<Arc<Mutex<GameFile>>>,
+	game_file: Option<Arc<GameFile>>,
 
 	/// Game file future
 	game_file_future: Option<task::ValueFuture<Result<GameFile, anyhow::Error>>>,
@@ -100,7 +95,7 @@ impl epi::App for FileEditor {
 		if let Some(res) = game_file_future.as_mut().and_then(|fut| fut.get()) {
 			*game_file_future = None;
 			match res {
-				Ok(game) => *game_file = Some(Arc::new(Mutex::new(game))),
+				Ok(game) => *game_file = Some(Arc::new(game)),
 				Err(err) => self::alert_error(&format!("Unable to open file: {:?}", err)),
 			};
 		}
@@ -169,7 +164,7 @@ impl epi::App for FileEditor {
 			// If we have a game file, display it and update the preview
 			if let Some(game_file) = game_file {
 				egui::ScrollArea::auto_sized().show(ui, |ui| {
-					let results = game_file.lock_unwrap().display(ui, file_search, swap_window);
+					let results = game_file.display(ui, file_search, swap_window);
 
 					// Update the preview if a new file was clicked
 					if let Some(path) = results.preview_path {
@@ -183,7 +178,7 @@ impl epi::App for FileEditor {
 		preview_panel.display(ctx);
 
 		if let (Some(swap_window), Some(game_file)) = (swap_window, game_file) {
-			swap_window.display(ctx, &mut *game_file.lock_unwrap())
+			swap_window.display(ctx, &*game_file)
 		}
 	}
 
@@ -194,7 +189,7 @@ impl epi::App for FileEditor {
 
 		// Flush the file if we have it
 		if let Some(game_file) = &mut self.game_file {
-			match game_file.lock_unwrap().game_file().cdrom().flush() {
+			match game_file.game_file().cdrom().flush() {
 				Ok(()) => (),
 				Err(err) => self::alert_error(&format!("Unable to flush file tod isk: {:?}", err)),
 			}

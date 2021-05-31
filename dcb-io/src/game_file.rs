@@ -11,7 +11,6 @@ pub use error::{OpenFileError, SwapFilesError};
 pub use path::Path;
 
 // Imports
-use dcb_cdrom_xa::CdRomCursor;
 use dcb_drv::DirEntryKind;
 use dcb_util::IoCursor;
 use std::io;
@@ -20,7 +19,7 @@ use std::io;
 #[derive(PartialEq, Clone, Debug)]
 pub struct GameFile<T> {
 	/// CD-Rom
-	cdrom: CdRomCursor<T>,
+	cdrom: T,
 }
 
 // Constants
@@ -58,7 +57,7 @@ impl<T> GameFile<T> {
 // Constructors
 impl<T: io::Read + io::Seek> GameFile<T> {
 	/// Creates a new game file
-	pub fn new(cdrom: CdRomCursor<T>) -> Self {
+	pub fn new(cdrom: T) -> Self {
 		Self { cdrom }
 	}
 }
@@ -66,7 +65,7 @@ impl<T: io::Read + io::Seek> GameFile<T> {
 // Getters
 impl<T> GameFile<T> {
 	/// Returns the cdrom associated with this game file
-	pub fn cdrom(&mut self) -> &mut CdRomCursor<T> {
+	pub fn cdrom(&mut self) -> &mut T {
 		&mut self.cdrom
 	}
 }
@@ -74,7 +73,7 @@ impl<T> GameFile<T> {
 // Drive getters
 impl<T: io::Seek> GameFile<T> {
 	/// Returns the `A.DRV` file alongside it's cursor
-	pub fn a_drv(&mut self) -> Result<DriveCursor<&mut CdRomCursor<T>>, io::Error> {
+	pub fn a_drv(&mut self) -> Result<DriveCursor<&mut T>, io::Error> {
 		match DriveCursor::new(&mut self.cdrom, Self::A_OFFSET, Self::A_SIZE) {
 			Ok(cursor) => Ok(cursor),
 			Err(err) => Err(err),
@@ -82,7 +81,7 @@ impl<T: io::Seek> GameFile<T> {
 	}
 
 	/// Returns the `B.DRV` file alongside it's cursor
-	pub fn b_drv(&mut self) -> Result<DriveCursor<&mut CdRomCursor<T>>, io::Error> {
+	pub fn b_drv(&mut self) -> Result<DriveCursor<&mut T>, io::Error> {
 		match DriveCursor::new(&mut self.cdrom, Self::B_OFFSET, Self::B_SIZE) {
 			Ok(cursor) => Ok(cursor),
 			Err(err) => Err(err),
@@ -90,7 +89,7 @@ impl<T: io::Seek> GameFile<T> {
 	}
 
 	/// Returns the `C.DRV` file alongside it's cursor
-	pub fn c_drv(&mut self) -> Result<DriveCursor<&mut CdRomCursor<T>>, io::Error> {
+	pub fn c_drv(&mut self) -> Result<DriveCursor<&mut T>, io::Error> {
 		match DriveCursor::new(&mut self.cdrom, Self::C_OFFSET, Self::C_SIZE) {
 			Ok(cursor) => Ok(cursor),
 			Err(err) => Err(err),
@@ -98,7 +97,7 @@ impl<T: io::Seek> GameFile<T> {
 	}
 
 	/// Returns the `E.DRV` file alongside it's cursor
-	pub fn e_drv(&mut self) -> Result<DriveCursor<&mut CdRomCursor<T>>, io::Error> {
+	pub fn e_drv(&mut self) -> Result<DriveCursor<&mut T>, io::Error> {
 		match DriveCursor::new(&mut self.cdrom, Self::E_OFFSET, Self::E_SIZE) {
 			Ok(cursor) => Ok(cursor),
 			Err(err) => Err(err),
@@ -106,7 +105,7 @@ impl<T: io::Seek> GameFile<T> {
 	}
 
 	/// Returns the `F.DRV` file alongside it's cursor
-	pub fn f_drv(&mut self) -> Result<DriveCursor<&mut CdRomCursor<T>>, io::Error> {
+	pub fn f_drv(&mut self) -> Result<DriveCursor<&mut T>, io::Error> {
 		match DriveCursor::new(&mut self.cdrom, Self::F_OFFSET, Self::F_SIZE) {
 			Ok(cursor) => Ok(cursor),
 			Err(err) => Err(err),
@@ -114,7 +113,7 @@ impl<T: io::Seek> GameFile<T> {
 	}
 
 	/// Returns the `G.DRV` file alongside it's cursor
-	pub fn g_drv(&mut self) -> Result<DriveCursor<&mut CdRomCursor<T>>, io::Error> {
+	pub fn g_drv(&mut self) -> Result<DriveCursor<&mut T>, io::Error> {
 		match DriveCursor::new(&mut self.cdrom, Self::G_OFFSET, Self::G_SIZE) {
 			Ok(cursor) => Ok(cursor),
 			Err(err) => Err(err),
@@ -122,7 +121,7 @@ impl<T: io::Seek> GameFile<T> {
 	}
 
 	/// Returns the `P.DRV` file alongside it's cursor
-	pub fn p_drv(&mut self) -> Result<DriveCursor<&mut CdRomCursor<T>>, io::Error> {
+	pub fn p_drv(&mut self) -> Result<DriveCursor<&mut T>, io::Error> {
 		match DriveCursor::new(&mut self.cdrom, Self::P_OFFSET, Self::P_SIZE) {
 			Ok(cursor) => Ok(cursor),
 			Err(err) => Err(err),
@@ -133,7 +132,7 @@ impl<T: io::Seek> GameFile<T> {
 // Files
 impl<T: io::Seek + io::Read> GameFile<T> {
 	/// Opens a file
-	pub fn open_file(&mut self, path: &Path) -> Result<FileCursor<DriveCursor<&mut CdRomCursor<T>>>, OpenFileError> {
+	pub fn open_file(&mut self, path: &Path) -> Result<FileCursor<DriveCursor<&mut T>>, OpenFileError> {
 		// Check the drive we're accessing.
 		let (drive, path) = path.drive().ok_or(OpenFileError::NoDrive)?;
 		let mut cursor = match drive.as_char() {

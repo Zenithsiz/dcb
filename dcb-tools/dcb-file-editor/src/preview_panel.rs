@@ -5,18 +5,12 @@ use crate::GameFile;
 use anyhow::Context;
 use dcb_io::game_file::Path;
 use dcb_tim::{Tim, Tis};
-use dcb_util::{
-	task::{self, ValueFuture},
-	MutexPoison,
-};
+use dcb_util::task::{self, ValueFuture};
 use eframe::{
 	egui::{self, Color32, TextureId},
 	epi::TextureAllocator,
 };
-use std::{
-	io::BufReader,
-	sync::{Arc, Mutex},
-};
+use std::{io::BufReader, sync::Arc};
 
 /// Preview panel
 #[derive(PartialEq, Clone)]
@@ -146,14 +140,13 @@ pub enum PreviewPanelBuilder {
 
 impl PreviewPanelBuilder {
 	/// Creates a new builder for a preview Panel
-	pub fn new(game_file: Arc<Mutex<GameFile>>, path: String) -> ValueFuture<Self> {
+	pub fn new(game_file: Arc<GameFile>, path: String) -> ValueFuture<Self> {
 		task::spawn(move || {
 			let res: Result<_, anyhow::Error> = try {
 				match path {
 					path if path.ends_with(".TIM") => {
 						// Deserialize the tim
 						let path = Path::from_ascii(&path).context("Unable to create path")?;
-						let mut game_file = game_file.lock_unwrap();
 						let mut game_file = game_file.game_file();
 						let mut file = game_file.open_file(path).context("Unable to open file")?;
 						let tim = Tim::deserialize(&mut file).context("Unable to parse file")?;
@@ -177,7 +170,6 @@ impl PreviewPanelBuilder {
 					path if path.ends_with(".TIS") => {
 						// Deserialize the tis
 						let path = Path::from_ascii(&path).context("Unable to create path")?;
-						let mut game_file = game_file.lock_unwrap();
 						let mut game_file = game_file.game_file();
 						let file = game_file.open_file(path).context("Unable to open file")?;
 						let mut file = BufReader::new(file);

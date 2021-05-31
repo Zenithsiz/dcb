@@ -1,6 +1,12 @@
 //! Dcb utilities
 // Features
-#![feature(slice_index_methods, format_args_capture)]
+#![feature(
+	slice_index_methods,
+	format_args_capture,
+	seek_stream_len,
+	unboxed_closures,
+	fn_traits
+)]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]
 // We'll disable the ones we don't need
@@ -68,6 +74,7 @@ pub mod display_wrapper;
 pub mod family;
 pub mod impl_bytes;
 pub mod io_cursor;
+pub mod io_thread;
 pub mod lock_poison;
 pub mod map_box;
 pub mod next_from_bytes;
@@ -88,6 +95,7 @@ pub use discarding_sorted_merge_iter::DiscardingSortedMergeIter;
 pub use display_wrapper::DisplayWrapper;
 pub use family::ResultFamily;
 pub use io_cursor::IoCursor;
+pub use io_thread::IoThread;
 pub use lock_poison::{MutexPoison, RwLockPoison};
 pub use map_box::MapBoxResult;
 pub use next_from_bytes::NextFromBytes;
