@@ -52,7 +52,7 @@ impl SwapWindow {
 
 						let res: Result<_, anyhow::Error> = try {
 							game_file
-								.game_file_mut()
+								.game_file()
 								.swap_files(lhs, rhs)
 								.context("Unable to swap files")?;
 

@@ -5,13 +5,14 @@ use crate::{
 	swap_window::SwapWindow,
 };
 use anyhow::Context;
+use dcb_cdrom_xa::CdRomCursor;
 use eframe::egui;
 use std::fs;
 
 /// Game file
 pub struct GameFile {
 	/// Game file
-	game_file: dcb_io::GameFile<fs::File>,
+	file: fs::File,
 
 	/// `A` drive tree
 	a_tree: DrvTree,
@@ -37,7 +38,8 @@ pub struct GameFile {
 
 impl GameFile {
 	/// Creates a new game
-	pub fn new(mut game_file: dcb_io::GameFile<fs::File>) -> Result<Self, anyhow::Error> {
+	pub fn new(mut file: fs::File) -> Result<Self, anyhow::Error> {
+		let mut game_file = dcb_io::GameFile::new(CdRomCursor::new(&mut file));
 		let mut a_reader = game_file.a_drv().context("Unable to get `a` drive")?;
 		let a_tree = DrvTree::new(&mut a_reader).context("Unable to load `a` drive")?;
 		let mut b_reader = game_file.b_drv().context("Unable to get `b` drive")?;
@@ -54,7 +56,7 @@ impl GameFile {
 		let p_tree = DrvTree::new(&mut p_reader).context("Unable to load `p` drive")?;
 
 		Ok(Self {
-			game_file,
+			file,
 			a_tree,
 			b_tree,
 			c_tree,
@@ -67,26 +69,27 @@ impl GameFile {
 
 	/// Reloads the game
 	pub fn reload(&mut self) -> Result<(), anyhow::Error> {
+		let mut game_file = dcb_io::GameFile::new(CdRomCursor::new(&mut self.file));
 		self.a_tree
-			.reload(&mut self.game_file.a_drv().context("Unable to get `A` drive")?)
+			.reload(&mut game_file.a_drv().context("Unable to get `A` drive")?)
 			.context("Unable to reload `A` drive")?;
 		self.b_tree
-			.reload(&mut self.game_file.b_drv().context("Unable to get `B` drive")?)
+			.reload(&mut game_file.b_drv().context("Unable to get `B` drive")?)
 			.context("Unable to reload `B` drive")?;
 		self.c_tree
-			.reload(&mut self.game_file.c_drv().context("Unable to get `C` drive")?)
+			.reload(&mut game_file.c_drv().context("Unable to get `C` drive")?)
 			.context("Unable to reload `C` drive")?;
 		self.e_tree
-			.reload(&mut self.game_file.e_drv().context("Unable to get `E` drive")?)
+			.reload(&mut game_file.e_drv().context("Unable to get `E` drive")?)
 			.context("Unable to reload `E` drive")?;
 		self.f_tree
-			.reload(&mut self.game_file.f_drv().context("Unable to get `F` drive")?)
+			.reload(&mut game_file.f_drv().context("Unable to get `F` drive")?)
 			.context("Unable to reload `F` drive")?;
 		self.g_tree
-			.reload(&mut self.game_file.g_drv().context("Unable to get `G` drive")?)
+			.reload(&mut game_file.g_drv().context("Unable to get `G` drive")?)
 			.context("Unable to reload `G` drive")?;
 		self.p_tree
-			.reload(&mut self.game_file.p_drv().context("Unable to get `P` drive")?)
+			.reload(&mut game_file.p_drv().context("Unable to get `P` drive")?)
 			.context("Unable to reload `P` drive")?;
 
 		Ok(())
@@ -121,9 +124,9 @@ impl GameFile {
 		DisplayResults { preview_path }
 	}
 
-	/// Returns a mutable reference to the underlying game file
-	pub fn game_file_mut(&mut self) -> &mut dcb_io::GameFile<fs::File> {
-		&mut self.game_file
+	/// Returns a game file
+	pub fn game_file(&mut self) -> dcb_io::GameFile<&mut fs::File> {
+		dcb_io::GameFile::new(CdRomCursor::new(&mut self.file))
 	}
 }
 

@@ -19,7 +19,6 @@ pub mod swap_window;
 
 // Imports
 use anyhow::Context;
-use dcb_cdrom_xa::CdRomCursor;
 use dcb_util::{task, MutexPoison};
 use eframe::{egui, epi, NativeOptions};
 use game_file::GameFile;
@@ -140,8 +139,6 @@ impl epi::App for FileEditor {
 									.write(true)
 									.open(file_path)
 									.context("Unable to open file")?;
-								let cdrom = CdRomCursor::new(file);
-								let file = dcb_io::GameFile::new(cdrom);
 
 								GameFile::new(file).context("Unable to load game")
 							}));
@@ -197,7 +194,7 @@ impl epi::App for FileEditor {
 
 		// Flush the file if we have it
 		if let Some(game_file) = &mut self.game_file {
-			match game_file.lock_unwrap().game_file_mut().cdrom().flush() {
+			match game_file.lock_unwrap().game_file().cdrom().flush() {
 				Ok(()) => (),
 				Err(err) => self::alert_error(&format!("Unable to flush file tod isk: {:?}", err)),
 			}

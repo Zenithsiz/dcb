@@ -154,10 +154,8 @@ impl PreviewPanelBuilder {
 						// Deserialize the tim
 						let path = Path::from_ascii(&path).context("Unable to create path")?;
 						let mut game_file = game_file.lock_unwrap();
-						let mut file = game_file
-							.game_file_mut()
-							.open_file(path)
-							.context("Unable to open file")?;
+						let mut game_file = game_file.game_file();
+						let mut file = game_file.open_file(path).context("Unable to open file")?;
 						let tim = Tim::deserialize(&mut file).context("Unable to parse file")?;
 
 						let pallette_pixels: Vec<Box<[_]>> = (0..tim.pallettes())
@@ -180,10 +178,8 @@ impl PreviewPanelBuilder {
 						// Deserialize the tis
 						let path = Path::from_ascii(&path).context("Unable to create path")?;
 						let mut game_file = game_file.lock_unwrap();
-						let file = game_file
-							.game_file_mut()
-							.open_file(path)
-							.context("Unable to open file")?;
+						let mut game_file = game_file.game_file();
+						let file = game_file.open_file(path).context("Unable to open file")?;
 						let mut file = BufReader::new(file);
 						let tis: Tis = Tis::deserialize(&mut file).context("Unable to parse file")?;
 
