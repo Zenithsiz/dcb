@@ -39,7 +39,7 @@ impl DrvTree {
 			.with_context(|| format!("Unable to read entry for {:#x}", ptr.sector_pos))?;
 
 		// Then convert all dir entries to our entries
-		let entries = entries
+		let mut entries: Vec<_> = entries
 			.into_iter()
 			.map(|entry| {
 				let kind = match entry.kind {
@@ -53,6 +53,9 @@ impl DrvTree {
 				Ok(TreeDirEntry { name: entry.name, kind })
 			})
 			.collect::<Result<_, anyhow::Error>>()?;
+
+		// And sort them by folder and name
+		entries.sort_unstable_by_key(|entry| (entry.kind.is_file(), entry.name));
 
 		Ok(TreeDir { entries })
 	}
@@ -126,6 +129,18 @@ pub enum TreeDirEntryKind {
 
 	/// Directory
 	Dir(TreeDir),
+}
+
+impl TreeDirEntryKind {
+	/// Returns `true` if the tree_dir_entry_kind is [`Dir`].
+	pub fn is_dir(&self) -> bool {
+		matches!(self, Self::Dir(..))
+	}
+
+	/// Returns `true` if the tree_dir_entry_kind is [`File`].
+	pub fn is_file(&self) -> bool {
+		matches!(self, Self::File { .. })
+	}
 }
 
 /// Display context
