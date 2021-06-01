@@ -6,6 +6,7 @@
 // Modules
 mod edit_screen;
 mod loaded_game;
+mod swap_screen;
 
 // Imports
 use dcb::card::property::{
@@ -27,6 +28,7 @@ use std::{
 	time::{Duration, SystemTime},
 };
 use strum::IntoEnumIterator;
+use swap_screen::SwapScreen;
 
 fn main() {
 	// Initialize the logger
@@ -122,11 +124,7 @@ impl epi::App for CardEditor {
 
 				egui::menu::menu(ui, "Edit", |ui| {
 					if loaded_game.is_some() && ui.button("Swap").clicked() {
-						*swap_screen = Some(SwapScreen {
-							card_type: CardType::Digimon,
-							lhs_idx:   0,
-							rhs_idx:   0,
-						});
+						*swap_screen = Some(SwapScreen::new(CardType::Digimon, 0, 0));
 					}
 				});
 			});
@@ -134,37 +132,13 @@ impl epi::App for CardEditor {
 
 		// Draw swap screen
 		if let (Some(screen), Some(loaded_game)) = (swap_screen.as_mut(), loaded_game.as_mut()) {
-			let mut close = false;
+			let mut should_close = false;
 			egui::Window::new("Swap screen").show(ctx, |ui| {
-				ui.horizontal(|ui| {
-					ui.label("Card type");
-					self::render_card_type(ui, &mut screen.card_type);
-				});
-
-				let range = match screen.card_type {
-					CardType::Digimon => loaded_game.digimon_idxs(),
-					CardType::Item => loaded_game.item_idxs(),
-					CardType::Digivolve => loaded_game.digivolve_idxs(),
-				};
-				screen.lhs_idx = screen.lhs_idx.clamp(range.start, range.end - 1);
-				screen.rhs_idx = screen.rhs_idx.clamp(range.start, range.end - 1);
-				let range = range.start..=(range.end - 1);
-
-				ui.horizontal(|ui| {
-					ui.label("Left");
-					ui.add(egui::Slider::new(&mut screen.lhs_idx, range.clone()));
-				});
-				ui.horizontal(|ui| {
-					ui.label("Right");
-					ui.add(egui::Slider::new(&mut screen.rhs_idx, range));
-				});
-				if ui.button("Swap").clicked() {
-					loaded_game.swap_cards(screen.lhs_idx, screen.rhs_idx);
-					close = true;
-				}
+				let results = screen.display(ui, loaded_game);
+				should_close = results.should_close;
 			});
 
-			if close {
+			if should_close {
 				*swap_screen = None;
 			}
 		}
@@ -227,19 +201,6 @@ impl epi::App for CardEditor {
 	fn name(&self) -> &str {
 		"Dcb card editor"
 	}
-}
-
-
-/// A swap screen
-pub struct SwapScreen {
-	/// Card type
-	card_type: CardType,
-
-	/// Left idx
-	lhs_idx: usize,
-
-	/// Right idx
-	rhs_idx: usize,
 }
 
 /// Digimon, Item or digivolve
