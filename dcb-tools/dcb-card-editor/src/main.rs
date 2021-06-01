@@ -3,26 +3,23 @@
 // Features
 #![feature(array_map, with_options, format_args_capture, once_cell, never_type)]
 
+// Modules
+mod loaded_game;
+
 // Imports
-use anyhow::Context;
-use dcb::{
-	card::property::{
-		ArrowColor, AttackType, CardType, CrossMoveEffect, DigimonProperty, DigivolveEffect, Effect, EffectCondition,
-		EffectConditionOperation, EffectOperation, Level, Move, PlayerType, Slot, Speciality,
-	},
-	CardTable,
+use dcb::card::property::{
+	ArrowColor, AttackType, CardType, CrossMoveEffect, DigimonProperty, DigivolveEffect, Effect, EffectCondition,
+	EffectConditionOperation, EffectOperation, Level, Move, PlayerType, Slot, Speciality,
 };
 use dcb_bytes::Validate;
 use dcb_util::{alert, AsciiTextBuffer, StrContainsCaseInsensitive};
 use eframe::{egui, epi, NativeOptions};
 use either::Either;
+use loaded_game::LoadedGame;
 use native_dialog::FileDialog;
 use ref_cast::RefCast;
 use std::{
-	fs,
-	io::{self, Read, Seek},
 	lazy::SyncLazy,
-	ops::Range,
 	path::{Path, PathBuf},
 	sync::Mutex,
 	time::{Duration, SystemTime},
@@ -59,104 +56,6 @@ pub struct CardEditor {
 
 	/// swap screen
 	swap_screen: Option<SwapScreen>,
-}
-
-impl CardEditor {
-	/// Card table offset
-	pub const CARD_TABLE_OFFSET: u64 = 0x216d000;
-	/// Card table size
-	pub const CARD_TABLE_SIZE: u64 = 0x14958;
-
-	/// Parses the card table from file
-	pub fn parse_card_table(file_path: &Path) -> Result<CardTable, anyhow::Error> {
-		// Open the file
-		let file = fs::File::open(file_path).context("Unable to open file")?;
-		let mut file = dcb_cdrom_xa::CdRomCursor::new(file);
-
-		// Seek to the card file position and limit our reading to the file size
-		file.seek(io::SeekFrom::Start(Self::CARD_TABLE_OFFSET))
-			.context("Unable to seek to card table")?;
-		let mut file = file.take(Self::CARD_TABLE_SIZE);
-
-		// Then parse it
-		let card_table = CardTable::deserialize(&mut file).context("Unable to parse table")?;
-
-		Ok(card_table)
-	}
-
-	/// Saves the card table to file
-	pub fn save_card_table(file_path: &Path, card_table: &CardTable) -> Result<(), anyhow::Error> {
-		// Open the file
-		let file = fs::File::with_options()
-			.write(true)
-			.open(file_path)
-			.context("Unable to open file")?;
-		let mut file = dcb_cdrom_xa::CdRomCursor::new(file);
-
-		// Seek to the card file position and limit our writing to the file size
-		file.seek(io::SeekFrom::Start(Self::CARD_TABLE_OFFSET))
-			.context("Unable to seek to card table")?;
-		let mut file = dcb_util::WriteTake::new(file, Self::CARD_TABLE_SIZE);
-
-		// Then serialize it
-		card_table.serialize(&mut file).context("Unable to serialize table")?;
-
-		Ok(())
-	}
-
-	/// Returns the digimon's indexes
-	pub fn digimon_idxs(card_table: &CardTable) -> Range<usize> {
-		0..card_table.digimons.len()
-	}
-
-	/// Returns the item's indexes
-	pub fn item_idxs(card_table: &CardTable) -> Range<usize> {
-		card_table.digimons.len()..(card_table.digimons.len() + card_table.items.len())
-	}
-
-	/// Returns the digivolve's indexes
-	pub fn digivolve_idxs(card_table: &CardTable) -> Range<usize> {
-		(card_table.digimons.len() + card_table.items.len())..
-			(card_table.digimons.len() + card_table.items.len() + card_table.digivolves.len())
-	}
-
-	/// Returns a card given it's index
-	pub fn get_card_from_idx(card_table: &mut CardTable, idx: usize) -> Card {
-		let digimons_len = card_table.digimons.len();
-		let items_len = card_table.items.len();
-
-		if Self::digimon_idxs(card_table).contains(&idx) {
-			Card::Digimon(&mut card_table.digimons[idx])
-		} else if Self::item_idxs(card_table).contains(&idx) {
-			Card::Item(&mut card_table.items[idx - digimons_len])
-		} else if Self::digivolve_idxs(card_table).contains(&idx) {
-			Card::Digivolve(&mut card_table.digivolves[idx - digimons_len - items_len])
-		} else {
-			panic!("Invalid card index");
-		}
-	}
-
-	/// Swaps two cards in the card table
-	pub fn swap_cards(card_table: &mut CardTable, lhs_idx: usize, rhs_idx: usize) {
-		let digimon_idxs = Self::digimon_idxs(card_table);
-		let item_idxs = Self::item_idxs(card_table);
-		let digivolve_idxs = Self::digivolve_idxs(card_table);
-		let digimons_len = card_table.digimons.len();
-		let items_len = card_table.items.len();
-
-
-		if digimon_idxs.contains(&lhs_idx) && digimon_idxs.contains(&rhs_idx) {
-			card_table.digimons.swap(lhs_idx, rhs_idx);
-		} else if item_idxs.contains(&lhs_idx) && item_idxs.contains(&rhs_idx) {
-			card_table.items.swap(lhs_idx - digimons_len, rhs_idx - digimons_len);
-		} else if digivolve_idxs.contains(&lhs_idx) && digivolve_idxs.contains(&rhs_idx) {
-			card_table
-				.digivolves
-				.swap(lhs_idx - digimons_len - items_len, rhs_idx - digimons_len - items_len);
-		} else {
-			panic!("Invalid indexes {} & {}", lhs_idx, rhs_idx);
-		}
-	}
 }
 
 impl Default for CardEditor {
@@ -196,14 +95,8 @@ impl epi::App for CardEditor {
 
 						// Then load the card table if we got a file
 						if let Some(file_path) = file_path {
-							match Self::parse_card_table(file_path) {
-								Ok(card_table) => {
-									let hash = dcb_util::hash_of(&card_table);
-									*loaded_game = Some(LoadedGame {
-										card_table,
-										saved_card_table_hash: hash,
-									});
-								},
+							match LoadedGame::load(file_path) {
+								Ok(game) => *loaded_game = Some(game),
 								Err(err) => alert::error!("Unable to open file: {err:?}"),
 							}
 						}
@@ -212,15 +105,9 @@ impl epi::App for CardEditor {
 					// On save, if we have a file, save it to there, else tell error
 					if ui.button("Save").clicked() {
 						match (&file_path, &mut *loaded_game) {
-							(Some(file_path), Some(loaded_game)) => {
-								match Self::save_card_table(file_path, &loaded_game.card_table) {
-									// After saving, update our hash
-									Ok(()) => {
-										loaded_game.saved_card_table_hash = dcb_util::hash_of(&loaded_game.card_table);
-										alert::info("Successfully saved!");
-									},
-									Err(err) => alert::error!("Unable to save file: {err:?}"),
-								}
+							(Some(file_path), Some(loaded_game)) => match loaded_game.save(file_path) {
+								Ok(()) => alert::info("Successfully saved!"),
+								Err(err) => alert::error!("Unable to save file: {err:?}"),
 							},
 							_ => alert::warn("You must first open a file to save"),
 						}
@@ -253,9 +140,9 @@ impl epi::App for CardEditor {
 				});
 
 				let range = match screen.card_type {
-					CardType::Digimon => Self::digimon_idxs(&loaded_game.card_table),
-					CardType::Item => Self::item_idxs(&loaded_game.card_table),
-					CardType::Digivolve => Self::digivolve_idxs(&loaded_game.card_table),
+					CardType::Digimon => loaded_game.digimon_idxs(),
+					CardType::Item => loaded_game.item_idxs(),
+					CardType::Digivolve => loaded_game.digivolve_idxs(),
 				};
 				screen.lhs_idx = screen.lhs_idx.clamp(range.start, range.end - 1);
 				screen.rhs_idx = screen.rhs_idx.clamp(range.start, range.end - 1);
@@ -270,7 +157,7 @@ impl epi::App for CardEditor {
 					ui.add(egui::Slider::new(&mut screen.rhs_idx, range));
 				});
 				if ui.button("Swap").clicked() {
-					Self::swap_cards(&mut loaded_game.card_table, screen.lhs_idx, screen.rhs_idx);
+					loaded_game.swap_cards(screen.lhs_idx, screen.rhs_idx);
 					close = true;
 				}
 			});
@@ -290,37 +177,7 @@ impl epi::App for CardEditor {
 
 			// If we have a loaded game, display all cards
 			if let Some(loaded_game) = &loaded_game {
-				let names = loaded_game
-					.card_table
-					.digimons
-					.iter()
-					.map(|digimon| digimon.name.as_str())
-					.chain(loaded_game.card_table.items.iter().map(|item| item.name.as_str()))
-					.chain(
-						loaded_game
-							.card_table
-							.digivolves
-							.iter()
-							.map(|digivolve| digivolve.name.as_str()),
-					)
-					.enumerate()
-					.map(|(idx, name)| (idx, format!("{idx}. {name}")))
-					.filter(|(_, name)| name.contains_case_insensitive(card_search));
-
-				egui::ScrollArea::auto_sized().show(ui, |ui| {
-					for (idx, name) in names {
-						// If clicked, open/close a new screen
-						let screen_idx = open_edit_screens.iter().position(|screen| screen.card_idx == idx);
-						if ui.selectable_label(screen_idx.is_some(), name).clicked() {
-							match screen_idx {
-								Some(screen_idx) => {
-									open_edit_screens.remove(screen_idx);
-								},
-								None => open_edit_screens.push(EditScreen { card_idx: idx }),
-							}
-						}
-					}
-				});
+				loaded_game.display_card_selection(card_search, ui, open_edit_screens);
 			}
 		});
 
@@ -328,13 +185,10 @@ impl epi::App for CardEditor {
 		egui::CentralPanel::default().show(ctx, |ui| {
 			let screens_len = open_edit_screens.len();
 			for screen in open_edit_screens {
-				let card = Self::get_card_from_idx(
-					&mut loaded_game
-						.as_mut()
-						.expect("Had a selected card without a card table")
-						.card_table,
-					screen.card_idx,
-				);
+				let card = loaded_game
+					.as_mut()
+					.expect("Had a selected card without a card table")
+					.get_card_from_idx(screen.card_idx);
 
 				let total_available_width = ui.available_width();
 				let default_width = total_available_width / (screens_len as f32);
@@ -363,11 +217,7 @@ impl epi::App for CardEditor {
 	fn on_exit(&mut self) {
 		// Ask user if they want to save before leaving if they had any changes
 		let wants_to_save = match (&self.file_path, &self.loaded_game) {
-			(Some(_), Some(loaded_game))
-				if dcb_util::hash_of(&loaded_game.card_table) != loaded_game.saved_card_table_hash =>
-			{
-				alert::warn_confirm("Do you want to save?")
-			},
+			(Some(_), Some(loaded_game)) if loaded_game.modified() => alert::warn_confirm("Do you want to save?"),
 
 			// If we have no file or card table wasn't loaded, user won't want to save
 			_ => false,
@@ -375,27 +225,25 @@ impl epi::App for CardEditor {
 
 		if wants_to_save {
 			let file_path = self.file_path.as_ref().expect("No file path was set");
-			let card_table = &self.loaded_game.as_ref().expect("No card table").card_table;
+			let loaded_game = self.loaded_game.as_ref().expect("No card table");
 
-			match Self::save_card_table(file_path, card_table) {
+			match loaded_game.save(file_path) {
 				Ok(()) => alert::info("Successfully saved!"),
 				// If unable to save, save the state to disk just in case changes are lost
 				// TODO: Be able to load these backup files up
 				Err(err) => {
+					alert::error!("Unable to save file: {err:?}\n\nAttempting backup.");
+
 					// Create backup
 					let time = SystemTime::now()
 						.duration_since(SystemTime::UNIX_EPOCH)
 						.as_ref()
 						.map_or(u64::MAX, Duration::as_secs);
 					let path = format!("cards-{time}.bak");
-					let file = fs::File::create(&path).expect("Unable to create backup file");
-					serde_yaml::to_writer(
-						file,
-						&self.loaded_game.as_ref().map(|loaded_game| &loaded_game.card_table),
-					)
-					.expect("Unable to write back up to file");
-
-					alert::error!("Unable to save file: {err:?}\n\nBackup made in file {path:?}.");
+					match loaded_game.save_backup(Path::new(&path)) {
+						Ok(()) => alert::info!("Successfully saved backup to {path:?}."),
+						Err(err) => alert::error!("Unable to create backup: {err:?}"),
+					}
 				},
 			}
 		}
@@ -422,15 +270,6 @@ pub struct SwapScreen {
 
 	/// Right idx
 	rhs_idx: usize,
-}
-
-/// Loaded game
-pub struct LoadedGame {
-	/// Card table
-	card_table: CardTable,
-
-	/// Original hash
-	saved_card_table_hash: u64,
 }
 
 /// Digimon, Item or digivolve
