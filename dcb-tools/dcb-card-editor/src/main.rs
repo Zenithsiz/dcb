@@ -4,6 +4,7 @@
 #![feature(array_map, with_options, format_args_capture, once_cell, never_type)]
 
 // Modules
+mod edit_screen;
 mod loaded_game;
 
 // Imports
@@ -13,6 +14,7 @@ use dcb::card::property::{
 };
 use dcb_bytes::Validate;
 use dcb_util::{alert, AsciiTextBuffer, StrContainsCaseInsensitive};
+use edit_screen::EditScreen;
 use eframe::{egui, epi, NativeOptions};
 use either::Either;
 use loaded_game::LoadedGame;
@@ -181,37 +183,10 @@ impl epi::App for CardEditor {
 			}
 		});
 
-		// For every screen, display it
-		egui::CentralPanel::default().show(ctx, |ui| {
-			let screens_len = open_edit_screens.len();
-			for screen in open_edit_screens {
-				let card = loaded_game
-					.as_mut()
-					.expect("Had a selected card without a card table")
-					.get_card_from_idx(screen.card_idx);
-
-				let total_available_width = ui.available_width();
-				let default_width = total_available_width / (screens_len as f32);
-				egui::SidePanel::left((screen as *const _, "panel", default_width.to_bits()))
-					.default_width(default_width)
-					.show(ctx, |ui| {
-						// Header for the card
-						ui.vertical(|ui| {
-							ui.heading(card.name());
-							ui.label(match card {
-								Card::Digimon(_) => "Digimon",
-								Card::Item(_) => "Item",
-								Card::Digivolve(_) => "Digivolve",
-							});
-							ui.separator();
-						});
-
-						egui::ScrollArea::auto_sized().show(ui, |ui| {
-							self::render_card(ui, card);
-						});
-					});
-			}
-		});
+		// Display all screens
+		if let Some(loaded_game) = loaded_game {
+			EditScreen::display_all(open_edit_screens, ctx, loaded_game);
+		}
 	}
 
 	fn on_exit(&mut self) {
@@ -254,11 +229,6 @@ impl epi::App for CardEditor {
 	}
 }
 
-/// An edit screen
-pub struct EditScreen {
-	/// Currently selected card
-	card_idx: usize,
-}
 
 /// A swap screen
 pub struct SwapScreen {

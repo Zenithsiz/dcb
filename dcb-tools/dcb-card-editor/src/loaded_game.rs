@@ -168,16 +168,17 @@ impl LoadedGame {
 			.enumerate()
 			.map(|(idx, name)| (idx, format!("{idx}. {name}")))
 			.filter(|(_, name)| name.contains_case_insensitive(card_search));
+
 		egui::ScrollArea::auto_sized().show(ui, |ui| {
 			for (idx, name) in names {
 				// If clicked, open/close a new screen
-				let screen_idx = open_edit_screens.iter().position(|screen| screen.card_idx == idx);
+				let screen_idx = open_edit_screens.iter().position(|screen| screen.card_idx() == idx);
 				if ui.selectable_label(screen_idx.is_some(), name).clicked() {
 					match screen_idx {
 						Some(screen_idx) => {
 							open_edit_screens.remove(screen_idx);
 						},
-						None => open_edit_screens.push(EditScreen { card_idx: idx }),
+						None => open_edit_screens.push(EditScreen::new(idx)),
 					}
 				}
 			}
