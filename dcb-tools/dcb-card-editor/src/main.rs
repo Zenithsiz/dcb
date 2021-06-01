@@ -13,10 +13,10 @@ use dcb::{
 	CardTable,
 };
 use dcb_bytes::Validate;
-use dcb_util::{AsciiTextBuffer, StrContainsCaseInsensitive};
+use dcb_util::{alert, AsciiTextBuffer, StrContainsCaseInsensitive};
 use eframe::{egui, epi, NativeOptions};
 use either::Either;
-use native_dialog::{FileDialog, MessageDialog, MessageType};
+use native_dialog::FileDialog;
 use ref_cast::RefCast;
 use std::{
 	fs,
@@ -204,11 +204,7 @@ impl epi::App for CardEditor {
 										saved_card_table_hash: hash,
 									});
 								},
-								Err(err) => MessageDialog::new()
-									.set_text(&format!("Unable to open file: {:?}", err))
-									.set_type(MessageType::Error)
-									.show_alert()
-									.expect("Unable to alert user"),
+								Err(err) => alert::error(&format!("Unable to open file: {:?}", err)),
 							}
 						}
 					}
@@ -221,24 +217,12 @@ impl epi::App for CardEditor {
 									// After saving, update our hash
 									Ok(()) => {
 										loaded_game.saved_card_table_hash = dcb_util::hash_of(&loaded_game.card_table);
-										MessageDialog::new()
-											.set_text("Successfully saved!")
-											.set_type(MessageType::Info)
-											.show_alert()
-											.expect("Unable to alert user");
+										alert::info("Successfully saved!");
 									},
-									Err(err) => MessageDialog::new()
-										.set_text(&format!("Unable to save file: {:?}", err))
-										.set_type(MessageType::Error)
-										.show_alert()
-										.expect("Unable to alert user"),
+									Err(err) => alert::error(&format!("Unable to save file: {:?}", err)),
 								}
 							},
-							_ => MessageDialog::new()
-								.set_text("You must first open a file to save")
-								.set_type(MessageType::Warning)
-								.show_alert()
-								.expect("Unable to alert user"),
+							_ => alert::warn("You must first open a file to save"),
 						}
 					}
 
@@ -382,11 +366,7 @@ impl epi::App for CardEditor {
 			(Some(_), Some(loaded_game))
 				if dcb_util::hash_of(&loaded_game.card_table) != loaded_game.saved_card_table_hash =>
 			{
-				MessageDialog::new()
-					.set_text("Do you want to save?")
-					.set_type(MessageType::Warning)
-					.show_confirm()
-					.expect("Unable to ask user for confirmation")
+				alert::warn_confirm("Do you want to save?")
 			},
 
 			// If we have no file or card table wasn't loaded, user won't want to save
@@ -398,11 +378,7 @@ impl epi::App for CardEditor {
 			let card_table = &self.loaded_game.as_ref().expect("No card table").card_table;
 
 			match Self::save_card_table(file_path, card_table) {
-				Ok(()) => MessageDialog::new()
-					.set_text("Successfully saved!")
-					.set_type(MessageType::Info)
-					.show_alert()
-					.expect("Unable to alert user"),
+				Ok(()) => alert::info("Successfully saved!"),
 				// If unable to save, save the state to disk just in case changes are lost
 				// TODO: Be able to load these backup files up
 				Err(err) => {
@@ -418,11 +394,7 @@ impl epi::App for CardEditor {
 					)
 					.expect("Unable to write back up to file");
 
-					MessageDialog::new()
-						.set_text(&format!("Unable to save file: {:?}\n\nBackup made in file.", err))
-						.set_type(MessageType::Error)
-						.show_alert()
-						.expect("Unable to alert user");
+					alert::error(&format!("Unable to save file: {:?}\n\nBackup made in file.", err));
 				},
 			}
 		}

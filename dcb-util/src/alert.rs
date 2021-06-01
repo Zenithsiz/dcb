@@ -29,3 +29,13 @@ pub fn info(msg: &str) {
 		.show_alert()
 		.expect("Unable to alert user");
 }
+
+/// Alerts and requests a confirmation for a warning
+#[must_use]
+pub fn warn_confirm(msg: &str) -> bool {
+	MessageDialog::new()
+		.set_text(msg)
+		.set_type(MessageType::Info)
+		.show_confirm()
+		.expect("Unable to alert user")
+}
