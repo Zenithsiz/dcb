@@ -13,7 +13,7 @@ use dcb::{
 	CardTable,
 };
 use dcb_bytes::Validate;
-use dcb_util::AsciiTextBuffer;
+use dcb_util::{AsciiTextBuffer, StrContainsCaseInsensitive};
 use eframe::{egui, epi, NativeOptions};
 use either::Either;
 use native_dialog::{FileDialog, MessageDialog, MessageType};
@@ -323,7 +323,7 @@ impl epi::App for CardEditor {
 					)
 					.enumerate()
 					.map(|(idx, name)| (idx, format!("{idx}. {name}")))
-					.filter(|(_, name)| self::contains_case_insensitive(name, card_search));
+					.filter(|(_, name)| name.contains_case_insensitive(card_search));
 
 				egui::ScrollArea::auto_sized().show(ui, |ui| {
 					for (idx, name) in names {
@@ -820,7 +820,7 @@ fn render_digimon_property(ui: &mut egui::Ui, cur_property: &mut DigimonProperty
 
 			let properties = DigimonProperty::iter()
 				.map(|property| (property, property.as_str()))
-				.filter(|(_, name)| self::contains_case_insensitive(name, &*search));
+				.filter(|(_, name)| name.contains_case_insensitive(&*search));
 
 			for (property, name) in properties {
 				ui.selectable_value(cur_property, property, name);
@@ -851,7 +851,7 @@ fn render_digimon_property_opt(ui: &mut egui::Ui, cur_property: &mut Option<Digi
 				.map(Some)
 				.chain(std::iter::once(None))
 				.map(|property| (property, TO_STR(property)))
-				.filter(|(_, name)| self::contains_case_insensitive(name, &*search));
+				.filter(|(_, name)| name.contains_case_insensitive(&*search));
 
 			for (property, name) in properties {
 				ui.selectable_value(cur_property, property, name);
@@ -1229,18 +1229,4 @@ pub fn hash_of<T: Hash>(value: &T) -> u64 {
 	let mut state = DefaultHasher::new();
 	value.hash(&mut state);
 	state.finish()
-}
-
-/// Checks if string `pattern` is contained in `haystack` without
-/// checking for case
-pub fn contains_case_insensitive(mut haystack: &str, pattern: &str) -> bool {
-	loop {
-		match haystack.get(..pattern.len()) {
-			Some(s) => match s.eq_ignore_ascii_case(pattern) {
-				true => return true,
-				false => haystack = &haystack[1..],
-			},
-			None => return false,
-		}
-	}
 }
