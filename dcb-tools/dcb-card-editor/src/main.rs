@@ -25,7 +25,7 @@ use overview_screen::OverviewScreen;
 use ref_cast::RefCast;
 use std::{
 	lazy::SyncLazy,
-	path::{Path, PathBuf},
+	path::Path,
 	sync::Mutex,
 	time::{Duration, SystemTime},
 };
@@ -48,9 +48,6 @@ fn main() {
 }
 
 pub struct CardEditor {
-	/// File path
-	file_path: Option<PathBuf>,
-
 	/// Loaded game
 	loaded_game: Option<LoadedGame>,
 
@@ -70,7 +67,6 @@ pub struct CardEditor {
 impl Default for CardEditor {
 	fn default() -> Self {
 		Self {
-			file_path:         None,
 			loaded_game:       None,
 			card_search:       String::new(),
 			open_edit_screens: vec![],
@@ -83,7 +79,6 @@ impl Default for CardEditor {
 impl epi::App for CardEditor {
 	fn update(&mut self, ctx: &egui::CtxRef, frame: &mut epi::Frame<'_>) {
 		let Self {
-			file_path,
 			loaded_game,
 			card_search,
 			open_edit_screens,
@@ -97,34 +92,45 @@ impl epi::App for CardEditor {
 				egui::menu::menu(ui, "File", |ui| {
 					// On open, ask the user and open the file
 					if ui.button("Open").clicked() {
-						let cur_dir_path = std::env::current_dir().expect("Unable to get current directory path");
-						*file_path = FileDialog::new()
-							.set_location(&cur_dir_path)
-							.add_filter("Game file", &["bin"])
-							.show_open_single_file()
-							.expect("Unable to ask user for file");
-
-						// Then load the card table if we got a file
-						if let Some(file_path) = file_path {
-							match LoadedGame::load(file_path) {
-								Ok(game) => *loaded_game = Some(game),
-								Err(err) => alert::error!("Unable to open file: {err:?}"),
+						// Ask the user if they want to override
+						if !loaded_game.as_ref().map_or(false, LoadedGame::modified) ||
+							alert::warn_confirm("Do you want to discard the changes to the current file")
+						{
+							// Then load the card table if we got a file
+							if let Some(file_path) = self::ask_game_file_path() {
+								match LoadedGame::load(file_path) {
+									Ok(game) => *loaded_game = Some(game),
+									Err(err) => alert::error!("Unable to open file: {err:?}"),
+								}
 							}
 						}
 					}
 
-					// On save, if we have a file, save it to there, else tell error
 					if ui.button("Save").clicked() {
-						match (&file_path, &mut *loaded_game) {
-							(Some(file_path), Some(loaded_game)) => match loaded_game.save(file_path) {
+						match loaded_game {
+							Some(loaded_game) => match loaded_game.save() {
 								Ok(()) => alert::info("Successfully saved!"),
 								Err(err) => alert::error!("Unable to save file: {err:?}"),
 							},
 							_ => alert::warn("You must first open a file to save"),
 						}
 					}
+					// TODO: Should `Save as` change the file path after successfully saving?
+					if ui.button("Save as").clicked() {
+						match loaded_game {
+							Some(loaded_game) => {
+								if let Some(file_path) = self::ask_game_file_path() {
+									match loaded_game.save_as(&file_path) {
+										Ok(()) => alert::info("Successfully saved to {file_path:?}!"),
+										Err(err) => alert::error!("Unable to save file: {err:?}"),
+									}
+								}
+							},
+							_ => alert::warn("You must first open a file to save"),
+						}
+					}
 
-					if ui.button("Quit").clicked() {
+					if ui.button("Quit").clicked() && alert::warn_confirm!("Are you sure you want to quit?") {
 						frame.quit();
 					}
 				});
@@ -194,18 +200,17 @@ impl epi::App for CardEditor {
 
 	fn on_exit(&mut self) {
 		// Ask user if they want to save before leaving if they had any changes
-		let wants_to_save = match (&self.file_path, &self.loaded_game) {
-			(Some(_), Some(loaded_game)) if loaded_game.modified() => alert::warn_confirm("Do you want to save?"),
+		let wants_to_save = match &self.loaded_game {
+			Some(loaded_game) if loaded_game.modified() => alert::warn_confirm("Do you want to save?"),
 
 			// If we have no file or card table wasn't loaded, user won't want to save
 			_ => false,
 		};
 
 		if wants_to_save {
-			let file_path = self.file_path.as_ref().expect("No file path was set");
 			let loaded_game = self.loaded_game.as_ref().expect("No card table");
 
-			match loaded_game.save(file_path) {
+			match loaded_game.save() {
 				Ok(()) => alert::info("Successfully saved!"),
 				// If unable to save, save the state to disk just in case changes are lost
 				// TODO: Be able to load these backup files up
@@ -992,4 +997,14 @@ fn render_effect_opt(ui: &mut egui::Ui, effect: &mut Option<Effect>) {
 				ui.selectable_value(effect, None, "None");
 			});
 	});
+}
+
+/// Asks the user for the game file path
+fn ask_game_file_path() -> Option<std::path::PathBuf> {
+	let cur_dir_path = std::env::current_dir().expect("Unable to get current directory path");
+	FileDialog::new()
+		.set_location(&cur_dir_path)
+		.add_filter("Game file", &["bin"])
+		.show_open_single_file()
+		.expect("Unable to ask user for file")
 }

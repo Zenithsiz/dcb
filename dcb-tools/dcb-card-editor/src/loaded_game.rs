@@ -12,11 +12,14 @@ use std::{
 	fs,
 	io::{self, Read, Seek},
 	ops::Range,
-	path::Path,
+	path::{Path, PathBuf},
 };
 
 /// Loaded game
 pub struct LoadedGame {
+	/// File path
+	file_path: PathBuf,
+
 	/// Card table
 	card_table: CardTable,
 
@@ -31,9 +34,9 @@ impl LoadedGame {
 	pub const CARD_TABLE_SIZE: u64 = 0x14958;
 
 	/// Loads a game from a path
-	pub fn load(path: &Path) -> Result<Self, anyhow::Error> {
+	pub fn load(file_path: PathBuf) -> Result<Self, anyhow::Error> {
 		// Open the file
-		let file = fs::File::open(path).context("Unable to open file")?;
+		let file = fs::File::open(&file_path).context("Unable to open file")?;
 		let mut file = dcb_cdrom_xa::CdRomCursor::new(file);
 
 		// Seek to the card file position and limit our reading to the file size
@@ -47,13 +50,19 @@ impl LoadedGame {
 		let saved_card_table_hash = dcb_util::hash_of(&card_table);
 
 		Ok(Self {
+			file_path,
 			card_table,
 			saved_card_table_hash: Cell::new(saved_card_table_hash),
 		})
 	}
 
-	/// Saves this game to a path
-	pub fn save(&self, path: &Path) -> Result<(), anyhow::Error> {
+	/// Saves this game
+	pub fn save(&self) -> Result<(), anyhow::Error> {
+		self.save_as(&self.file_path)
+	}
+
+	/// Saves this game to `path`
+	pub fn save_as(&self, path: &Path) -> Result<(), anyhow::Error> {
 		// If we haven't been modified, return
 		if !self.modified() {
 			return Ok(());
@@ -151,7 +160,7 @@ impl LoadedGame {
 
 	/// Displays the card selection menu
 	pub fn display_card_selection(
-		&self, card_search: &mut String, ui: &mut egui::Ui, open_edit_screens: &mut Vec<EditScreen>,
+		&self, card_search: &str, ui: &mut egui::Ui, open_edit_screens: &mut Vec<EditScreen>,
 	) {
 		let names = self
 			.card_table

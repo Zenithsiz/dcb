@@ -61,3 +61,18 @@ pub fn warn_confirm(msg: &str) -> bool {
 pub macro warn_confirm($($args:tt)*) {
 	$crate::alert::warn_confirm(&::std::format!($($args)*))
 }
+
+/// Alerts and requests a confirmation for info
+#[must_use]
+pub fn info_confirm(msg: &str) -> bool {
+	MessageDialog::new()
+		.set_text(msg)
+		.set_type(MessageType::Info)
+		.show_confirm()
+		.expect("Unable to alert user")
+}
+
+/// Alerts and requests a confirmation for a info with interpolation
+pub macro info_confirm($($args:tt)*) {
+	$crate::alert::info_confirm(&::std::format!($($args)*))
+}
