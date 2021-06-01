@@ -519,14 +519,15 @@ impl Bytes for Effect {
 				Opponent => 43,
 			},
 
-			Self::VoidOpponentSupportEffect       => *bytes.effect_type = 42,
-			Self::VoidOpponentSupportOptionEffect => *bytes.effect_type = 43,
+			Self::VoidOpponentSupportEffect       => *bytes.effect_type = 44,
+			Self::VoidOpponentSupportOptionEffect => *bytes.effect_type = 45,
 
 			Self::PickPartnerCard => *bytes.effect_type = 46,
 
 			Self::CycleOpponentAttackType => *bytes.effect_type = 47,
 
 			Self::KoDigimonRevives { health } => {
+				*bytes.effect_type = 48;
 				LittleEndian::write_u16(bytes.y, health);
 			},
 
