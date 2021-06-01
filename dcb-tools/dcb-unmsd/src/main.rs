@@ -79,7 +79,7 @@ fn main() -> Result<(), anyhow::Error> {
 	};
 	let labels: HashMap<u32, String> = commands
 		.iter()
-		.filter_map(|(pos, command)| match *command {
+		.filter_map(|&(pos, ref command)| match *command {
 			Command::Jump { addr, .. } => Some((addr, next_label("jump"))),
 			Command::DisplayScene {
 				value0: 0xf | 0xe,
