@@ -5,7 +5,8 @@
 	format_args_capture,
 	seek_stream_len,
 	unboxed_closures,
-	fn_traits
+	fn_traits,
+	decl_macro
 )]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]
@@ -109,7 +110,13 @@ pub use string_contains_case_insensitive::StrContainsCaseInsensitive;
 pub use write_take::WriteTake;
 
 // Imports
-use std::{collections::hash_map::DefaultHasher, error, fmt, fs, hash::{Hash, Hasher}, io, path::Path};
+use std::{
+	collections::hash_map::DefaultHasher,
+	error, fmt, fs,
+	hash::{Hash, Hasher},
+	io,
+	path::Path,
+};
 
 /// Error for [`parse_from_file`]
 #[derive(Debug, thiserror::Error)]

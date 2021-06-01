@@ -204,7 +204,7 @@ impl epi::App for CardEditor {
 										saved_card_table_hash: hash,
 									});
 								},
-								Err(err) => alert::error(&format!("Unable to open file: {:?}", err)),
+								Err(err) => alert::error!("Unable to open file: {err:?}"),
 							}
 						}
 					}
@@ -219,7 +219,7 @@ impl epi::App for CardEditor {
 										loaded_game.saved_card_table_hash = dcb_util::hash_of(&loaded_game.card_table);
 										alert::info("Successfully saved!");
 									},
-									Err(err) => alert::error(&format!("Unable to save file: {:?}", err)),
+									Err(err) => alert::error!("Unable to save file: {err:?}"),
 								}
 							},
 							_ => alert::warn("You must first open a file to save"),
@@ -387,14 +387,15 @@ impl epi::App for CardEditor {
 						.duration_since(SystemTime::UNIX_EPOCH)
 						.as_ref()
 						.map_or(u64::MAX, Duration::as_secs);
-					let file = fs::File::create(&format!("cards-{time}.bak")).expect("Unable to create backup file");
+					let path = format!("cards-{time}.bak");
+					let file = fs::File::create(&path).expect("Unable to create backup file");
 					serde_yaml::to_writer(
 						file,
 						&self.loaded_game.as_ref().map(|loaded_game| &loaded_game.card_table),
 					)
 					.expect("Unable to write back up to file");
 
-					alert::error(&format!("Unable to save file: {:?}\n\nBackup made in file.", err));
+					alert::error!("Unable to save file: {err:?}\n\nBackup made in file {path:?}.");
 				},
 			}
 		}
