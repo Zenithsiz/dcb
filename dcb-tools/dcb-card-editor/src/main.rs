@@ -6,6 +6,7 @@
 // Modules
 mod edit_screen;
 mod loaded_game;
+mod overview_screen;
 mod swap_screen;
 
 // Imports
@@ -20,6 +21,7 @@ use eframe::{egui, epi, NativeOptions};
 use either::Either;
 use loaded_game::LoadedGame;
 use native_dialog::FileDialog;
+use overview_screen::OverviewScreen;
 use ref_cast::RefCast;
 use std::{
 	lazy::SyncLazy,
@@ -58,8 +60,11 @@ pub struct CardEditor {
 	/// All selected edit screens
 	open_edit_screens: Vec<EditScreen>,
 
-	/// swap screen
+	/// Swap screen
 	swap_screen: Option<SwapScreen>,
+
+	/// Overview screen
+	overview_screen: Option<OverviewScreen>,
 }
 
 impl Default for CardEditor {
@@ -70,6 +75,7 @@ impl Default for CardEditor {
 			card_search:       String::new(),
 			open_edit_screens: vec![],
 			swap_screen:       None,
+			overview_screen:   None,
 		}
 	}
 }
@@ -82,6 +88,7 @@ impl epi::App for CardEditor {
 			card_search,
 			open_edit_screens,
 			swap_screen,
+			overview_screen,
 		} = self;
 
 		// Top panel
@@ -127,19 +134,41 @@ impl epi::App for CardEditor {
 						*swap_screen = Some(SwapScreen::new(CardType::Digimon, 0, 0));
 					}
 				});
+
+				egui::menu::menu(ui, "View", |ui| {
+					if let Some(loaded_game) = loaded_game {
+						if ui.button("Overview").clicked() {
+							*overview_screen = Some(OverviewScreen::new(loaded_game));
+						}
+					}
+				});
 			});
 		});
 
 		// Draw swap screen
 		if let (Some(screen), Some(loaded_game)) = (swap_screen.as_mut(), loaded_game.as_mut()) {
 			let mut should_close = false;
-			egui::Window::new("Swap screen").show(ctx, |ui| {
+			let mut is_open = true;
+			egui::Window::new("Swap screen").open(&mut is_open).show(ctx, |ui| {
 				let results = screen.display(ui, loaded_game);
 				should_close = results.should_close;
 			});
 
-			if should_close {
+			if !is_open || should_close {
 				*swap_screen = None;
+			}
+		}
+
+		// Draw overview screen
+		if let (Some(screen), Some(loaded_game)) = (overview_screen.as_mut(), loaded_game.as_mut()) {
+			let mut is_open = true;
+			egui::Window::new("Overview screen").open(&mut is_open).show(ctx, |ui| {
+				screen.display(ui, loaded_game);
+			});
+
+			// If the window closed, destroy it
+			if !is_open {
+				*overview_screen = None;
 			}
 		}
 

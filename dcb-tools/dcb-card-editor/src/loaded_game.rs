@@ -184,4 +184,9 @@ impl LoadedGame {
 			}
 		});
 	}
+
+	/// Get a reference to the loaded game's card table.
+	pub fn card_table(&self) -> &CardTable {
+		&self.card_table
+	}
 }
