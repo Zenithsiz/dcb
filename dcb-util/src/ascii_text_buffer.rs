@@ -1,6 +1,7 @@
 //! Ascii text buffer
 
-use dcb_util::{ascii_str_arr::AsciiChar, AsciiStrArr};
+// Imports
+use crate::{ascii_str_arr::AsciiChar, AsciiStrArr};
 
 /// An ascii text buffer
 #[derive(PartialEq, Default, Clone, Debug, derive_more::Display)]

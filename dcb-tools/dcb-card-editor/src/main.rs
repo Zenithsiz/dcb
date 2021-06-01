@@ -3,12 +3,6 @@
 // Features
 #![feature(array_map, with_options, format_args_capture, once_cell, never_type)]
 
-// Modules
-pub mod ascii_text_buffer;
-
-// Exports
-pub use ascii_text_buffer::AsciiTextBuffer;
-
 // Imports
 use anyhow::Context;
 use dcb::{
@@ -19,6 +13,7 @@ use dcb::{
 	CardTable,
 };
 use dcb_bytes::Validate;
+use dcb_util::AsciiTextBuffer;
 use eframe::{egui, epi, NativeOptions};
 use either::Either;
 use native_dialog::{FileDialog, MessageDialog, MessageType};

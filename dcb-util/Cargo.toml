@@ -15,6 +15,7 @@ ascii = { version = "1.0.0", features = ["serde"] }
 int-conv = "0.1.4"
 either = "1.6.1"
 sealed = "0.2.1"
+derive_more = "0.99.14"
 
 # Serde
 serde = { version = "1.0.120", features = ["derive"] }
@@ -30,3 +31,9 @@ thread_local = "1.1.3"
 
 # Logging
 log = "0.4.14"
+
+# Gui
+eframe = { git = "https://github.com/emilk/egui", optional = true }
+
+[features]
+gui = ["eframe"]

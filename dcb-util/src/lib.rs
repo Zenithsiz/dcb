@@ -66,6 +66,8 @@
 // Modules
 pub mod array_split;
 pub mod ascii_str_arr;
+#[cfg(feature = "gui")]
+pub mod ascii_text_buffer;
 pub mod bcd;
 pub mod btree_map_par_iter;
 pub mod btree_map_vector;
@@ -83,11 +85,11 @@ pub mod signed_hex;
 pub mod string_contains_case_insensitive;
 pub mod task;
 pub mod write_take;
-//pub mod peekable_iter;
 
 // Exports
-//pub use array_split::{array_split, array_split_mut};
 pub use ascii_str_arr::AsciiStrArr;
+#[cfg(feature = "gui")]
+pub use ascii_text_buffer::AsciiTextBuffer;
 pub use bcd::BcdU8;
 pub use btree_map_par_iter::BTreeMapParIter;
 pub use btree_map_vector::BTreeMapVector;
@@ -103,7 +105,6 @@ pub use null_ascii_string::NullAsciiString;
 pub use signed_hex::SignedHex;
 pub use string_contains_case_insensitive::StrContainsCaseInsensitive;
 pub use write_take::WriteTake;
-//pub use peekable_iter::PeekableIter;
 
 // Imports
 use std::{error, fmt, fs, io, path::Path};
