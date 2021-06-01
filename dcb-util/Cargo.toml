@@ -35,5 +35,9 @@ log = "0.4.14"
 # Gui
 eframe = { git = "https://github.com/emilk/egui", optional = true }
 
+# Alert
+native-dialog = { version = "0.5.5", optional = true }
+
 [features]
 gui = ["eframe"]
+alert = ["native-dialog"]

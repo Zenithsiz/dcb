@@ -4,6 +4,7 @@
 use crate::GameFile;
 use anyhow::Context;
 use dcb_io::game_file::Path;
+use dcb_util::alert;
 use eframe::egui;
 use std::mem;
 
@@ -60,11 +61,11 @@ impl SwapWindow {
 						};
 
 						match res {
-							Ok(()) => crate::alert_info("Successfully swapped!"),
-							Err(err) => crate::alert_error(&format!("Unable to swap files: {:?}", err)),
+							Ok(()) => alert::info("Successfully swapped!"),
+							Err(err) => alert::error(&format!("Unable to swap files: {:?}", err)),
 						}
 					},
-					_ => crate::alert_warn("You must set both files before swapping"),
+					_ => alert::warn("You must set both files before swapping"),
 				}
 			}
 		});

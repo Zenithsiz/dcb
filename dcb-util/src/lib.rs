@@ -64,6 +64,8 @@
 #![allow(clippy::map_err_ignore)]
 
 // Modules
+#[cfg(feature = "alert")]
+pub mod alert;
 pub mod array_split;
 pub mod ascii_str_arr;
 #[cfg(feature = "gui")]

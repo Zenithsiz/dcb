@@ -20,10 +20,10 @@ pub mod swap_window;
 
 // Imports
 use anyhow::Context;
-use dcb_util::task;
+use dcb_util::{alert, task};
 use eframe::{egui, epi, NativeOptions};
 use game_file::GameFile;
-use native_dialog::{FileDialog, MessageDialog, MessageType};
+use native_dialog::FileDialog;
 use preview_panel::{PreviewPanel, PreviewPanelBuilder};
 use std::{fs, io::Write, path::PathBuf, sync::Arc};
 use swap_window::SwapWindow;
@@ -97,7 +97,7 @@ impl epi::App for FileEditor {
 			*game_file_future = None;
 			match res {
 				Ok(game) => *game_file = Some(Arc::new(game)),
-				Err(err) => self::alert_error(&format!("Unable to open file: {:?}", err)),
+				Err(err) => alert::error(&format!("Unable to open file: {:?}", err)),
 			};
 		}
 
@@ -194,7 +194,7 @@ impl epi::App for FileEditor {
 		if let Some(game_file) = &mut self.game_file {
 			match game_file.game_file().cdrom().flush() {
 				Ok(()) => (),
-				Err(err) => self::alert_error(&format!("Unable to flush file tod isk: {:?}", err)),
+				Err(err) => alert::error(&format!("Unable to flush file tod isk: {:?}", err)),
 			}
 		}
 	}
@@ -202,31 +202,4 @@ impl epi::App for FileEditor {
 	fn name(&self) -> &str {
 		"Dcb file editor"
 	}
-}
-
-/// Alerts an error to the user
-fn alert_error(msg: &str) {
-	MessageDialog::new()
-		.set_text(msg)
-		.set_type(MessageType::Error)
-		.show_alert()
-		.expect("Unable to alert user")
-}
-
-/// Alerts a warning to the user
-fn alert_warn(msg: &str) {
-	MessageDialog::new()
-		.set_text(msg)
-		.set_type(MessageType::Warning)
-		.show_alert()
-		.expect("Unable to alert user")
-}
-
-/// Alerts info to the user
-fn alert_info(msg: &str) {
-	MessageDialog::new()
-		.set_text(msg)
-		.set_type(MessageType::Info)
-		.show_alert()
-		.expect("Unable to alert user")
 }
