@@ -8,9 +8,10 @@ pub use error::{DeserializeError, SerializeError};
 
 // Imports
 use crate::Deck;
+use byteorder::{ByteOrder, LittleEndian};
 use dcb_bytes::Bytes;
-use dcb_io::GameFile;
-use std::io;
+use dcb_util::array_split_mut;
+use std::{convert::TryInto, io};
 
 /// The decks table, where all decks are stored
 #[derive(PartialEq, Eq, Clone, Debug)]
@@ -18,7 +19,7 @@ use std::io;
 #[allow(clippy::unsafe_derive_deserialize)] // False positive
 pub struct Table {
 	/// All decks
-	decks: Vec<Deck>,
+	pub decks: Vec<Deck>,
 }
 
 // Constants
@@ -28,27 +29,15 @@ impl Table {
 	/// The magic in the table header
 	/// = "33KD"
 	pub const HEADER_MAGIC: u32 = 0x444b3033;
-	/*
-	/// The max size of the deck table
-	// TODO: Verify this
-	pub const MAX_BYTE_SIZE: usize = 0x4452;
-	/// The start address of the decks table
-	const START_ADDRESS: Data = Data::from_u64(0x21a6800);
-	*/
 }
 
 impl Table {
 	/// Deserializes the deck table from `file`.
-	pub fn deserialize<R: io::Read>(_file: &mut GameFile<R>) -> Result<Self, DeserializeError> {
-		todo!();
-		/*
-		// Seek to the beginning of the deck table
-		file.seek(std::io::SeekFrom::Start(Self::START_ADDRESS.as_u64()))
-			.map_err(DeserializeError::Seek)?;
-
+	pub fn deserialize<R: io::Read>(file: &mut R) -> Result<Self, DeserializeError> {
 		// Read header
 		let mut header_bytes = [0u8; Self::HEADER_BYTE_SIZE];
-		file.read_exact(&mut header_bytes).map_err(DeserializeError::ReadHeader)?;
+		file.read_exact(&mut header_bytes)
+			.map_err(DeserializeError::ReadHeader)?;
 
 		// Check if the magic is right
 		let magic = LittleEndian::read_u32(&header_bytes[0x0..0x4]);
@@ -60,17 +49,13 @@ impl Table {
 		let decks_count: usize = header_bytes[0x4].into();
 		log::trace!("Found {decks_count} decks");
 
-		// If there are too many decks, return Err
-		if decks_count * std::mem::size_of::<<Deck as Bytes>::ByteArray>() > Self::MAX_BYTE_SIZE {
-			return Err(DeserializeError::TooManyDecks { decks_count });
-		}
-
 		// Then get each deck
 		let mut decks = vec![];
 		for id in 0..decks_count {
 			// Read all bytes of the deck
 			let mut bytes = [0; 0x6e];
-			file.read_exact(&mut bytes).map_err(|err| DeserializeError::ReadDeck { id, err })?;
+			file.read_exact(&mut bytes)
+				.map_err(|err| DeserializeError::ReadDeck { id, err })?;
 
 			// And try to serialize the deck
 			let deck = Deck::from_bytes(&bytes).map_err(|err| DeserializeError::DeserializeDeck { id, err })?;
@@ -84,25 +69,10 @@ impl Table {
 
 		// And return the table
 		Ok(Self { decks })
-		*/
 	}
 
 	/// Serializes the deck table to `file`
-	pub fn serialize<R: io::Write>(&self, _file: &mut GameFile<R>) -> Result<(), SerializeError> {
-		let _ = self;
-		todo!();
-		/*
-		// If the total table size is bigger than the max, return Err
-		if self.decks.len() * std::mem::size_of::<<Deck as Bytes>::ByteArray>() > Self::MAX_BYTE_SIZE {
-			return Err(SerializeError::TooManyDecks {
-				decks_count: self.decks.len(),
-			});
-		}
-
-		// Seek to the beginning of the deck table
-		file.seek(std::io::SeekFrom::Start(Self::START_ADDRESS.as_u64()))
-			.map_err(SerializeError::Seek)?;
-
+	pub fn serialize<R: io::Write>(&self, file: &mut R) -> Result<(), SerializeError> {
 		// Write header
 		let mut header_bytes = [0u8; 0x8];
 		let header = array_split_mut!(&mut header_bytes,
@@ -129,11 +99,11 @@ impl Table {
 			deck.to_bytes(&mut bytes).into_ok();
 
 			// And write them to file
-			file.write(&bytes).map_err(|err| SerializeError::WriteDeck { id, err })?;
+			file.write(&bytes)
+				.map_err(|err| SerializeError::WriteDeck { id, err })?;
 		}
 
 		// And return Ok
 		Ok(())
-		*/
 	}
 }
