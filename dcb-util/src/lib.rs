@@ -107,7 +107,7 @@ pub use string_contains_case_insensitive::StrContainsCaseInsensitive;
 pub use write_take::WriteTake;
 
 // Imports
-use std::{error, fmt, fs, io, path::Path};
+use std::{collections::hash_map::DefaultHasher, error, fmt, fs, hash::{Hash, Hasher}, io, path::Path};
 
 /// Error for [`parse_from_file`]
 #[derive(Debug, thiserror::Error)]
@@ -270,4 +270,11 @@ pub fn try_create_folder(path: impl AsRef<std::path::Path>) -> Result<(), std::i
 		Err(err) if err.kind() == std::io::ErrorKind::AlreadyExists => Ok(()),
 		Err(err) => Err(err),
 	}
+}
+
+/// Calculates the hash of any single value
+pub fn hash_of<T: Hash>(value: &T) -> u64 {
+	let mut state = DefaultHasher::new();
+	value.hash(&mut state);
+	state.finish()
 }

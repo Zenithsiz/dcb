@@ -19,9 +19,7 @@ use either::Either;
 use native_dialog::{FileDialog, MessageDialog, MessageType};
 use ref_cast::RefCast;
 use std::{
-	collections::hash_map::DefaultHasher,
 	fs,
-	hash::{Hash, Hasher},
 	io::{self, Read, Seek},
 	lazy::SyncLazy,
 	ops::Range,
@@ -200,7 +198,7 @@ impl epi::App for CardEditor {
 						if let Some(file_path) = file_path {
 							match Self::parse_card_table(file_path) {
 								Ok(card_table) => {
-									let hash = self::hash_of(&card_table);
+									let hash = dcb_util::hash_of(&card_table);
 									*loaded_game = Some(LoadedGame {
 										card_table,
 										saved_card_table_hash: hash,
@@ -222,7 +220,7 @@ impl epi::App for CardEditor {
 								match Self::save_card_table(file_path, &loaded_game.card_table) {
 									// After saving, update our hash
 									Ok(()) => {
-										loaded_game.saved_card_table_hash = self::hash_of(&loaded_game.card_table);
+										loaded_game.saved_card_table_hash = dcb_util::hash_of(&loaded_game.card_table);
 										MessageDialog::new()
 											.set_text("Successfully saved!")
 											.set_type(MessageType::Info)
@@ -382,7 +380,7 @@ impl epi::App for CardEditor {
 		// Ask user if they want to save before leaving if they had any changes
 		let wants_to_save = match (&self.file_path, &self.loaded_game) {
 			(Some(_), Some(loaded_game))
-				if self::hash_of(&loaded_game.card_table) != loaded_game.saved_card_table_hash =>
+				if dcb_util::hash_of(&loaded_game.card_table) != loaded_game.saved_card_table_hash =>
 			{
 				MessageDialog::new()
 					.set_text("Do you want to save?")
@@ -1222,11 +1220,4 @@ fn render_effect_opt(ui: &mut egui::Ui, effect: &mut Option<Effect>) {
 				ui.selectable_value(effect, None, "None");
 			});
 	});
-}
-
-/// Calculates the hash of any single value
-pub fn hash_of<T: Hash>(value: &T) -> u64 {
-	let mut state = DefaultHasher::new();
-	value.hash(&mut state);
-	state.finish()
 }
