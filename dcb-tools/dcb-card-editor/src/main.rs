@@ -230,8 +230,8 @@ fn render_card(ui: &mut egui::Ui, card: Card) {
 		Card::Digivolve(digivolve) => self::render_digivolve_card(ui, digivolve),
 	}
 
-	// Add some space at bottom for cut-off stuff at the bottom
-	ui.add_space(400.0);
+	// Add a screen's worth of space at the bottom for cut-off content
+	ui.add_space(ui.clip_rect().height());
 }
 
 /// Renders a digimon card
