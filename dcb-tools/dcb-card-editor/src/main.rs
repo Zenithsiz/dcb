@@ -210,10 +210,8 @@ impl epi::App for CardEditor {
 			_ => false,
 		};
 
-		if wants_to_save {
-			let loaded_game = self.loaded_game.as_ref().expect("No card table");
-
-			match loaded_game.save() {
+		match (wants_to_save, &self.loaded_game) {
+			(true, Some(loaded_game)) => match loaded_game.save() {
 				Ok(()) => alert::info("Successfully saved!"),
 				// If unable to save, save the state to disk just in case changes are lost
 				// TODO: Be able to load these backup files up
@@ -231,7 +229,9 @@ impl epi::App for CardEditor {
 						Err(err) => alert::error!("Unable to create backup: {err:?}"),
 					}
 				},
-			}
+			},
+			(true, None) => alert::error("Cannot save without a loaded game"),
+			(false, _) => (),
 		}
 	}
 
