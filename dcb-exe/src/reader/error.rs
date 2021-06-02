@@ -2,6 +2,7 @@
 
 // Imports
 use crate::header;
+use dcb_bytes::bytes_io_ext::ReadDeserializeError;
 
 /// Error type for [`ExeReader::deserialize`](super::ExeReader::deserialize)
 #[derive(Debug, thiserror::Error)]
@@ -12,11 +13,7 @@ pub enum DeserializeError {
 
 	/// Unable to read header
 	#[error("Unable to read header")]
-	ReadHeader(#[source] std::io::Error),
-
-	/// Unable to parse header
-	#[error("Unable to parse header")]
-	ParseHeader(#[source] header::DeserializeBytesError),
+	ReadHeader(#[from] ReadDeserializeError<header::DeserializeBytesError>),
 
 	/// Unable to read data
 	#[error("Unable to read data")]

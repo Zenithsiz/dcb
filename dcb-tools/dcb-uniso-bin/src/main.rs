@@ -54,8 +54,7 @@ fn main() -> Result<(), anyhow::Error> {
 	let mut header_file = fs::File::create(header_file_path).context("Unable to create output header file")?;
 	{
 		let date_time_to_string = |date_time: DecDateTime| {
-			let mut bytes = [0; 0x11];
-			date_time.serialize_bytes(&mut bytes).into_ok();
+			let bytes = date_time.to_bytes().into_ok();
 			std::str::from_utf8(&bytes)
 				.expect("Date time was invalid utf8")
 				.to_owned()

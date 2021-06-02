@@ -11,7 +11,7 @@ pub use opts::DeserializeOpts;
 
 // Imports
 use crate::{inst, Data, DataTable, Func, FuncTable, Header, Pos};
-use dcb_bytes::{ByteArray, Bytes};
+use dcb_bytes::BytesReadExt;
 use std::{convert::TryFrom, io, ops::Range};
 
 /// Executable reader
@@ -42,11 +42,7 @@ impl ExeReader {
 	/// Allows external data and function tables to be used during this deserialization.
 	pub fn deserialize<R: io::Read + io::Seek>(file: &mut R, opts: DeserializeOpts) -> Result<Self, DeserializeError> {
 		// Read header
-		let header = {
-			let mut bytes = [0u8; <<Header as Bytes>::ByteArray as ByteArray>::SIZE];
-			file.read_exact(&mut bytes).map_err(DeserializeError::ReadHeader)?;
-			Header::deserialize_bytes(&bytes).map_err(DeserializeError::ParseHeader)?
-		};
+		let header = file.read_deserialize::<Header>()?;
 
 		// Read all of the bytes
 		let mut bytes =
