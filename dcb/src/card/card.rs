@@ -9,7 +9,7 @@ pub use error::{DeserializeError, SerializeError};
 // Imports
 use super::property::CardType;
 use crate::{Digimon, Digivolve, Item};
-use dcb_bytes::{ByteArray, Bytes};
+use dcb_bytes::{BytesReadExt, BytesWriteExt};
 use dcb_util::AsciiStrArr;
 use std::io;
 
@@ -31,27 +31,9 @@ impl Card {
 	/// Deserializes a card
 	pub fn deserialize<R: io::Read>(card_type: CardType, reader: &mut R) -> Result<Self, DeserializeError> {
 		let card = match card_type {
-			CardType::Digimon => {
-				let mut bytes = <Digimon as Bytes>::ByteArray::zeros();
-				reader.read_exact(&mut bytes).map_err(DeserializeError::Read)?;
-				Digimon::deserialize_bytes(&bytes)
-					.map(Self::Digimon)
-					.map_err(DeserializeError::ParseDigimon)?
-			},
-			CardType::Item => {
-				let mut bytes = <Item as Bytes>::ByteArray::zeros();
-				reader.read_exact(&mut bytes).map_err(DeserializeError::Read)?;
-				Item::deserialize_bytes(&bytes)
-					.map(Self::Item)
-					.map_err(DeserializeError::ParseItem)?
-			},
-			CardType::Digivolve => {
-				let mut bytes = <Digivolve as Bytes>::ByteArray::zeros();
-				reader.read_exact(&mut bytes).map_err(DeserializeError::Read)?;
-				Digivolve::deserialize_bytes(&bytes)
-					.map(Self::Digivolve)
-					.map_err(DeserializeError::ParseDigivolve)?
-			},
+			CardType::Digimon => reader.read_bytes().map(Self::Digimon)?,
+			CardType::Item => reader.read_bytes().map(Self::Item)?,
+			CardType::Digivolve => reader.read_bytes().map(Self::Digivolve)?,
 		};
 
 		Ok(card)
@@ -60,18 +42,9 @@ impl Card {
 	/// Serializes a card
 	pub fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<(), SerializeError> {
 		match self {
-			Card::Digimon(digimon) => {
-				let bytes = digimon.to_bytes().map_err(SerializeError::SerializeDigimon)?;
-				writer.write_all(&bytes).map_err(SerializeError::Write)?;
-			},
-			Card::Item(item) => {
-				let bytes = item.to_bytes().map_err(SerializeError::SerializeItem)?;
-				writer.write_all(&bytes).map_err(SerializeError::Write)?;
-			},
-			Card::Digivolve(digivolve) => {
-				let bytes = digivolve.to_bytes().into_ok();
-				writer.write_all(&bytes).map_err(SerializeError::Write)?;
-			},
+			Card::Digimon(digimon) => writer.write_bytes(digimon)?,
+			Card::Item(item) => writer.write_bytes(item)?,
+			Card::Digivolve(digivolve) => writer.write_bytes(digivolve)?,
 		}
 
 		Ok(())

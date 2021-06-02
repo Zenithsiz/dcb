@@ -1,40 +1,37 @@
 //! Errors
 
 // Imports
-use crate::card;
+use crate::card::{digimon, digivolve, item};
+use dcb_bytes::bytes_io_ext::{ReadBytesError, WriteBytesError};
 
 /// Error type for [`Card::deserialize`](super::Card::deserialize)
 #[derive(Debug, thiserror::Error)]
 pub enum DeserializeError {
-	/// Unable to read card
-	#[error("Unable to read card")]
-	Read(#[source] std::io::Error),
+	/// Unable to read a digimon card
+	#[error("Unable to read digimon card")]
+	Digimon(#[from] ReadBytesError<digimon::DeserializeBytesError>),
 
-	/// Unable to deserialize a digimon card
-	#[error("Unable to deserialize digimon card")]
-	ParseDigimon(#[source] card::digimon::DeserializeBytesError),
+	/// Unable to read an item card
+	#[error("Unable to read item card")]
+	Item(#[from] ReadBytesError<item::DeserializeBytesError>),
 
-	/// Unable to deserialize an item card
-	#[error("Unable to deserialize item card")]
-	ParseItem(#[source] card::item::DeserializeBytesError),
-
-	/// Unable to deserialize a digivolve card
-	#[error("Unable to deserialize digivolve card")]
-	ParseDigivolve(#[source] card::digivolve::DeserializeBytesError),
+	/// Unable to read a digivolve card
+	#[error("Unable to read digivolve card")]
+	Digivolve(#[from] ReadBytesError<digivolve::DeserializeBytesError>),
 }
 
 /// Error type for [`Card::serialize`](super::Card::serialize)
 #[derive(Debug, thiserror::Error)]
 pub enum SerializeError {
-	/// Unable to write a card
-	#[error("Unable to write card")]
-	Write(#[source] std::io::Error),
+	/// Unable to write a digimon card
+	#[error("Unable to write digimon card")]
+	Digimon(#[from] WriteBytesError<digimon::SerializeBytesError>),
 
-	/// Unable to serialize a digimon card
-	#[error("Unable to serialize digimon card")]
-	SerializeDigimon(#[source] card::digimon::SerializeBytesError),
+	/// Unable to write an item card
+	#[error("Unable to write item card")]
+	Item(#[from] WriteBytesError<item::SerializeBytesError>),
 
-	/// Unable to serialize an item card
-	#[error("Unable to serialize item card")]
-	SerializeItem(#[source] card::item::SerializeBytesError),
+	/// Unable to write a digivolve card
+	#[error("Unable to read digivolve card")]
+	Digivolve(#[from] WriteBytesError<!>),
 }

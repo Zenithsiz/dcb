@@ -14,6 +14,8 @@ pub trait BytesReadExt: io::Read {
 	}
 }
 
+impl<R: io::Read> BytesReadExt for R {}
+
 /// Bytes write extension trait
 pub trait BytesWriteExt: io::Write {
 	/// Writes `B` to this stream
@@ -22,6 +24,8 @@ pub trait BytesWriteExt: io::Write {
 		self.write_all(bytes.as_slice()).map_err(WriteBytesError::Write)
 	}
 }
+
+impl<W: io::Write> BytesWriteExt for W {}
 
 /// Read bytes error
 #[derive(Debug, thiserror::Error)]
