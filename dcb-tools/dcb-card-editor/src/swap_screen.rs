@@ -1,16 +1,11 @@
 //! Swap self
 
 // Imports
-use dcb::card::property::CardType;
-use eframe::egui;
-
 use crate::loaded_game::LoadedGame;
+use eframe::egui;
 
 /// A swap self
 pub struct SwapScreen {
-	/// Card type
-	card_type: CardType,
-
 	/// Left idx
 	lhs_idx: usize,
 
@@ -21,22 +16,13 @@ pub struct SwapScreen {
 impl SwapScreen {
 	/// Creates a new swap screen
 	#[must_use]
-	pub fn new(card_type: CardType, lhs_idx: usize, rhs_idx: usize) -> Self {
-		Self {
-			card_type,
-			lhs_idx,
-			rhs_idx,
-		}
+	pub fn new(lhs_idx: usize, rhs_idx: usize) -> Self {
+		Self { lhs_idx, rhs_idx }
 	}
 
 	/// Displays this swap screen
 	pub fn display(&mut self, ui: &mut egui::Ui, loaded_game: &mut LoadedGame) -> Results {
 		let mut should_close = false;
-
-		ui.horizontal(|ui| {
-			ui.label("Card type");
-			crate::render_card_type(ui, &mut self.card_type);
-		});
 
 		let range = 0..loaded_game.card_table.cards.len();
 		if range.is_empty() {

@@ -124,7 +124,7 @@ impl epi::App for CardEditor {
 							Some(loaded_game) => {
 								if let Some(file_path) = self::ask_game_file_path() {
 									match loaded_game.save_as(&file_path) {
-										Ok(()) => alert::info("Successfully saved to {file_path:?}!"),
+										Ok(()) => alert::info!("Successfully saved to {file_path:?}!"),
 										Err(err) => alert::error!("Unable to save file: {err:?}"),
 									}
 								}
@@ -140,7 +140,7 @@ impl epi::App for CardEditor {
 
 				egui::menu::menu(ui, "Edit", |ui| {
 					if loaded_game.is_some() && ui.button("Swap").clicked() {
-						*swap_screen = Some(SwapScreen::new(CardType::Digimon, 0, 0));
+						*swap_screen = Some(SwapScreen::new(0, 0));
 					}
 				});
 
@@ -532,6 +532,7 @@ fn render_player_type(ui: &mut egui::Ui, cur_player: &mut PlayerType) {
 }
 
 /// Displays a card type
+#[allow(dead_code)] // It'll be used eventually / moved somewhere where it is public
 fn render_card_type(ui: &mut egui::Ui, cur_card: &mut CardType) {
 	egui::ComboBox::from_id_source(cur_card as *const _)
 		.selected_text(cur_card.as_str())
