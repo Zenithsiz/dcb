@@ -62,12 +62,7 @@ impl LoadedGame {
 
 	/// Saves this game to `path`
 	pub fn save_as(&self, path: &Path) -> Result<(), anyhow::Error> {
-		// If we haven't been modified, return
-		if !self.modified() {
-			return Ok(());
-		}
-
-		// Else open the file
+		// Open the file
 		let file = fs::File::with_options()
 			.write(true)
 			.open(path)
@@ -84,8 +79,10 @@ impl LoadedGame {
 			.serialize(&mut file)
 			.context("Unable to serialize table")?;
 
-		// And update our hash
-		self.saved_card_table_hash.set(dcb_util::hash_of(&self.card_table));
+		// And update our hash if the paths are the same
+		if self.file_path == path {
+			self.saved_card_table_hash.set(dcb_util::hash_of(&self.card_table));
+		}
 
 		Ok(())
 	}

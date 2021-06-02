@@ -72,6 +72,10 @@ pub enum DeserializeError {
 /// Error type for [`Table::serialize`](super::Table::serialize)
 #[derive(Debug, thiserror::Error)]
 pub enum SerializeError {
+	/// Cards weren't partitioned correctly
+	#[error("Cards weren't partitioned correctly")]
+	Partitioned,
+
 	/// Number of digimons must fit within a `u16`
 	#[error("Number of digimons must fit within a `u16` (was {_0})")]
 	TooManyDigimon(usize),

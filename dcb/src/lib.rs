@@ -7,7 +7,8 @@
 	unwrap_infallible,
 	external_doc,
 	format_args_capture,
-	array_map
+	array_map,
+	iter_is_partitioned
 )]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]

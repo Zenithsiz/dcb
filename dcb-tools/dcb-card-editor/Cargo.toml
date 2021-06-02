@@ -8,7 +8,7 @@ edition = "2018"
 # Dcb
 dcb = { path = "../../dcb" }
 dcb-bytes = { path = "../../dcb-bytes" }
-dcb-util = { path = "../../dcb-util", features = ["gui"] }
+dcb-util = { path = "../../dcb-util", features = ["gui", "alert"] }
 dcb-cdrom-xa = { path = "../../dcb-cdrom-xa" }
 
 # Gui

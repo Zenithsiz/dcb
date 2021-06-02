@@ -103,6 +103,16 @@ impl Table {
 
 	/// Serializes this card table to a file
 	pub fn serialize<R: io::Write>(&self, mut writer: R) -> Result<(), SerializeError> {
+		// If the cards aren't in order digimon-item-digivolve, return Error
+		if !self.cards.iter().is_partitioned(Card::is_digimon) ||
+			!self
+				.cards
+				.iter()
+				.is_partitioned(|card| card.is_digimon() || card.is_item())
+		{
+			return Err(SerializeError::Partitioned);
+		}
+
 		// Write header
 		let digimons_len = self.digimons().count();
 		let items_len = self.items().count();
@@ -114,7 +124,7 @@ impl Table {
 			items_len:      items_len
 				.try_into()
 				.map_err(|_err| SerializeError::TooManyItems(items_len))?,
-			digivolves_len: digimons_len
+			digivolves_len: digivolves_len
 				.try_into()
 				.map_err(|_err| SerializeError::TooManyDigivolves(digivolves_len))?,
 		};
