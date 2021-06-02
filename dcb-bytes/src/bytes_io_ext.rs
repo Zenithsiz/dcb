@@ -1,0 +1,48 @@
+//! Bytes io extensions
+
+// Imports
+use crate::{ByteArray, Bytes};
+use std::{error, fmt, io};
+
+/// Bytes read extension trait
+pub trait BytesReadExt: io::Read {
+	/// Reads `B` from this stream
+	fn read_bytes<B: Bytes>(&mut self) -> Result<B, ReadBytesError<B::FromError>> {
+		let mut bytes = B::ByteArray::zeros();
+		self.read_exact(bytes.as_slice_mut()).map_err(ReadBytesError::Read)?;
+		B::from_bytes(&bytes).map_err(ReadBytesError::Parse)
+	}
+}
+
+/// Bytes write extension trait
+pub trait BytesWriteExt: io::Write {
+	/// Writes `B` to this stream
+	fn write_bytes<B: Bytes>(&mut self, value: &B) -> Result<(), WriteBytesError<B::ToError>> {
+		let bytes = value.bytes().map_err(WriteBytesError::Serialize)?;
+		self.write_all(bytes.as_slice()).map_err(WriteBytesError::Write)
+	}
+}
+
+/// Read bytes error
+#[derive(Debug, thiserror::Error)]
+pub enum ReadBytesError<E: fmt::Debug + error::Error + 'static> {
+	/// Unable to read bytes
+	#[error("Unable to read bytes")]
+	Read(#[source] io::Error),
+
+	/// Unable to parse bytes
+	#[error("Unable to parse bytes")]
+	Parse(#[source] E),
+}
+
+/// Write bytes error
+#[derive(Debug, thiserror::Error)]
+pub enum WriteBytesError<E: fmt::Debug + error::Error + 'static> {
+	/// Unable to serialize value
+	#[error("Unable to serialize value")]
+	Serialize(#[source] E),
+
+	/// Unable to write bytes
+	#[error("Unable to write bytes")]
+	Write(#[source] io::Error),
+}
