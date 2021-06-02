@@ -95,15 +95,15 @@ impl SubMode {
 
 impl dcb_bytes::Bytes for SubMode {
 	type ByteArray = u8;
-	type FromError = BytesError;
-	type ToError = BytesError;
+	type DeserializeError = BytesError;
+	type SerializeError = BytesError;
 
-	fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError> {
+	fn deserialize_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::DeserializeError> {
 		let submode = Self::from_bits_truncate(*bytes);
 		submode.validate().map(|()| submode)
 	}
 
-	fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError> {
+	fn serialize_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::SerializeError> {
 		self.validate().map(|()| *bytes = self.bits())
 	}
 }

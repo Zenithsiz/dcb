@@ -61,16 +61,16 @@ impl Edc {
 
 impl Bytes for Edc {
 	type ByteArray = [u8; 4];
-	type FromError = !;
-	type ToError = !;
+	type DeserializeError = !;
+	type SerializeError = !;
 
-	fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError> {
+	fn deserialize_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::DeserializeError> {
 		Ok(Self {
 			crc: LittleEndian::read_u32(bytes),
 		})
 	}
 
-	fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError> {
+	fn serialize_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::SerializeError> {
 		LittleEndian::write_u32(bytes, self.crc);
 		Ok(())
 	}

@@ -1,8 +1,8 @@
 //! Error
 
-/// Error type for [`Bytes::from_bytes`](dcb_bytes::Bytes::from_bytes)
+/// Error type for [`Bytes::deserialize_bytes`](dcb_bytes::Bytes::deserialize_bytes)
 #[derive(Debug, thiserror::Error)]
-pub enum FromBytesError {
+pub enum DeserializeBytesError {
 	/// Invalid year
 	#[error("Invalid year {_0:#x?}")]
 	Year([u8; 4]),

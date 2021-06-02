@@ -45,7 +45,7 @@ impl ExeReader {
 		let header = {
 			let mut bytes = [0u8; <<Header as Bytes>::ByteArray as ByteArray>::SIZE];
 			file.read_exact(&mut bytes).map_err(DeserializeError::ReadHeader)?;
-			Header::from_bytes(&bytes).map_err(DeserializeError::ParseHeader)?
+			Header::deserialize_bytes(&bytes).map_err(DeserializeError::ParseHeader)?
 		};
 
 		// Read all of the bytes

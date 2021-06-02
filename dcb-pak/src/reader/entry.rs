@@ -48,7 +48,7 @@ impl<'a, R: io::Read> PakEntryReader<'a, R> {
 		reader
 			.read_exact(&mut header_bytes[0x4..])
 			.map_err(FromReaderError::ReadHeader)?;
-		let header = Header::from_bytes(&header_bytes).map_err(FromReaderError::ParseHeader)?;
+		let header = Header::deserialize_bytes(&header_bytes).map_err(FromReaderError::ParseHeader)?;
 
 		Ok(Some(Self { header, reader }))
 	}

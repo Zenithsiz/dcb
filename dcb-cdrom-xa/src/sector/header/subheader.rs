@@ -8,7 +8,7 @@ pub mod error;
 pub mod submode;
 
 // Exports
-pub use error::{FromBytesError, ToBytesError};
+pub use error::{DeserializeBytesError, SerializeBytesError};
 pub use submode::SubMode;
 
 // Imports
@@ -72,10 +72,10 @@ impl SubHeader {
 
 impl Bytes for SubHeader {
 	type ByteArray = [u8; 4];
-	type FromError = FromBytesError;
-	type ToError = ToBytesError;
+	type DeserializeError = DeserializeBytesError;
+	type SerializeError = SerializeBytesError;
 
-	fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError> {
+	fn deserialize_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::DeserializeError> {
 		let bytes = array_split!(bytes,
 			file       : 0x1,
 			channel    : 0x1,
@@ -86,12 +86,12 @@ impl Bytes for SubHeader {
 		Ok(Self {
 			file:        *bytes.file,
 			channel:     *bytes.channel,
-			submode:     SubMode::from_bytes(bytes.submode).map_err(FromBytesError::SubMode)?,
+			submode:     SubMode::deserialize_bytes(bytes.submode).map_err(DeserializeBytesError::SubMode)?,
 			coding_info: *bytes.coding_info,
 		})
 	}
 
-	fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError> {
+	fn serialize_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::SerializeError> {
 		let bytes = array_split_mut!(bytes,
 			file       : 0x1,
 			channel    : 0x1,
@@ -101,7 +101,9 @@ impl Bytes for SubHeader {
 
 		*bytes.file = self.file;
 		*bytes.channel = self.channel;
-		self.submode.to_bytes(bytes.submode).map_err(ToBytesError::SubMode)?;
+		self.submode
+			.serialize_bytes(bytes.submode)
+			.map_err(SerializeBytesError::SubMode)?;
 		*bytes.coding_info = self.coding_info;
 
 		Ok(())

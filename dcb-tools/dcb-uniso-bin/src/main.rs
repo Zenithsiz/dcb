@@ -55,7 +55,7 @@ fn main() -> Result<(), anyhow::Error> {
 	{
 		let date_time_to_string = |date_time: DecDateTime| {
 			let mut bytes = [0; 0x11];
-			date_time.to_bytes(&mut bytes).into_ok();
+			date_time.serialize_bytes(&mut bytes).into_ok();
 			std::str::from_utf8(&bytes)
 				.expect("Date time was invalid utf8")
 				.to_owned()

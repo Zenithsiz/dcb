@@ -27,9 +27,9 @@ pub struct Move {
 	pub unknown: u32,
 }
 
-/// Error type for [`Bytes::from_bytes`](dcb_bytes::Bytes::from_bytes)
+/// Error type for [`Bytes::deserialize_bytes`](dcb_bytes::Bytes::deserialize_bytes)
 #[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
-pub enum FromBytesError {
+pub enum DeserializeBytesError {
 	/// Unable to read the move name
 	#[error("Unable to read the move name")]
 	Name(#[source] null_ascii_string::ReadError),
@@ -37,10 +37,10 @@ pub enum FromBytesError {
 
 impl Bytes for Move {
 	type ByteArray = [u8; 0x1c];
-	type FromError = FromBytesError;
-	type ToError = !;
+	type DeserializeError = DeserializeBytesError;
+	type SerializeError = !;
 
-	fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError> {
+	fn deserialize_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::DeserializeError> {
 		// Get all byte arrays we need
 		let bytes = array_split!(bytes,
 			power  : [0x2],
@@ -50,13 +50,13 @@ impl Bytes for Move {
 
 		// Return the move
 		Ok(Self {
-			name:    bytes.name.read_string().map_err(FromBytesError::Name)?,
+			name:    bytes.name.read_string().map_err(DeserializeBytesError::Name)?,
 			power:   LittleEndian::read_u16(bytes.power),
 			unknown: LittleEndian::read_u32(bytes.unknown),
 		})
 	}
 
-	fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError> {
+	fn serialize_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::SerializeError> {
 		// Get all byte arrays we need
 		let bytes = array_split_mut!(bytes,
 			power  : [0x2],

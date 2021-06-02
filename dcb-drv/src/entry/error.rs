@@ -3,9 +3,9 @@
 // Imports
 use dcb_util::ascii_str_arr;
 
-/// Error for [`DirEntry::from_bytes`](super::DirEntry::from_bytes)
+/// Error for [`DirEntry::deserialize_bytes`](super::DirEntry::deserialize_bytes)
 #[derive(Debug, thiserror::Error)]
-pub enum FromBytesError {
+pub enum DeserializeBytesError {
 	/// Invalid kind
 	#[error("Invalid kind {_0:#x}")]
 	InvalidKind(u8),

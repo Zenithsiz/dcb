@@ -36,9 +36,9 @@ pub enum EffectConditionOperation {
 	EqualToNumber       = 5,
 }
 
-/// Error type for [`Bytes::from_bytes`]
+/// Error type for [`Bytes::deserialize_bytes`]
 #[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
-pub enum FromBytesError {
+pub enum DeserializeBytesError {
 	/// Unknown value
 	#[error("Unknown byte {:#x} for a effect condition operation", byte)]
 	UnknownValue {
@@ -49,10 +49,10 @@ pub enum FromBytesError {
 
 impl Bytes for EffectConditionOperation {
 	type ByteArray = u8;
-	type FromError = FromBytesError;
-	type ToError = !;
+	type DeserializeError = DeserializeBytesError;
+	type SerializeError = !;
 
-	fn from_bytes(byte: &Self::ByteArray) -> Result<Self, Self::FromError> {
+	fn deserialize_bytes(byte: &Self::ByteArray) -> Result<Self, Self::DeserializeError> {
 		match byte {
 			0 => Ok(Self::LessThanProperty),
 			1 => Ok(Self::LessThanNumber),
@@ -66,12 +66,12 @@ impl Bytes for EffectConditionOperation {
 				log::info!("The previous warning should only appear for \"Aquilamon\" in the original game file.");
 				Ok(Self::EqualToNumber)
 			},
-			&byte => Err(FromBytesError::UnknownValue { byte }),
+			&byte => Err(DeserializeBytesError::UnknownValue { byte }),
 		}
 	}
 
 	#[allow(unreachable_code, unused_variables)]
-	fn to_bytes(&self, byte: &mut Self::ByteArray) -> Result<(), Self::ToError> {
+	fn serialize_bytes(&self, byte: &mut Self::ByteArray) -> Result<(), Self::SerializeError> {
 		*byte = match self {
 			Self::LessThanProperty => 0,
 			Self::LessThanNumber => 1,

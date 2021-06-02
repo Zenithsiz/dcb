@@ -48,7 +48,7 @@ impl<W: Write> CdRomWriter<W> {
 
 		// Serialize it
 		let mut bytes = [0; 2352];
-		sector.to_bytes(&mut bytes).map_err(WriteSectorError::ToBytes)?;
+		sector.serialize_bytes(&mut bytes).map_err(WriteSectorError::ToBytes)?;
 
 		// Write it and increase out sector
 		self.writer.write_all(&bytes).map_err(WriteSectorError::Write)?;

@@ -12,7 +12,7 @@ pub enum DeserializeError {
 
 	/// Unable to parse table header
 	#[error("Unable to parse table header")]
-	ParseHeader(#[source] header::FromBytesError),
+	ParseHeader(#[source] header::DeserializeBytesError),
 
 	/// Unable to read card header
 	#[error("Unable to read card header for card {id}")]
@@ -33,7 +33,7 @@ pub enum DeserializeError {
 
 		/// Underlying error
 		#[source]
-		err: card::header::FromBytesError,
+		err: card::header::DeserializeBytesError,
 	},
 
 	/// Unable to deserialize card

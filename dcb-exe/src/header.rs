@@ -4,7 +4,7 @@
 pub mod error;
 
 // Exports
-pub use error::{FromBytesError, ToBytesError};
+pub use error::{DeserializeBytesError, SerializeBytesError};
 
 // Imports
 use crate::Pos;
@@ -56,10 +56,10 @@ impl Header {
 
 impl Bytes for Header {
 	type ByteArray = [u8; 0x800];
-	type FromError = FromBytesError;
-	type ToError = ToBytesError;
+	type DeserializeError = DeserializeBytesError;
+	type SerializeError = SerializeBytesError;
 
-	fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError> {
+	fn deserialize_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::DeserializeError> {
 		let bytes = array_split!(bytes,
 			magic            : [0x8],   // 0x0
 			_zero            : [0x8],   // 0x8
@@ -78,13 +78,13 @@ impl Bytes for Header {
 
 		// If the magic is wrong, return Err
 		if bytes.magic != Self::MAGIC {
-			return Err(FromBytesError::Magic { magic: *bytes.magic });
+			return Err(DeserializeBytesError::Magic { magic: *bytes.magic });
 		}
 
 		// If the size isn't aligned, return Err
 		let size = LittleEndian::read_u32(bytes.size);
 		if size % 0x800 != 0 {
-			return Err(FromBytesError::SizeAlignment { size });
+			return Err(DeserializeBytesError::SizeAlignment { size });
 		}
 
 		Ok(Self {
@@ -96,11 +96,11 @@ impl Bytes for Header {
 			memfill_size: LittleEndian::read_u32(bytes.memfill_size),
 			initial_sp_base: LittleEndian::read_u32(bytes.initial_sp_base),
 			initial_sp_offset: LittleEndian::read_u32(bytes.initial_sp_offset),
-			marker: NullAsciiString::read_string(bytes.marker).map_err(FromBytesError::Name)?,
+			marker: NullAsciiString::read_string(bytes.marker).map_err(DeserializeBytesError::Name)?,
 		})
 	}
 
-	fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError> {
+	fn serialize_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::SerializeError> {
 		let bytes = array_split_mut!(bytes,
 			magic            : [0x8],   // 0x0
 			zero             : [0x8],   // 0x8

@@ -5,7 +5,7 @@ use crate::string;
 use dcb_cdrom_xa::reader::{ReadNthSectorError, SeekSectorError};
 use std::io;
 
-/// Error type for [`Bytes::from_bytes`](dcb_bytes::Bytes::from_bytes)
+/// Error type for [`Bytes::deserialize_bytes`](dcb_bytes::Bytes::deserialize_bytes)
 #[derive(Debug, thiserror::Error)]
 pub enum FromReaderError {
 	/// Unable to read header

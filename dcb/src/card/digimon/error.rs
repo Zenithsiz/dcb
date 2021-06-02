@@ -4,9 +4,9 @@
 use crate::card::property;
 use dcb_util::null_ascii_string;
 
-/// Error type for [`Bytes::from_bytes`](dcb_bytes::Bytes::from_bytes)
+/// Error type for [`Bytes::deserialize_bytes`](dcb_bytes::Bytes::deserialize_bytes)
 #[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
-pub enum FromBytesError {
+pub enum DeserializeBytesError {
 	/// Unable to read the digimon name
 	#[error("Unable to read the digimon name")]
 	Name(#[source] null_ascii_string::ReadError),
@@ -29,66 +29,66 @@ pub enum FromBytesError {
 
 	/// An unknown speciality was found
 	#[error("Unknown speciality found")]
-	Speciality(#[source] property::speciality::FromBytesError),
+	Speciality(#[source] property::speciality::DeserializeBytesError),
 
 	/// An unknown level was found
 	#[error("Unknown level found")]
-	Level(#[source] property::level::FromBytesError),
+	Level(#[source] property::level::DeserializeBytesError),
 
 	/// An unknown effect arrow color was found
 	#[error("Unknown effect arrow color found")]
-	ArrowColor(#[source] property::arrow_color::FromBytesError),
+	ArrowColor(#[source] property::arrow_color::DeserializeBytesError),
 
 	/// An unknown cross move effect was found
 	#[error("Unknown cross move effect found")]
-	CrossMoveEffect(#[source] property::cross_move_effect::FromBytesError),
+	CrossMoveEffect(#[source] property::cross_move_effect::DeserializeBytesError),
 
 	/// Unable to read the circle move
 	#[error("Unable to read the circle move")]
-	MoveCircle(#[source] property::moves::FromBytesError),
+	MoveCircle(#[source] property::moves::DeserializeBytesError),
 
 	/// Unable to read the triangle move
 	#[error("Unable to read the triangle move")]
-	MoveTriangle(#[source] property::moves::FromBytesError),
+	MoveTriangle(#[source] property::moves::DeserializeBytesError),
 
 	/// Unable to read the cross move
 	#[error("Unable to read the cross move")]
-	MoveCross(#[source] property::moves::FromBytesError),
+	MoveCross(#[source] property::moves::DeserializeBytesError),
 
 	/// Unable to read the first effect condition
 	#[error("Unable to read the first effect condition")]
-	EffectConditionFirst(#[source] property::effect_condition::FromBytesError),
+	EffectConditionFirst(#[source] property::effect_condition::DeserializeBytesError),
 
 	/// Unable to read the second effect condition
 	#[error("Unable to read the second effect condition")]
-	EffectConditionSecond(#[source] property::effect_condition::FromBytesError),
+	EffectConditionSecond(#[source] property::effect_condition::DeserializeBytesError),
 
 	/// Unable to read the first effect
 	#[error("Unable to read the first effect")]
-	EffectFirst(#[source] property::effect::FromBytesError),
+	EffectFirst(#[source] property::effect::DeserializeBytesError),
 
 	/// Unable to read the second effect
 	#[error("Unable to read the second effect")]
-	EffectSecond(#[source] property::effect::FromBytesError),
+	EffectSecond(#[source] property::effect::DeserializeBytesError),
 
 	/// Unable to read the third effect
 	#[error("Unable to read the third effect")]
-	EffectThird(#[source] property::effect::FromBytesError),
+	EffectThird(#[source] property::effect::DeserializeBytesError),
 }
 
-/// Error type for [`Bytes::to_bytes`](dcb_bytes::Bytes::to_bytes)
+/// Error type for [`Bytes::serialize_bytes`](dcb_bytes::Bytes::serialize_bytes)
 #[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
 #[allow(clippy::pub_enum_variant_names)] // This is a general error, not a specific effect error
-pub enum ToBytesError {
+pub enum SerializeBytesError {
 	/// Unable to write the first effect
 	#[error("Unable to write the first effect")]
-	EffectFirst(#[source] property::effect::ToBytesError),
+	EffectFirst(#[source] property::effect::SerializeBytesError),
 
 	/// Unable to write the second effect
 	#[error("Unable to write the second effect")]
-	EffectSecond(#[source] property::effect::ToBytesError),
+	EffectSecond(#[source] property::effect::SerializeBytesError),
 
 	/// Unable to write the third effect
 	#[error("Unable to write the third effect")]
-	EffectThird(#[source] property::effect::ToBytesError),
+	EffectThird(#[source] property::effect::SerializeBytesError),
 }

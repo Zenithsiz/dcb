@@ -52,9 +52,9 @@ impl DigivolveEffect {
 	}
 }
 
-/// Error type for [`Bytes::from_bytes`](dcb_bytes::Bytes::from_bytes)
+/// Error type for [`Bytes::deserialize_bytes`](dcb_bytes::Bytes::deserialize_bytes)
 #[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
-pub enum FromBytesError {
+pub enum DeserializeBytesError {
 	/// Unknown effect type
 	#[error("Unknown bytes for an effect type: {:?}", bytes)]
 	UnknownEffect {
@@ -65,10 +65,10 @@ pub enum FromBytesError {
 
 impl Bytes for DigivolveEffect {
 	type ByteArray = [u8; 0x3];
-	type FromError = FromBytesError;
-	type ToError = !;
+	type DeserializeError = DeserializeBytesError;
+	type SerializeError = !;
 
-	fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError> {
+	fn deserialize_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::DeserializeError> {
 		let effect = match *bytes {
 			[0, 0, 5] => Self::DisregardSpecialityLevelDP,
 			[14, 21, 6] => Self::ArmorToChampionUltimate,
@@ -78,13 +78,13 @@ impl Bytes for DigivolveEffect {
 			[4, 14, 7] => Self::DowngradeArmorToRookie,
 			[6, 14, 2] => Self::DisregardDPInNonAbnormalStates,
 			[2, 5, 4] => Self::DowngradeLevelWithHpBoostOnSuccess,
-			bytes => return Err(FromBytesError::UnknownEffect { bytes }),
+			bytes => return Err(DeserializeBytesError::UnknownEffect { bytes }),
 		};
 
 		Ok(effect)
 	}
 
-	fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError> {
+	fn serialize_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::SerializeError> {
 		*bytes = match *self {
 			Self::DisregardSpecialityLevelDP => [0, 0, 5],
 			Self::ArmorToChampionUltimate => [14, 21, 6],

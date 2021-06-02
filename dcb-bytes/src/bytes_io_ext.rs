@@ -7,18 +7,18 @@ use std::{error, fmt, io};
 /// Bytes read extension trait
 pub trait BytesReadExt: io::Read {
 	/// Reads `B` from this stream
-	fn read_bytes<B: Bytes>(&mut self) -> Result<B, ReadBytesError<B::FromError>> {
+	fn read_bytes<B: Bytes>(&mut self) -> Result<B, ReadBytesError<B::DeserializeError>> {
 		let mut bytes = B::ByteArray::zeros();
 		self.read_exact(bytes.as_slice_mut()).map_err(ReadBytesError::Read)?;
-		B::from_bytes(&bytes).map_err(ReadBytesError::Parse)
+		B::deserialize_bytes(&bytes).map_err(ReadBytesError::Parse)
 	}
 }
 
 /// Bytes write extension trait
 pub trait BytesWriteExt: io::Write {
 	/// Writes `B` to this stream
-	fn write_bytes<B: Bytes>(&mut self, value: &B) -> Result<(), WriteBytesError<B::ToError>> {
-		let bytes = value.bytes().map_err(WriteBytesError::Serialize)?;
+	fn write_bytes<B: Bytes>(&mut self, value: &B) -> Result<(), WriteBytesError<B::SerializeError>> {
+		let bytes = value.to_bytes().map_err(WriteBytesError::Serialize)?;
 		self.write_all(bytes.as_slice()).map_err(WriteBytesError::Write)
 	}
 }

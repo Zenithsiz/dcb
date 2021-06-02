@@ -41,7 +41,7 @@ pub enum DeserializeError {
 
 		/// Underlying error
 		#[source]
-		err: deck::FromBytesError,
+		err: deck::DeserializeBytesError,
 	},
 }
 

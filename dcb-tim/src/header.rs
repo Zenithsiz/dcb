@@ -4,7 +4,7 @@
 pub mod error;
 
 // Export
-pub use error::FromBytesError;
+pub use error::DeserializeBytesError;
 
 // Imports
 use crate::BitsPerPixel;
@@ -24,11 +24,11 @@ pub struct Header {
 
 impl Bytes for Header {
 	type ByteArray = [u8; 0x8];
-	type FromError = FromBytesError;
-	type ToError = !;
+	type DeserializeError = DeserializeBytesError;
+	type SerializeError = !;
 
 	#[bitmatch::bitmatch]
-	fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError> {
+	fn deserialize_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::DeserializeError> {
 		let bytes = array_split!(bytes,
 			tag    :  0x1,
 			version:  0x1,
@@ -38,12 +38,12 @@ impl Bytes for Header {
 
 		// If the tag is wrong, return
 		if *bytes.tag != 0x10 {
-			return Err(FromBytesError::InvalidTag(*bytes.tag));
+			return Err(DeserializeBytesError::InvalidTag(*bytes.tag));
 		}
 
 		// If the version isn't `0x0`, return
 		if *bytes.version != 0x0 {
-			return Err(FromBytesError::InvalidVersion(*bytes.version));
+			return Err(DeserializeBytesError::InvalidVersion(*bytes.version));
 		}
 
 		// Else parse the flags
@@ -51,7 +51,7 @@ impl Bytes for Header {
 		let (bpp, clut_present) = #[bitmatch]
 		match flags {
 			"0000_0000_0000_0000_0000_0000_0000_c0bb" => (b, c != 0),
-			_ => return Err(FromBytesError::UnknownFlag(flags)),
+			_ => return Err(DeserializeBytesError::UnknownFlag(flags)),
 		};
 		let bpp = match bpp {
 			0b00 => BitsPerPixel::Index4Bit,
@@ -64,7 +64,7 @@ impl Bytes for Header {
 		Ok(Self { bpp, clut_present })
 	}
 
-	fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError> {
+	fn serialize_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::SerializeError> {
 		let bytes = array_split_mut!(bytes,
 			tag    :  0x1,
 			version:  0x1,

@@ -4,7 +4,7 @@
 pub mod error;
 
 // Exports
-pub use error::{FromBytesError, FromSectorPosError, ToBytesError};
+pub use error::{DeserializeBytesError, FromSectorPosError, SerializeBytesError};
 
 // Imports
 use dcb_util::{array_split, array_split_mut, BcdU8};
@@ -45,10 +45,10 @@ impl Address {
 
 impl dcb_bytes::Bytes for Address {
 	type ByteArray = [u8; 3];
-	type FromError = FromBytesError;
-	type ToError = ToBytesError;
+	type DeserializeError = DeserializeBytesError;
+	type SerializeError = SerializeBytesError;
 
-	fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError> {
+	fn deserialize_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::DeserializeError> {
 		let bytes = array_split!(bytes,
 			min  : 0x1,
 			sec  : 0x1,
@@ -57,25 +57,25 @@ impl dcb_bytes::Bytes for Address {
 
 		let min = BcdU8(*bytes.min)
 			.to_u8()
-			.ok_or(FromBytesError::InvalidMinute(*bytes.min))?;
+			.ok_or(DeserializeBytesError::InvalidMinute(*bytes.min))?;
 		let sec = BcdU8(*bytes.sec)
 			.to_u8()
-			.ok_or(FromBytesError::InvalidSecond(*bytes.sec))?;
+			.ok_or(DeserializeBytesError::InvalidSecond(*bytes.sec))?;
 		let block = BcdU8(*bytes.block)
 			.to_u8()
-			.ok_or(FromBytesError::InvalidBlock(*bytes.block))?;
+			.ok_or(DeserializeBytesError::InvalidBlock(*bytes.block))?;
 
 		if !Self::SECS_RANGE.contains(&sec) {
-			return Err(FromBytesError::OutOfRangeSecond(sec));
+			return Err(DeserializeBytesError::OutOfRangeSecond(sec));
 		}
 		if !Self::BLOCK_RANGE.contains(&block) {
-			return Err(FromBytesError::OutOfRangeBlock(block));
+			return Err(DeserializeBytesError::OutOfRangeBlock(block));
 		}
 
 		Ok(Self { min, sec, block })
 	}
 
-	fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError> {
+	fn serialize_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::SerializeError> {
 		let bytes = array_split_mut!(bytes,
 			min  : 0x1,
 			sec  : 0x1,
@@ -83,20 +83,20 @@ impl dcb_bytes::Bytes for Address {
 		);
 
 		if !Self::SECS_RANGE.contains(&self.sec) {
-			return Err(ToBytesError::OutOfRangeSecond(self.sec));
+			return Err(SerializeBytesError::OutOfRangeSecond(self.sec));
 		}
 		if !Self::BLOCK_RANGE.contains(&self.block) {
-			return Err(ToBytesError::OutOfRangeBlock(self.block));
+			return Err(SerializeBytesError::OutOfRangeBlock(self.block));
 		}
 
 		let min = BcdU8::from_u8(self.min)
-			.ok_or(ToBytesError::OutOfRangeMinute(self.min))?
+			.ok_or(SerializeBytesError::OutOfRangeMinute(self.min))?
 			.0;
 		let sec = BcdU8::from_u8(self.sec)
-			.ok_or(ToBytesError::OutOfRangeSecond(self.sec))?
+			.ok_or(SerializeBytesError::OutOfRangeSecond(self.sec))?
 			.0;
 		let block = BcdU8::from_u8(self.block)
-			.ok_or(ToBytesError::OutOfRangeBlock(self.block))?
+			.ok_or(SerializeBytesError::OutOfRangeBlock(self.block))?
 			.0;
 
 		*bytes.min = min;

@@ -3,9 +3,9 @@
 // Imports
 use super::{address, subheader, SubHeader};
 
-/// Error type for [`Bytes::from_bytes`](dcb_bytes::Bytes::from_bytes)
+/// Error type for [`Bytes::deserialize_bytes`](dcb_bytes::Bytes::deserialize_bytes)
 #[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
-pub enum FromBytesError {
+pub enum DeserializeBytesError {
 	/// Sync was wrong
 	#[error("Sync was wrong, found {_0:?}")]
 	WrongSync([u8; 0xc]),
@@ -16,7 +16,7 @@ pub enum FromBytesError {
 
 	/// Unable to read subheader
 	#[error("Unable to parse subheader")]
-	SubHeader(#[source] subheader::FromBytesError),
+	SubHeader(#[source] subheader::DeserializeBytesError),
 
 	/// The two sub-headers were different
 	#[error("The two sub-headers were different {_0:?} & {_1:?}")]
@@ -24,17 +24,17 @@ pub enum FromBytesError {
 
 	/// Unable to read address
 	#[error("Unable to parse address")]
-	Address(#[source] address::FromBytesError),
+	Address(#[source] address::DeserializeBytesError),
 }
 
-/// Error type for [`Bytes::to_bytes`](dcb_bytes::Bytes::to_bytes)
+/// Error type for [`Bytes::serialize_bytes`](dcb_bytes::Bytes::serialize_bytes)
 #[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
-pub enum ToBytesError {
+pub enum SerializeBytesError {
 	/// Unable to write subheader
 	#[error("Unable to write subheader")]
-	SubHeader(subheader::ToBytesError),
+	SubHeader(subheader::SerializeBytesError),
 
 	/// Unable to write address
 	#[error("Unable to write address")]
-	Address(address::ToBytesError),
+	Address(address::SerializeBytesError),
 }

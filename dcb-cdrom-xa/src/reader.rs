@@ -63,7 +63,7 @@ impl<R: Read> CdRomReader<R> {
 		self.reader.read_exact(&mut bytes).map_err(ReadSectorError::Read)?;
 
 		// And parse it
-		Sector::from_bytes(&bytes).map_err(ReadSectorError::Parse)
+		Sector::deserialize_bytes(&bytes).map_err(ReadSectorError::Parse)
 	}
 
 	/// Returns an iterator over the next sectors

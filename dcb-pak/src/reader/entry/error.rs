@@ -13,5 +13,5 @@ pub enum FromReaderError {
 
 	/// Unable to parse header
 	#[error("Unable to parse header")]
-	ParseHeader(#[source] header::FromBytesError),
+	ParseHeader(#[source] header::DeserializeBytesError),
 }

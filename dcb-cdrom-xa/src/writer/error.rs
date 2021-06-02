@@ -12,7 +12,7 @@ pub enum WriteSectorError {
 
 	/// Unable to serialize sector to bytes
 	#[error("Unable to serialize sector to bytes")]
-	ToBytes(#[source] sector::ToBytesError),
+	ToBytes(#[source] sector::SerializeBytesError),
 
 	/// Unable to write sector
 	#[error("Unable to write sector")]

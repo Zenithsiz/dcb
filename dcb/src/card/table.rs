@@ -51,7 +51,7 @@ impl Table {
 		reader
 			.read_exact(&mut header_bytes)
 			.map_err(DeserializeError::ReadHeader)?;
-		let header = Header::from_bytes(&header_bytes).map_err(DeserializeError::ParseHeader)?;
+		let header = Header::deserialize_bytes(&header_bytes).map_err(DeserializeError::ParseHeader)?;
 
 		// Then check the number of each card
 		let digimon_cards = header.digimons_len;
@@ -72,7 +72,7 @@ impl Table {
 					.map_err(|err| DeserializeError::ReadCardHeader { id, err })?;
 
 				// Read the header
-				let card_header = CardHeader::from_bytes(&card_header_bytes)
+				let card_header = CardHeader::deserialize_bytes(&card_header_bytes)
 					.map_err(|err| DeserializeError::ParseCardHeader { id, err })?;
 				log::trace!("#{}: {}", id, card_header.ty);
 
@@ -129,14 +129,14 @@ impl Table {
 				.map_err(|_err| SerializeError::TooManyDigivolves(digivolves_len))?,
 		};
 		writer
-			.write_all(&header.bytes().into_ok())
+			.write_all(&header.to_bytes().into_ok())
 			.map_err(SerializeError::WriteHeader)?;
 
 		for (card, id) in self.cards.iter().zip(0..) {
 			// Write the header
 			let header = CardHeader { id, ty: card.ty() };
 			writer
-				.write_all(&header.bytes().into_ok())
+				.write_all(&header.to_bytes().into_ok())
 				.map_err(|err| SerializeError::WriteCardHeader { id, err })?;
 
 			// Then serialize the card

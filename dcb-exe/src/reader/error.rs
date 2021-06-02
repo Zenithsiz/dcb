@@ -16,7 +16,7 @@ pub enum DeserializeError {
 
 	/// Unable to parse header
 	#[error("Unable to parse header")]
-	ParseHeader(#[source] header::FromBytesError),
+	ParseHeader(#[source] header::DeserializeBytesError),
 
 	/// Unable to read data
 	#[error("Unable to read data")]

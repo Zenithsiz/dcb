@@ -34,21 +34,21 @@ impl Card {
 			CardType::Digimon => {
 				let mut bytes = <Digimon as Bytes>::ByteArray::zeros();
 				reader.read_exact(&mut bytes).map_err(DeserializeError::Read)?;
-				Digimon::from_bytes(&bytes)
+				Digimon::deserialize_bytes(&bytes)
 					.map(Self::Digimon)
 					.map_err(DeserializeError::ParseDigimon)?
 			},
 			CardType::Item => {
 				let mut bytes = <Item as Bytes>::ByteArray::zeros();
 				reader.read_exact(&mut bytes).map_err(DeserializeError::Read)?;
-				Item::from_bytes(&bytes)
+				Item::deserialize_bytes(&bytes)
 					.map(Self::Item)
 					.map_err(DeserializeError::ParseItem)?
 			},
 			CardType::Digivolve => {
 				let mut bytes = <Digivolve as Bytes>::ByteArray::zeros();
 				reader.read_exact(&mut bytes).map_err(DeserializeError::Read)?;
-				Digivolve::from_bytes(&bytes)
+				Digivolve::deserialize_bytes(&bytes)
 					.map(Self::Digivolve)
 					.map_err(DeserializeError::ParseDigivolve)?
 			},
@@ -61,15 +61,15 @@ impl Card {
 	pub fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<(), SerializeError> {
 		match self {
 			Card::Digimon(digimon) => {
-				let bytes = digimon.bytes().map_err(SerializeError::SerializeDigimon)?;
+				let bytes = digimon.to_bytes().map_err(SerializeError::SerializeDigimon)?;
 				writer.write_all(&bytes).map_err(SerializeError::Write)?;
 			},
 			Card::Item(item) => {
-				let bytes = item.bytes().map_err(SerializeError::SerializeItem)?;
+				let bytes = item.to_bytes().map_err(SerializeError::SerializeItem)?;
 				writer.write_all(&bytes).map_err(SerializeError::Write)?;
 			},
 			Card::Digivolve(digivolve) => {
-				let bytes = digivolve.bytes().into_ok();
+				let bytes = digivolve.to_bytes().into_ok();
 				writer.write_all(&bytes).map_err(SerializeError::Write)?;
 			},
 		}

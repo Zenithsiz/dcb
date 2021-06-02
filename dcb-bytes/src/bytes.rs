@@ -12,21 +12,21 @@ where
 	type ByteArray: ByteArray;
 
 	/// The error type used for the operation
-	type FromError: Error;
+	type DeserializeError: Error;
 
 	/// The error type used for the operation
-	type ToError: Error;
+	type SerializeError: Error;
 
-	/// Constructs this structure from `bytes`
-	fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError>;
+	/// Deserializes this from `bytes`
+	fn deserialize_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::DeserializeError>;
 
-	/// Writes this structure to `bytes`
-	fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError>;
+	/// Serializes this to `bytes`
+	fn serialize_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::SerializeError>;
 
-	/// Creates bytes and writes this structure to them
-	fn bytes(&self) -> Result<Self::ByteArray, Self::ToError> {
+	/// Serializes this to bytes and returns them.
+	fn to_bytes(&self) -> Result<Self::ByteArray, Self::SerializeError> {
 		let mut bytes = Self::ByteArray::zeros();
-		self.to_bytes(&mut bytes)?;
+		self.serialize_bytes(&mut bytes)?;
 		Ok(bytes)
 	}
 }

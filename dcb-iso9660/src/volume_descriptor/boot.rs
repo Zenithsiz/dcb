@@ -4,7 +4,7 @@
 pub mod error;
 
 // Exports
-pub use error::FromBytesError;
+pub use error::DeserializeBytesError;
 
 // Imports
 use crate::StrArrA;
@@ -26,10 +26,10 @@ pub struct BootRecordVolumeDescriptor {
 
 impl Bytes for BootRecordVolumeDescriptor {
 	type ByteArray = [u8; 0x7f9];
-	type FromError = FromBytesError;
-	type ToError = !;
+	type DeserializeError = DeserializeBytesError;
+	type SerializeError = !;
 
-	fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError> {
+	fn deserialize_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::DeserializeError> {
 		let bytes = array_split!(bytes,
 			system_id: [0x20],
 			boot_id  : [0x20],
@@ -37,8 +37,8 @@ impl Bytes for BootRecordVolumeDescriptor {
 		);
 
 		// Parse both ids
-		let system_id = StrArrA::from_bytes(bytes.system_id).map_err(FromBytesError::SystemId)?;
-		let boot_id = StrArrA::from_bytes(bytes.boot_id).map_err(FromBytesError::BootId)?;
+		let system_id = StrArrA::from_bytes(bytes.system_id).map_err(DeserializeBytesError::SystemId)?;
+		let boot_id = StrArrA::from_bytes(bytes.boot_id).map_err(DeserializeBytesError::BootId)?;
 
 		Ok(Self {
 			system_id,
@@ -47,7 +47,7 @@ impl Bytes for BootRecordVolumeDescriptor {
 		})
 	}
 
-	fn to_bytes(&self, _bytes: &mut Self::ByteArray) -> Result<(), Self::ToError> {
+	fn serialize_bytes(&self, _bytes: &mut Self::ByteArray) -> Result<(), Self::SerializeError> {
 		todo!()
 	}
 }

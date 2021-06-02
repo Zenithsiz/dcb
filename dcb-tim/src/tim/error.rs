@@ -13,7 +13,7 @@ pub enum DeserializeError {
 
 	/// Unable to parse header
 	#[error("Unable to parse header")]
-	ParseHeader(#[source] header::FromBytesError),
+	ParseHeader(#[source] header::DeserializeBytesError),
 
 	/// Unable to deserialize clut
 	#[error("Unable to deserialize clut")]

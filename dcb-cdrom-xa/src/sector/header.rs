@@ -7,7 +7,7 @@ pub mod subheader;
 
 // Exports
 pub use address::Address;
-pub use error::{FromBytesError, ToBytesError};
+pub use error::{DeserializeBytesError, SerializeBytesError};
 pub use subheader::SubHeader;
 
 // Imports
@@ -32,10 +32,10 @@ impl Header {
 
 impl Bytes for Header {
 	type ByteArray = [u8; 0x18];
-	type FromError = FromBytesError;
-	type ToError = ToBytesError;
+	type DeserializeError = DeserializeBytesError;
+	type SerializeError = SerializeBytesError;
 
-	fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError> {
+	fn deserialize_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::DeserializeError> {
 		let bytes = array_split!(bytes,
 			sync      : [0xc],
 			address   : [0x3],
@@ -46,24 +46,24 @@ impl Bytes for Header {
 
 		// Check if the sync is correct
 		if bytes.sync != &Self::SYNC {
-			return Err(FromBytesError::WrongSync(*bytes.sync));
+			return Err(DeserializeBytesError::WrongSync(*bytes.sync));
 		}
 
 		// If we aren't in mode 2, return
 		if *bytes.mode != 2 {
-			return Err(FromBytesError::InvalidMode(*bytes.mode));
+			return Err(DeserializeBytesError::InvalidMode(*bytes.mode));
 		}
 
 		// Read the two sub-headers
-		let subheader1 = SubHeader::from_bytes(bytes.subheader1).map_err(FromBytesError::SubHeader)?;
-		let subheader2 = SubHeader::from_bytes(bytes.subheader2).map_err(FromBytesError::SubHeader)?;
+		let subheader1 = SubHeader::deserialize_bytes(bytes.subheader1).map_err(DeserializeBytesError::SubHeader)?;
+		let subheader2 = SubHeader::deserialize_bytes(bytes.subheader2).map_err(DeserializeBytesError::SubHeader)?;
 
 		if subheader1 != subheader2 {
-			return Err(FromBytesError::DifferentSubHeaders(subheader1, subheader2));
+			return Err(DeserializeBytesError::DifferentSubHeaders(subheader1, subheader2));
 		}
 
 		// Read the address
-		let address = Address::from_bytes(bytes.address).map_err(FromBytesError::Address)?;
+		let address = Address::deserialize_bytes(bytes.address).map_err(DeserializeBytesError::Address)?;
 
 
 		Ok(Self {
@@ -72,7 +72,7 @@ impl Bytes for Header {
 		})
 	}
 
-	fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError> {
+	fn serialize_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::SerializeError> {
 		let bytes = array_split_mut!(bytes,
 			sync      : [0xc],
 			address   : [0x3],
@@ -82,14 +82,16 @@ impl Bytes for Header {
 		);
 
 		*bytes.sync = Self::SYNC;
-		self.address.to_bytes(bytes.address).map_err(ToBytesError::Address)?;
+		self.address
+			.serialize_bytes(bytes.address)
+			.map_err(SerializeBytesError::Address)?;
 		*bytes.mode = 2;
 		self.subheader
-			.to_bytes(bytes.subheader1)
-			.map_err(ToBytesError::SubHeader)?;
+			.serialize_bytes(bytes.subheader1)
+			.map_err(SerializeBytesError::SubHeader)?;
 		self.subheader
-			.to_bytes(bytes.subheader2)
-			.map_err(ToBytesError::SubHeader)?;
+			.serialize_bytes(bytes.subheader2)
+			.map_err(SerializeBytesError::SubHeader)?;
 
 		Ok(())
 	}

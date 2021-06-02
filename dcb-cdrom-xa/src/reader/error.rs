@@ -36,5 +36,5 @@ pub enum ReadSectorError {
 
 	/// Unable to parse sector
 	#[error("Unable to parse sector")]
-	Parse(#[source] sector::FromBytesError),
+	Parse(#[source] sector::DeserializeBytesError),
 }

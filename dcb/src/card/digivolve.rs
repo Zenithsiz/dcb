@@ -27,9 +27,9 @@ pub struct Digivolve {
 	pub effect: DigivolveEffect,
 }
 
-/// Error type for [`Bytes::from_bytes`](dcb_bytes::Bytes::from_bytes)
+/// Error type for [`Bytes::deserialize_bytes`](dcb_bytes::Bytes::deserialize_bytes)
 #[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
-pub enum FromBytesError {
+pub enum DeserializeBytesError {
 	/// Unable to read the digimon name
 	#[error("Unable to read the digimon name")]
 	Name(#[source] null_ascii_string::ReadError),
@@ -52,15 +52,15 @@ pub enum FromBytesError {
 
 	/// Unable to parse the effect
 	#[error("Unable to parse the effect")]
-	Effect(#[source] digivolve_effect::FromBytesError),
+	Effect(#[source] digivolve_effect::DeserializeBytesError),
 }
 
 impl Bytes for Digivolve {
 	type ByteArray = [u8; 0x6c];
-	type FromError = FromBytesError;
-	type ToError = !;
+	type DeserializeError = DeserializeBytesError;
+	type SerializeError = !;
 
-	fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError> {
+	fn deserialize_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::DeserializeError> {
 		// Split bytes
 		let bytes = array_split!(bytes,
 			name                : [0x15],
@@ -73,34 +73,34 @@ impl Bytes for Digivolve {
 
 		Ok(Self {
 			// Name
-			name: bytes.name.read_string().map_err(FromBytesError::Name)?,
+			name: bytes.name.read_string().map_err(DeserializeBytesError::Name)?,
 
 			// Effect
 			effect_description: [
 				bytes
 					.effect_description_0
 					.read_string()
-					.map_err(FromBytesError::EffectDescription1)?,
+					.map_err(DeserializeBytesError::EffectDescription1)?,
 				bytes
 					.effect_description_1
 					.read_string()
-					.map_err(FromBytesError::EffectDescription2)?,
+					.map_err(DeserializeBytesError::EffectDescription2)?,
 				bytes
 					.effect_description_2
 					.read_string()
-					.map_err(FromBytesError::EffectDescription3)?,
+					.map_err(DeserializeBytesError::EffectDescription3)?,
 				bytes
 					.effect_description_3
 					.read_string()
-					.map_err(FromBytesError::EffectDescription4)?,
+					.map_err(DeserializeBytesError::EffectDescription4)?,
 			],
 
 			// Unknown
-			effect: DigivolveEffect::from_bytes(bytes.effect).map_err(FromBytesError::Effect)?,
+			effect: DigivolveEffect::deserialize_bytes(bytes.effect).map_err(DeserializeBytesError::Effect)?,
 		})
 	}
 
-	fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError> {
+	fn serialize_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::SerializeError> {
 		// Split bytes
 		let bytes = array_split_mut!(bytes,
 			name                : [0x15],
@@ -121,7 +121,7 @@ impl Bytes for Digivolve {
 		bytes.effect_description_3.write_string(&self.effect_description[3]);
 
 		// Unknown
-		self.effect.to_bytes(bytes.effect).into_ok();
+		self.effect.serialize_bytes(bytes.effect).into_ok();
 
 		// Return Ok
 		Ok(())

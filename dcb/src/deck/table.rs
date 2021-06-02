@@ -58,7 +58,7 @@ impl Table {
 				.map_err(|err| DeserializeError::ReadDeck { id, err })?;
 
 			// And try to serialize the deck
-			let deck = Deck::from_bytes(&bytes).map_err(|err| DeserializeError::DeserializeDeck { id, err })?;
+			let deck = Deck::deserialize_bytes(&bytes).map_err(|err| DeserializeError::DeserializeDeck { id, err })?;
 
 			// Log the deck
 			log::trace!("Found deck #{}: {}", id, deck.name);
@@ -96,7 +96,7 @@ impl Table {
 		for (id, deck) in self.decks.iter().enumerate() {
 			// Parse each deck into bytes
 			let mut bytes = [0; 0x6e];
-			deck.to_bytes(&mut bytes).into_ok();
+			deck.serialize_bytes(&mut bytes).into_ok();
 
 			// And write them to file
 			file.write(&bytes)

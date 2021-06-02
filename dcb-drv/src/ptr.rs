@@ -100,7 +100,7 @@ impl DirPtr {
 				reader.read_exact(&mut entry_bytes).map_err(ReadEntryError::ReadEntry)?;
 
 				// And parse it
-				DirEntry::from_bytes(&entry_bytes).map_err(ReadEntryError::ParseEntry)?
+				DirEntry::deserialize_bytes(&entry_bytes).map_err(ReadEntryError::ParseEntry)?
 			};
 
 			entry.transpose()
@@ -153,7 +153,7 @@ impl DirPtr {
 		for entry in entries {
 			// Put the entry into bytes
 			let mut entry_bytes = [0; 0x20];
-			entry.to_bytes(&mut entry_bytes);
+			entry.serialize_bytes(&mut entry_bytes);
 
 			// Then write it
 			writer.write_all(&entry_bytes).map_err(WriteEntriesError::WriteEntry)?;
@@ -177,7 +177,7 @@ impl DirPtr {
 
 		// Then write the entry
 		let mut entry_bytes = [0; 0x20];
-		entry.to_bytes(&mut entry_bytes);
+		entry.serialize_bytes(&mut entry_bytes);
 
 		// Then write it
 		writer.write_all(&entry_bytes).map_err(WriteEntryError::WriteEntry)

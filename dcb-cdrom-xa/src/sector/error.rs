@@ -11,12 +11,12 @@ pub enum NewError {
 	Address(#[source] header::address::FromSectorPosError),
 }
 
-/// Error type for [`Bytes::from_bytes`](dcb_bytes::Bytes::from_bytes)
+/// Error type for [`Bytes::deserialize_bytes`](dcb_bytes::Bytes::deserialize_bytes)
 #[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
-pub enum FromBytesError {
+pub enum DeserializeBytesError {
 	/// Unable to read header
 	#[error("Unable to parse header")]
-	Header(#[source] header::FromBytesError),
+	Header(#[source] header::DeserializeBytesError),
 
 	/// Edc was wrong
 	#[error("Found crc {found}, calculated {calculated}")]
@@ -29,10 +29,10 @@ pub enum FromBytesError {
 	},
 }
 
-/// Error type for [`Bytes::to_bytes`](dcb_bytes::Bytes::to_bytes)
+/// Error type for [`Bytes::serialize_bytes`](dcb_bytes::Bytes::serialize_bytes)
 #[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
-pub enum ToBytesError {
+pub enum SerializeBytesError {
 	/// Unable to write header
 	#[error("Unable to write header")]
-	Header(#[source] header::ToBytesError),
+	Header(#[source] header::SerializeBytesError),
 }

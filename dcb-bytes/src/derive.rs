@@ -17,10 +17,10 @@ macro_rules! derive_bytes_split {
 					{0 $( + <<$U as ByteOrderExt<$crate::byteorder::$BYTEORDER>>::ByteArray as ByteArray>::SIZE )*}
 				];
 
-				type FromError = !;
-				type ToError   = !;
+				type DeserializeError = !;
+				type SerializeError   = !;
 
-				fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError> {
+				fn deserialize_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::DeserializeError> {
 					let ( $($field,)* ) = arrayref::array_refs![
 						bytes,
 						$( <<$U as ByteOrderExt<$crate::byteorder::$BYTEORDER>>::ByteArray as ByteArray>::SIZE ),*
@@ -33,7 +33,7 @@ macro_rules! derive_bytes_split {
 					})
 				}
 
-				fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError> {
+				fn serialize_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::SerializeError> {
 					let ( $($field,)* ) = arrayref::mut_array_refs![
 						bytes,
 						$( <<$U as ByteOrderExt<$crate::byteorder::$BYTEORDER>>::ByteArray as ByteArray>::SIZE ),*

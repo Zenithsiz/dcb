@@ -32,7 +32,7 @@ impl Clut {
 		reader
 			.read_exact(&mut header_bytes)
 			.map_err(DeserializeError::ReadHeader)?;
-		let header = Header::from_bytes(&header_bytes).into_ok();
+		let header = Header::deserialize_bytes(&header_bytes).into_ok();
 
 		let colors = (0..header.colors_len())
 			.map(|_| {

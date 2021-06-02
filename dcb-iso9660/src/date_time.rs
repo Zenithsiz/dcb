@@ -4,7 +4,7 @@
 pub mod error;
 
 // Exports
-pub use error::FromBytesError;
+pub use error::DeserializeBytesError;
 
 // Imports
 use super::StrArrD;
@@ -42,10 +42,10 @@ pub struct DecDateTime {
 
 impl Bytes for DecDateTime {
 	type ByteArray = [u8; 0x11];
-	type FromError = FromBytesError;
-	type ToError = !;
+	type DeserializeError = DeserializeBytesError;
+	type SerializeError = !;
 
-	fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError> {
+	fn deserialize_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::DeserializeError> {
 		let bytes = array_split!(bytes,
 			year          : [0x4],
 			month         : [0x2],
@@ -60,25 +60,25 @@ impl Bytes for DecDateTime {
 		// TODO: Validate time zone.
 		Ok(Self {
 			year:           self::parse_decimal_string(bytes.year, [b'0', b'0', b'0', b'0'], [b'9', b'9', b'9', b'9'])
-				.ok_or_else(|| FromBytesError::Year(*bytes.year))?,
+				.ok_or_else(|| DeserializeBytesError::Year(*bytes.year))?,
 			month:          self::parse_decimal_string(bytes.month, [b'0', b'0'], [b'1', b'2'])
-				.ok_or_else(|| FromBytesError::Month(*bytes.month))?,
+				.ok_or_else(|| DeserializeBytesError::Month(*bytes.month))?,
 			day:            self::parse_decimal_string(bytes.day, [b'0', b'0'], [b'3', b'1'])
-				.ok_or_else(|| FromBytesError::Day(*bytes.day))?,
+				.ok_or_else(|| DeserializeBytesError::Day(*bytes.day))?,
 			hour:           self::parse_decimal_string(bytes.hour, [b'0', b'0'], [b'2', b'3'])
-				.ok_or_else(|| FromBytesError::Hour(*bytes.hour))?,
+				.ok_or_else(|| DeserializeBytesError::Hour(*bytes.hour))?,
 			minutes:        self::parse_decimal_string(bytes.minutes, [b'0', b'0'], [b'5', b'9'])
-				.ok_or_else(|| FromBytesError::Minute(*bytes.minutes))?,
+				.ok_or_else(|| DeserializeBytesError::Minute(*bytes.minutes))?,
 			seconds:        self::parse_decimal_string(bytes.seconds, [b'0', b'0'], [b'5', b'9'])
-				.ok_or_else(|| FromBytesError::Second(*bytes.seconds))?,
+				.ok_or_else(|| DeserializeBytesError::Second(*bytes.seconds))?,
 			hundredths_sec: self::parse_decimal_string(bytes.hundredths_sec, [b'0', b'0'], [b'9', b'9'])
-				.ok_or_else(|| FromBytesError::HundredthsSec(*bytes.hundredths_sec))?,
+				.ok_or_else(|| DeserializeBytesError::HundredthsSec(*bytes.hundredths_sec))?,
 			time_zone:      *bytes.time_zone,
 		})
 	}
 
 	// TODO: Error checking
-	fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError> {
+	fn serialize_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::SerializeError> {
 		let bytes = array_split_mut!(bytes,
 			year          : [0x4],
 			month         : [0x2],

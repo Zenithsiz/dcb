@@ -42,7 +42,7 @@ fn valid_bytes() {
 	for (mov, bytes) in valid_moves {
 		// Check that we can create the move from bytes
 		assert_eq!(
-			&Move::from_bytes(bytes).expect("Unable to convert move from bytes"),
+			&Move::deserialize_bytes(bytes).expect("Unable to convert move from bytes"),
 			mov
 		);
 
@@ -52,7 +52,7 @@ fn valid_bytes() {
 
 		// Then serialize it to bytes and make sure it's equal
 		let mut mov_bytes = <Move as Bytes>::ByteArray::default();
-		Move::to_bytes(mov, &mut mov_bytes).expect("Unable to convert move to bytes");
+		Move::serialize_bytes(mov, &mut mov_bytes).expect("Unable to convert move to bytes");
 		assert_eq!(&mov_bytes, bytes);
 	}
 }
@@ -61,7 +61,7 @@ fn valid_bytes() {
 fn invalid_bytes() {
 	// Valid moves with no warnings
 	#[rustfmt::skip]
-	let invalid_moves: &[(<Move as Bytes>::ByteArray, FromBytesError)] = &[
+	let invalid_moves: &[(<Move as Bytes>::ByteArray, DeserializeBytesError)] = &[
 		(
 			[
 				0, 0,                                                       // Power
@@ -70,12 +70,12 @@ fn invalid_bytes() {
 				b'1', b'2', b'3', b'4', b'5', b'6', b'7', b'8', b'9', b'0', // ^^^^
 				b'1', 1,                                                    // ^^^^
 			],
-			FromBytesError::Name(null_ascii_string::ReadError::NoNull),
+			DeserializeBytesError::Name(null_ascii_string::ReadError::NoNull),
 		),
 	];
 
 	for (bytes, err) in invalid_moves {
 		// Check that we can create the move from bytes
-		assert_eq!(Move::from_bytes(bytes), Err(*err));
+		assert_eq!(Move::deserialize_bytes(bytes), Err(*err));
 	}
 }

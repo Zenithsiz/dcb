@@ -3,9 +3,9 @@
 // Imports
 use crate::{date_time, entry, string};
 
-/// Error type for [`Bytes::from_bytes`](dcb_bytes::Bytes::from_bytes)
+/// Error type for [`Bytes::deserialize_bytes`](dcb_bytes::Bytes::deserialize_bytes)
 #[derive(Debug, thiserror::Error)]
-pub enum FromBytesError {
+pub enum DeserializeBytesError {
 	/// Unable to parse system id
 	#[error("Unable to parse system id")]
 	SystemId(#[source] string::InvalidCharError),
@@ -48,17 +48,17 @@ pub enum FromBytesError {
 
 	/// Unable to parse volume creation date time
 	#[error("Unable to parse volume creation date time")]
-	VolumeCreationDateTime(#[source] date_time::FromBytesError),
+	VolumeCreationDateTime(#[source] date_time::DeserializeBytesError),
 
 	/// Unable to parse volume modification date time
 	#[error("Unable to parse volume modification date time")]
-	VolumeModificationDateTime(#[source] date_time::FromBytesError),
+	VolumeModificationDateTime(#[source] date_time::DeserializeBytesError),
 
 	/// Unable to parse volume expiration date time
 	#[error("Unable to parse volume expiration date time")]
-	VolumeExpirationDateTime(#[source] date_time::FromBytesError),
+	VolumeExpirationDateTime(#[source] date_time::DeserializeBytesError),
 
 	/// Unable to parse volume effective date time
 	#[error("Unable to parse volume effective date time")]
-	VolumeEffectiveDateTime(#[source] date_time::FromBytesError),
+	VolumeEffectiveDateTime(#[source] date_time::DeserializeBytesError),
 }

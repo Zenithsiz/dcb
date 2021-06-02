@@ -53,9 +53,9 @@ pub struct Deck {
 	unknown_6a: u8,
 }
 
-/// Error type for [`Bytes::from_bytes`](dcb_bytes::Bytes::from_bytes)
+/// Error type for [`Bytes::deserialize_bytes`](dcb_bytes::Bytes::deserialize_bytes)
 #[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
-pub enum FromBytesError {
+pub enum DeserializeBytesError {
 	/// Unable to read the deck name
 	#[error("Unable to read the deck name")]
 	Name(#[source] null_ascii_string::ReadError),
@@ -66,27 +66,27 @@ pub enum FromBytesError {
 
 	/// Unable to read the deck city
 	#[error("Unable to read the deck city")]
-	City(#[source] city::FromBytesError),
+	City(#[source] city::DeserializeBytesError),
 
 	/// Unable to read the armor digivolution
 	#[error("Unable to read the deck armor digivolution")]
-	ArmorEvo(#[source] armor_evo::FromBytesError),
+	ArmorEvo(#[source] armor_evo::DeserializeBytesError),
 
 	/// Unable to read the battle music
 	#[error("Unable to read the deck battle music")]
-	BattleMusic(#[source] music::FromBytesError),
+	BattleMusic(#[source] music::DeserializeBytesError),
 
 	/// Unable to read the polygon music
 	#[error("Unable to read the deck polygon music")]
-	PolygonMusic(#[source] music::FromBytesError),
+	PolygonMusic(#[source] music::DeserializeBytesError),
 }
 
 impl Bytes for Deck {
 	type ByteArray = [u8; 0x6e];
-	type FromError = FromBytesError;
-	type ToError = !;
+	type DeserializeError = DeserializeBytesError;
+	type SerializeError = !;
 
-	fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError> {
+	fn deserialize_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::DeserializeError> {
 		// Split the bytes
 		let bytes = array_split!(bytes,
 			deck         : [0x3c],
@@ -107,18 +107,20 @@ impl Bytes for Deck {
 		}
 
 		Ok(Self {
-			name:          bytes.name.read_string().map_err(FromBytesError::Name)?,
-			owner:         bytes.owner.read_string().map_err(FromBytesError::Owner)?,
+			name:          bytes.name.read_string().map_err(DeserializeBytesError::Name)?,
+			owner:         bytes.owner.read_string().map_err(DeserializeBytesError::Owner)?,
 			cards:         cards.map(CardId),
-			city:          MaybeCity::from_bytes(bytes.city).map_err(FromBytesError::City)?.into(),
-			armor_evo:     MaybeArmorEvo::from_bytes(bytes.armor_evo)
-				.map_err(FromBytesError::ArmorEvo)?
+			city:          MaybeCity::deserialize_bytes(bytes.city)
+				.map_err(DeserializeBytesError::City)?
 				.into(),
-			battle_music:  MaybeMusic::from_bytes(bytes.battle_music)
-				.map_err(FromBytesError::BattleMusic)?
+			armor_evo:     MaybeArmorEvo::deserialize_bytes(bytes.armor_evo)
+				.map_err(DeserializeBytesError::ArmorEvo)?
 				.into(),
-			polygon_music: MaybeMusic::from_bytes(bytes.polygon_music)
-				.map_err(FromBytesError::PolygonMusic)?
+			battle_music:  MaybeMusic::deserialize_bytes(bytes.battle_music)
+				.map_err(DeserializeBytesError::BattleMusic)?
+				.into(),
+			polygon_music: MaybeMusic::deserialize_bytes(bytes.polygon_music)
+				.map_err(DeserializeBytesError::PolygonMusic)?
 				.into(),
 			experience:    *bytes.experience,
 			unknown_64:    *bytes.unknown_64,
@@ -126,7 +128,7 @@ impl Bytes for Deck {
 		})
 	}
 
-	fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError> {
+	fn serialize_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::SerializeError> {
 		// Split the bytes
 		let bytes = array_split_mut!(bytes,
 			deck         : [0x3c],
@@ -154,19 +156,19 @@ impl Bytes for Deck {
 		*bytes.experience = self.experience;
 
 		// City
-		MaybeCity::ref_cast(&self.city).to_bytes(bytes.city).into_ok();
+		MaybeCity::ref_cast(&self.city).serialize_bytes(bytes.city).into_ok();
 
 		// Armor evo
 		MaybeArmorEvo::ref_cast(&self.armor_evo)
-			.to_bytes(bytes.armor_evo)
+			.serialize_bytes(bytes.armor_evo)
 			.into_ok();
 
 		// Music
 		MaybeMusic::ref_cast(&self.battle_music)
-			.to_bytes(bytes.battle_music)
+			.serialize_bytes(bytes.battle_music)
 			.into_ok();
 		MaybeMusic::ref_cast(&self.polygon_music)
-			.to_bytes(bytes.polygon_music)
+			.serialize_bytes(bytes.polygon_music)
 			.into_ok();
 
 		// Unknown

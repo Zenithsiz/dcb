@@ -65,7 +65,7 @@ impl TmdModel {
 		for _ in 0..objs_len {
 			let mut obj_bytes = [0; 0x1c];
 			reader.read_exact(&mut obj_bytes).map_err(FromReaderError::ReadObj)?;
-			let obj = Obj::from_bytes(&obj_bytes).into_ok();
+			let obj = Obj::deserialize_bytes(&obj_bytes).into_ok();
 			objs.push(obj);
 		}
 

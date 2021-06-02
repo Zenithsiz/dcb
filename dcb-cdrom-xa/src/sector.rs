@@ -11,7 +11,7 @@ pub mod header;
 // Exports
 pub use ecc::Ecc;
 pub use edc::Edc;
-pub use error::{FromBytesError, NewError, ToBytesError};
+pub use error::{DeserializeBytesError, NewError, SerializeBytesError};
 pub use header::Header;
 
 // Imports
@@ -50,16 +50,16 @@ impl Sector {
 
 impl Bytes for Sector {
 	type ByteArray = [u8; 0x930];
-	type FromError = FromBytesError;
-	type ToError = ToBytesError;
+	type DeserializeError = DeserializeBytesError;
+	type SerializeError = SerializeBytesError;
 
-	fn from_bytes(byte_array: &Self::ByteArray) -> Result<Self, Self::FromError> {
+	fn deserialize_bytes(byte_array: &Self::ByteArray) -> Result<Self, Self::DeserializeError> {
 		let bytes = array_split!(byte_array,
 			header: [0x18 ],
 			rest  : [0x918],
 		);
 
-		let header = Header::from_bytes(bytes.header).map_err(FromBytesError::Header)?;
+		let header = Header::deserialize_bytes(bytes.header).map_err(DeserializeBytesError::Header)?;
 
 		let data = match header.subheader.submode.contains(SubMode::FORM) {
 			false => {
@@ -72,10 +72,10 @@ impl Bytes for Sector {
 				// TODO: Verify & correct ecc
 
 				// Verify edc
-				let edc = Edc::from_bytes(bytes.edc).into_ok();
+				let edc = Edc::deserialize_bytes(bytes.edc).into_ok();
 				let edc_bytes = &byte_array[0x10..0x818];
 				if let Err(calculated) = edc.is_valid(edc_bytes) {
-					return Err(FromBytesError::WrongEdc {
+					return Err(DeserializeBytesError::WrongEdc {
 						found:      edc.crc,
 						calculated: calculated.crc,
 					});
@@ -93,10 +93,10 @@ impl Bytes for Sector {
 				);
 
 				// Verify edc
-				let edc = Edc::from_bytes(bytes.edc).into_ok();
+				let edc = Edc::deserialize_bytes(bytes.edc).into_ok();
 				let edc_bytes = &byte_array[0x10..0x92c];
 				if let Err(calculated) = edc.is_valid(edc_bytes) {
-					return Err(FromBytesError::WrongEdc {
+					return Err(DeserializeBytesError::WrongEdc {
 						found:      edc.crc,
 						calculated: calculated.crc,
 					});
@@ -109,7 +109,7 @@ impl Bytes for Sector {
 		Ok(Self { header, data })
 	}
 
-	fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError> {
+	fn serialize_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::SerializeError> {
 		// Calculate edc before writing
 		let edc = match self.data {
 			Data::Form1(_) => Edc::calc_ecc(&bytes[0x10..0x818]),
@@ -122,7 +122,9 @@ impl Bytes for Sector {
 			rest  : [0x918],
 		);
 
-		self.header.to_bytes(bytes.header).map_err(ToBytesError::Header)?;
+		self.header
+			.serialize_bytes(bytes.header)
+			.map_err(SerializeBytesError::Header)?;
 
 		match self.data {
 			Data::Form1(data) => {
@@ -136,7 +138,7 @@ impl Bytes for Sector {
 				*bytes.data = data;
 
 				// Write the edc
-				edc.to_bytes(bytes.edc).into_ok();
+				edc.serialize_bytes(bytes.edc).into_ok();
 
 				// TODO: Ecc
 			},
@@ -152,7 +154,7 @@ impl Bytes for Sector {
 				*bytes.data = data;
 
 				// Write the edc
-				edc.to_bytes(bytes.edc).into_ok();
+				edc.serialize_bytes(bytes.edc).into_ok();
 			},
 		}
 

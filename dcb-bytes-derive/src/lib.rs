@@ -62,20 +62,20 @@ pub fn proxy_sentinel_derive(input: proc_macro::TokenStream) -> proc_macro::Toke
 		impl ::dcb_bytes::Bytes for #struct_name {
 			type ByteArray = <#wrapper_type as ::dcb_bytes::Bytes>::ByteArray;
 
-			type FromError = <#wrapper_type as ::dcb_bytes::Bytes>::FromError;
-			fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError>
+			type DeserializeError = <#wrapper_type as ::dcb_bytes::Bytes>::DeserializeError;
+			fn deserialize_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::DeserializeError>
 			{
 				match bytes {
 					#sentinel_value => Ok( Self(None) ),
-					_               => Ok( Self(Some( ::dcb_bytes::Bytes::from_bytes(bytes)? )) ),
+					_               => Ok( Self(Some( ::dcb_bytes::Bytes::deserialize_bytes(bytes)? )) ),
 				}
 			}
 
-			type ToError = <#wrapper_type as ::dcb_bytes::Bytes>::ToError;
-			fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError>
+			type SerializeError = <#wrapper_type as ::dcb_bytes::Bytes>::SerializeError;
+			fn serialize_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::SerializeError>
 			{
 				match &self.0 {
-					Some(value) => ::dcb_bytes::Bytes::to_bytes(value, bytes)?,
+					Some(value) => ::dcb_bytes::Bytes::serialize_bytes(value, bytes)?,
 					None        => *bytes = #sentinel_value,
 				}
 
@@ -105,9 +105,9 @@ pub fn discriminant_derive(input: proc_macro::TokenStream) -> proc_macro::TokenS
 	let struct_name = input.ident;
 	let output = quote::quote!(
 		// TODO: Maybe just define this in `dcb_bytes` and reference it here instead?
-		/// Error type for [`Bytes::from_bytes`]
+		/// Error type for [`Bytes::deserialize_bytes`]
 		#[derive(PartialEq, Eq, Clone, Copy, Debug, ::thiserror::Error)]
-		pub enum FromBytesError {
+		pub enum DeserializeBytesError {
 			/// Unknown value
 			#[error("Unknown byte {:#x}", byte)]
 			UnknownValue {
@@ -120,19 +120,19 @@ pub fn discriminant_derive(input: proc_macro::TokenStream) -> proc_macro::TokenS
 		impl ::dcb_bytes::Bytes for #struct_name {
 			type ByteArray = u8;
 
-			type FromError = FromBytesError;
-			fn from_bytes(byte: &Self::ByteArray) -> Result<Self, Self::FromError> {
+			type DeserializeError = DeserializeBytesError;
+			fn deserialize_bytes(byte: &Self::ByteArray) -> Result<Self, Self::DeserializeError> {
 				match *byte {
 					#(
 						byte if byte == #keys => Ok(Self::#values),
 					)*
 
-					byte => Err(FromBytesError::UnknownValue { byte }),
+					byte => Err(DeserializeBytesError::UnknownValue { byte }),
 				}
 			}
 
-			type ToError = !;
-			fn to_bytes(&self, byte: &mut Self::ByteArray) -> Result<(), Self::ToError> {
+			type SerializeError = !;
+			fn serialize_bytes(&self, byte: &mut Self::ByteArray) -> Result<(), Self::SerializeError> {
 				*byte = match &self {
 					#(
 						Self::#values => #keys,

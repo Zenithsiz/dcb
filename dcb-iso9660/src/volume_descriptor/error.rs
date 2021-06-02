@@ -3,9 +3,9 @@
 // Imports
 use super::{boot, primary, DescriptorKind};
 
-/// Error type for [`Bytes::from_bytes`](dcb_bytes::Bytes::from_bytes)
+/// Error type for [`Bytes::deserialize_bytes`](dcb_bytes::Bytes::deserialize_bytes)
 #[derive(Debug, thiserror::Error)]
-pub enum FromBytesError {
+pub enum DeserializeBytesError {
 	/// Invalid magic
 	#[error("Invalid magic {_0:#x?}")]
 	InvalidMagic([u8; 5]),
@@ -20,9 +20,9 @@ pub enum FromBytesError {
 
 	/// Unable to parse boot record
 	#[error("Unable to parse boot record")]
-	ParseBootRecord(#[source] boot::FromBytesError),
+	ParseBootRecord(#[source] boot::DeserializeBytesError),
 
 	/// Unable to parse primary
 	#[error("Unable to parse primary")]
-	ParsePrimary(#[source] primary::FromBytesError),
+	ParsePrimary(#[source] primary::DeserializeBytesError),
 }

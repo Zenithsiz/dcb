@@ -36,7 +36,7 @@ impl<A: Alphabet> StrAlphabet<A> {
 	///
 	/// # Panics
 	/// Panics if `self` and `bytes` are different lengths
-	pub fn to_bytes(&self, bytes: &mut [u8]) {
+	pub fn write_bytes(&self, bytes: &mut [u8]) {
 		bytes.copy_from_slice(self.as_bytes());
 	}
 

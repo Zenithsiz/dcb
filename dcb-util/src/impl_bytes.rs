@@ -37,9 +37,9 @@ macro_rules! generate_enum_property_mod
 						$enum_variant_value:literal,
 					)+
 
-					// Extra fields for `Bytes::from_bytes`.
+					// Extra fields for `Bytes::deserialize_bytes`.
 					$(
-						$from_bytes_value:literal => $from_bytes_body:tt,
+						$deserialize_bytes_value:literal => $deserialize_bytes_body:tt,
 					)*
 
 					// Error
@@ -74,9 +74,9 @@ macro_rules! generate_enum_property_mod
 					)+
 				}
 
-				/// Error type for [`::dcb_bytes::Bytes::from_bytes`]
+				/// Error type for [`::dcb_bytes::Bytes::deserialize_bytes`]
 				#[derive(PartialEq, Eq, Clone, Copy, ::std::fmt::Debug, ::thiserror::Error)]
-				pub enum FromBytesError {
+				pub enum DeserializeBytesError {
 
 					/// Unknown value
 					#[error($error_unknown_value_display, byte)]
@@ -89,8 +89,8 @@ macro_rules! generate_enum_property_mod
 				{
 					type ByteArray = u8;
 
-					type FromError = FromBytesError;
-					fn from_bytes(byte: &Self::ByteArray) -> Result<Self, Self::FromError>
+					type DeserializeError = DeserializeBytesError;
+					fn deserialize_bytes(byte: &Self::ByteArray) -> Result<Self, Self::DeserializeError>
 					{
 						match byte {
 							$(
@@ -99,18 +99,18 @@ macro_rules! generate_enum_property_mod
 							)+
 
 							$(
-								$from_bytes_value => {
-									Ok( { $from_bytes_body } )
+								$deserialize_bytes_value => {
+									Ok( { $deserialize_bytes_body } )
 								}
 							)*
 
-							&byte => Err( Self::FromError::UnknownValue{ byte } ),
+							&byte => Err( Self::DeserializeError::UnknownValue{ byte } ),
 						}
 					}
 
-					type ToError = !;
+					type SerializeError = !;
 					#[allow(unreachable_code, unused_variables)] // For when there are multiple values
-					fn to_bytes(&self, byte: &mut Self::ByteArray) -> Result<(), Self::ToError>
+					fn serialize_bytes(&self, byte: &mut Self::ByteArray) -> Result<(), Self::SerializeError>
 					{
 						*byte = match self {
 							$(

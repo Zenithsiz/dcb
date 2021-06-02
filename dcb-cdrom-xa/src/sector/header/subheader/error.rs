@@ -3,17 +3,17 @@
 // Imports
 use super::submode;
 
-/// Error type for [`Bytes::from_bytes`](dcb_bytes::Bytes::from_bytes)
+/// Error type for [`Bytes::deserialize_bytes`](dcb_bytes::Bytes::deserialize_bytes)
 #[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
-pub enum FromBytesError {
+pub enum DeserializeBytesError {
 	/// Unable to read submode
 	#[error("Unable to read submode")]
 	SubMode(submode::BytesError),
 }
 
-/// Error type for [`Bytes::to_bytes`](dcb_bytes::Bytes::to_bytes)
+/// Error type for [`Bytes::serialize_bytes`](dcb_bytes::Bytes::serialize_bytes)
 #[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
-pub enum ToBytesError {
+pub enum SerializeBytesError {
 	/// Unable to write submode
 	#[error("Unable to write submode")]
 	SubMode(submode::BytesError),

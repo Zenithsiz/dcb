@@ -237,28 +237,28 @@ impl Effect {
 	}
 }
 
-/// Error type for [`Bytes::from_bytes`](dcb_bytes::Bytes::from_bytes)
+/// Error type for [`Bytes::deserialize_bytes`](dcb_bytes::Bytes::deserialize_bytes)
 #[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
-pub enum FromBytesError {
+pub enum DeserializeBytesError {
 	/// Unknown property for first property argument
 	#[error("Unknown property for first property argument")]
-	FirstProperty(#[source] property::digimon_property::FromBytesError),
+	FirstProperty(#[source] property::digimon_property::DeserializeBytesError),
 
 	/// Unknown property for second property argument
 	#[error("Unknown property for second property argument")]
-	SecondProperty(#[source] property::digimon_property::FromBytesError),
+	SecondProperty(#[source] property::digimon_property::DeserializeBytesError),
 
 	/// Unknown property for third property argument
 	#[error("Unknown property for third property argument")]
-	ThirdProperty(#[source] property::digimon_property::FromBytesError),
+	ThirdProperty(#[source] property::digimon_property::DeserializeBytesError),
 
 	/// Unknown operation argument
 	#[error("Unknown operation argument")]
-	Operation(#[source] property::effect_operation::FromBytesError),
+	Operation(#[source] property::effect_operation::DeserializeBytesError),
 
 	/// Unknown attack type for [`Effect::UseAttack`]
 	#[error("Unknown attack type")]
-	UseAttackAttackType(#[source] property::attack_type::FromBytesError),
+	UseAttackAttackType(#[source] property::attack_type::DeserializeBytesError),
 
 	/// Unknown effect type
 	#[error("Unknown byte for an effect type: {}", byte)]
@@ -268,9 +268,9 @@ pub enum FromBytesError {
 	},
 }
 
-/// Error type for [`Bytes::from_bytes`](dcb_bytes::Bytes::from_bytes)
+/// Error type for [`Bytes::deserialize_bytes`](dcb_bytes::Bytes::deserialize_bytes)
 #[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
-pub enum ToBytesError {
+pub enum SerializeBytesError {
 	/// Invalid property to set
 	#[error("Invalid property to set {property}")]
 	InvalidProperty {
@@ -291,10 +291,10 @@ pub enum ToBytesError {
 
 impl Bytes for Effect {
 	type ByteArray = [u8; 0xf];
-	type FromError = FromBytesError;
-	type ToError = ToBytesError;
+	type DeserializeError = DeserializeBytesError;
+	type SerializeError = SerializeBytesError;
 
-	fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError> {
+	fn deserialize_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::DeserializeError> {
 		// Utility uses
 		use PlayerType::{Opponent, Player};
 		use Slot::{Dp as DpSlot, Hand, Offline as OfflineDeck, Online as OnlineDeck};
@@ -323,21 +323,21 @@ impl Bytes for Effect {
 		// Else create getters for all arguments
 		let get_a = || {
 			(*bytes.a != 0)
-				.then(|| DigimonProperty::from_bytes(bytes.a))
+				.then(|| DigimonProperty::deserialize_bytes(bytes.a))
 				.transpose()
-				.map_err(FromBytesError::FirstProperty)
+				.map_err(DeserializeBytesError::FirstProperty)
 		};
 		let get_b = || {
 			(*bytes.b != 0)
-				.then(|| DigimonProperty::from_bytes(bytes.b))
+				.then(|| DigimonProperty::deserialize_bytes(bytes.b))
 				.transpose()
-				.map_err(FromBytesError::SecondProperty)
+				.map_err(DeserializeBytesError::SecondProperty)
 		};
 		let get_c = || {
 			(*bytes.c != 0)
-				.then(|| DigimonProperty::from_bytes(bytes.c))
+				.then(|| DigimonProperty::deserialize_bytes(bytes.c))
 				.transpose()
-				.map_err(FromBytesError::ThirdProperty)
+				.map_err(DeserializeBytesError::ThirdProperty)
 		};
 
 		// The number arguments
@@ -347,17 +347,17 @@ impl Bytes for Effect {
 		// Attack type
 		// Lower byte of `y`
 		let get_attack_type =
-			|| AttackType::from_bytes(&y.to_le_bytes()[0]).map_err(FromBytesError::UseAttackAttackType);
+			|| AttackType::deserialize_bytes(&y.to_le_bytes()[0]).map_err(DeserializeBytesError::UseAttackAttackType);
 
 		// The operation argument
-		let get_op = || EffectOperation::from_bytes(bytes.op).map_err(FromBytesError::Operation);
+		let get_op = || EffectOperation::deserialize_bytes(bytes.op).map_err(DeserializeBytesError::Operation);
 
 		// And check what the effect type is
 		#[rustfmt::skip]
 		let effect = match bytes.effect_type {
 			0..=13 | 25 => Self::ChangeProperty {
 				// Note: unwrapping is fine here because we know that `effect_type_byte+1` is between 1 and 14 inclusive
-				property: DigimonProperty::from_bytes( &(bytes.effect_type+1) )
+				property: DigimonProperty::deserialize_bytes( &(bytes.effect_type+1) )
 					.expect("Unable to get digimon property from bytes"),
 				a: get_a()?, b: get_b()?, c: get_c()?, x, y, op: get_op()?,
 			},
@@ -400,7 +400,7 @@ impl Bytes for Effect {
 			52 => Self::AttackFirst{ player: Player   },
 			53 => Self::AttackFirst{ player: Opponent },
 
-			&byte => return Err( FromBytesError::EffectType { byte } ),
+			&byte => return Err( DeserializeBytesError::EffectType { byte } ),
 		};
 
 		// And return the effect
@@ -408,7 +408,7 @@ impl Bytes for Effect {
 	}
 
 	#[allow(clippy::too_many_lines)] // It's a single match, we can't really split it
-	fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError> {
+	fn serialize_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::SerializeError> {
 		// Utility uses
 		use PlayerType::{Opponent, Player};
 		use Slot::{Dp as DpSlot, Hand, Offline as OfflineDeck, Online as OnlineDeck};
@@ -434,27 +434,27 @@ impl Bytes for Effect {
 		let bytes_c = bytes.c;
 		let mut set_a = |a: Option<DigimonProperty>| {
 			if let Some(a) = a {
-				a.to_bytes(bytes_a).into_ok();
+				a.serialize_bytes(bytes_a).into_ok();
 			} else {
 				*bytes_a = 0;
 			}
 		};
 		let mut set_b = |b: Option<DigimonProperty>| {
 			if let Some(b) = b {
-				b.to_bytes(bytes_b).into_ok();
+				b.serialize_bytes(bytes_b).into_ok();
 			} else {
 				*bytes_b = 0;
 			}
 		};
 		let mut set_c = |c: Option<DigimonProperty>| {
 			if let Some(c) = c {
-				c.to_bytes(bytes_c).into_ok();
+				c.serialize_bytes(bytes_c).into_ok();
 			} else {
 				*bytes_c = 0;
 			}
 		};
 		let bytes_attack_type = &mut bytes.y[0];
-		let mut set_attack_type = |attack: AttackType| attack.to_bytes(bytes_attack_type).into_ok();
+		let mut set_attack_type = |attack: AttackType| attack.serialize_bytes(bytes_attack_type).into_ok();
 
 		// Set zeros
 		*bytes.zero_0 = 0;
@@ -467,12 +467,12 @@ impl Bytes for Effect {
 		match *self {
 			Self::ChangeProperty { property, a, b, c, x, y, op } => {
 				// Write the property minus one
-				property.to_bytes(bytes.effect_type).into_ok();
+				property.serialize_bytes(bytes.effect_type).into_ok();
 				*bytes.effect_type -= 1;
 
 				// If the effect type isn't within 0..=13 | 25, return Err
 				if !matches!(bytes.effect_type, 0..=13 | 25) {
-					return Err(ToBytesError::InvalidProperty { property });
+					return Err(SerializeBytesError::InvalidProperty { property });
 				}
 
 				// Write all arguments
@@ -481,7 +481,7 @@ impl Bytes for Effect {
 				set_c(c);
 				LittleEndian::write_u16(bytes.x, x);
 				LittleEndian::write_u16(bytes.y, y);
-				op.to_bytes(bytes.op).into_ok();
+				op.serialize_bytes(bytes.op).into_ok();
 			},
 
 			Self::UseAttack { player, attack } => {
@@ -509,7 +509,7 @@ impl Bytes for Effect {
 					(Player  , DpSlot, OfflineDeck) => 36,
 					(Opponent, DpSlot, OfflineDeck) => 37,
 
-					(_, from, to) => return Err( ToBytesError::InvalidMoveCards { from, to } ),
+					(_, from, to) => return Err( SerializeBytesError::InvalidMoveCards { from, to } ),
 				};
 				LittleEndian::write_u16(bytes.y, count);
 			}
@@ -560,11 +560,11 @@ pub struct MaybeEffect(Option<Effect>);
 
 impl Bytes for MaybeEffect {
 	type ByteArray = [u8; 0x10];
-	type FromError = FromBytesError;
-	type ToError = ToBytesError;
+	type DeserializeError = DeserializeBytesError;
+	type SerializeError = SerializeBytesError;
 
 	// `bytes` should include the `exists` byte
-	fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError> {
+	fn deserialize_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::DeserializeError> {
 		let bytes = array_split!(bytes,
 			exists : 0x1,
 			effect : [0xf],
@@ -576,10 +576,10 @@ impl Bytes for MaybeEffect {
 		}
 
 		// Else get the effect
-		Ok(Self(Some(Effect::from_bytes(bytes.effect)?)))
+		Ok(Self(Some(Effect::deserialize_bytes(bytes.effect)?)))
 	}
 
-	fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError> {
+	fn serialize_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::SerializeError> {
 		let bytes = array_split_mut!(bytes,
 			exists: 0x1,
 			effect: [0xf],
@@ -589,7 +589,7 @@ impl Bytes for MaybeEffect {
 		match &self.0 {
 			Some(effect) => {
 				*bytes.exists = 1;
-				effect.to_bytes(bytes.effect)?;
+				effect.serialize_bytes(bytes.effect)?;
 			},
 			None => {
 				*bytes.exists = 0;

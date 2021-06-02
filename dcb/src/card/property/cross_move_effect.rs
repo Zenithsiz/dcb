@@ -63,9 +63,9 @@ impl CrossMoveEffect {
 	}
 }
 
-/// Error type for [`::dcb_bytes::Bytes::from_bytes`]
+/// Error type for [`::dcb_bytes::Bytes::deserialize_bytes`]
 #[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
-pub enum FromBytesError {
+pub enum DeserializeBytesError {
 	/// Unknown value
 	#[error("Unknown byte {:#x} for a cross move effect", byte)]
 	UnknownValue {
@@ -75,10 +75,10 @@ pub enum FromBytesError {
 }
 impl ::dcb_bytes::Bytes for CrossMoveEffect {
 	type ByteArray = u8;
-	type FromError = FromBytesError;
-	type ToError = !;
+	type DeserializeError = DeserializeBytesError;
+	type SerializeError = !;
 
-	fn from_bytes(byte: &Self::ByteArray) -> Result<Self, Self::FromError> {
+	fn deserialize_bytes(byte: &Self::ByteArray) -> Result<Self, Self::DeserializeError> {
 		match byte {
 			1 => Ok(Self::AttackFirst),
 			2 => Ok(Self::AttackToZero(AttackType::Circle)),
@@ -95,12 +95,12 @@ impl ::dcb_bytes::Bytes for CrossMoveEffect {
 			13 => Ok(Self::TripleAgainst(Speciality::Nature)),
 			14 => Ok(Self::TripleAgainst(Speciality::Darkness)),
 			15 => Ok(Self::TripleAgainst(Speciality::Rare)),
-			&byte => Err(Self::FromError::UnknownValue { byte }),
+			&byte => Err(Self::DeserializeError::UnknownValue { byte }),
 		}
 	}
 
 	#[allow(unreachable_code, unused_variables)]
-	fn to_bytes(&self, byte: &mut Self::ByteArray) -> Result<(), Self::ToError> {
+	fn serialize_bytes(&self, byte: &mut Self::ByteArray) -> Result<(), Self::SerializeError> {
 		*byte = match self {
 			Self::AttackFirst => 1,
 			Self::AttackToZero(AttackType::Circle) => 2,

@@ -86,7 +86,7 @@ impl Animation2d {
 			reader
 				.read_exact(&mut frame_bytes)
 				.map_err(DeserializeError::ReadFrame)?;
-			let frame = Frame::from_bytes(&frame_bytes).into_ok();
+			let frame = Frame::deserialize_bytes(&frame_bytes).into_ok();
 
 			frames.push(frame);
 		}

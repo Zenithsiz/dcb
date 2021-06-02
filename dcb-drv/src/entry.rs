@@ -4,7 +4,7 @@
 pub mod error;
 
 // Exports
-pub use error::FromBytesError;
+pub use error::DeserializeBytesError;
 
 
 // Imports
@@ -80,7 +80,7 @@ pub struct DirEntry {
 
 impl DirEntry {
 	/// Reads a directory entry reader from bytes
-	pub fn from_bytes(bytes: &[u8; 0x20]) -> Result<Option<Self>, FromBytesError> {
+	pub fn deserialize_bytes(bytes: &[u8; 0x20]) -> Result<Option<Self>, DeserializeBytesError> {
 		let bytes = array_split!(bytes,
 			kind      :  0x1,
 			extension : [0x3],
@@ -104,9 +104,9 @@ impl DirEntry {
 		}
 
 		// Then get the name and extension
-		let mut name = AsciiStrArr::from_bytes(bytes.name).map_err(FromBytesError::Name)?;
+		let mut name = AsciiStrArr::from_bytes(bytes.name).map_err(DeserializeBytesError::Name)?;
 		name.trim_end(AsciiChar::Null);
-		let mut extension = AsciiStrArr::from_bytes(bytes.extension).map_err(FromBytesError::Extension)?;
+		let mut extension = AsciiStrArr::from_bytes(bytes.extension).map_err(DeserializeBytesError::Extension)?;
 		extension.trim_end(AsciiChar::Null);
 
 		// Get the sector position, size and date
@@ -128,14 +128,14 @@ impl DirEntry {
 					ptr: DirPtr { sector_pos },
 				}
 			},
-			&kind => return Err(FromBytesError::InvalidKind(kind)),
+			&kind => return Err(DeserializeBytesError::InvalidKind(kind)),
 		};
 
 		Ok(Some(Self { name, date, kind }))
 	}
 
 	/// Writes this entry to bytes.
-	pub fn to_bytes(&self, bytes: &mut [u8; 0x20]) {
+	pub fn serialize_bytes(&self, bytes: &mut [u8; 0x20]) {
 		let bytes = array_split_mut!(bytes,
 			kind      :  0x1,
 			extension : [0x3],

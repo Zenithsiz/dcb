@@ -29,26 +29,26 @@ pub struct EffectCondition {
 
 /// The error type thrown by `FromBytes`
 #[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
-pub enum FromBytesError {
+pub enum DeserializeBytesError {
 	/// Unable to read the condition
 	#[error("Unable to read the effect condition")]
-	Condition(#[source] property::digimon_property::FromBytesError),
+	Condition(#[source] property::digimon_property::DeserializeBytesError),
 
 	/// Unable to read a property argument
 	#[error("Unable to read the property argument")]
-	PropertyArgument(#[source] property::digimon_property::FromBytesError),
+	PropertyArgument(#[source] property::digimon_property::DeserializeBytesError),
 
 	/// Unable to read the effect operation
 	#[error("Unable to read the effect operation")]
-	Operation(#[source] property::effect_condition_operation::FromBytesError),
+	Operation(#[source] property::effect_condition_operation::DeserializeBytesError),
 }
 
 impl Bytes for EffectCondition {
 	type ByteArray = [u8; 0x20];
-	type FromError = FromBytesError;
-	type ToError = !;
+	type DeserializeError = DeserializeBytesError;
+	type SerializeError = !;
 
-	fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError> {
+	fn deserialize_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::DeserializeError> {
 		let bytes = array_split!(bytes,
 			misfire     : 0x1,
 			zero_0      : 0x1,
@@ -80,19 +80,21 @@ impl Bytes for EffectCondition {
 
 		Ok(Self {
 			misfire:      (*bytes.misfire != 0),
-			property_cmp: DigimonProperty::from_bytes(bytes.property_cmp).map_err(FromBytesError::Condition)?,
+			property_cmp: DigimonProperty::deserialize_bytes(bytes.property_cmp)
+				.map_err(DeserializeBytesError::Condition)?,
 
-			arg_property: MaybeDigimonProperty::from_bytes(bytes.arg_property)
-				.map_err(FromBytesError::PropertyArgument)?
+			arg_property: MaybeDigimonProperty::deserialize_bytes(bytes.arg_property)
+				.map_err(DeserializeBytesError::PropertyArgument)?
 				.into(),
 
 			arg_num: LittleEndian::read_u16(bytes.arg_num),
 
-			operation: EffectConditionOperation::from_bytes(bytes.operation).map_err(FromBytesError::Operation)?,
+			operation: EffectConditionOperation::deserialize_bytes(bytes.operation)
+				.map_err(DeserializeBytesError::Operation)?,
 		})
 	}
 
-	fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError> {
+	fn serialize_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::SerializeError> {
 		let bytes = array_split_mut!(bytes,
 			misfire     : 0x1,
 			zero_0      : 0x1,
@@ -110,14 +112,14 @@ impl Bytes for EffectCondition {
 		*bytes.misfire = if self.misfire { 1 } else { 0 };
 
 		// Condition
-		self.property_cmp.to_bytes(bytes.property_cmp).into_ok();
+		self.property_cmp.serialize_bytes(bytes.property_cmp).into_ok();
 
 		// Arguments
 		MaybeDigimonProperty::ref_cast(&self.arg_property)
-			.to_bytes(bytes.arg_property)
+			.serialize_bytes(bytes.arg_property)
 			.into_ok();
 		LittleEndian::write_u16(bytes.arg_num, self.arg_num);
-		self.operation.to_bytes(bytes.operation).into_ok();
+		self.operation.serialize_bytes(bytes.operation).into_ok();
 
 		// Zeros
 		*bytes.zero_0 = 0;
@@ -139,24 +141,24 @@ pub struct MaybeEffectCondition(Option<EffectCondition>);
 
 impl Bytes for MaybeEffectCondition {
 	type ByteArray = [u8; 0x20];
-	type FromError = FromBytesError;
-	type ToError = <EffectCondition as Bytes>::ToError;
+	type DeserializeError = DeserializeBytesError;
+	type SerializeError = <EffectCondition as Bytes>::SerializeError;
 
-	fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError> {
+	fn deserialize_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::DeserializeError> {
 		// If we have no property comparison, return None
 		if bytes[0x2] == 0 {
 			return Ok(Self(None));
 		}
 
 		// Else build the type
-		Ok(Self(Some(EffectCondition::from_bytes(bytes)?)))
+		Ok(Self(Some(EffectCondition::deserialize_bytes(bytes)?)))
 	}
 
-	#[allow(clippy::diverging_sub_expression)] // For if we ever change `EffectCondition::ToError`
-	fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError> {
+	#[allow(clippy::diverging_sub_expression)] // For if we ever change `EffectCondition::SerializeError`
+	fn serialize_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::SerializeError> {
 		// Check if we exist
 		match self.0 {
-			Some(cond) => cond.to_bytes(bytes)?,
+			Some(cond) => cond.serialize_bytes(bytes)?,
 			None => bytes[0x2] = 0,
 		};
 

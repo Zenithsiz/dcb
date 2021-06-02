@@ -219,7 +219,7 @@ fn main() -> Result<(), anyhow::Error> {
 		.seek(SeekFrom::Start(0))
 		.context("Unable to seek stream to beginning")?;
 	let mut header_bytes = [0; 0x800];
-	header.to_bytes(&mut header_bytes).into_ok();
+	header.serialize_bytes(&mut header_bytes).into_ok();
 	output_file
 		.write_all(&header_bytes)
 		.context("Unable to write header to output file")?;

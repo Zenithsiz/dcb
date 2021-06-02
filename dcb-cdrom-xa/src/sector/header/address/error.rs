@@ -8,9 +8,9 @@ pub enum FromSectorPosError {
 	TooLarge(usize),
 }
 
-/// Error type for [`Bytes::from_bytes`](dcb_bytes::Bytes::from_bytes)
+/// Error type for [`Bytes::deserialize_bytes`](dcb_bytes::Bytes::deserialize_bytes)
 #[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
-pub enum FromBytesError {
+pub enum DeserializeBytesError {
 	/// Invalid minute
 	#[error("Invalid minute {_0:#x}")]
 	InvalidMinute(u8),
@@ -32,10 +32,10 @@ pub enum FromBytesError {
 	OutOfRangeBlock(u8),
 }
 
-/// Error type for [`Bytes::to_bytes`](dcb_bytes::Bytes::to_bytes)
+/// Error type for [`Bytes::serialize_bytes`](dcb_bytes::Bytes::serialize_bytes)
 #[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
 #[allow(clippy::pub_enum_variant_names)] // It just happens they're all out of range, other errors may occur
-pub enum ToBytesError {
+pub enum SerializeBytesError {
 	/// Out of range minute
 	#[error("Out of range minute {_0:#x}")]
 	OutOfRangeMinute(u8),

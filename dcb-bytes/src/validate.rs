@@ -8,7 +8,7 @@ use either::Either;
 /// This works in tandem with the [`Bytes`](crate::Bytes) interface to allow
 /// applications which take user input to validate input before serializing it.
 ///
-/// Although this information exists by calling [`Bytes::to_bytes`](crate::Bytes::to_bytes),
+/// Although this information exists by calling [`Bytes::serialize_bytes`](crate::Bytes::serialize_bytes),
 /// this interface provides two main advantages:
 ///
 /// 1. It is faster than serializing the data, as it doesn't need to write the raw bytes and

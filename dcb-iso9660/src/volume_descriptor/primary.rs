@@ -4,7 +4,7 @@
 pub mod error;
 
 // Exports
-pub use error::FromBytesError;
+pub use error::DeserializeBytesError;
 
 // Imports
 use crate::{date_time::DecDateTime, entry::DirEntry, StrArrA, StrArrD};
@@ -78,10 +78,10 @@ pub struct PrimaryVolumeDescriptor {
 
 impl Bytes for PrimaryVolumeDescriptor {
 	type ByteArray = [u8; 0x7f9];
-	type FromError = FromBytesError;
-	type ToError = !;
+	type DeserializeError = DeserializeBytesError;
+	type SerializeError = !;
 
-	fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError> {
+	fn deserialize_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::DeserializeError> {
 		let bytes = array_split!(bytes,
 			zeroes0                      :  0x1,
 			system_id                    : [0x20],
@@ -121,8 +121,10 @@ impl Bytes for PrimaryVolumeDescriptor {
 		);
 
 		Ok(Self {
-			system_id:                     StrArrA::from_bytes(bytes.system_id).map_err(FromBytesError::SystemId)?,
-			volume_id:                     StrArrD::from_bytes(bytes.volume_id).map_err(FromBytesError::VolumeId)?,
+			system_id:                     StrArrA::from_bytes(bytes.system_id)
+				.map_err(DeserializeBytesError::SystemId)?,
+			volume_id:                     StrArrD::from_bytes(bytes.volume_id)
+				.map_err(DeserializeBytesError::VolumeId)?,
 			volume_space_size:             LittleEndian::read_u32(bytes.volume_space_size_lsb),
 			volume_sequence_number:        LittleEndian::read_u16(bytes.volume_sequence_number_lsb),
 			logical_block_size:            LittleEndian::read_u16(bytes.logical_block_size_lsb),
@@ -130,33 +132,33 @@ impl Bytes for PrimaryVolumeDescriptor {
 			path_table_location:           LittleEndian::read_u32(bytes.path_table_lsb_location),
 			path_table_opt_location:       LittleEndian::read_u32(bytes.path_table_lsb_opt_location),
 			root_dir_entry:                DirEntry::from_reader(&mut std::io::Cursor::new(bytes.root_dir_entry))
-				.map_err(FromBytesError::RootDirEntry)?,
+				.map_err(DeserializeBytesError::RootDirEntry)?,
 			volume_set_id:                 StrArrD::from_bytes(bytes.volume_set_id)
-				.map_err(FromBytesError::VolumeSetId)?,
+				.map_err(DeserializeBytesError::VolumeSetId)?,
 			publisher_id:                  StrArrA::from_bytes(bytes.publisher_id)
-				.map_err(FromBytesError::PublisherId)?,
+				.map_err(DeserializeBytesError::PublisherId)?,
 			data_preparer_id:              StrArrA::from_bytes(bytes.data_preparer_id)
-				.map_err(FromBytesError::DataPreparerId)?,
+				.map_err(DeserializeBytesError::DataPreparerId)?,
 			application_id:                StrArrA::from_bytes(bytes.application_id)
-				.map_err(FromBytesError::ApplicationId)?,
+				.map_err(DeserializeBytesError::ApplicationId)?,
 			copyright_file_id:             StrArrD::from_bytes(bytes.copyright_file_id)
-				.map_err(FromBytesError::CopyrightFileId)?,
+				.map_err(DeserializeBytesError::CopyrightFileId)?,
 			abstract_file_id:              StrArrD::from_bytes(bytes.abstract_file_id)
-				.map_err(FromBytesError::AbstractFileId)?,
+				.map_err(DeserializeBytesError::AbstractFileId)?,
 			bibliographic_file_id:         StrArrD::from_bytes(bytes.bibliographic_file_id)
-				.map_err(FromBytesError::BibliographicFileId)?,
-			volume_creation_date_time:     DecDateTime::from_bytes(bytes.volume_creation_date_time)
-				.map_err(FromBytesError::VolumeCreationDateTime)?,
-			volume_modification_date_time: DecDateTime::from_bytes(bytes.volume_modification_date_time)
-				.map_err(FromBytesError::VolumeModificationDateTime)?,
-			volume_expiration_date_time:   DecDateTime::from_bytes(bytes.volume_expiration_date_time)
-				.map_err(FromBytesError::VolumeExpirationDateTime)?,
-			volume_effective_date_time:    DecDateTime::from_bytes(bytes.volume_effective_date_time)
-				.map_err(FromBytesError::VolumeEffectiveDateTime)?,
+				.map_err(DeserializeBytesError::BibliographicFileId)?,
+			volume_creation_date_time:     DecDateTime::deserialize_bytes(bytes.volume_creation_date_time)
+				.map_err(DeserializeBytesError::VolumeCreationDateTime)?,
+			volume_modification_date_time: DecDateTime::deserialize_bytes(bytes.volume_modification_date_time)
+				.map_err(DeserializeBytesError::VolumeModificationDateTime)?,
+			volume_expiration_date_time:   DecDateTime::deserialize_bytes(bytes.volume_expiration_date_time)
+				.map_err(DeserializeBytesError::VolumeExpirationDateTime)?,
+			volume_effective_date_time:    DecDateTime::deserialize_bytes(bytes.volume_effective_date_time)
+				.map_err(DeserializeBytesError::VolumeEffectiveDateTime)?,
 		})
 	}
 
-	fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError> {
+	fn serialize_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::SerializeError> {
 		let bytes = array_split_mut!(bytes,
 			zeroes0                      :  0x1,
 			system_id                    : [0x20],
@@ -195,8 +197,8 @@ impl Bytes for PrimaryVolumeDescriptor {
 			reserved                     : [0x28d],
 		);
 
-		self.system_id.to_bytes(bytes.system_id);
-		self.volume_id.to_bytes(bytes.volume_id);
+		self.system_id.write_bytes(bytes.system_id);
+		self.volume_id.write_bytes(bytes.volume_id);
 		LittleEndian::write_u32(bytes.volume_space_size_lsb, self.volume_space_size);
 		LittleEndian::write_u16(bytes.volume_sequence_number_lsb, self.volume_sequence_number);
 		LittleEndian::write_u16(bytes.logical_block_size_lsb, self.logical_block_size);
@@ -206,24 +208,24 @@ impl Bytes for PrimaryVolumeDescriptor {
 		self.root_dir_entry
 			.to_writer(&mut std::io::Cursor::<&mut [u8]>::new(bytes.root_dir_entry))
 			.expect("Couldn't write root entry"); // TODO: Error handling
-		self.volume_set_id.to_bytes(bytes.volume_set_id);
-		self.publisher_id.to_bytes(bytes.publisher_id);
-		self.data_preparer_id.to_bytes(bytes.data_preparer_id);
-		self.application_id.to_bytes(bytes.application_id);
-		self.copyright_file_id.to_bytes(bytes.copyright_file_id);
-		self.abstract_file_id.to_bytes(bytes.abstract_file_id);
-		self.bibliographic_file_id.to_bytes(bytes.bibliographic_file_id);
+		self.volume_set_id.write_bytes(bytes.volume_set_id);
+		self.publisher_id.write_bytes(bytes.publisher_id);
+		self.data_preparer_id.write_bytes(bytes.data_preparer_id);
+		self.application_id.write_bytes(bytes.application_id);
+		self.copyright_file_id.write_bytes(bytes.copyright_file_id);
+		self.abstract_file_id.write_bytes(bytes.abstract_file_id);
+		self.bibliographic_file_id.write_bytes(bytes.bibliographic_file_id);
 		self.volume_creation_date_time
-			.to_bytes(bytes.volume_creation_date_time)
+			.serialize_bytes(bytes.volume_creation_date_time)
 			.into_ok();
 		self.volume_modification_date_time
-			.to_bytes(bytes.volume_modification_date_time)
+			.serialize_bytes(bytes.volume_modification_date_time)
 			.into_ok();
 		self.volume_expiration_date_time
-			.to_bytes(bytes.volume_expiration_date_time)
+			.serialize_bytes(bytes.volume_expiration_date_time)
 			.into_ok();
 		self.volume_effective_date_time
-			.to_bytes(bytes.volume_effective_date_time)
+			.serialize_bytes(bytes.volume_effective_date_time)
 			.into_ok();
 
 		Ok(())

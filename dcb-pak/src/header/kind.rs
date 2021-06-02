@@ -35,17 +35,17 @@ pub enum Kind {
 	AudioVb,
 }
 
-/// Error type for [`Bytes::from_bytes`]
+/// Error type for [`Bytes::deserialize_bytes`]
 #[derive(Debug, thiserror::Error)]
 #[error("Invalid kind {_0}")]
-pub struct FromBytesError(pub u16);
+pub struct DeserializeBytesError(pub u16);
 
 impl Bytes for Kind {
 	type ByteArray = [u8; 0x2];
-	type FromError = FromBytesError;
-	type ToError = !;
+	type DeserializeError = DeserializeBytesError;
+	type SerializeError = !;
 
-	fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError> {
+	fn deserialize_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::DeserializeError> {
 		let raw = LittleEndian::read_u16(bytes);
 		let kind = match raw {
 			0 => Self::Model3DSet,
@@ -57,13 +57,13 @@ impl Bytes for Kind {
 			6 => Self::AudioSeq,
 			7 => Self::AudioVh,
 			8 => Self::AudioVb,
-			_ => return Err(FromBytesError(raw)),
+			_ => return Err(DeserializeBytesError(raw)),
 		};
 
 		Ok(kind)
 	}
 
-	fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError> {
+	fn serialize_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::SerializeError> {
 		let raw = match self {
 			Self::Model3DSet => 0,
 			Self::Unknown1 => 1,

@@ -46,9 +46,9 @@ pub struct Item {
 	pub unknown_15: u32,
 }
 
-/// Error type for [`Bytes::from_bytes`](dcb_bytes::Bytes::from_bytes)
+/// Error type for [`Bytes::deserialize_bytes`](dcb_bytes::Bytes::deserialize_bytes)
 #[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
-pub enum FromBytesError {
+pub enum DeserializeBytesError {
 	/// Unable to read the digimon name
 	#[error("Unable to read the digimon name")]
 	Name(#[source] null_ascii_string::ReadError),
@@ -71,52 +71,52 @@ pub enum FromBytesError {
 
 	/// An unknown effect arrow color was found
 	#[error("Unknown effect arrow color found")]
-	ArrowColor(#[source] property::arrow_color::FromBytesError),
+	ArrowColor(#[source] property::arrow_color::DeserializeBytesError),
 
 	/// Unable to read the first effect condition
 	#[error("Unable to read the first effect condition")]
-	EffectConditionFirst(#[source] property::effect_condition::FromBytesError),
+	EffectConditionFirst(#[source] property::effect_condition::DeserializeBytesError),
 
 	/// Unable to read the second effect condition
 	#[error("Unable to read the second effect condition")]
-	EffectConditionSecond(#[source] property::effect_condition::FromBytesError),
+	EffectConditionSecond(#[source] property::effect_condition::DeserializeBytesError),
 
 	/// Unable to read the first effect
 	#[error("Unable to read the first effect")]
-	EffectFirst(#[source] property::effect::FromBytesError),
+	EffectFirst(#[source] property::effect::DeserializeBytesError),
 
 	/// Unable to read the second effect
 	#[error("Unable to read the second effect")]
-	EffectSecond(#[source] property::effect::FromBytesError),
+	EffectSecond(#[source] property::effect::DeserializeBytesError),
 
 	/// Unable to read the third effect
 	#[error("Unable to read the third effect")]
-	EffectThird(#[source] property::effect::FromBytesError),
+	EffectThird(#[source] property::effect::DeserializeBytesError),
 }
 
-/// Error type for [`Bytes::to_bytes`](dcb_bytes::Bytes::to_bytes)
+/// Error type for [`Bytes::serialize_bytes`](dcb_bytes::Bytes::serialize_bytes)
 #[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
 #[allow(clippy::pub_enum_variant_names)] // This is a general error, not a specific effect error
-pub enum ToBytesError {
+pub enum SerializeBytesError {
 	/// Unable to write the first effect
 	#[error("Unable to write the first effect")]
-	EffectFirst(#[source] property::effect::ToBytesError),
+	EffectFirst(#[source] property::effect::SerializeBytesError),
 
 	/// Unable to write the second effect
 	#[error("Unable to write the second effect")]
-	EffectSecond(#[source] property::effect::ToBytesError),
+	EffectSecond(#[source] property::effect::SerializeBytesError),
 
 	/// Unable to write the third effect
 	#[error("Unable to write the third effect")]
-	EffectThird(#[source] property::effect::ToBytesError),
+	EffectThird(#[source] property::effect::SerializeBytesError),
 }
 
 impl Bytes for Item {
 	type ByteArray = [u8; 0xde];
-	type FromError = FromBytesError;
-	type ToError = ToBytesError;
+	type DeserializeError = DeserializeBytesError;
+	type SerializeError = SerializeBytesError;
 
-	fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError> {
+	fn deserialize_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::DeserializeError> {
 		// Split bytes
 		let bytes = array_split!(bytes,
 			name                : [0x15],
@@ -135,51 +135,51 @@ impl Bytes for Item {
 
 		// And return the struct
 		Ok(Self {
-			name: bytes.name.read_string().map_err(FromBytesError::Name)?,
+			name: bytes.name.read_string().map_err(DeserializeBytesError::Name)?,
 
 			// Effects
 			effect_conditions: [
-				MaybeEffectCondition::from_bytes(bytes.condition_first)
-					.map_err(FromBytesError::EffectConditionFirst)?
+				MaybeEffectCondition::deserialize_bytes(bytes.condition_first)
+					.map_err(DeserializeBytesError::EffectConditionFirst)?
 					.into(),
-				MaybeEffectCondition::from_bytes(bytes.condition_second)
-					.map_err(FromBytesError::EffectConditionSecond)?
+				MaybeEffectCondition::deserialize_bytes(bytes.condition_second)
+					.map_err(DeserializeBytesError::EffectConditionSecond)?
 					.into(),
 			],
 
 			effects: [
-				MaybeEffect::from_bytes(bytes.effect_first)
-					.map_err(FromBytesError::EffectFirst)?
+				MaybeEffect::deserialize_bytes(bytes.effect_first)
+					.map_err(DeserializeBytesError::EffectFirst)?
 					.into(),
-				MaybeEffect::from_bytes(bytes.effect_second)
-					.map_err(FromBytesError::EffectSecond)?
+				MaybeEffect::deserialize_bytes(bytes.effect_second)
+					.map_err(DeserializeBytesError::EffectSecond)?
 					.into(),
-				MaybeEffect::from_bytes(bytes.effect_third)
-					.map_err(FromBytesError::EffectThird)?
+				MaybeEffect::deserialize_bytes(bytes.effect_third)
+					.map_err(DeserializeBytesError::EffectThird)?
 					.into(),
 			],
 
-			effect_arrow_color: MaybeArrowColor::from_bytes(bytes.effect_arrow_color)
-				.map_err(FromBytesError::ArrowColor)?
+			effect_arrow_color: MaybeArrowColor::deserialize_bytes(bytes.effect_arrow_color)
+				.map_err(DeserializeBytesError::ArrowColor)?
 				.into(),
 
 			effect_description: [
 				bytes
 					.effect_description_0
 					.read_string()
-					.map_err(FromBytesError::EffectDescription1)?,
+					.map_err(DeserializeBytesError::EffectDescription1)?,
 				bytes
 					.effect_description_1
 					.read_string()
-					.map_err(FromBytesError::EffectDescription2)?,
+					.map_err(DeserializeBytesError::EffectDescription2)?,
 				bytes
 					.effect_description_2
 					.read_string()
-					.map_err(FromBytesError::EffectDescription3)?,
+					.map_err(DeserializeBytesError::EffectDescription3)?,
 				bytes
 					.effect_description_3
 					.read_string()
-					.map_err(FromBytesError::EffectDescription4)?,
+					.map_err(DeserializeBytesError::EffectDescription4)?,
 			],
 
 			// Unknown
@@ -187,7 +187,7 @@ impl Bytes for Item {
 		})
 	}
 
-	fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError> {
+	fn serialize_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::SerializeError> {
 		// Split bytes
 		let bytes = array_split_mut!(bytes,
 			name                : [0x15],
@@ -209,24 +209,24 @@ impl Bytes for Item {
 
 		// Effects
 		MaybeEffectCondition::ref_cast(&self.effect_conditions[0])
-			.to_bytes(bytes.condition_first)
+			.serialize_bytes(bytes.condition_first)
 			.into_ok();
 		MaybeEffectCondition::ref_cast(&self.effect_conditions[1])
-			.to_bytes(bytes.condition_second)
+			.serialize_bytes(bytes.condition_second)
 			.into_ok();
 
 		MaybeEffect::ref_cast(&self.effects[0])
-			.to_bytes(bytes.effect_first)
-			.map_err(ToBytesError::EffectFirst)?;
+			.serialize_bytes(bytes.effect_first)
+			.map_err(SerializeBytesError::EffectFirst)?;
 		MaybeEffect::ref_cast(&self.effects[1])
-			.to_bytes(bytes.effect_second)
-			.map_err(ToBytesError::EffectSecond)?;
+			.serialize_bytes(bytes.effect_second)
+			.map_err(SerializeBytesError::EffectSecond)?;
 		MaybeEffect::ref_cast(&self.effects[2])
-			.to_bytes(bytes.effect_third)
-			.map_err(ToBytesError::EffectThird)?;
+			.serialize_bytes(bytes.effect_third)
+			.map_err(SerializeBytesError::EffectThird)?;
 
 		MaybeArrowColor::ref_cast(&self.effect_arrow_color)
-			.to_bytes(bytes.effect_arrow_color)
+			.serialize_bytes(bytes.effect_arrow_color)
 			.into_ok();
 
 		bytes.effect_description_0.write_string(&self.effect_description[0]);

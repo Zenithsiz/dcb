@@ -4,7 +4,7 @@
 pub mod error;
 
 // Exports
-pub use error::{FromBytesError, ToBytesError};
+pub use error::{DeserializeBytesError, SerializeBytesError};
 
 // Imports
 use crate::card::property::{
@@ -90,10 +90,10 @@ pub struct Digimon {
 
 impl Bytes for Digimon {
 	type ByteArray = [u8; 0x138];
-	type FromError = FromBytesError;
-	type ToError = ToBytesError;
+	type DeserializeError = DeserializeBytesError;
+	type SerializeError = SerializeBytesError;
 
-	fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError> {
+	fn deserialize_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::DeserializeError> {
 		// Split bytes
 		let bytes = array_split!(bytes,
 			name                : [0x15],
@@ -122,12 +122,12 @@ impl Bytes for Digimon {
 
 		// Return the struct after building it
 		Ok(Self {
-			name: NullAsciiString::read_string(bytes.name).map_err(FromBytesError::Name)?,
+			name: NullAsciiString::read_string(bytes.name).map_err(DeserializeBytesError::Name)?,
 
-			speciality: Speciality::from_bytes(&((bytes.speciality_level & 0xF0) >> 4u8))
-				.map_err(FromBytesError::Speciality)?,
+			speciality: Speciality::deserialize_bytes(&((bytes.speciality_level & 0xF0) >> 4u8))
+				.map_err(DeserializeBytesError::Speciality)?,
 
-			level: Level::from_bytes(&(bytes.speciality_level & 0x0F)).map_err(FromBytesError::Level)?,
+			level: Level::deserialize_bytes(&(bytes.speciality_level & 0x0F)).map_err(DeserializeBytesError::Level)?,
 
 			dp_cost: *bytes.dp_cost,
 			dp_give: *bytes.dp_give,
@@ -135,57 +135,57 @@ impl Bytes for Digimon {
 			hp: LittleEndian::read_u16(bytes.hp),
 
 			// Moves
-			move_circle:   Move::from_bytes(bytes.move_circle).map_err(FromBytesError::MoveCircle)?,
-			move_triangle: Move::from_bytes(bytes.move_triangle).map_err(FromBytesError::MoveTriangle)?,
-			move_cross:    Move::from_bytes(bytes.move_cross).map_err(FromBytesError::MoveCross)?,
+			move_circle:   Move::deserialize_bytes(bytes.move_circle).map_err(DeserializeBytesError::MoveCircle)?,
+			move_triangle: Move::deserialize_bytes(bytes.move_triangle).map_err(DeserializeBytesError::MoveTriangle)?,
+			move_cross:    Move::deserialize_bytes(bytes.move_cross).map_err(DeserializeBytesError::MoveCross)?,
 
 			// Effects
 			effect_conditions: [
-				MaybeEffectCondition::from_bytes(bytes.condition_first)
-					.map_err(FromBytesError::EffectConditionFirst)?
+				MaybeEffectCondition::deserialize_bytes(bytes.condition_first)
+					.map_err(DeserializeBytesError::EffectConditionFirst)?
 					.into(),
-				MaybeEffectCondition::from_bytes(bytes.condition_second)
-					.map_err(FromBytesError::EffectConditionSecond)?
+				MaybeEffectCondition::deserialize_bytes(bytes.condition_second)
+					.map_err(DeserializeBytesError::EffectConditionSecond)?
 					.into(),
 			],
 
 			effects: [
-				MaybeEffect::from_bytes(bytes.effect_first)
-					.map_err(FromBytesError::EffectFirst)?
+				MaybeEffect::deserialize_bytes(bytes.effect_first)
+					.map_err(DeserializeBytesError::EffectFirst)?
 					.into(),
-				MaybeEffect::from_bytes(bytes.effect_second)
-					.map_err(FromBytesError::EffectSecond)?
+				MaybeEffect::deserialize_bytes(bytes.effect_second)
+					.map_err(DeserializeBytesError::EffectSecond)?
 					.into(),
-				MaybeEffect::from_bytes(bytes.effect_third)
-					.map_err(FromBytesError::EffectThird)?
+				MaybeEffect::deserialize_bytes(bytes.effect_third)
+					.map_err(DeserializeBytesError::EffectThird)?
 					.into(),
 			],
 
-			cross_move_effect: MaybeCrossMoveEffect::from_bytes(bytes.cross_move_effect)
-				.map_err(FromBytesError::CrossMoveEffect)?
+			cross_move_effect: MaybeCrossMoveEffect::deserialize_bytes(bytes.cross_move_effect)
+				.map_err(DeserializeBytesError::CrossMoveEffect)?
 				.into(),
 
-			effect_arrow_color: MaybeArrowColor::from_bytes(bytes.effect_arrow_color)
-				.map_err(FromBytesError::ArrowColor)?
+			effect_arrow_color: MaybeArrowColor::deserialize_bytes(bytes.effect_arrow_color)
+				.map_err(DeserializeBytesError::ArrowColor)?
 				.into(),
 
 			effect_description: [
 				bytes
 					.effect_description_0
 					.read_string()
-					.map_err(FromBytesError::EffectDescription1)?,
+					.map_err(DeserializeBytesError::EffectDescription1)?,
 				bytes
 					.effect_description_1
 					.read_string()
-					.map_err(FromBytesError::EffectDescription2)?,
+					.map_err(DeserializeBytesError::EffectDescription2)?,
 				bytes
 					.effect_description_2
 					.read_string()
-					.map_err(FromBytesError::EffectDescription3)?,
+					.map_err(DeserializeBytesError::EffectDescription3)?,
 				bytes
 					.effect_description_3
 					.read_string()
-					.map_err(FromBytesError::EffectDescription4)?,
+					.map_err(DeserializeBytesError::EffectDescription4)?,
 			],
 
 			// Unknown
@@ -195,7 +195,7 @@ impl Bytes for Digimon {
 		})
 	}
 
-	fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError> {
+	fn serialize_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::SerializeError> {
 		// Split bytes
 		let bytes = array_split_mut!(bytes,
 			name                : [0x15],
@@ -230,8 +230,8 @@ impl Bytes for Digimon {
 			let (mut speciality_byte, mut level_byte) = (0u8, 0u8);
 
 			// Note: Buffers have 1 byte, so this can't fail
-			self.speciality.to_bytes(&mut speciality_byte).into_ok();
-			self.level.to_bytes(&mut level_byte).into_ok();
+			self.speciality.serialize_bytes(&mut speciality_byte).into_ok();
+			self.level.serialize_bytes(&mut level_byte).into_ok();
 
 			// Merge them
 			*bytes.speciality_level = (speciality_byte << 4u8) | level_byte;
@@ -245,34 +245,34 @@ impl Bytes for Digimon {
 		LittleEndian::write_u16(bytes.hp, self.hp);
 
 		// Moves
-		self.move_circle.to_bytes(bytes.move_circle).into_ok();
-		self.move_triangle.to_bytes(bytes.move_triangle).into_ok();
-		self.move_cross.to_bytes(bytes.move_cross).into_ok();
+		self.move_circle.serialize_bytes(bytes.move_circle).into_ok();
+		self.move_triangle.serialize_bytes(bytes.move_triangle).into_ok();
+		self.move_cross.serialize_bytes(bytes.move_cross).into_ok();
 
 		// Effects
 		MaybeEffectCondition::ref_cast(&self.effect_conditions[0])
-			.to_bytes(bytes.condition_first)
+			.serialize_bytes(bytes.condition_first)
 			.into_ok();
 		MaybeEffectCondition::ref_cast(&self.effect_conditions[1])
-			.to_bytes(bytes.condition_second)
+			.serialize_bytes(bytes.condition_second)
 			.into_ok();
 
 		MaybeEffect::ref_cast(&self.effects[0])
-			.to_bytes(bytes.effect_first)
-			.map_err(ToBytesError::EffectFirst)?;
+			.serialize_bytes(bytes.effect_first)
+			.map_err(SerializeBytesError::EffectFirst)?;
 		MaybeEffect::ref_cast(&self.effects[1])
-			.to_bytes(bytes.effect_second)
-			.map_err(ToBytesError::EffectSecond)?;
+			.serialize_bytes(bytes.effect_second)
+			.map_err(SerializeBytesError::EffectSecond)?;
 		MaybeEffect::ref_cast(&self.effects[2])
-			.to_bytes(bytes.effect_third)
-			.map_err(ToBytesError::EffectThird)?;
+			.serialize_bytes(bytes.effect_third)
+			.map_err(SerializeBytesError::EffectThird)?;
 
 		MaybeCrossMoveEffect::ref_cast(&self.cross_move_effect)
-			.to_bytes(bytes.cross_move_effect)
+			.serialize_bytes(bytes.cross_move_effect)
 			.into_ok();
 
 		MaybeArrowColor::ref_cast(&self.effect_arrow_color)
-			.to_bytes(bytes.effect_arrow_color)
+			.serialize_bytes(bytes.effect_arrow_color)
 			.into_ok();
 
 		bytes.effect_description_0.write_string(&self.effect_description[0]);

@@ -27,10 +27,10 @@ pub enum DescriptorKind {
 
 impl Bytes for DescriptorKind {
 	type ByteArray = u8;
-	type FromError = !;
-	type ToError = !;
+	type DeserializeError = !;
+	type SerializeError = !;
 
-	fn from_bytes(byte: &Self::ByteArray) -> Result<Self, Self::FromError> {
+	fn deserialize_bytes(byte: &Self::ByteArray) -> Result<Self, Self::DeserializeError> {
 		let kind = match byte {
 			0 => Self::BootRecord,
 			1 => Self::Primary,
@@ -43,7 +43,7 @@ impl Bytes for DescriptorKind {
 		Ok(kind)
 	}
 
-	fn to_bytes(&self, byte: &mut Self::ByteArray) -> Result<(), Self::ToError> {
+	fn serialize_bytes(&self, byte: &mut Self::ByteArray) -> Result<(), Self::SerializeError> {
 		*byte = match self {
 			Self::BootRecord => 0,
 			Self::Primary => 1,

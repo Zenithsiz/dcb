@@ -21,10 +21,10 @@ pub struct Header {
 
 impl Bytes for Header {
 	type ByteArray = [u8; 0xc];
-	type FromError = !;
-	type ToError = !;
+	type DeserializeError = !;
+	type SerializeError = !;
 
-	fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError> {
+	fn deserialize_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::DeserializeError> {
 		let bytes = array_split!(bytes,
 			length: [0x4],
 			x     : [0x2],
@@ -48,7 +48,7 @@ impl Bytes for Header {
 		})
 	}
 
-	fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError> {
+	fn serialize_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::SerializeError> {
 		let bytes = array_split_mut!(bytes,
 			length: [0x4],
 			x     : [0x2],

@@ -29,7 +29,7 @@ impl Tim {
 		reader
 			.read_exact(&mut header_bytes)
 			.map_err(DeserializeError::ReadHeader)?;
-		let header = Header::from_bytes(&header_bytes).map_err(DeserializeError::ParseHeader)?;
+		let header = Header::deserialize_bytes(&header_bytes).map_err(DeserializeError::ParseHeader)?;
 
 		// If we have a clut, read it
 		let clut = header

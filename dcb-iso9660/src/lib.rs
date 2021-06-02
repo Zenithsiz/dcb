@@ -103,8 +103,9 @@ impl FilesystemReader {
 		let primary_volume_descriptor = loop {
 			match sectors.next() {
 				Some(Ok(sector)) => {
-					match VolumeDescriptor::from_bytes(sector.data.as_form1().ok_or(NewError::PrimaryFormatWrongForm)?)
-					{
+					match VolumeDescriptor::deserialize_bytes(
+						sector.data.as_form1().ok_or(NewError::PrimaryFormatWrongForm)?,
+					) {
 						Ok(VolumeDescriptor::Primary(primary)) => break primary,
 						Ok(VolumeDescriptor::SetTerminator) => {
 							return Err(NewError::MissingPrimaryVolumeBeforeSetTerminator)

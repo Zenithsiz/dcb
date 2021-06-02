@@ -8,7 +8,7 @@ pub mod primary;
 
 // Exports
 pub use boot::BootRecordVolumeDescriptor;
-pub use error::FromBytesError;
+pub use error::DeserializeBytesError;
 pub use kind::DescriptorKind;
 pub use primary::PrimaryVolumeDescriptor;
 
@@ -50,10 +50,10 @@ impl VolumeDescriptor {
 
 impl Bytes for VolumeDescriptor {
 	type ByteArray = [u8; 0x800];
-	type FromError = FromBytesError;
-	type ToError = !;
+	type DeserializeError = DeserializeBytesError;
+	type SerializeError = !;
 
-	fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError> {
+	fn deserialize_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::DeserializeError> {
 		let bytes = array_split!(bytes,
 			kind      :  0x1,
 			magic     : [0x5],
@@ -62,34 +62,34 @@ impl Bytes for VolumeDescriptor {
 		);
 
 		// Get the descriptor kind
-		let kind = DescriptorKind::from_bytes(bytes.kind).into_ok();
+		let kind = DescriptorKind::deserialize_bytes(bytes.kind).into_ok();
 
 		// If the magic is wrong, return Err
 		if bytes.magic != &Self::MAGIC {
-			return Err(FromBytesError::InvalidMagic(*bytes.magic));
+			return Err(DeserializeBytesError::InvalidMagic(*bytes.magic));
 		}
 
 		// If this isn't our version, return Err
 		if bytes.version != &Self::VERSION {
-			return Err(FromBytesError::InvalidVersion(*bytes.version));
+			return Err(DeserializeBytesError::InvalidVersion(*bytes.version));
 		}
 
 		// Check the kind and parse the descriptor itself
 		match kind {
-			DescriptorKind::BootRecord => BootRecordVolumeDescriptor::from_bytes(bytes.descriptor)
+			DescriptorKind::BootRecord => BootRecordVolumeDescriptor::deserialize_bytes(bytes.descriptor)
 				.map(Self::BootRecord)
-				.map_err(FromBytesError::ParseBootRecord),
-			DescriptorKind::Primary => PrimaryVolumeDescriptor::from_bytes(bytes.descriptor)
+				.map_err(DeserializeBytesError::ParseBootRecord),
+			DescriptorKind::Primary => PrimaryVolumeDescriptor::deserialize_bytes(bytes.descriptor)
 				.map(Self::Primary)
-				.map_err(FromBytesError::ParsePrimary),
+				.map_err(DeserializeBytesError::ParsePrimary),
 			DescriptorKind::SetTerminator => Ok(Self::SetTerminator),
 			DescriptorKind::Supplementary | DescriptorKind::VolumePartition | DescriptorKind::Reserved(_) => {
-				Err(FromBytesError::CannotParseKind(kind))
+				Err(DeserializeBytesError::CannotParseKind(kind))
 			},
 		}
 	}
 
-	fn to_bytes(&self, _bytes: &mut Self::ByteArray) -> Result<(), Self::ToError> {
+	fn serialize_bytes(&self, _bytes: &mut Self::ByteArray) -> Result<(), Self::SerializeError> {
 		todo!()
 	}
 }

@@ -33,7 +33,7 @@ impl Img {
 		reader
 			.read_exact(&mut header_bytes)
 			.map_err(DeserializeError::ReadHeader)?;
-		let header: Header = Header::from_bytes(&header_bytes).into_ok();
+		let header: Header = Header::deserialize_bytes(&header_bytes).into_ok();
 
 		// If the width and height don't match the length, return Err
 		// Note: The unscaled width should the one used to check the length, not the scaled

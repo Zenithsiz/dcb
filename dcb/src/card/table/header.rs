@@ -4,7 +4,7 @@
 pub mod error;
 
 // Exports
-pub use error::FromBytesError;
+pub use error::DeserializeBytesError;
 
 // Imports
 use byteorder::{ByteOrder, LittleEndian};
@@ -33,10 +33,10 @@ impl Header {
 
 impl Bytes for Header {
 	type ByteArray = [u8; 0x8];
-	type FromError = FromBytesError;
-	type ToError = !;
+	type DeserializeError = DeserializeBytesError;
+	type SerializeError = !;
 
-	fn from_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::FromError> {
+	fn deserialize_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::DeserializeError> {
 		let bytes = array_split!(bytes,
 			magic: [0x4],
 			digimons_len: [0x2],
@@ -45,7 +45,7 @@ impl Bytes for Header {
 		);
 
 		if *bytes.magic != Self::MAGIC {
-			return Err(FromBytesError::Magic { magic: *bytes.magic });
+			return Err(DeserializeBytesError::Magic { magic: *bytes.magic });
 		}
 
 		let digimons_len = LittleEndian::read_u16(bytes.digimons_len);
@@ -59,7 +59,7 @@ impl Bytes for Header {
 		})
 	}
 
-	fn to_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::ToError> {
+	fn serialize_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::SerializeError> {
 		let bytes = array_split_mut!(bytes,
 			magic: [0x4],
 			digimons_len: [0x2],
