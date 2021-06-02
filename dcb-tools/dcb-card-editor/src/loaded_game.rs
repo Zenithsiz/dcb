@@ -10,7 +10,7 @@ use eframe::egui;
 use std::{
 	cell::Cell,
 	fs,
-	io::{self, Read, Seek},
+	io::{self, Read, Seek, Write},
 	path::{Path, PathBuf},
 };
 
@@ -62,6 +62,12 @@ impl LoadedGame {
 
 	/// Saves this game to `path`
 	pub fn save_as(&self, path: &Path) -> Result<(), anyhow::Error> {
+		// Serialize the card table to a temporary vector
+		let mut bytes = vec![];
+		self.card_table
+			.serialize(&mut bytes)
+			.context("Unable to serialize table")?;
+
 		// Open the file
 		let file = fs::File::with_options()
 			.write(true)
@@ -74,10 +80,8 @@ impl LoadedGame {
 			.context("Unable to seek to card table")?;
 		let mut file = dcb_util::WriteTake::new(file, Self::CARD_TABLE_SIZE);
 
-		// Then serialize it
-		self.card_table
-			.serialize(&mut file)
-			.context("Unable to serialize table")?;
+		// And then write all bytes
+		file.write_all(&bytes).context("Unable to write card table to file")?;
 
 		// And update our hash if the paths are the same
 		if self.file_path == path {
