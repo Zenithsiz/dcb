@@ -9,7 +9,7 @@ pub use error::{DeserializeError, SerializeError};
 // Imports
 use crate::Deck;
 use byteorder::{ByteOrder, LittleEndian};
-use dcb_bytes::Bytes;
+use dcb_bytes::{BytesReadExt, BytesWriteExt};
 use dcb_util::array_split_mut;
 use std::{convert::TryInto, io};
 
@@ -32,11 +32,12 @@ impl Table {
 }
 
 impl Table {
-	/// Deserializes the deck table from `file`.
-	pub fn deserialize<R: io::Read>(file: &mut R) -> Result<Self, DeserializeError> {
+	/// Deserializes the deck table from `reader`.
+	pub fn deserialize<R: io::Read>(reader: &mut R) -> Result<Self, DeserializeError> {
 		// Read header
 		let mut header_bytes = [0u8; Self::HEADER_BYTE_SIZE];
-		file.read_exact(&mut header_bytes)
+		reader
+			.read_exact(&mut header_bytes)
 			.map_err(DeserializeError::ReadHeader)?;
 
 		// Check if the magic is right
@@ -52,13 +53,10 @@ impl Table {
 		// Then get each deck
 		let mut decks = vec![];
 		for id in 0..decks_count {
-			// Read all bytes of the deck
-			let mut bytes = [0; 0x6e];
-			file.read_exact(&mut bytes)
+			// Deserialize the deck
+			let deck = reader
+				.read_deserialize::<Deck>()
 				.map_err(|err| DeserializeError::ReadDeck { id, err })?;
-
-			// And try to serialize the deck
-			let deck = Deck::deserialize_bytes(&bytes).map_err(|err| DeserializeError::DeserializeDeck { id, err })?;
 
 			// Log the deck
 			log::trace!("Found deck #{}: {}", id, deck.name);
@@ -71,8 +69,8 @@ impl Table {
 		Ok(Self { decks })
 	}
 
-	/// Serializes the deck table to `file`
-	pub fn serialize<R: io::Write>(&self, file: &mut R) -> Result<(), SerializeError> {
+	/// Serializes the deck table to `writer`
+	pub fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<(), SerializeError> {
 		// Write header
 		let mut header_bytes = [0u8; 0x8];
 		let header = array_split_mut!(&mut header_bytes,
@@ -90,16 +88,12 @@ impl Table {
 		*header.decks_count = self.decks.len().try_into().expect("Number of decks exceeded `u8`");
 
 		// And write the header
-		file.write_all(&header_bytes).map_err(SerializeError::WriteHeader)?;
+		writer.write_all(&header_bytes).map_err(SerializeError::WriteHeader)?;
 
 		// Then write each deck
 		for (id, deck) in self.decks.iter().enumerate() {
-			// Parse each deck into bytes
-			let mut bytes = [0; 0x6e];
-			deck.serialize_bytes(&mut bytes).into_ok();
-
-			// And write them to file
-			file.write(&bytes)
+			writer
+				.write_serialize(deck)
 				.map_err(|err| SerializeError::WriteDeck { id, err })?;
 		}
 

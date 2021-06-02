@@ -3,6 +3,7 @@
 // Imports
 use super::Table;
 use crate::deck::deck;
+use dcb_bytes::bytes_io_ext::{ReadDeserializeError, WriteSerializeError};
 
 /// Error type for [`Table::deserialize`]
 #[derive(Debug, thiserror::Error)]
@@ -30,18 +31,7 @@ pub enum DeserializeError {
 
 		/// Underlying error
 		#[source]
-		err: std::io::Error,
-	},
-
-	/// Could not deserialize a deck entry
-	#[error("Unable to serialize deck entry with id {}", id)]
-	DeserializeDeck {
-		/// Id of card
-		id: usize,
-
-		/// Underlying error
-		#[source]
-		err: deck::DeserializeBytesError,
+		err: ReadDeserializeError<deck::DeserializeBytesError>,
 	},
 }
 
@@ -53,13 +43,13 @@ pub enum SerializeError {
 	WriteHeader(#[source] std::io::Error),
 
 	/// Could not write a deck entry
-	#[error("Unable to read deck entry with id {}", id)]
+	#[error("Unable to write deck entry with id {}", id)]
 	WriteDeck {
 		/// Id of card
 		id: usize,
 
 		/// Underlying error
 		#[source]
-		err: std::io::Error,
+		err: WriteSerializeError<!>,
 	},
 }

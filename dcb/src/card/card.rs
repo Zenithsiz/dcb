@@ -31,9 +31,9 @@ impl Card {
 	/// Deserializes a card
 	pub fn deserialize<R: io::Read>(card_type: CardType, reader: &mut R) -> Result<Self, DeserializeError> {
 		let card = match card_type {
-			CardType::Digimon => reader.read_bytes().map(Self::Digimon)?,
-			CardType::Item => reader.read_bytes().map(Self::Item)?,
-			CardType::Digivolve => reader.read_bytes().map(Self::Digivolve)?,
+			CardType::Digimon => reader.read_deserialize().map(Self::Digimon)?,
+			CardType::Item => reader.read_deserialize().map(Self::Item)?,
+			CardType::Digivolve => reader.read_deserialize().map(Self::Digivolve)?,
 		};
 
 		Ok(card)
@@ -42,9 +42,9 @@ impl Card {
 	/// Serializes a card
 	pub fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<(), SerializeError> {
 		match self {
-			Card::Digimon(digimon) => writer.write_bytes(digimon)?,
-			Card::Item(item) => writer.write_bytes(item)?,
-			Card::Digivolve(digivolve) => writer.write_bytes(digivolve)?,
+			Card::Digimon(digimon) => writer.write_serialize(digimon)?,
+			Card::Item(item) => writer.write_serialize(item)?,
+			Card::Digivolve(digivolve) => writer.write_serialize(digivolve)?,
 		}
 
 		Ok(())
