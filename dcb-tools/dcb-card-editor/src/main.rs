@@ -10,9 +10,12 @@ mod overview_screen;
 mod swap_screen;
 
 // Imports
-use dcb::card::property::{
-	ArrowColor, AttackType, CardType, CrossMoveEffect, DigimonProperty, DigivolveEffect, Effect, EffectCondition,
-	EffectConditionOperation, EffectOperation, Level, Move, PlayerType, Slot, Speciality,
+use dcb::card::{
+	property::{
+		ArrowColor, AttackType, CardType, CrossMoveEffect, DigimonProperty, DigivolveEffect, Effect, EffectCondition,
+		EffectConditionOperation, EffectOperation, Level, Move, PlayerType, Slot, Speciality,
+	},
+	Card,
 };
 use dcb_bytes::Validate;
 use dcb_util::{alert, AsciiTextBuffer, StrContainsCaseInsensitive};
@@ -237,27 +240,8 @@ impl epi::App for CardEditor {
 	}
 }
 
-/// Digimon, Item or digivolve
-pub enum Card<'a> {
-	Digimon(&'a mut dcb::Digimon),
-	Item(&'a mut dcb::Item),
-	Digivolve(&'a mut dcb::Digivolve),
-}
-
-impl<'a> Card<'a> {
-	/// Returns the name of this card
-	pub fn name(&self) -> &str {
-		match self {
-			Card::Digimon(digimon) => digimon.name.as_str(),
-			Card::Item(item) => item.name.as_str(),
-			Card::Digivolve(digivolve) => digivolve.name.as_str(),
-		}
-	}
-}
-
-
 /// Renders a card
-fn render_card(ui: &mut egui::Ui, card: Card) {
+fn render_card(ui: &mut egui::Ui, card: &mut Card) {
 	match card {
 		Card::Digimon(digimon) => self::render_digimon_card(ui, digimon),
 		Card::Item(item) => self::render_item_card(ui, item),

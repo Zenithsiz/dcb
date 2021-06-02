@@ -14,7 +14,7 @@ use dcb_util::{
 };
 
 /// A digimon's move
-#[derive(PartialEq, Eq, Clone, Hash, Debug)]
+#[derive(PartialEq, Eq, Clone, Copy, Hash, Debug)]
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Move {
 	/// The move's name

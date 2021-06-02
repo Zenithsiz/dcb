@@ -24,17 +24,16 @@ pub struct OverviewScreen {
 impl OverviewScreen {
 	/// Creates a new screen
 	pub fn new(loaded_game: &LoadedGame) -> Self {
-		let card_table = loaded_game.card_table();
-		let total_digimons = card_table.digimons.len();
-		let total_cards = card_table.digimons.len() + card_table.items.len() + card_table.digivolves.len();
+		let card_table = &loaded_game.card_table;
+		let total_digimons = card_table.digimons().count();
+		let total_cards = card_table.cards.len();
 
 		let cards_per_speciality = Speciality::iter()
 			.map(|speciality| {
 				(
 					speciality,
 					card_table
-						.digimons
-						.iter()
+						.digimons()
 						.filter(|digimon| digimon.speciality == speciality)
 						.count(),
 				)

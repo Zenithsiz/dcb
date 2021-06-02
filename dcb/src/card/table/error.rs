@@ -1,7 +1,7 @@
 //! Errors
 
 // Imports
-use super::{card, header, CardType};
+use super::{card, header};
 
 /// Error type for [`Table::deserialize`](super::Table::deserialize)
 #[derive(Debug, thiserror::Error)]
@@ -15,10 +15,10 @@ pub enum DeserializeError {
 	ParseHeader(#[source] header::FromBytesError),
 
 	/// Unable to read card header
-	#[error("Unable to read card header for card id {}", id)]
+	#[error("Unable to read card header for card {id}")]
 	ReadCardHeader {
 		/// Id of card
-		id: usize,
+		id: u16,
 
 		/// Underlying error
 		#[source]
@@ -26,72 +26,46 @@ pub enum DeserializeError {
 	},
 
 	/// Unable to parse a card header
-	#[error("Unable to parse a card header for card id {id}")]
+	#[error("Unable to parse a card header for card {id}")]
 	ParseCardHeader {
 		/// Id of card
-		id: usize,
+		id: u16,
 
 		/// Underlying error
 		#[source]
 		err: card::header::FromBytesError,
 	},
 
-	/// Unable to read a card
-	#[error("Unable to read {} with id {}", card_type, id)]
-	ReadCard {
+	/// Unable to deserialize card
+	#[error("Unable to deserialize card {id}")]
+	DeserializeCard {
 		/// Id of card
-		id: usize,
-
-		/// Card type
-		card_type: CardType,
+		id: u16,
 
 		/// Underlying error
 		#[source]
-		err: std::io::Error,
-	},
-
-	/// Unable to deserialize a digimon card
-	#[error("Unable to deserialize digimon card with id {}", id)]
-	ParseDigimonCard {
-		/// Id of card
-		id: usize,
-
-		/// Underlying error
-		#[source]
-		err: card::digimon::FromBytesError,
-	},
-
-	/// Unable to deserialize an item card
-	#[error("Unable to deserialize item card with id {}", id)]
-	ParseItemCard {
-		/// Id of card
-		id: usize,
-
-		/// Underlying error
-		#[source]
-		err: card::item::FromBytesError,
-	},
-
-	/// Unable to deserialize a digivolve card
-	#[error("Unable to deserialize digivolve card with id {}", id)]
-	ParseDigivolveCard {
-		/// Id of card
-		id: usize,
-
-		/// Underlying error
-		#[source]
-		err: card::digivolve::FromBytesError,
+		err: card::card::DeserializeError,
 	},
 
 	/// Unable to read card footer
-	#[error("Unable to read card footer for card id {}", id)]
+	#[error("Unable to read card footer for card {id}")]
 	ReadCardFooter {
 		/// Id of card
-		id: usize,
+		id: u16,
 
 		/// Underlying error
 		#[source]
 		err: std::io::Error,
+	},
+
+	/// Null terminator wasn't null
+	#[error("Null terminator for card {id} was {terminator}")]
+	NullTerminator {
+		/// Id of card
+		id: u16,
+
+		/// Terminator
+		terminator: u8,
 	},
 }
 
@@ -114,39 +88,36 @@ pub enum SerializeError {
 	#[error("Unable to write table header")]
 	WriteHeader(#[source] std::io::Error),
 
-	/// Unable to write a card
-	#[error("Unable to write {} card with id {}", card_type, id)]
-	WriteCard {
+	/// Unable to write card header
+	#[error("Unable to write header for card {id}")]
+	WriteCardHeader {
 		/// Id of card
-		id: usize,
-
-		/// Card type
-		card_type: CardType,
+		id: u16,
 
 		/// Underlying error
 		#[source]
 		err: std::io::Error,
 	},
 
-	/// Unable to serialize a digimon card
-	#[error("Unable to serialize digimon card with id {}", id)]
-	SerializeDigimonCard {
+	/// Unable to serialize card
+	#[error("Unable to serialize card {id}")]
+	SerializeCard {
 		/// Id of card
-		id: usize,
+		id: u16,
 
 		/// Underlying error
 		#[source]
-		err: card::digimon::ToBytesError,
+		err: card::card::SerializeError,
 	},
 
-	/// Unable to serialize an item card
-	#[error("Unable to serialize item card with id {}", id)]
-	SerializeItemCard {
+	/// Unable to write card footer
+	#[error("Unable to write footer for card {id}")]
+	WriteCardFooter {
 		/// Id of card
-		id: usize,
+		id: u16,
 
 		/// Underlying error
 		#[source]
-		err: card::item::ToBytesError,
+		err: std::io::Error,
 	},
 }

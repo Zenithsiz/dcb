@@ -1,8 +1,9 @@
 //! Edit screen
 
+// Imports
+use crate::loaded_game::LoadedGame;
+use dcb::card::Card;
 use eframe::egui;
-
-use crate::{loaded_game::LoadedGame, Card};
 
 /// An edit screen
 pub struct EditScreen {
@@ -27,7 +28,7 @@ impl EditScreen {
 	pub fn display_all(screens: &mut Vec<Self>, ctx: &egui::CtxRef, loaded_game: &mut LoadedGame) {
 		let screen_width = ctx.available_rect().width() / (screens.len() as f32);
 		for screen in screens {
-			let card = loaded_game.get_card_from_idx(screen.card_idx);
+			let card = &mut loaded_game.card_table.cards[screen.card_idx];
 
 			egui::SidePanel::left(screen as *const _)
 				.min_width(screen_width)
@@ -35,7 +36,7 @@ impl EditScreen {
 				.show(ctx, |ui| {
 					// Header for the card
 					ui.vertical(|ui| {
-						ui.heading(card.name());
+						ui.heading(card.name().as_str());
 						ui.label(match card {
 							Card::Digimon(_) => "Digimon",
 							Card::Item(_) => "Item",

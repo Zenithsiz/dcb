@@ -11,9 +11,9 @@ use eframe::{egui, epi, NativeOptions};
 use native_dialog::{FileDialog, MessageDialog, MessageType};
 use ref_cast::RefCast;
 use std::{
+	convert::TryFrom,
 	fs,
 	io::{self, Read, Seek},
-	ops::Range,
 	path::{Path, PathBuf},
 };
 
@@ -108,38 +108,6 @@ impl DeckEditor {
 		deck_table.serialize(&mut file).context("Unable to serialize table")?;
 
 		Ok(())
-	}
-
-	/// Returns the digimon's indexes
-	pub fn digimon_idxs(card_table: &CardTable) -> Range<usize> {
-		0..card_table.digimons.len()
-	}
-
-	/// Returns the item's indexes
-	pub fn item_idxs(card_table: &CardTable) -> Range<usize> {
-		card_table.digimons.len()..(card_table.digimons.len() + card_table.items.len())
-	}
-
-	/// Returns the digivolve's indexes
-	pub fn digivolve_idxs(card_table: &CardTable) -> Range<usize> {
-		(card_table.digimons.len() + card_table.items.len())..
-			(card_table.digimons.len() + card_table.items.len() + card_table.digivolves.len())
-	}
-
-	/// Returns a card given it's index
-	pub fn get_card_from_idx(card_table: &mut CardTable, idx: usize) -> Card {
-		let digimons_len = card_table.digimons.len();
-		let items_len = card_table.items.len();
-
-		if Self::digimon_idxs(card_table).contains(&idx) {
-			Card::Digimon(&mut card_table.digimons[idx])
-		} else if Self::item_idxs(card_table).contains(&idx) {
-			Card::Item(&mut card_table.items[idx - digimons_len])
-		} else if Self::digivolve_idxs(card_table).contains(&idx) {
-			Card::Digivolve(&mut card_table.digivolves[idx - digimons_len - items_len])
-		} else {
-			panic!("Invalid card index");
-		}
 	}
 }
 
@@ -327,24 +295,6 @@ pub struct LoadedGame {
 	deck_table: DeckTable,
 }
 
-/// Digimon, Item or digivolve
-pub enum Card<'a> {
-	Digimon(&'a mut dcb::Digimon),
-	Item(&'a mut dcb::Item),
-	Digivolve(&'a mut dcb::Digivolve),
-}
-
-impl<'a> Card<'a> {
-	/// Returns the name of this card
-	pub fn name(&self) -> &str {
-		match self {
-			Card::Digimon(digimon) => digimon.name.as_str(),
-			Card::Item(item) => item.name.as_str(),
-			Card::Digivolve(digivolve) => digivolve.name.as_str(),
-		}
-	}
-}
-
 /// Renders a deck
 fn render_deck(ui: &mut egui::Ui, deck: &mut Deck, card_table: &mut CardTable) {
 	// Name
@@ -363,10 +313,16 @@ fn render_deck(ui: &mut egui::Ui, deck: &mut Deck, card_table: &mut CardTable) {
 		ui.label("Cards");
 		for card_id in &mut deck.cards {
 			ui.horizontal(|ui| {
-				let card = DeckEditor::get_card_from_idx(card_table, usize::from(card_id.0));
+				let range = 0..u16::try_from(card_table.cards.len()).expect("Too many cards");
+				if range.is_empty() {
+					return;
+				}
 
-				ui.add(egui::Slider::new(&mut card_id.0, 0..=300).clamp_to_range(true));
-				ui.label(card.name());
+				let range = 0..=(range.end - 1);
+				let card = &card_table.cards[usize::from(card_id.0)];
+
+				ui.add(egui::Slider::new(&mut card_id.0, range).clamp_to_range(true));
+				ui.label(card.name().as_str());
 			});
 		}
 	});

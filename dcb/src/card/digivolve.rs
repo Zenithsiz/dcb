@@ -12,7 +12,7 @@ use dcb_util::{
 /// A digivolve card
 ///
 /// Contains all information about each digivolve card stored in the [`Card Table`](crate::card::table::Table)
-#[derive(PartialEq, Eq, Clone, Hash, Debug)]
+#[derive(PartialEq, Eq, Clone, Copy, Hash, Debug)]
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Digivolve {
 	/// The item's name

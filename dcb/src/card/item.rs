@@ -16,7 +16,7 @@ use ref_cast::RefCast;
 /// An item card
 ///
 /// Contains all information about each item card stored in the [`Card Table`](crate::card::table::Table)
-#[derive(PartialEq, Eq, Clone, Hash, Debug)]
+#[derive(PartialEq, Eq, Clone, Copy, Hash, Debug)]
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Item {
 	/// The item's name

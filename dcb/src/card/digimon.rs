@@ -19,7 +19,7 @@ use ref_cast::RefCast;
 /// A digimon card
 ///
 /// Contains all information about each digimon card stored in the [`Card Table`](crate::card::table::Table)
-#[derive(PartialEq, Eq, Clone, Hash, Debug)]
+#[derive(PartialEq, Eq, Clone, Copy, Hash, Debug)]
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Digimon {
 	/// The digimon's name
