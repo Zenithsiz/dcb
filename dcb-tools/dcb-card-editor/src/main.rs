@@ -1,7 +1,15 @@
 //! Card editor
 
 // Features
-#![feature(array_map, with_options, format_args_capture, once_cell, never_type)]
+#![feature(
+	array_map,
+	with_options,
+	format_args_capture,
+	once_cell,
+	never_type,
+	seek_stream_len,
+	try_blocks
+)]
 
 // Modules
 mod edit_screen;
@@ -118,20 +126,6 @@ impl epi::App for CardEditor {
 							_ => alert::warn("You must first open a file to save"),
 						}
 					}
-					// TODO: Should `Save as` change the file path after successfully saving?
-					if ui.button("Save as").clicked() {
-						match loaded_game {
-							Some(loaded_game) => {
-								if let Some(file_path) = self::ask_game_file_path() {
-									match loaded_game.save_as(&file_path) {
-										Ok(()) => alert::info!("Successfully saved to {file_path:?}!"),
-										Err(err) => alert::error!("Unable to save file: {err:?}"),
-									}
-								}
-							},
-							_ => alert::warn("You must first open a file to save"),
-						}
-					}
 
 					if ui.button("Quit").clicked() && alert::warn_confirm!("Are you sure you want to quit?") {
 						frame.quit();
@@ -190,8 +184,8 @@ impl epi::App for CardEditor {
 			});
 
 			// If we have a loaded game, display all cards
-			if let Some(loaded_game) = &loaded_game {
-				loaded_game.display_card_selection(card_search, ui, open_edit_screens);
+			if let Some(loaded_game) = loaded_game {
+				loaded_game.display_card_selection(card_search, ui, open_edit_screens, frame.tex_allocator());
 			}
 		});
 
@@ -210,7 +204,7 @@ impl epi::App for CardEditor {
 			_ => false,
 		};
 
-		match (wants_to_save, &self.loaded_game) {
+		match (wants_to_save, &mut self.loaded_game) {
 			(true, Some(loaded_game)) => match loaded_game.save() {
 				Ok(()) => alert::info("Successfully saved!"),
 				// If unable to save, save the state to disk just in case changes are lost
