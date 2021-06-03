@@ -493,7 +493,16 @@ fn render_arrow_color_opt(ui: &mut egui::Ui, cur_color: &mut Option<ArrowColor>)
 		.selected_text(to_str(*cur_color))
 		.show_ui(ui, |ui| {
 			for color in ArrowColor::iter().map(Some).chain(std::iter::once(None)) {
-				ui.selectable_value(cur_color, color, to_str(color));
+				ui.horizontal(|ui| {
+					ui.selectable_value(cur_color, color, to_str(color));
+					let ([r, g, b], label) = match color {
+						Some(ArrowColor::Red) => ([255, 0, 0], ">"),
+						Some(ArrowColor::Green) => ([0, 255, 0], ">>"),
+						Some(ArrowColor::Blue) => ([127, 127, 255], ">>>"),
+						None => ([0; 3], ""),
+					};
+					ui.colored_label(egui::Color32::from_rgb(r, g, b), label);
+				});
 			}
 		});
 }
