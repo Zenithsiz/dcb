@@ -8,7 +8,8 @@
 	assert_matches,
 	exact_size_is_empty,
 	iter_advance_by,
-	try_blocks
+	try_blocks,
+	cow_is_borrowed
 )]
 
 // Modules
@@ -18,6 +19,7 @@ mod cli;
 use anyhow::Context;
 use byteorder::{ByteOrder, LittleEndian};
 use cli::CliData;
+use encoding_rs::SHIFT_JIS;
 use itertools::Itertools;
 use std::{collections::HashMap, convert::TryInto, fs};
 
@@ -167,11 +169,10 @@ impl State {
 				_ => println!("display_scene {value0:#x}, {value1:#x}"),
 			},
 			(State::Start, Command::SetBuffer { kind, bytes }) => {
-				// Special case some bad bytes from the original game
-				let s = match bytes {
-					b"my idea\x82\x93 on you." => "my idea�� on you.",
-					_ => std::str::from_utf8(bytes).context("Unable to parse text buffer as utf-8")?,
-				};
+				let s = SHIFT_JIS
+					.decode_without_bom_handling_and_without_replacement(bytes)
+					.context("Unable to parse text buffer as utf-8")?;
+
 				match kind {
 					0x4 => println!("set_text_buffer \"{}\"", s.escape_debug()),
 					_ => println!("set_buffer {kind:#x}, \"{}\"", s.escape_debug()),
