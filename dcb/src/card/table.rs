@@ -11,7 +11,13 @@ pub use header::Header;
 // Imports
 use super::{Card, CardHeader};
 use crate::card::{self, Digimon, Digivolve, Item};
+use ascii::AsciiString;
 use dcb_bytes::Bytes;
+use dcb_io::{
+	game_file::{OpenFileError, Path},
+	GameFile,
+};
+use dcb_util::IoCursor;
 use std::{convert::TryInto, io};
 
 /// Table storing all cards.
@@ -151,5 +157,23 @@ impl Table {
 
 		// And return Ok
 		Ok(())
+	}
+}
+
+// File
+impl Table {
+	/// Returns the path of a card image
+	#[must_use]
+	pub fn card_image_path(idx: usize) -> AsciiString {
+		let path = format!("B:\\CARD\\LC{idx:03}.TIM");
+		AsciiString::from_ascii(path).expect("Path was invalid ascii")
+	}
+
+	/// Returns the table file on a game file
+	pub fn open<R: io::Seek + io::Read>(
+		game_file: &mut GameFile<R>,
+	) -> Result<IoCursor<IoCursor<&mut R>>, OpenFileError> {
+		let path = Path::from_ascii(Self::PATH).expect("Table path was invalid");
+		game_file.open_file(path)
 	}
 }
