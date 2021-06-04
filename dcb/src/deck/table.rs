@@ -10,7 +10,6 @@ pub use error::{DeserializeError, SerializeError};
 use crate::Deck;
 use byteorder::{ByteOrder, LittleEndian};
 use dcb_bytes::{BytesReadExt, BytesWriteExt};
-use dcb_util::array_split_mut;
 use std::{convert::TryInto, io};
 
 /// The decks table, where all decks are stored
@@ -73,7 +72,7 @@ impl Table {
 	pub fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<(), SerializeError> {
 		// Write header
 		let mut header_bytes = [0u8; 0x8];
-		let header = array_split_mut!(&mut header_bytes,
+		let header = dcb_util::array_split_mut!(&mut header_bytes,
 			magic: [0x4],
 
 			decks_count: 1,

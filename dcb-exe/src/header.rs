@@ -10,7 +10,7 @@ pub use error::{DeserializeBytesError, SerializeBytesError};
 use crate::Pos;
 use byteorder::{ByteOrder, LittleEndian};
 use dcb_bytes::Bytes;
-use dcb_util::{array_split, array_split_mut, null_ascii_string::NullAsciiString, AsciiStrArr};
+use dcb_util::{null_ascii_string::NullAsciiString, AsciiStrArr};
 
 /// Executable header
 #[derive(PartialEq, Eq, Clone, Copy, Hash, Debug)]
@@ -60,7 +60,7 @@ impl Bytes for Header {
 	type SerializeError = SerializeBytesError;
 
 	fn deserialize_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::DeserializeError> {
-		let bytes = array_split!(bytes,
+		let bytes = dcb_util::array_split!(bytes,
 			magic            : [0x8],   // 0x0
 			_zero            : [0x8],   // 0x8
 			pc0              : [0x4],   // 0x10
@@ -101,7 +101,7 @@ impl Bytes for Header {
 	}
 
 	fn serialize_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::SerializeError> {
-		let bytes = array_split_mut!(bytes,
+		let bytes = dcb_util::array_split_mut!(bytes,
 			magic            : [0x8],   // 0x0
 			zero             : [0x8],   // 0x8
 			pc0              : [0x4],   // 0x10

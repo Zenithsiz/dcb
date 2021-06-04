@@ -5,7 +5,6 @@ use crate::deck::{armor_evo, city, music, ArmorEvo, City, MaybeArmorEvo, MaybeCi
 use byteorder::{ByteOrder, LittleEndian};
 use dcb_bytes::Bytes;
 use dcb_util::{
-	array_split, array_split_mut,
 	null_ascii_string::{self, NullAsciiString},
 	AsciiStrArr,
 };
@@ -88,7 +87,7 @@ impl Bytes for Deck {
 
 	fn deserialize_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::DeserializeError> {
 		// Split the bytes
-		let bytes = array_split!(bytes,
+		let bytes = dcb_util::array_split!(bytes,
 			deck         : [0x3c],
 			name         : [0x13],
 			owner        : [0x15],
@@ -130,7 +129,7 @@ impl Bytes for Deck {
 
 	fn serialize_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::SerializeError> {
 		// Split the bytes
-		let bytes = array_split_mut!(bytes,
+		let bytes = dcb_util::array_split_mut!(bytes,
 			deck         : [0x3c],
 			name         : [0x13],
 			owner        : [0x15],

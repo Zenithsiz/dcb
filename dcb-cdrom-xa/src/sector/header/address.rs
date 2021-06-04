@@ -7,7 +7,7 @@ pub mod error;
 pub use error::{DeserializeBytesError, FromSectorPosError, SerializeBytesError};
 
 // Imports
-use dcb_util::{array_split, array_split_mut, BcdU8};
+use dcb_util::BcdU8;
 use std::{convert::TryFrom, ops::Range};
 
 /// Sector address
@@ -49,7 +49,7 @@ impl dcb_bytes::Bytes for Address {
 	type SerializeError = SerializeBytesError;
 
 	fn deserialize_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::DeserializeError> {
-		let bytes = array_split!(bytes,
+		let bytes = dcb_util::array_split!(bytes,
 			min  : 0x1,
 			sec  : 0x1,
 			block: 0x1,
@@ -76,7 +76,7 @@ impl dcb_bytes::Bytes for Address {
 	}
 
 	fn serialize_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::SerializeError> {
-		let bytes = array_split_mut!(bytes,
+		let bytes = dcb_util::array_split_mut!(bytes,
 			min  : 0x1,
 			sec  : 0x1,
 			block: 0x1,

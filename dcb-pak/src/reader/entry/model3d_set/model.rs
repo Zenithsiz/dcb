@@ -11,7 +11,6 @@ pub use obj::Obj;
 // Imports
 use byteorder::{ByteOrder, LittleEndian};
 use dcb_bytes::Bytes;
-use dcb_util::array_split;
 use std::{convert::TryFrom, io};
 
 /// A `.TMD` model.
@@ -36,7 +35,7 @@ impl TmdModel {
 		reader
 			.read_exact(&mut header_bytes)
 			.map_err(FromReaderError::ReadHeader)?;
-		let header_bytes = array_split!(&header_bytes,
+		let header_bytes = dcb_util::array_split!(&header_bytes,
 			magic   : [0x4],
 			flags   : [0x4],
 			objs_len: [0x4],

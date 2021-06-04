@@ -10,7 +10,7 @@ mod cli;
 use anyhow::Context;
 use byteorder::{ByteOrder, LittleEndian, ReadBytesExt};
 use cli::CliData;
-use dcb_util::{array_split, AsciiStrArr, IoCursor, NullAsciiString};
+use dcb_util::{AsciiStrArr, IoCursor, NullAsciiString};
 use std::{
 	convert::TryFrom,
 	fs,
@@ -156,7 +156,7 @@ impl M3dEntry {
 		let mut bytes = [0; 0xc];
 		reader.read_exact(&mut bytes).context("Unable to read entry")?;
 
-		let bytes = array_split!(&bytes,
+		let bytes = dcb_util::array_split!(&bytes,
 			len: [0x4],
 			x: [0x2],
 			y: [0x2],
@@ -389,7 +389,7 @@ impl Index {
 			(0xc, 0x8, 0x0, 0x3c) => {
 				let mut bytes = [0; 32];
 				reader.read_exact(&mut bytes)?;
-				let bytes = array_split!(&bytes,
+				let bytes = dcb_util::array_split!(&bytes,
 					uv0: [0x2],
 					_unknown0: [0x2],
 					uv1: [0x2],

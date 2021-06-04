@@ -13,7 +13,6 @@ pub use submode::SubMode;
 
 // Imports
 use dcb_bytes::Bytes;
-use dcb_util::{array_split, array_split_mut};
 
 /// The sector sub-header
 ///
@@ -76,7 +75,7 @@ impl Bytes for SubHeader {
 	type SerializeError = SerializeBytesError;
 
 	fn deserialize_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::DeserializeError> {
-		let bytes = array_split!(bytes,
+		let bytes = dcb_util::array_split!(bytes,
 			file       : 0x1,
 			channel    : 0x1,
 			submode    : 0x1,
@@ -92,7 +91,7 @@ impl Bytes for SubHeader {
 	}
 
 	fn serialize_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::SerializeError> {
-		let bytes = array_split_mut!(bytes,
+		let bytes = dcb_util::array_split_mut!(bytes,
 			file       : 0x1,
 			channel    : 0x1,
 			submode    : 0x1,

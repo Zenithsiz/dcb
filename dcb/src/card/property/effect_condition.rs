@@ -4,7 +4,6 @@
 use crate::card::property::{self, DigimonProperty, EffectConditionOperation, MaybeDigimonProperty};
 use byteorder::{ByteOrder, LittleEndian};
 use dcb_bytes::Bytes;
-use dcb_util::{array_split, array_split_mut};
 use ref_cast::RefCast;
 
 /// A digimon's support effect condition
@@ -49,7 +48,7 @@ impl Bytes for EffectCondition {
 	type SerializeError = !;
 
 	fn deserialize_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::DeserializeError> {
-		let bytes = array_split!(bytes,
+		let bytes = dcb_util::array_split!(bytes,
 			misfire     : 0x1,
 			zero_0      : 0x1,
 			property_cmp: 0x1,
@@ -95,7 +94,7 @@ impl Bytes for EffectCondition {
 	}
 
 	fn serialize_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::SerializeError> {
-		let bytes = array_split_mut!(bytes,
+		let bytes = dcb_util::array_split_mut!(bytes,
 			misfire     : 0x1,
 			zero_0      : 0x1,
 			property_cmp: 0x1,

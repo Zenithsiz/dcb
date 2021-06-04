@@ -11,7 +11,7 @@ pub use frame::Frame;
 // Imports
 use byteorder::{ByteOrder, LittleEndian};
 use dcb_bytes::Bytes;
-use dcb_util::{array_split, null_ascii_string::NullAsciiString, AsciiStrArr};
+use dcb_util::{null_ascii_string::NullAsciiString, AsciiStrArr};
 use std::io;
 
 /// 2D Animation data
@@ -62,7 +62,7 @@ impl Animation2d {
 			.read_exact(&mut header_bytes)
 			.map_err(DeserializeError::ReadHeader)?;
 
-		let header_bytes = array_split!(&header_bytes,
+		let header_bytes = dcb_util::array_split!(&header_bytes,
 			file_name : [0xc],
 			unknown0  : [0x4],
 			unknown1  : [0x4],

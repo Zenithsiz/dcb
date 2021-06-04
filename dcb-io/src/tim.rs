@@ -10,7 +10,6 @@ pub use error::DeserializeError;
 
 // Imports
 use byteorder::{ByteOrder, LittleEndian};
-use dcb_util::array_split;
 use std::io;
 
 /// Bits per pixel
@@ -57,7 +56,7 @@ impl TimFile {
 			.read_exact(&mut header_bytes)
 			.map_err(DeserializeError::ReadHeader)?;
 
-		let header_bytes = array_split!(&header_bytes,
+		let header_bytes = dcb_util::array_split!(&header_bytes,
 			magic  :  0x1,
 			version:  0x1,
 			_unused: [0x2],

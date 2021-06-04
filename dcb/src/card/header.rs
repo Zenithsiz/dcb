@@ -10,7 +10,6 @@ pub use error::DeserializeBytesError;
 use crate::card::property::CardType;
 use byteorder::{ByteOrder, LittleEndian};
 use dcb_bytes::Bytes;
-use dcb_util::{array_split, array_split_mut};
 
 /// Card header
 pub struct CardHeader {
@@ -28,7 +27,7 @@ impl Bytes for CardHeader {
 	type SerializeError = !;
 
 	fn deserialize_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::DeserializeError> {
-		let bytes = array_split!(bytes,
+		let bytes = dcb_util::array_split!(bytes,
 			id: [0x2],
 			ty: 0x1,
 		);
@@ -40,7 +39,7 @@ impl Bytes for CardHeader {
 	}
 
 	fn serialize_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::SerializeError> {
-		let bytes = array_split_mut!(bytes,
+		let bytes = dcb_util::array_split_mut!(bytes,
 			id: [0x2],
 			ty: 0x1,
 		);

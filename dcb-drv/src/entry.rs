@@ -11,7 +11,7 @@ pub use error::DeserializeBytesError;
 use super::ptr::{DirPtr, FilePtr};
 use byteorder::{ByteOrder, LittleEndian};
 use chrono::NaiveDateTime;
-use dcb_util::{array_split, array_split_mut, ascii_str_arr::AsciiChar, AsciiStrArr};
+use dcb_util::{ascii_str_arr::AsciiChar, AsciiStrArr};
 use std::convert::TryInto;
 
 /// A directory entry kind
@@ -81,7 +81,7 @@ pub struct DirEntry {
 impl DirEntry {
 	/// Reads a directory entry reader from bytes
 	pub fn deserialize_bytes(bytes: &[u8; 0x20]) -> Result<Option<Self>, DeserializeBytesError> {
-		let bytes = array_split!(bytes,
+		let bytes = dcb_util::array_split!(bytes,
 			kind      :  0x1,
 			extension : [0x3],
 			sector_pos: [0x4],
@@ -136,7 +136,7 @@ impl DirEntry {
 
 	/// Writes this entry to bytes.
 	pub fn serialize_bytes(&self, bytes: &mut [u8; 0x20]) {
-		let bytes = array_split_mut!(bytes,
+		let bytes = dcb_util::array_split_mut!(bytes,
 			kind      :  0x1,
 			extension : [0x3],
 			sector_pos: [0x4],

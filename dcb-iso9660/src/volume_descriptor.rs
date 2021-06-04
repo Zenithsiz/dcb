@@ -14,7 +14,6 @@ pub use primary::PrimaryVolumeDescriptor;
 
 // Imports
 use dcb_bytes::Bytes;
-use dcb_util::array_split;
 
 /// A volume descriptor
 #[derive(PartialEq, Eq, Clone, Debug)]
@@ -54,7 +53,7 @@ impl Bytes for VolumeDescriptor {
 	type SerializeError = !;
 
 	fn deserialize_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::DeserializeError> {
-		let bytes = array_split!(bytes,
+		let bytes = dcb_util::array_split!(bytes,
 			kind      :  0x1,
 			magic     : [0x5],
 			version   :  0x1,

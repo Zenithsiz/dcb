@@ -4,7 +4,6 @@
 use crate::card::property::{self, AttackType, DigimonProperty, EffectOperation, PlayerType, Slot};
 use byteorder::{ByteOrder, LittleEndian};
 use dcb_bytes::Bytes;
-use dcb_util::{array_split, array_split_mut};
 
 /// A digimon's support effects
 ///
@@ -300,7 +299,7 @@ impl Bytes for Effect {
 		use Slot::{Dp as DpSlot, Hand, Offline as OfflineDeck, Online as OnlineDeck};
 
 		// Get all byte arrays we need
-		let bytes = array_split!(bytes,
+		let bytes = dcb_util::array_split!(bytes,
 			effect_type: 0x1,   // 0x0
 			a          : 0x1,   // 0x1
 			zero_0     : 0x1,   // 0x2
@@ -414,7 +413,7 @@ impl Bytes for Effect {
 		use Slot::{Dp as DpSlot, Hand, Offline as OfflineDeck, Online as OnlineDeck};
 
 		// Get all byte arrays we need
-		let bytes = array_split_mut!(bytes,
+		let bytes = dcb_util::array_split_mut!(bytes,
 			effect_type: 0x1,   // 0x0
 			a          : 0x1,   // 0x1
 			zero_0     : 0x1,   // 0x2
@@ -565,7 +564,7 @@ impl Bytes for MaybeEffect {
 
 	// `bytes` should include the `exists` byte
 	fn deserialize_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::DeserializeError> {
-		let bytes = array_split!(bytes,
+		let bytes = dcb_util::array_split!(bytes,
 			exists : 0x1,
 			effect : [0xf],
 		);
@@ -580,7 +579,7 @@ impl Bytes for MaybeEffect {
 	}
 
 	fn serialize_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::SerializeError> {
-		let bytes = array_split_mut!(bytes,
+		let bytes = dcb_util::array_split_mut!(bytes,
 			exists: 0x1,
 			effect: [0xf],
 		);

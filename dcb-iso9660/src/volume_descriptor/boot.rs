@@ -9,7 +9,6 @@ pub use error::DeserializeBytesError;
 // Imports
 use crate::StrArrA;
 use dcb_bytes::Bytes;
-use dcb_util::array_split;
 
 /// Primary volume descriptor
 #[derive(PartialEq, Eq, Clone, Debug)]
@@ -30,7 +29,7 @@ impl Bytes for BootRecordVolumeDescriptor {
 	type SerializeError = !;
 
 	fn deserialize_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::DeserializeError> {
-		let bytes = array_split!(bytes,
+		let bytes = dcb_util::array_split!(bytes,
 			system_id: [0x20],
 			boot_id  : [0x20],
 			data     : [0x7b9],

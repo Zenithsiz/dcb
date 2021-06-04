@@ -13,7 +13,7 @@ use crate::card::property::{
 };
 use byteorder::{ByteOrder, LittleEndian};
 use dcb_bytes::Bytes;
-use dcb_util::{array_split, array_split_mut, null_ascii_string::NullAsciiString, AsciiStrArr};
+use dcb_util::{null_ascii_string::NullAsciiString, AsciiStrArr};
 use ref_cast::RefCast;
 
 /// A digimon card
@@ -95,7 +95,7 @@ impl Bytes for Digimon {
 
 	fn deserialize_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::DeserializeError> {
 		// Split bytes
-		let bytes = array_split!(bytes,
+		let bytes = dcb_util::array_split!(bytes,
 			name                : [0x15],
 			unknown_15          : [0x2],
 			speciality_level    : 0x1,
@@ -197,7 +197,7 @@ impl Bytes for Digimon {
 
 	fn serialize_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::SerializeError> {
 		// Split bytes
-		let bytes = array_split_mut!(bytes,
+		let bytes = dcb_util::array_split_mut!(bytes,
 			name                : [0x15],
 			unknown_15          : [0x2],
 			speciality_level    : 0x1,

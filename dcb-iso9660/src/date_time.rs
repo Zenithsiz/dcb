@@ -9,7 +9,6 @@ pub use error::DeserializeBytesError;
 // Imports
 use super::StrArrD;
 use dcb_bytes::Bytes;
-use dcb_util::{array_split, array_split_mut};
 use std::{cmp::Ordering, fmt};
 
 /// Decimal date time
@@ -46,7 +45,7 @@ impl Bytes for DecDateTime {
 	type SerializeError = !;
 
 	fn deserialize_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::DeserializeError> {
-		let bytes = array_split!(bytes,
+		let bytes = dcb_util::array_split!(bytes,
 			year          : [0x4],
 			month         : [0x2],
 			day           : [0x2],
@@ -79,7 +78,7 @@ impl Bytes for DecDateTime {
 
 	// TODO: Error checking
 	fn serialize_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::SerializeError> {
-		let bytes = array_split_mut!(bytes,
+		let bytes = dcb_util::array_split_mut!(bytes,
 			year          : [0x4],
 			month         : [0x2],
 			day           : [0x2],

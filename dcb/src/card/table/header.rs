@@ -9,7 +9,6 @@ pub use error::DeserializeBytesError;
 // Imports
 use byteorder::{ByteOrder, LittleEndian};
 use dcb_bytes::Bytes;
-use dcb_util::{array_split, array_split_mut};
 
 /// The header
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -37,7 +36,7 @@ impl Bytes for Header {
 	type SerializeError = !;
 
 	fn deserialize_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::DeserializeError> {
-		let bytes = array_split!(bytes,
+		let bytes = dcb_util::array_split!(bytes,
 			magic: [0x4],
 			digimons_len: [0x2],
 			items_len: 1,
@@ -60,7 +59,7 @@ impl Bytes for Header {
 	}
 
 	fn serialize_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::SerializeError> {
-		let bytes = array_split_mut!(bytes,
+		let bytes = dcb_util::array_split_mut!(bytes,
 			magic: [0x4],
 			digimons_len: [0x2],
 			items_len: 1,

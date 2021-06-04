@@ -10,7 +10,6 @@ pub use error::DeserializeBytesError;
 use crate::BitsPerPixel;
 use byteorder::{ByteOrder, LittleEndian};
 use dcb_bytes::Bytes;
-use dcb_util::{array_split, array_split_mut};
 
 /// Header
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -29,7 +28,7 @@ impl Bytes for Header {
 
 	#[bitmatch::bitmatch]
 	fn deserialize_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::DeserializeError> {
-		let bytes = array_split!(bytes,
+		let bytes = dcb_util::array_split!(bytes,
 			tag    :  0x1,
 			version:  0x1,
 			_unused: [0x2],
@@ -65,7 +64,7 @@ impl Bytes for Header {
 	}
 
 	fn serialize_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::SerializeError> {
-		let bytes = array_split_mut!(bytes,
+		let bytes = dcb_util::array_split_mut!(bytes,
 			tag    :  0x1,
 			version:  0x1,
 			_unused: [0x2],

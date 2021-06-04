@@ -3,7 +3,6 @@
 // Imports
 use byteorder::{ByteOrder, LittleEndian};
 use dcb_bytes::Bytes;
-use dcb_util::{array_split, array_split_mut};
 use std::convert::TryInto;
 
 /// Header
@@ -25,7 +24,7 @@ impl Bytes for Header {
 	type SerializeError = !;
 
 	fn deserialize_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::DeserializeError> {
-		let bytes = array_split!(bytes,
+		let bytes = dcb_util::array_split!(bytes,
 			length: [0x4],
 			x     : [0x2],
 			y     : [0x2],
@@ -49,7 +48,7 @@ impl Bytes for Header {
 	}
 
 	fn serialize_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::SerializeError> {
-		let bytes = array_split_mut!(bytes,
+		let bytes = dcb_util::array_split_mut!(bytes,
 			length: [0x4],
 			x     : [0x2],
 			y     : [0x2],

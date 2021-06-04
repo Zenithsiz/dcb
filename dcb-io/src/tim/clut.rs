@@ -8,7 +8,6 @@ pub use error::DeserializeError;
 
 // Imports
 use byteorder::{ByteOrder, LittleEndian, ReadBytesExt};
-use dcb_util::array_split;
 use std::{convert::TryFrom, io};
 
 /// Color lookup table
@@ -45,7 +44,7 @@ impl Clut {
 			.read_exact(&mut header_bytes)
 			.map_err(DeserializeError::ReadHeader)?;
 
-		let header_bytes = array_split!(&header_bytes,
+		let header_bytes = dcb_util::array_split!(&header_bytes,
 			length: [0x4],
 			x     : [0x2],
 			y     : [0x2],

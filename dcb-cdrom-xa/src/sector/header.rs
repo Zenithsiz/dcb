@@ -12,7 +12,6 @@ pub use subheader::SubHeader;
 
 // Imports
 use dcb_bytes::Bytes;
-use dcb_util::{array_split, array_split_mut};
 
 /// The sector header
 #[derive(PartialEq, Eq, Clone, Debug)]
@@ -36,7 +35,7 @@ impl Bytes for Header {
 	type SerializeError = SerializeBytesError;
 
 	fn deserialize_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::DeserializeError> {
-		let bytes = array_split!(bytes,
+		let bytes = dcb_util::array_split!(bytes,
 			sync      : [0xc],
 			address   : [0x3],
 			mode      :  0x1 ,
@@ -73,7 +72,7 @@ impl Bytes for Header {
 	}
 
 	fn serialize_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::SerializeError> {
-		let bytes = array_split_mut!(bytes,
+		let bytes = dcb_util::array_split_mut!(bytes,
 			sync      : [0xc],
 			address   : [0x3],
 			mode      :  0x1 ,
