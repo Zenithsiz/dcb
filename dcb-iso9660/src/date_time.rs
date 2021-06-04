@@ -116,11 +116,10 @@ impl fmt::Debug for DecDateTime {
 			time_zone,
 		} = self;
 
+		// TODO: Verify this is right for negative timezones?
 		let time_zone_15_min_offset: i16 = -48 + i16::from(*time_zone);
-
-		let time_zone_hours = time_zone_15_min_offset / 4;
-		#[allow(clippy::modulo_arithmetic)] // We take the absolute value before-hand
-		let time_zone_minutes = (time_zone_15_min_offset.abs() % 4) * 15;
+		let time_zone_hours = time_zone_15_min_offset.div_euclid(4);
+		let time_zone_minutes = time_zone_15_min_offset.rem_euclid(4) * 15;
 
 		write!(
 			f,
