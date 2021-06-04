@@ -3,7 +3,7 @@
 // Imports
 use dcb_util::ascii_str_arr;
 
-/// Error for [`DirEntry::deserialize_bytes`](super::DirEntry::deserialize_bytes)
+/// Error for [`Bytes::deserialize_bytes`](dcb_bytes::Bytes::deserialize_bytes)
 #[derive(Debug, thiserror::Error)]
 pub enum DeserializeBytesError {
 	/// Invalid kind

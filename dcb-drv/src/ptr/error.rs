@@ -44,7 +44,7 @@ pub enum WriteEntriesError {
 	WriteEntry(#[source] io::Error),
 }
 
-/// Error for [`DirPtr::write_entry`](super::DirPtr::write_entry)
+/// Error for [`DirEntryPtr::write`](super::DirEntryPtr::write)
 #[derive(Debug, thiserror::Error)]
 pub enum WriteEntryError {
 	/// Unable to seek to directory

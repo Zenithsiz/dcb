@@ -2,7 +2,7 @@
 
 # Layout
 
-Each directory is a contiguous array of [`entry`]'s.
+Each directory is a contiguous array of [`entry`](crate::entry)'s.
 See it's module for details on each entry
 
 # Limitations

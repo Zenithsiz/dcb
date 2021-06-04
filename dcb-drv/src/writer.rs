@@ -20,7 +20,7 @@ pub trait DirWriterLister:
 	type Error: std::error::Error + 'static;
 }
 
-/// Error for [`write_fs`](write_fs)
+/// Error for [`DirWriter::write`]
 #[derive(Debug, thiserror::Error)]
 pub enum WriteDirError<E: std::error::Error + 'static> {
 	/// Unable to get entry
