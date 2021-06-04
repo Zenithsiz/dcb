@@ -10,15 +10,15 @@ pub struct CliData {
 	/// Input files
 	pub input_files: Vec<PathBuf>,
 
-	/// The output file
-	pub output_file: Option<PathBuf>,
+	/// The output directory
+	pub output_dir: Option<PathBuf>,
 }
 
 impl CliData {
 	/// Constructs all of the cli data given and returns it
 	pub fn new() -> Self {
 		const INPUT_FILES_STR: &str = "input-files";
-		const OUTPUT_FILE_STR: &str = "output-file";
+		const OUTPUT_DIR_STR: &str = "output-dir";
 
 		// Get all matches from cli
 		let matches = ClapApp::new("Tmd Extractor")
@@ -31,10 +31,10 @@ impl CliData {
 					.multiple(true),
 			)
 			.arg(
-				ClapArg::with_name(OUTPUT_FILE_STR)
-					.help("The output file")
+				ClapArg::with_name(OUTPUT_DIR_STR)
+					.help("The output directory")
 					.short("o")
-					.long("output-file")
+					.long("output-dir")
 					.takes_value(true),
 			)
 			.get_matches();
@@ -48,12 +48,12 @@ impl CliData {
 			.collect();
 
 
-		let output_file = matches.value_of(OUTPUT_FILE_STR).map(PathBuf::from);
+		let output_dir = matches.value_of(OUTPUT_DIR_STR).map(PathBuf::from);
 
 		// Return the data
 		Self {
 			input_files,
-			output_file,
+			output_dir,
 		}
 	}
 }

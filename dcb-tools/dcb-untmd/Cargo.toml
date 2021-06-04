@@ -21,3 +21,6 @@ anyhow = "1.0.38"
 # Util
 size_format = "1.0.2"
 byteorder = "1.4.2"
+
+# Math
+cgmath = "0.18.0"
