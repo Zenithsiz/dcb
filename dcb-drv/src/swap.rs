@@ -8,7 +8,7 @@ use crate::{
 };
 use std::{io, mem};
 
-/// Swaps two files within a file
+/// Swaps two files
 pub fn swap_files<T: io::Seek + io::Read + io::Write>(
 	cursor: &mut T, lhs_path: &Path, rhs_path: &Path,
 ) -> Result<(), SwapFilesError> {

@@ -22,3 +22,13 @@ See the [`dir`] documentation for more information on how each directory works.
 
 This is supported by it's usage a drive, e.g. 'B:\\CARD2.CDD' where
 the file `B.DRV` exists in the upper `Iso9660` filesystem.
+
+# API
+
+The [`DirPtr`] type can be used to access any directory, namely the root directory
+(provided by [`DirPtr::root`]).
+
+The [`Path`] type is used to refer to any entry.
+
+There also exist some utility functions at the root of the crate, such as [`find_entry`]
+and [`swap_files`].
