@@ -17,6 +17,7 @@ pub fn swap_files<T: io::Seek + io::Read + io::Write>(
 		Some((lhs_dir_path, lhs_filename)) => {
 			let lhs_dir_ptr = crate::find_entry(cursor, lhs_dir_path)
 				.map_err(SwapFilesError::LhsDir)?
+				.1
 				.kind
 				.as_dir_ptr()
 				.ok_or(SwapFilesError::LhsParentIsFile)?;
@@ -28,6 +29,7 @@ pub fn swap_files<T: io::Seek + io::Read + io::Write>(
 		Some((rhs_dir_path, rhs_filename)) => {
 			let rhs_dir_ptr = crate::find_entry(cursor, rhs_dir_path)
 				.map_err(SwapFilesError::RhsDir)?
+				.1
 				.kind
 				.as_dir_ptr()
 				.ok_or(SwapFilesError::RhsParentIsFile)?;

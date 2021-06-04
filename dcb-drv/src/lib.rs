@@ -79,6 +79,6 @@ pub mod writer;
 pub use entry::{DirEntry, DirEntryKind};
 pub use find::find_entry;
 pub use path::Path;
-pub use ptr::{DirPtr, FilePtr};
+pub use ptr::{DirEntryPtr, DirPtr, FilePtr};
 pub use swap::swap_files;
 pub use writer::{DirEntryWriter, DirEntryWriterKind, DirWriter, DirWriterLister};
