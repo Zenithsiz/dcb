@@ -37,10 +37,10 @@ pub fn swap_files<T: io::Seek + io::Read + io::Write>(
 	};
 
 	// Read the directory entries and find where the file is
-	let (lhs_file_idx, mut lhs_entry) = lhs_dir_ptr
+	let (lhs_entry_ptr, mut lhs_entry) = lhs_dir_ptr
 		.find_entry(cursor, lhs_filename)
 		.map_err(SwapFilesError::FindLhsFile)?;
-	let (rhs_file_idx, mut rhs_entry) = rhs_dir_ptr
+	let (rhs_entry_ptr, mut rhs_entry) = rhs_dir_ptr
 		.find_entry(cursor, rhs_filename)
 		.map_err(SwapFilesError::FindRhsFile)?;
 
@@ -53,11 +53,11 @@ pub fn swap_files<T: io::Seek + io::Read + io::Write>(
 	}
 
 	// Then write both entries back
-	lhs_dir_ptr
-		.write_entry(cursor, &lhs_entry, lhs_file_idx)
+	lhs_entry_ptr
+		.write(cursor, &lhs_entry)
 		.map_err(SwapFilesError::WriteLhs)?;
-	rhs_dir_ptr
-		.write_entry(cursor, &rhs_entry, rhs_file_idx)
+	rhs_entry_ptr
+		.write(cursor, &rhs_entry)
 		.map_err(SwapFilesError::WriteRhs)?;
 
 	Ok(())

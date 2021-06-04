@@ -13,10 +13,7 @@ use super::DirEntry;
 use crate::DirEntryKind;
 use ascii::AsciiStr;
 use dcb_util::IoCursor;
-use std::{
-	convert::TryFrom,
-	io::{self, SeekFrom},
-};
+use std::io::{self, SeekFrom};
 
 /// File pointer
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -112,7 +109,7 @@ impl DirPtr {
 	/// Finds an entry
 	pub fn find_entry<R: io::Read + io::Seek>(
 		self, reader: &mut R, entry_name: &AsciiStr,
-	) -> Result<(usize, DirEntry), FindEntryError> {
+	) -> Result<(DirEntryPtr, DirEntry), FindEntryError> {
 		let (filename, extension) = entry_name
 			.as_str()
 			.split_once('.')
@@ -122,8 +119,8 @@ impl DirPtr {
 
 		self.read_entries(reader)
 			.map_err(FindEntryError::SeekDir)?
-			.enumerate()
-			.find_map(|(idx, entry)| match entry {
+			.zip(0..)
+			.find_map(|(entry, idx)| match entry {
 				Ok(entry) => {
 					let is_match = entry.name.as_str() == filename &&
 						match entry.kind {
@@ -132,7 +129,7 @@ impl DirPtr {
 						};
 
 					match is_match {
-						true => Some(Ok((idx, entry))),
+						true => Some(Ok((DirEntryPtr::new(self, idx), entry))),
 						false => None,
 					}
 				},
@@ -161,19 +158,36 @@ impl DirPtr {
 
 		Ok(())
 	}
+}
 
-	/// Writes a single entry to this directory
-	pub fn write_entry<W: io::Seek + io::Write>(
-		self, writer: &mut W, entry: &DirEntry, idx: usize,
-	) -> Result<(), WriteEntryError> {
-		// Seek to the sector and then to the entry
-		// TODO: Maybe do this in one seek
+/// Directory entry pointer
+#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Debug)]
+pub struct DirEntryPtr {
+	/// Directory
+	dir: DirPtr,
+
+	/// Entry
+	entry: u32,
+}
+
+impl DirEntryPtr {
+	/// Creates a new entry pointer
+	#[must_use]
+	pub const fn new(dir: DirPtr, entry: u32) -> Self {
+		Self { dir, entry }
+	}
+
+	/// Seeks to this entry on a cursor
+	pub fn seek_to<T: io::Seek>(self, cursor: &mut T) -> Result<u64, io::Error> {
+		cursor.seek(SeekFrom::Start(
+			u64::from(self.dir.sector_pos) * 0x800 + u64::from(self.entry) * 0x20,
+		))
+	}
+
+	/// Writes an entry to this pointer
+	pub fn write<W: io::Seek + io::Write>(self, writer: &mut W, entry: &DirEntry) -> Result<(), WriteEntryError> {
+		// Seek to this entry
 		self.seek_to(writer).map_err(WriteEntryError::Seek)?;
-		writer
-			.seek(SeekFrom::Current(
-				0x20 * i64::try_from(idx).expect("Entry index didn't fit into `usize`"),
-			))
-			.map_err(WriteEntryError::Seek)?;
 
 		// Then write the entry
 		let mut entry_bytes = [0; 0x20];
