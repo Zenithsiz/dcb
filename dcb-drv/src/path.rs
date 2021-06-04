@@ -3,8 +3,9 @@
 //! See the [`Path`] type for more details.
 
 // Imports
-use ascii::{AsciiChar, AsciiStr};
+use ascii::{AsciiChar, AsciiStr, AsciiString};
 use ref_cast::RefCast;
+use std::{fmt, ops};
 
 /// A path
 ///
@@ -100,6 +101,12 @@ impl Path {
 		let start = &self.0[..(self.len() - last.len())];
 		Some((Self::new(start), last.as_ascii()))
 	}
+
+	/// Converts this path into a [`PathBuf`]
+	#[must_use]
+	pub fn to_path_buf(&self) -> PathBuf {
+		PathBuf(self.0.to_ascii_string())
+	}
 }
 
 impl PartialEq for Path {
@@ -124,6 +131,47 @@ impl PartialEq for Path {
 	}
 }
 
+impl<I> ops::Index<I> for Path
+where
+	AsciiStr: ops::Index<I, Output = AsciiStr>,
+{
+	type Output = Self;
+
+	fn index(&self, index: I) -> &Self::Output {
+		Self::new(&self.as_ascii()[index])
+	}
+}
+
+impl fmt::Display for Path {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		write!(f, "{}", self.as_ascii())
+	}
+}
+
+/// Path Buffer
+#[derive(Clone, Debug)]
+pub struct PathBuf(AsciiString);
+
+impl ops::Deref for PathBuf {
+	type Target = Path;
+
+	fn deref(&self) -> &Self::Target {
+		Path::new(&self.0)
+	}
+}
+
+impl PartialEq for PathBuf {
+	fn eq(&self, other: &Self) -> bool {
+		**self == **other
+	}
+}
+
+impl fmt::Display for PathBuf {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		write!(f, "{}", &**self)
+	}
+}
+
 /// Components of a path
 #[derive(PartialEq, Clone, Debug)]
 pub struct Components<'a> {
@@ -138,6 +186,12 @@ impl<'a> Components<'a> {
 		Self {
 			path: path.trim_trailing(),
 		}
+	}
+
+	/// Returns the remaining path
+	#[must_use]
+	pub const fn remaining(&self) -> &'a Path {
+		self.path
 	}
 }
 
