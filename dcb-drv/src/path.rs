@@ -2,10 +2,14 @@
 //!
 //! See the [`Path`] type for more details.
 
+// Modules
+#[cfg(test)]
+mod test;
+
 // Imports
 use ascii::{AsciiChar, AsciiStr, AsciiString};
 use ref_cast::RefCast;
-use std::{fmt, ops};
+use std::{fmt, iter::FusedIterator, ops};
 
 /// A path
 ///
@@ -74,32 +78,8 @@ impl Path {
 
 	/// Returns an iterator over all components of this path
 	#[must_use]
-	pub fn components(&self) -> Components {
+	pub const fn components(&self) -> Components {
 		Components::new(self)
-	}
-
-	/// Splits this path at it's first component
-	#[must_use]
-	pub fn split_first(&self) -> Option<(&AsciiStr, &Self)> {
-		let mut components = self.components();
-		let first = components.next()?;
-		Some((first.as_ascii(), components.path))
-	}
-
-	/// Splits this path at it's last component
-	#[must_use]
-	pub fn split_last(&self) -> Option<(&Self, &AsciiStr)> {
-		// Get the last component
-		let (idx, last) = self.components().enumerate().last()?;
-
-		// If it was the start component, return
-		if idx == 0 {
-			return None;
-		}
-
-		// Else separate them
-		let start = &self.0[..(self.len() - last.len())];
-		Some((Self::new(start), last.as_ascii()))
 	}
 
 	/// Converts this path into a [`PathBuf`]
@@ -181,11 +161,9 @@ pub struct Components<'a> {
 
 impl<'a> Components<'a> {
 	/// Creates new components
-	pub(self) fn new(path: &'a Path) -> Self {
+	pub(self) const fn new(path: &'a Path) -> Self {
 		// Trim all trailing `\`
-		Self {
-			path: path.trim_trailing(),
-		}
+		Self { path }
 	}
 
 	/// Returns the remaining path
@@ -195,21 +173,55 @@ impl<'a> Components<'a> {
 	}
 }
 
+impl<'a> FusedIterator for Components<'a> {}
+
 impl<'a> Iterator for Components<'a> {
-	type Item = &'a Path;
+	type Item = Component<'a>;
 
 	fn next(&mut self) -> Option<Self::Item> {
-		// Trim all leading `\`
-		self.path = self.path.trim_leading();
+		// Read until the next `\\` or eof
+		let (cmpt, rest) = match self.path.0.chars().position(|ch| ch == AsciiChar::BackSlash) {
+			// If we found it first, emit a root component
+			Some(0) => (Component::Root, self.path),
 
-		// Then split at the first `\` we find
-		let (path, rest) = match self.path.0.chars().position(|ch| ch == AsciiChar::BackSlash) {
-			Some(idx) => (Path::new(&self.path.0[..idx]), Path::new(&self.path.0[idx..])),
-			None if !self.path.is_empty() => (self.path, Path::empty()),
+			// Else it's a normal component
+			// Note: We handle `.` and `..` below
+			Some(idx) => (Component::Normal(self.path[..idx].as_ascii()), &self.path[idx..]),
+
+			// If we didn't find `\\`, but we're not empty, return the remaining path
+			None if !self.path.is_empty() => (Component::Normal(self.path.as_ascii()), Path::empty()),
+
+			// Else we're done
 			None => return None,
 		};
 
+		// Trim all remaining leading `\\`s
+		let rest = rest.trim_leading();
+
+		// If the component is a normal `.` or `..`, change it
+		let cmpt = match cmpt {
+			Component::Normal(path) if path == "." => Component::CurDir,
+			Component::Normal(path) if path == ".." => Component::ParentDir,
+			_ => cmpt,
+		};
+
 		self.path = rest;
-		Some(path)
+		Some(cmpt)
 	}
+}
+
+/// Component
+#[derive(PartialEq, Clone, Copy, Debug)]
+pub enum Component<'a> {
+	/// Root, `\\` at the start of the path
+	Root,
+
+	/// Cur dir, `.`
+	CurDir,
+
+	/// Parent dir, `..`
+	ParentDir,
+
+	/// Normal
+	Normal(&'a AsciiStr),
 }
