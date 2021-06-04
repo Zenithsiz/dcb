@@ -1,7 +1,7 @@
 //! Errors
 
 // Imports
-use dcb_drv::{find::FindEntryError, ptr::FileCursorError};
+use dcb_drv::ptr;
 use std::io;
 
 
@@ -25,7 +25,7 @@ pub enum OpenFileError {
 
 	/// Unable to find file
 	#[error("Unable to find file")]
-	FindFile(#[source] FindEntryError),
+	FindFile(#[source] ptr::FindError),
 
 	/// Found directory
 	#[error("Found directory")]
@@ -33,7 +33,7 @@ pub enum OpenFileError {
 
 	/// Unable to open file
 	#[error("Unable to open file")]
-	OpenFile(#[source] FileCursorError),
+	OpenFile(#[source] ptr::FileCursorError),
 }
 
 

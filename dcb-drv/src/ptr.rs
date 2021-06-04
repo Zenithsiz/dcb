@@ -5,12 +5,12 @@ pub mod error;
 
 // Exports
 pub use error::{
-	FileCursorError, FindEntryError, ReadEntriesError, ReadEntryError, WriteEntriesError, WriteEntryError,
+	FileCursorError, FindEntryError, FindError, ReadEntriesError, ReadEntryError, WriteEntriesError, WriteEntryError,
 };
 
 // Imports
 use super::DirEntry;
-use crate::DirEntryKind;
+use crate::{path, DirEntryKind, Path};
 use ascii::AsciiStr;
 use core::str::lossy::Utf8Lossy;
 use dcb_bytes::Bytes;
@@ -121,6 +121,63 @@ impl DirPtr {
 		});
 
 		Ok(iter)
+	}
+
+	/// Finds an entry from it's path
+	pub fn find<R: io::Seek + io::Read>(
+		self, reader: &mut R, path: &Path,
+	) -> Result<(DirEntryPtr, DirEntry), FindError> {
+		// Current directory pointer
+		let mut cur_ptr = self;
+
+		// Current entry
+		let mut cur_entry = None;
+
+		let mut components = path.components();
+		loop {
+			match components.next() {
+				// If we get root, reset us to root and clear any entry we have
+				Some(path::Component::Root) => (cur_ptr, cur_entry) = (DirPtr::root(), None),
+
+				// For current directory just get the next component
+				Some(path::Component::CurDir) => continue,
+
+				// Return `Err` on parent directories
+				// Note: We don't support parent directories as we'd have to store all
+				//       of the parent directories, because directories don't have
+				//       access to their parents
+				Some(path::Component::ParentDir) => return Err(FindError::ParentDir),
+
+				// On a normal entry, find the entry in the current dir
+				Some(path::Component::Normal(entry_name)) => {
+					// Find the entry
+					let (entry_ptr, entry) = cur_ptr.find_entry(reader, entry_name).map_err(FindError::FindEntry)?;
+
+					// If this is the final entry, return it
+					if components.clone().next().is_none() {
+						return Ok((entry_ptr, entry));
+					}
+
+					// Else check what entry we got
+					match entry.kind {
+						DirEntryKind::File { .. } => {
+							return Err(FindError::ExpectedDir {
+								path: path[..(path.len() - components.remaining().len())].to_path_buf(),
+							})
+						},
+
+						// If we got a directory, continue
+						DirEntryKind::Dir { ptr } => {
+							cur_entry = Some((entry_ptr, entry));
+							cur_ptr = ptr;
+						},
+					};
+				},
+
+				// If we're done, return whatever entry we had before running out
+				None => return cur_entry.ok_or(FindError::EmptyPath),
+			}
+		}
 	}
 
 	/// Finds an entry

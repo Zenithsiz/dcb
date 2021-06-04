@@ -8,7 +8,8 @@
 	never_type,
 	unwrap_infallible,
 	format_args_capture,
-	str_internals
+	str_internals,
+	destructuring_assignment
 )]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]
@@ -69,7 +70,6 @@
 // Modules
 pub mod dir;
 pub mod entry;
-pub mod find;
 pub mod path;
 pub mod ptr;
 pub mod swap;
@@ -77,7 +77,6 @@ pub mod writer;
 
 // Exports
 pub use entry::{DirEntry, DirEntryKind};
-pub use find::find_entry;
 pub use path::{Path, PathBuf};
 pub use ptr::{DirEntryPtr, DirPtr, FilePtr};
 pub use swap::swap_files;

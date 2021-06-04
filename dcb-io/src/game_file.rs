@@ -147,7 +147,9 @@ impl<T: io::Seek + io::Read> GameFile<T> {
 		};
 
 		// Then get the entry
-		let (_, entry) = dcb_drv::find_entry(&mut cursor, path).map_err(OpenFileError::FindFile)?;
+		let (_, entry) = dcb_drv::DirPtr::root()
+			.find(&mut cursor, path)
+			.map_err(OpenFileError::FindFile)?;
 
 		match entry.kind {
 			DirEntryKind::File { ptr, .. } => ptr.cursor(cursor).map_err(OpenFileError::OpenFile),

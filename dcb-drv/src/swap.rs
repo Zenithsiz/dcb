@@ -1,7 +1,10 @@
 //! File swapping
 
 // Imports
-use crate::{ptr::WriteEntryError, DirEntryKind, Path};
+use crate::{
+	ptr,
+	DirEntryKind, DirPtr, Path,
+};
 use std::{io, mem};
 
 /// Swaps two files
@@ -9,8 +12,8 @@ pub fn swap_files<T: io::Seek + io::Read + io::Write>(
 	cursor: &mut T, lhs_path: &Path, rhs_path: &Path,
 ) -> Result<(), SwapFilesError> {
 	// Find both files and their entry pointers
-	let (lhs_entry_ptr, mut lhs_entry) = crate::find_entry(cursor, lhs_path).map_err(SwapFilesError::FindLhs)?;
-	let (rhs_entry_ptr, mut rhs_entry) = crate::find_entry(cursor, rhs_path).map_err(SwapFilesError::FindLhs)?;
+	let (lhs_entry_ptr, mut lhs_entry) = DirPtr::root().find(cursor, lhs_path).map_err(SwapFilesError::FindLhs)?;
+	let (rhs_entry_ptr, mut rhs_entry) = DirPtr::root().find(cursor, rhs_path).map_err(SwapFilesError::FindLhs)?;
 
 	// Swap both entries' file pointers
 	match (&mut lhs_entry.kind, &mut rhs_entry.kind) {
@@ -36,11 +39,11 @@ pub fn swap_files<T: io::Seek + io::Read + io::Write>(
 pub enum SwapFilesError {
 	/// Unable to find lhs file
 	#[error("Unable to find lhs file")]
-	FindLhs(#[source] crate::find::FindEntryError),
+	FindLhs(#[source] ptr::FindError),
 
 	/// Unable to find rhs file
 	#[error("Unable to find rhs file")]
-	FindRhs(#[source] crate::find::FindEntryError),
+	FindRhs(#[source] ptr::FindError),
 
 	/// Both paths must be files
 	#[error("Both paths must be files")]
@@ -48,9 +51,9 @@ pub enum SwapFilesError {
 
 	/// Unable to write lhs file entry
 	#[error("Unable to write lhs file entry")]
-	WriteLhs(#[source] WriteEntryError),
+	WriteLhs(#[source] ptr::WriteEntryError),
 
 	/// Unable to write rhs file entry
 	#[error("Unable to write rhs file entry")]
-	WriteRhs(#[source] WriteEntryError),
+	WriteRhs(#[source] ptr::WriteEntryError),
 }

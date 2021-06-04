@@ -30,5 +30,4 @@ The [`DirPtr`] type can be used to access any directory, namely the root directo
 
 The [`Path`] type is used to refer to any entry.
 
-There also exist some utility functions at the root of the crate, such as [`find_entry`]
-and [`swap_files`].
+There also exist some utility functions at the root of the crate, such as [`swap_files`].
