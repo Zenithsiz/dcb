@@ -11,7 +11,7 @@ use anyhow::Context;
 use cli::CliData;
 use dcb_bytes::Bytes;
 use dcb_cdrom_xa::CdRomReader;
-use dcb_iso9660::{date_time::DecDateTime, FilesystemReader};
+use dcb_iso9660::{date_time::DecDateTime, string::FileStrWithoutVersion, FilesystemReader};
 use std::{fs, io, path::PathBuf};
 
 fn main() -> Result<(), anyhow::Error> {

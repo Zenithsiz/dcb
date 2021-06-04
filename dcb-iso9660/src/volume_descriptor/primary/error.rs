@@ -1,18 +1,19 @@
 //! Errors
 
 // Imports
-use crate::{date_time, entry, string};
+use crate::{date_time, entry};
+use dcb_util::alphabet;
 
 /// Error type for [`Bytes::deserialize_bytes`](dcb_bytes::Bytes::deserialize_bytes)
 #[derive(Debug, thiserror::Error)]
 pub enum DeserializeBytesError {
 	/// Unable to parse system id
 	#[error("Unable to parse system id")]
-	SystemId(#[source] string::InvalidCharError),
+	SystemId(#[source] alphabet::arr::FromBytesError<alphabet::InvalidCharError>),
 
 	/// Unable to parse volume id
 	#[error("Unable to parse volume id")]
-	VolumeId(#[source] string::InvalidCharError),
+	VolumeId(#[source] alphabet::arr::FromBytesError<alphabet::InvalidCharError>),
 
 	/// Unable to parse the root dir entry
 	#[error("Unable to parse the root dir entry")]
@@ -20,31 +21,31 @@ pub enum DeserializeBytesError {
 
 	/// Unable to parse volume set id
 	#[error("Unable to parse volume set id")]
-	VolumeSetId(#[source] string::InvalidCharError),
+	VolumeSetId(#[source] alphabet::arr::FromBytesError<alphabet::InvalidCharError>),
 
 	/// Unable to parse publisher id
 	#[error("Unable to parse publisher id")]
-	PublisherId(#[source] string::InvalidCharError),
+	PublisherId(#[source] alphabet::arr::FromBytesError<alphabet::InvalidCharError>),
 
 	/// Unable to parse data preparer id
 	#[error("Unable to parse data preparer id")]
-	DataPreparerId(#[source] string::InvalidCharError),
+	DataPreparerId(#[source] alphabet::arr::FromBytesError<alphabet::InvalidCharError>),
 
 	/// Unable to parse application id
 	#[error("Unable to parse application id")]
-	ApplicationId(#[source] string::InvalidCharError),
+	ApplicationId(#[source] alphabet::arr::FromBytesError<alphabet::InvalidCharError>),
 
 	/// Unable to parse copyright file id
 	#[error("Unable to parse copyright file id")]
-	CopyrightFileId(#[source] string::InvalidCharError),
+	CopyrightFileId(#[source] alphabet::arr::FromBytesError<alphabet::InvalidCharError>),
 
 	/// Unable to parse abstract file id
 	#[error("Unable to parse abstract file id")]
-	AbstractFileId(#[source] string::InvalidCharError),
+	AbstractFileId(#[source] alphabet::arr::FromBytesError<alphabet::InvalidCharError>),
 
 	/// Unable to parse bibliographic file id
 	#[error("Unable to parse bibliographic file id")]
-	BibliographicFileId(#[source] string::InvalidCharError),
+	BibliographicFileId(#[source] alphabet::arr::FromBytesError<alphabet::InvalidCharError>),
 
 	/// Unable to parse volume creation date time
 	#[error("Unable to parse volume creation date time")]

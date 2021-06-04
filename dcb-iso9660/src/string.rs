@@ -1,66 +1,13 @@
 //! Filesystem strings
 
-/// Modules
-pub mod arr;
+// Modules
 pub mod error;
-pub mod owned;
-pub mod slice;
 
 // Exports
-pub use arr::StrArrAlphabet;
-pub use error::{InvalidCharError, ValidateFileAlphabetError};
-pub use owned::StringAlphabet;
-pub use slice::StrAlphabet;
+pub use error::ValidateFileAlphabetError;
 
-/// A string alphabet
-///
-/// This type serves to create marker types for strings that may only
-/// contain a subset of characters, or must have them in a certain order.
-///
-/// This is accomplished by the [`validate`](Alphabet::validate) method,
-/// which simply checks if a byte slice is valid for this alphabet.
-pub trait Alphabet {
-	/// Error type
-	type Error;
-
-	/// Validates `bytes` for a string of this alphabet and returns
-	/// it, possibly without it's terminator.
-	fn validate(bytes: &[u8]) -> Result<&[u8], Self::Error>;
-}
-
-/// Implements the [`Alphabet`] trait from a list of valid characters
-/// and a possible terminator
-pub trait OnlyValidCharsAlphabet {
-	/// All valid characters
-	fn valid_chars() -> &'static [u8];
-
-	/// Terminator for the string.
-	fn terminator() -> u8;
-}
-
-impl<A: OnlyValidCharsAlphabet> Alphabet for A {
-	type Error = InvalidCharError;
-
-	fn validate(bytes: &[u8]) -> Result<&[u8], Self::Error> {
-		// Go through all bytes and validate them until end of
-		// string or terminator.
-		let terminator = Self::terminator();
-		for (pos, &byte) in bytes.iter().enumerate() {
-			// If we found the terminator, terminate
-			if byte == terminator {
-				return Ok(&bytes[..pos]);
-			}
-
-			// Else make sure it contains this byte
-			if !Self::valid_chars().contains(&byte) {
-				return Err(InvalidCharError { byte, pos });
-			}
-		}
-
-		// If we got, there was no terminator, which is still a valid string.
-		Ok(bytes)
-	}
-}
+// Imports
+use dcb_util::{alphabet::OnlyValidCharsAlphabet, Alphabet, StrAlphabet, StrArrAlphabet, StringAlphabet};
 
 /// A-character alphabet
 ///
@@ -185,10 +132,11 @@ pub type FileStrArr<const N: usize> = StrArrAlphabet<FileAlphabet, N>;
 /// File string
 pub type FileString = StringAlphabet<FileAlphabet>;
 
+#[extend::ext(pub, name = FileStrWithoutVersion)]
 impl FileStr {
 	/// Returns this filename without the version
 	#[must_use]
-	pub fn without_version(&self) -> &str {
+	fn without_version(&self) -> &str {
 		let s = std::str::from_utf8(self.as_bytes()).expect("File string had invalid utf8 characters");
 
 		match s.split_once(';') {

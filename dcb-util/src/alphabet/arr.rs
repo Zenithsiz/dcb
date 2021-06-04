@@ -19,11 +19,19 @@ pub struct StrArrAlphabet<A: Alphabet, const N: usize> {
 
 impl<A: Alphabet, const N: usize> StrArrAlphabet<A, N> {
 	/// Parses a string from bytes
-	pub fn from_bytes(bytes: &[u8; N]) -> Result<Self, A::Error> {
-		A::validate(bytes).map(|valid_bytes| Self {
+	#[allow(clippy::shadow_unrelated)] // They're actually related
+	pub fn from_bytes(bytes: &[u8; N]) -> Result<Self, FromBytesError<A::Error>> {
+		// Validate the bytes with the alphabet
+		let valid_bytes = A::validate(bytes).map_err(FromBytesError::Validate)?;
+
+		// Try to copy the bytes over
+		let mut bytes = [0; N];
+		bytes.copy_from_slice(valid_bytes.get(..N).ok_or(FromBytesError::TooLong)?);
+
+		Ok(Self {
 			phantom: PhantomData,
-			bytes:   *bytes,
-			len:     valid_bytes.len(),
+			bytes,
+			len: valid_bytes.len(),
 		})
 	}
 
@@ -54,4 +62,16 @@ impl<A: Alphabet, const N: usize> fmt::Display for StrArrAlphabet<A, N> {
 		let s: &StrAlphabet<A> = self;
 		write!(f, "{}", s)
 	}
+}
+
+/// Error type for [`StrArrAlphabet::from_bytes`]
+#[derive(Debug, thiserror::Error)]
+pub enum FromBytesError<E: std::error::Error> {
+	/// Unable to validate
+	#[error("Unable to validate")]
+	Validate(E),
+
+	/// Returned string was too long
+	#[error("Validated string was too long")]
+	TooLong,
 }

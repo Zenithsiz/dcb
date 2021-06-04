@@ -1,28 +1,18 @@
 //! Errors
 
-/// Error for [`Alphabet::validate`](super::Alphabet::validate)'s impl of [`AlphabetA`](super::AlphabetA) and
-/// [`AlphabetD`](super::AlphabetD)
-#[derive(Debug, thiserror::Error)]
-#[error("Invalid character '{byte:#x}' at index {pos}")]
-pub struct InvalidCharError {
-	/// Invalid character
-	pub byte: u8,
+// Imports
+use dcb_util::alphabet;
 
-	/// Position
-	pub pos: usize,
-}
-
-/// Error for [`Alphabet::validate`](super::Alphabet::validate)'s impl of [`AlphabetA`](super::AlphabetA) and
-/// [`AlphabetD`](super::AlphabetD)
+/// Error for [`Alphabet`](dcb_util::Alphabet)'s impl of [`AlphabetFileAlphabet`](super::FileAlphabet)
 #[derive(Debug, thiserror::Error)]
 pub enum ValidateFileAlphabetError {
 	/// Invalid name character
 	#[error("Invalid name character")]
-	InvalidNameChar(#[source] InvalidCharError),
+	InvalidNameChar(#[source] alphabet::InvalidCharError),
 
 	/// Invalid extension character
 	#[error("Invalid extension character")]
-	InvalidExtensionChar(#[source] InvalidCharError),
+	InvalidExtensionChar(#[source] alphabet::InvalidCharError),
 
 	/// Missing file name extension
 	#[error("Missing file name extension")]

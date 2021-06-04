@@ -6,7 +6,9 @@
 	seek_stream_len,
 	unboxed_closures,
 	fn_traits,
-	decl_macro
+	decl_macro,
+	array_methods,
+	str_internals
 )]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]
@@ -67,6 +69,7 @@
 // Modules
 #[cfg(feature = "alert")]
 pub mod alert;
+pub mod alphabet;
 pub mod array_split;
 pub mod ascii_str_arr;
 #[cfg(feature = "gui")]
@@ -90,6 +93,7 @@ pub mod task;
 pub mod write_take;
 
 // Exports
+pub use alphabet::{Alphabet, StrAlphabet, StrArrAlphabet, StringAlphabet};
 pub use ascii_str_arr::AsciiStrArr;
 #[cfg(feature = "gui")]
 pub use ascii_text_buffer::AsciiTextBuffer;
