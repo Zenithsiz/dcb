@@ -11,6 +11,7 @@ pub use error::DeserializeBytesError;
 use super::ptr::{DirPtr, FilePtr};
 use byteorder::{ByteOrder, LittleEndian};
 use chrono::NaiveDateTime;
+use dcb_bytes::Bytes;
 use dcb_util::{ascii_str_arr::AsciiChar, AsciiStrArr};
 use std::convert::TryInto;
 
@@ -78,9 +79,12 @@ pub struct DirEntry {
 	pub kind: DirEntryKind,
 }
 
-impl DirEntry {
-	/// Reads a directory entry reader from bytes
-	pub fn deserialize_bytes(bytes: &[u8; 0x20]) -> Result<Option<Self>, DeserializeBytesError> {
+impl Bytes for DirEntry {
+	type ByteArray = [u8; 0x20];
+	type DeserializeError = DeserializeBytesError;
+	type SerializeError = !;
+
+	fn deserialize_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::DeserializeError> {
 		let bytes = dcb_util::array_split!(bytes,
 			kind      :  0x1,
 			extension : [0x3],
@@ -89,19 +93,6 @@ impl DirEntry {
 			date      : [0x4],
 			name      : [0x10],
 		);
-
-		// Special case some files which cause problems and return early, as if we encountered the final entry.
-		#[allow(clippy::single_match)] // We might add more matches in the future
-		match bytes.name {
-			[0x83, 0x52, 0x83, 0x53, 0x81, 0x5B, 0x20, 0x81, 0x60, 0x20, 0x43, 0x41, 0x52, 0x44, 0x32, 0x00] => {
-				log::warn!(
-					"Ignoring special directory entry: {:?}",
-					String::from_utf8_lossy(bytes.name)
-				);
-				return Ok(None);
-			},
-			_ => (),
-		}
 
 		// Then get the name and extension
 		let mut name = AsciiStrArr::from_bytes(bytes.name).map_err(DeserializeBytesError::Name)?;
@@ -116,7 +107,6 @@ impl DirEntry {
 
 		// Check kind
 		let kind = match bytes.kind {
-			0x0 => return Ok(None),
 			0x1 => DirEntryKind::File {
 				extension,
 				ptr: FilePtr { sector_pos, size },
@@ -131,11 +121,10 @@ impl DirEntry {
 			&kind => return Err(DeserializeBytesError::InvalidKind(kind)),
 		};
 
-		Ok(Some(Self { name, date, kind }))
+		Ok(Self { name, date, kind })
 	}
 
-	/// Writes this entry to bytes.
-	pub fn serialize_bytes(&self, bytes: &mut [u8; 0x20]) {
+	fn serialize_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::SerializeError> {
 		let bytes = dcb_util::array_split_mut!(bytes,
 			kind      :  0x1,
 			extension : [0x3],
@@ -174,5 +163,7 @@ impl DirEntry {
 			.try_into()
 			.expect("Seconds didn't fit into date");
 		LittleEndian::write_u32(bytes.date, date);
+
+		Ok(())
 	}
 }

@@ -12,6 +12,8 @@ pub use error::{
 use super::DirEntry;
 use crate::DirEntryKind;
 use ascii::AsciiStr;
+use core::str::lossy::Utf8Lossy;
+use dcb_bytes::Bytes;
 use dcb_util::IoCursor;
 use std::io::{self, SeekFrom};
 
@@ -93,11 +95,26 @@ impl DirPtr {
 		let iter = std::iter::from_fn(move || {
 			let entry: Result<_, _> = try {
 				// Read the bytes
-				let mut entry_bytes = [0; 0x20];
-				reader.read_exact(&mut entry_bytes).map_err(ReadEntryError::ReadEntry)?;
+				let mut bytes = [0; 0x20];
+				reader.read_exact(&mut bytes).map_err(ReadEntryError::ReadEntry)?;
 
-				// And parse it
-				DirEntry::deserialize_bytes(&entry_bytes).map_err(ReadEntryError::ParseEntry)?
+				// If all bytes are null, we're finished
+				if bytes == [0; 0x20] {
+					return None;
+				}
+
+				// Special case some entries which cause problems
+				#[allow(clippy::single_match)] // We might add more matches in the future
+				match &bytes {
+					b"\x01CDD\xd5/\x00\x00\xf0?\x01\x00\xe6u\xad:\x83R\x83S\x81[ \x81` CARD2\x00" => {
+						log::warn!("Ignoring special directory entry: {:?}", Utf8Lossy::from_bytes(&bytes));
+						return None;
+					},
+					_ => (),
+				}
+
+				// Else parse it
+				Some(DirEntry::deserialize_bytes(&bytes).map_err(ReadEntryError::ParseEntry)?)
 			};
 
 			entry.transpose()
@@ -150,7 +167,7 @@ impl DirPtr {
 		for entry in entries {
 			// Put the entry into bytes
 			let mut entry_bytes = [0; 0x20];
-			entry.serialize_bytes(&mut entry_bytes);
+			entry.serialize_bytes(&mut entry_bytes).into_ok();
 
 			// Then write it
 			writer.write_all(&entry_bytes).map_err(WriteEntriesError::WriteEntry)?;
@@ -191,7 +208,7 @@ impl DirEntryPtr {
 
 		// Then write the entry
 		let mut entry_bytes = [0; 0x20];
-		entry.serialize_bytes(&mut entry_bytes);
+		entry.serialize_bytes(&mut entry_bytes).into_ok();
 
 		// Then write it
 		writer.write_all(&entry_bytes).map_err(WriteEntryError::WriteEntry)
