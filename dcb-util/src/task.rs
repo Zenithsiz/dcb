@@ -6,6 +6,7 @@ use std::{
 	pin::Pin,
 	sync::{Arc, Mutex},
 	task::Poll,
+	thread,
 };
 
 /// Spawns a task and returns a future for awaiting it's value
@@ -18,7 +19,8 @@ pub fn spawn<T: Send + 'static>(f: impl FnOnce() -> T + Send + 'static) -> Value
 	};
 
 	// Spawn the task
-	rayon::spawn(move || {
+	// TODO: If not null, maybe use a threadpool for small tasks?
+	thread::spawn(move || {
 		let value = f();
 		*mutex.lock().expect("Poisoned") = Some(value);
 	});
