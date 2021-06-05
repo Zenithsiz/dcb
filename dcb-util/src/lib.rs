@@ -89,6 +89,7 @@ pub mod null_ascii_string;
 pub mod signed_hex;
 pub mod string_contains_case_insensitive;
 pub mod task;
+pub mod void;
 pub mod write_take;
 
 // Exports
@@ -109,6 +110,7 @@ pub use next_from_bytes::NextFromBytes;
 pub use null_ascii_string::NullAsciiString;
 pub use signed_hex::SignedHex;
 pub use string_contains_case_insensitive::StrContainsCaseInsensitive;
+pub use void::Void;
 pub use write_take::WriteTake;
 
 // Imports

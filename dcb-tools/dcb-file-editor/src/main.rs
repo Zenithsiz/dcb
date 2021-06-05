@@ -20,12 +20,12 @@ pub mod swap_window;
 
 // Imports
 use anyhow::Context;
-use dcb_util::{alert, task};
+use dcb_util::{alert, task, Void};
 use eframe::{egui, epi, NativeOptions};
 use game_file::GameFile;
 use native_dialog::FileDialog;
 use preview_panel::{PreviewPanel, PreviewPanelBuilder};
-use std::{fs, path::PathBuf, sync::Arc};
+use std::{fs, path::PathBuf, sync::Arc, thread};
 use swap_window::SwapWindow;
 
 fn main() {
@@ -97,7 +97,7 @@ impl epi::App for FileEditor {
 			*game_file_future = None;
 			match res {
 				Ok(game) => *game_file = Some(Arc::new(game)),
-				Err(err) => alert::error!("Unable to open file: {err:?}"),
+				Err(err) => thread::spawn(move || alert::error!("Unable to open file: {err:?}")).void(),
 			};
 		}
 
