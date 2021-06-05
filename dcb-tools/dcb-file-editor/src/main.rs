@@ -97,7 +97,7 @@ impl epi::App for FileEditor {
 			*game_file_future = None;
 			match res {
 				Ok(game) => *game_file = Some(Arc::new(game)),
-				Err(err) => alert::error(&format!("Unable to open file: {:?}", err)),
+				Err(err) => alert::error!("Unable to open file: {err:?}"),
 			};
 		}
 
@@ -194,7 +194,7 @@ impl epi::App for FileEditor {
 		if let Some(game_file) = &mut self.game_file {
 			match game_file.flush() {
 				Ok(()) => (),
-				Err(err) => alert::error(&format!("Unable to flush file tod isk: {:?}", err)),
+				Err(err) => alert::error!("Unable to flush file to disk: {err:?}"),
 			}
 		}
 	}

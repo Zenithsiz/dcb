@@ -67,12 +67,12 @@ impl SwapWindow {
 
 							// Then alert the user
 							match res {
-								Ok(()) => alert::info("Successfully swapped {lhs} with {rhs}!"),
-								Err(err) => alert::error(&format!("Unable to swap files: {:?}", err)),
+								Ok(()) => alert::info!("Successfully swapped {lhs:?} with {rhs:?}!"),
+								Err(err) => alert::error!("Unable to swap files: {err:?}"),
 							}
 						});
 					},
-					_ => alert::warn("You must set both files before swapping"),
+					_ => alert::warn!("You must set both files before swapping"),
 				}
 			}
 		});

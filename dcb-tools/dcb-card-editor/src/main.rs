@@ -105,7 +105,7 @@ impl epi::App for CardEditor {
 					if ui.button("Open").clicked() {
 						// Ask the user if they want to override
 						if !loaded_game.as_ref().map_or(false, LoadedGame::modified) ||
-							alert::warn_confirm("Do you want to discard the changes to the current file")
+							alert::warn_confirm!("Do you want to discard the changes to the current file")
 						{
 							// Then load the card table if we got a file
 							if let Some(file_path) = self::ask_game_file_path() {
@@ -120,10 +120,10 @@ impl epi::App for CardEditor {
 					if ui.button("Save").clicked() {
 						match loaded_game {
 							Some(loaded_game) => match loaded_game.save() {
-								Ok(()) => alert::info("Successfully saved!"),
+								Ok(()) => alert::info!("Successfully saved!"),
 								Err(err) => alert::error!("Unable to save file: {err:?}"),
 							},
-							_ => alert::warn("You must first open a file to save"),
+							_ => alert::warn!("You must first open a file to save"),
 						}
 					}
 
@@ -198,7 +198,7 @@ impl epi::App for CardEditor {
 	fn on_exit(&mut self) {
 		// Ask user if they want to save before leaving if they had any changes
 		let wants_to_save = match &self.loaded_game {
-			Some(loaded_game) if loaded_game.modified() => alert::warn_confirm("Do you want to save?"),
+			Some(loaded_game) if loaded_game.modified() => alert::warn_confirm!("Do you want to save?"),
 
 			// If we have no file or card table wasn't loaded, user won't want to save
 			_ => false,
@@ -206,7 +206,7 @@ impl epi::App for CardEditor {
 
 		match (wants_to_save, &mut self.loaded_game) {
 			(true, Some(loaded_game)) => match loaded_game.save() {
-				Ok(()) => alert::info("Successfully saved!"),
+				Ok(()) => alert::info!("Successfully saved!"),
 				// If unable to save, save the state to disk just in case changes are lost
 				// TODO: Be able to load these backup files up
 				Err(err) => {
@@ -224,7 +224,7 @@ impl epi::App for CardEditor {
 					}
 				},
 			},
-			(true, None) => alert::error("Cannot save without a loaded game"),
+			(true, None) => alert::error!("Cannot save without a loaded game"),
 			(false, _) => (),
 		}
 	}
