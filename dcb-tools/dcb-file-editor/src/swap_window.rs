@@ -4,9 +4,9 @@
 use crate::GameFile;
 use anyhow::Context;
 use dcb_io::game_file::Path;
-use dcb_util::alert;
+use dcb_util::{alert, task};
 use eframe::egui;
-use std::mem;
+use std::{mem, sync::Arc};
 
 /// Swap window
 #[derive(PartialEq, Clone, Default)]
@@ -30,7 +30,7 @@ impl SwapWindow {
 	}
 
 	/// Displays this swap window
-	pub fn display(&mut self, ctx: &egui::CtxRef, game_file: &GameFile) {
+	pub fn display(&mut self, ctx: &egui::CtxRef, game_file: &Arc<GameFile>) {
 		egui::Window::new("Swap screen").show(ctx, |ui| {
 			ui.horizontal(|ui| {
 				ui.label(self.first.as_str().unwrap_or("None"));
@@ -47,21 +47,30 @@ impl SwapWindow {
 
 			if ui.button("Swap").clicked() {
 				match (&self.first, &self.second) {
+					// If we got both, spawn the task to swap the files
 					(SwapFileStatus::Set(lhs), SwapFileStatus::Set(rhs)) => {
-						let lhs = Path::from_ascii(lhs).expect("Lhs path wasn't valid");
-						let rhs = Path::from_ascii(rhs).expect("Rhs path wasn't valid");
+						let lhs = lhs.clone();
+						let rhs = rhs.clone();
+						let game_file = Arc::clone(game_file);
+						task::spawn(move || {
+							// TODO: Use `PathBuf` once `dcb_io` supports it
+							let lhs = Path::from_ascii(&lhs).expect("Lhs path wasn't valid");
+							let rhs = Path::from_ascii(&rhs).expect("Rhs path wasn't valid");
 
-						let res: Result<_, anyhow::Error> = try {
-							game_file.with_game_file(|mut game_file| {
-								game_file.swap_files(lhs, rhs).context("Unable to swap files")
-							})?;
-							game_file.reload().context("Unable to reload the game")?;
-						};
+							// Try to swap them and reload the game file
+							let res: Result<_, anyhow::Error> = try {
+								game_file.with_game_file(|mut game_file| {
+									game_file.swap_files(lhs, rhs).context("Unable to swap files")
+								})?;
+								game_file.reload().context("Unable to reload the game")?;
+							};
 
-						match res {
-							Ok(()) => alert::info("Successfully swapped!"),
-							Err(err) => alert::error(&format!("Unable to swap files: {:?}", err)),
-						}
+							// Then alert the user
+							match res {
+								Ok(()) => alert::info("Successfully swapped {lhs} with {rhs}!"),
+								Err(err) => alert::error(&format!("Unable to swap files: {:?}", err)),
+							}
+						});
 					},
 					_ => alert::warn("You must set both files before swapping"),
 				}

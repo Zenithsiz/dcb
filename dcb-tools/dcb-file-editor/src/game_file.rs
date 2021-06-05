@@ -8,7 +8,11 @@ use anyhow::Context;
 use dcb_cdrom_xa::CdRomCursor;
 use dcb_util::MutexPoison;
 use eframe::egui;
-use std::{fs, sync::Mutex};
+use std::{
+	fs,
+	io::{self, Write},
+	sync::Mutex,
+};
 
 /// Game file
 pub struct GameFile {
@@ -20,7 +24,7 @@ pub struct GameFile {
 }
 
 impl GameFile {
-	/// Creates a new game
+	/// Creates a new game file from it's file
 	pub fn new(file: fs::File) -> Result<Self, anyhow::Error> {
 		let mut cdrom = CdRomCursor::new(file);
 		let mut game_file = dcb_io::GameFile::new(&mut cdrom);
@@ -94,6 +98,11 @@ impl GameFile {
 		Ok(())
 	}
 
+	/// Flushes the game file to disc
+	pub fn flush(&self) -> Result<(), io::Error> {
+		self.cdrom.lock_unwrap().flush()
+	}
+
 	/// Displays the game file tree
 	pub fn display(
 		&self, ui: &mut egui::Ui, file_search: &mut String, swap_window: &mut Option<SwapWindow>,
@@ -126,7 +135,14 @@ impl GameFile {
 
 	/// Performs an operation using the game file
 	pub fn with_game_file<T>(&self, f: impl FnOnce(dcb_io::GameFile<&mut CdRomCursor<fs::File>>) -> T) -> T {
-		// TODO: Check if main thread is using the game file, as it shouldn't be
+		// We shouldn't be called from the main thread, as locking might
+		// TODO: Get a better way of making sure it's the main thread and not some
+		//       other thread with the name 'main'?
+		debug_assert_ne!(
+			std::thread::current().name(),
+			Some("main"),
+			"Main thread should not call this function, as it might block for an indeterminate amount of time"
+		);
 
 		// Get the game file
 		let mut cdrom = self.cdrom.lock_unwrap();

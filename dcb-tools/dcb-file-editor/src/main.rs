@@ -25,7 +25,7 @@ use eframe::{egui, epi, NativeOptions};
 use game_file::GameFile;
 use native_dialog::FileDialog;
 use preview_panel::{PreviewPanel, PreviewPanelBuilder};
-use std::{fs, io::Write, path::PathBuf, sync::Arc};
+use std::{fs, path::PathBuf, sync::Arc};
 use swap_window::SwapWindow;
 
 fn main() {
@@ -192,10 +192,10 @@ impl epi::App for FileEditor {
 
 		// Flush the file if we have it
 		if let Some(game_file) = &mut self.game_file {
-			game_file.with_game_file(|mut game| match game.cdrom().flush() {
+			match game_file.flush() {
 				Ok(()) => (),
 				Err(err) => alert::error(&format!("Unable to flush file tod isk: {:?}", err)),
-			})
+			}
 		}
 	}
 
