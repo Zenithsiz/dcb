@@ -155,9 +155,10 @@ impl PreviewPanelBuilder {
 					path if path.ends_with(".TIM") => {
 						// Deserialize the tim
 						let path = Path::from_ascii(&path).context("Unable to create path")?;
-						let mut game_file = game_file.game_file();
-						let mut file = game_file.open_file(path).context("Unable to open file")?;
-						let tim = Tim::deserialize(&mut file).context("Unable to parse file")?;
+						let tim = game_file.with_game_file(|mut game_file| {
+							let mut file = game_file.open_file(path).context("Unable to open file")?;
+							Tim::deserialize(&mut file).context("Unable to parse file")
+						})?;
 
 						let pallette_pixels: Vec<Box<[_]>> = (0..tim.pallettes())
 							.map(|pallette| {
@@ -178,10 +179,12 @@ impl PreviewPanelBuilder {
 					path if path.ends_with(".TIS") => {
 						// Deserialize the tis
 						let path = Path::from_ascii(&path).context("Unable to create path")?;
-						let mut game_file = game_file.game_file();
-						let file = game_file.open_file(path).context("Unable to open file")?;
-						let mut file = BufReader::new(file);
-						let tis: Tis = Tis::deserialize(&mut file).context("Unable to parse file")?;
+						let tis = game_file.with_game_file(|mut game_file| {
+							let file = game_file.open_file(path).context("Unable to open file")?;
+							let mut file = BufReader::new(file);
+							Tis::deserialize(&mut file).context("Unable to parse file")
+						})?;
+
 
 						let tims = tis
 							.tims
@@ -210,33 +213,37 @@ impl PreviewPanelBuilder {
 					path if path.ends_with(".PAK") => {
 						// Deserialize the pak
 						let path = Path::from_ascii(&path).context("Unable to create path")?;
-						let mut game_file = game_file.game_file();
-						let file = game_file.open_file(path).context("Unable to open file")?;
-						let mut file = BufReader::new(file);
-						let mut pak = PakFileReader::new(&mut file);
+						let paks = game_file.with_game_file(|mut game_file| {
+							let file = game_file.open_file(path).context("Unable to open file")?;
+							let mut file = BufReader::new(file);
+							let mut pak = PakFileReader::new(&mut file);
 
-						let mut paks: BTreeMap<u16, Vec<_>> = BTreeMap::new();
+							let mut paks: BTreeMap<u16, Vec<_>> = BTreeMap::new();
 
-						while let Some(entry) = pak.next_entry().transpose() {
-							use dcb_pak::header::Kind;
+							while let Some(entry) = pak.next_entry().transpose() {
+								use dcb_pak::header::Kind;
 
-							let entry = entry.context("Unable to get entry")?;
+								let entry = entry.context("Unable to get entry")?;
 
-							let header = entry.header();
-							let extension = match header.kind {
-								Kind::Model3DSet => "m3s",
-								Kind::Unknown1 => "un1",
-								Kind::GameScript => "msd",
-								Kind::Animation2D => "a2d",
-								Kind::Unknown2 => "un2",
-								Kind::FileContents => "bin",
-								Kind::AudioSeq => "seq",
-								Kind::AudioVh => "vh",
-								Kind::AudioVb => "vb",
-							};
+								let header = entry.header();
+								let extension = match header.kind {
+									Kind::Model3DSet => "m3s",
+									Kind::Unknown1 => "un1",
+									Kind::GameScript => "msd",
+									Kind::Animation2D => "a2d",
+									Kind::Unknown2 => "un2",
+									Kind::FileContents => "bin",
+									Kind::AudioSeq => "seq",
+									Kind::AudioVh => "vh",
+									Kind::AudioVb => "vb",
+								};
 
-							paks.entry(header.id).or_default().push(extension);
-						}
+								paks.entry(header.id).or_default().push(extension);
+							}
+
+							Ok::<_, anyhow::Error>(paks)
+						})?;
+
 
 						Self::Pak(PakDisplay { paks })
 					},

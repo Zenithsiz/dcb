@@ -192,10 +192,10 @@ impl epi::App for FileEditor {
 
 		// Flush the file if we have it
 		if let Some(game_file) = &mut self.game_file {
-			match game_file.game_file().cdrom().flush() {
+			game_file.with_game_file(|mut game| match game.cdrom().flush() {
 				Ok(()) => (),
 				Err(err) => alert::error(&format!("Unable to flush file tod isk: {:?}", err)),
-			}
+			})
 		}
 	}
 

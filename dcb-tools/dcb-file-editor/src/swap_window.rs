@@ -52,11 +52,9 @@ impl SwapWindow {
 						let rhs = Path::from_ascii(rhs).expect("Rhs path wasn't valid");
 
 						let res: Result<_, anyhow::Error> = try {
-							game_file
-								.game_file()
-								.swap_files(lhs, rhs)
-								.context("Unable to swap files")?;
-
+							game_file.with_game_file(|mut game_file| {
+								game_file.swap_files(lhs, rhs).context("Unable to swap files")
+							})?;
 							game_file.reload().context("Unable to reload the game")?;
 						};
 

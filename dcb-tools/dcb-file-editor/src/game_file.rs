@@ -6,14 +6,14 @@ use crate::{
 };
 use anyhow::Context;
 use dcb_cdrom_xa::CdRomCursor;
-use dcb_util::{IoThread, MutexPoison};
+use dcb_util::MutexPoison;
 use eframe::egui;
 use std::{fs, sync::Mutex};
 
 /// Game file
 pub struct GameFile {
-	/// Game file
-	file: IoThread<CdRomCursor<fs::File>>,
+	/// Cd rom
+	cdrom: Mutex<CdRomCursor<fs::File>>,
 
 	/// Drives
 	drives: Mutex<Drives>,
@@ -22,9 +22,8 @@ pub struct GameFile {
 impl GameFile {
 	/// Creates a new game
 	pub fn new(file: fs::File) -> Result<Self, anyhow::Error> {
-		let cdrom = CdRomCursor::new(file);
-		let file = IoThread::new(cdrom);
-		let mut game_file = dcb_io::GameFile::new(&file);
+		let mut cdrom = CdRomCursor::new(file);
+		let mut game_file = dcb_io::GameFile::new(&mut cdrom);
 
 		let mut a_reader = game_file.a_drv().context("Unable to get `a` drive")?;
 		let a_tree = DrvTree::new(&mut a_reader).context("Unable to load `a` drive")?;
@@ -52,14 +51,16 @@ impl GameFile {
 		};
 
 		Ok(Self {
-			file,
+			cdrom:  Mutex::new(cdrom),
 			drives: Mutex::new(drives),
 		})
 	}
 
 	/// Reloads the game
 	pub fn reload(&self) -> Result<(), anyhow::Error> {
-		let mut game_file = dcb_io::GameFile::new(&self.file);
+		// TODO: Avoid deadlock by acquiring these using some special algorithm
+		let mut cdrom = self.cdrom.lock_unwrap();
+		let mut game_file = dcb_io::GameFile::new(&mut *cdrom);
 		let mut drives = self.drives.lock_unwrap();
 		drives
 			.a_tree
@@ -123,9 +124,14 @@ impl GameFile {
 		DisplayResults { preview_path }
 	}
 
-	/// Returns a game file
-	pub fn game_file(&self) -> dcb_io::GameFile<&IoThread<CdRomCursor<fs::File>>> {
-		dcb_io::GameFile::new(&self.file)
+	/// Performs an operation using the game file
+	pub fn with_game_file<T>(&self, f: impl FnOnce(dcb_io::GameFile<&mut CdRomCursor<fs::File>>) -> T) -> T {
+		// TODO: Check if main thread is using the game file, as it shouldn't be
+
+		// Get the game file
+		let mut cdrom = self.cdrom.lock_unwrap();
+		let game_file = dcb_io::GameFile::new(&mut *cdrom);
+		f(game_file)
 	}
 }
 
