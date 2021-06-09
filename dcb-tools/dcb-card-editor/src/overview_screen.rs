@@ -1,11 +1,9 @@
 //! Overview screen
 
-use std::collections::HashMap;
-
 // Imports
-use crate::loaded_game::LoadedGame;
-use dcb::card::property::Speciality;
+use dcb::{card::property::Speciality, CardTable};
 use eframe::egui;
+use std::collections::HashMap;
 use strum::IntoEnumIterator;
 
 
@@ -22,9 +20,8 @@ pub struct OverviewScreen {
 }
 
 impl OverviewScreen {
-	/// Creates a new screen
-	pub fn new(loaded_game: &LoadedGame) -> Self {
-		let card_table = &loaded_game.card_table;
+	/// Creates a new overview screen
+	pub fn new(card_table: &CardTable) -> Self {
 		let total_digimons = card_table.digimons().count();
 		let total_cards = card_table.cards.len();
 
@@ -48,12 +45,12 @@ impl OverviewScreen {
 	}
 
 	/// Reloads this screen
-	pub fn reload(&mut self, loaded_game: &LoadedGame) {
-		*self = Self::new(loaded_game);
+	pub fn reload(&mut self, card_table: &CardTable) {
+		*self = Self::new(card_table);
 	}
 
 	/// Displays this swap screen
-	pub fn display(&mut self, ui: &mut egui::Ui, loaded_game: &LoadedGame) {
+	pub fn display(&mut self, ui: &mut egui::Ui, card_table: &CardTable) {
 		let Self {
 			total_cards,
 			cards_per_speciality,
@@ -92,7 +89,7 @@ impl OverviewScreen {
 
 		// Reload if the users wants to
 		if ui.button("Reload").clicked() {
-			self.reload(loaded_game);
+			self.reload(card_table);
 		}
 	}
 }

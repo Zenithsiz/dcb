@@ -141,7 +141,7 @@ impl epi::App for CardEditor {
 				egui::menu::menu(ui, "View", |ui| {
 					if let Some(loaded_game) = loaded_game {
 						if ui.button("Overview").clicked() {
-							*overview_screen = Some(OverviewScreen::new(loaded_game));
+							*overview_screen = Some(OverviewScreen::new(&loaded_game.card_table));
 						}
 					}
 				});
@@ -166,7 +166,7 @@ impl epi::App for CardEditor {
 		if let (Some(screen), Some(loaded_game)) = (overview_screen.as_mut(), loaded_game.as_mut()) {
 			let mut is_open = true;
 			egui::Window::new("Overview screen").open(&mut is_open).show(ctx, |ui| {
-				screen.display(ui, loaded_game);
+				screen.display(ui, &loaded_game.card_table);
 			});
 
 			// If the window closed, destroy it
