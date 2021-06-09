@@ -1,10 +1,11 @@
-//! Swap self
+//! Swap screen
 
 // Imports
-use crate::loaded_game::LoadedGame;
+use dcb::CardTable;
+use dcb_util::alert;
 use eframe::egui;
 
-/// A swap self
+/// Swap screen
 pub struct SwapScreen {
 	/// Left idx
 	lhs_idx: usize,
@@ -21,18 +22,19 @@ impl SwapScreen {
 	}
 
 	/// Displays this swap screen
-	pub fn display(&mut self, ui: &mut egui::Ui, loaded_game: &mut LoadedGame) -> Results {
-		let mut should_close = false;
-
-		let range = 0..loaded_game.card_table.cards.len();
+	pub fn display(&mut self, ui: &mut egui::Ui, card_table: &mut CardTable) {
+		// If there are no cards, return
+		let range = 0..card_table.cards.len();
 		if range.is_empty() {
-			return Results { should_close: false };
+			return;
 		}
 
+		// Else clamp our indexes and get our range as inclusive
 		self.lhs_idx = self.lhs_idx.clamp(range.start, range.end - 1);
 		self.rhs_idx = self.rhs_idx.clamp(range.start, range.end - 1);
 		let range = range.start..=(range.end - 1);
 
+		// Then draw the sliders for both cards
 		ui.horizontal(|ui| {
 			ui.label("Left");
 			ui.add(egui::Slider::new(&mut self.lhs_idx, range.clone()));
@@ -41,17 +43,24 @@ impl SwapScreen {
 			ui.label("Right");
 			ui.add(egui::Slider::new(&mut self.rhs_idx, range));
 		});
+
+		// And check if they should be swapped
 		if ui.button("Swap").clicked() {
-			loaded_game.card_table.cards.swap(self.lhs_idx, self.rhs_idx);
-			should_close = true;
+			// Note: Cannot panic, as we clamp the indexes to their range
+			card_table.cards.swap(self.lhs_idx, self.rhs_idx);
+
+			// Note: Swapped because we just swapped them, but we want to display
+			//       the previous names
+			let rhs = &card_table.cards[self.lhs_idx];
+			let lhs = &card_table.cards[self.rhs_idx];
+
+			alert::info!(
+				"Successfully swapped {} ({}) and {} ({})",
+				lhs.name(),
+				self.lhs_idx,
+				rhs.name(),
+				self.rhs_idx
+			);
 		}
-
-		Results { should_close }
 	}
-}
-
-/// Display results
-pub struct Results {
-	/// If the self should be closed
-	pub should_close: bool,
 }

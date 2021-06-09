@@ -150,14 +150,12 @@ impl epi::App for CardEditor {
 
 		// Draw swap screen
 		if let (Some(screen), Some(loaded_game)) = (swap_screen.as_mut(), loaded_game.as_mut()) {
-			let mut should_close = false;
 			let mut is_open = true;
-			egui::Window::new("Swap screen").open(&mut is_open).show(ctx, |ui| {
-				let results = screen.display(ui, loaded_game);
-				should_close = results.should_close;
-			});
+			egui::Window::new("Swap screen")
+				.open(&mut is_open)
+				.show(ctx, |ui| screen.display(ui, &mut loaded_game.card_table));
 
-			if !is_open || should_close {
+			if !is_open {
 				*swap_screen = None;
 			}
 		}
@@ -165,9 +163,9 @@ impl epi::App for CardEditor {
 		// Draw overview screen
 		if let (Some(screen), Some(loaded_game)) = (overview_screen.as_mut(), loaded_game.as_mut()) {
 			let mut is_open = true;
-			egui::Window::new("Overview screen").open(&mut is_open).show(ctx, |ui| {
-				screen.display(ui, &loaded_game.card_table);
-			});
+			egui::Window::new("Overview screen")
+				.open(&mut is_open)
+				.show(ctx, |ui| screen.display(ui, &loaded_game.card_table));
 
 			// If the window closed, destroy it
 			if !is_open {
