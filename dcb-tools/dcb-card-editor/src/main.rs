@@ -8,7 +8,8 @@
 	once_cell,
 	never_type,
 	seek_stream_len,
-	try_blocks
+	try_blocks,
+	array_zip
 )]
 
 // Modules
@@ -140,7 +141,9 @@ impl epi::App for CardEditor {
 
 					if let Some(_loaded_game) = loaded_game {
 						if ui.button("Diff").clicked() {
-							*diff_screen = Some(DiffScreen::new());
+							if let Err(err) = self::on_diff(diff_screen) {
+								alert::error!("Unable to diff with game: {err:?}");
+							}
 						}
 					}
 				});
@@ -173,11 +176,11 @@ impl epi::App for CardEditor {
 		}
 
 		// Draw diff screen
-		if let (Some(screen), Some(_loaded_game)) = (diff_screen.as_mut(), loaded_game.as_mut()) {
+		if let (Some(screen), Some(loaded_game)) = (diff_screen.as_mut(), loaded_game.as_ref()) {
 			let mut is_open = true;
 			egui::Window::new("Diff screen")
 				.open(&mut is_open)
-				.show(ctx, |ui| screen.display(ui));
+				.show(ctx, |ui| screen.display(ui, loaded_game));
 
 			// If the window closed, destroy it
 			if !is_open {
@@ -1008,6 +1011,21 @@ fn on_open(loaded_game: &mut Option<LoadedGame>) -> Result<(), anyhow::Error> {
 	// And try to load it
 	let game = LoadedGame::load(file_path).context("Unable to load game")?;
 	*loaded_game = Some(game);
+
+	Ok(())
+}
+
+/// On 'View > Diff'.
+fn on_diff(diff_screen: &mut Option<DiffScreen>) -> Result<(), anyhow::Error> {
+	// Ask for the file path
+	let other_file_path = match self::ask_game_file_path() {
+		Some(path) => path,
+		None => return Ok(()),
+	};
+
+	// Try to create the screen
+	let screen = DiffScreen::new(other_file_path).context("Unable to create diff screen")?;
+	*diff_screen = Some(screen);
 
 	Ok(())
 }

@@ -2,6 +2,7 @@
 
 // Imports
 use super::{AttackType, Speciality};
+use std::fmt;
 
 /// A digimon's cross move effect
 #[derive(PartialEq, Eq, Clone, Copy, Hash, Debug)]
@@ -119,5 +120,16 @@ impl ::dcb_bytes::Bytes for CrossMoveEffect {
 			Self::TripleAgainst(Speciality::Rare) => 15,
 		};
 		Ok(())
+	}
+}
+
+impl fmt::Display for CrossMoveEffect {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		match self {
+			CrossMoveEffect::AttackToZero(attack) => write!(f, "{attack} to zero"),
+			CrossMoveEffect::Counter(attack) => write!(f, "{attack} Counter"),
+			CrossMoveEffect::TripleAgainst(speciality) => write!(f, "Triple against {speciality}"),
+			_ => write!(f, "{}", self.as_str()),
+		}
 	}
 }
