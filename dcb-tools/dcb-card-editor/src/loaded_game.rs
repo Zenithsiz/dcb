@@ -65,7 +65,7 @@ impl LoadedGame {
 		// If it's larger than the file, return Err
 		let file_len = table_file.stream_len().context("Unable to get file size")?;
 		anyhow::ensure!(
-			bytes.len().try_into().map_or(true, |len: u64| len < file_len),
+			bytes.len().try_into().map_or(false, |len: u64| len < file_len),
 			"Card table is too big"
 		);
 
