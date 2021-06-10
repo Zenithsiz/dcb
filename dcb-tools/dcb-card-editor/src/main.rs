@@ -18,6 +18,7 @@ mod overview_screen;
 mod swap_screen;
 
 // Imports
+use anyhow::Context;
 use dcb::card::{
 	property::{
 		ArrowColor, AttackType, CardType, CrossMoveEffect, DigimonProperty, DigivolveEffect, Effect, EffectCondition,
@@ -96,19 +97,9 @@ impl epi::App for CardEditor {
 		egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
 			egui::menu::bar(ui, |ui| {
 				egui::menu::menu(ui, "File", |ui| {
-					// On open, ask the user and open the file
 					if ui.button("Open").clicked() {
-						// Ask the user if they want to override
-						if !loaded_game.as_ref().map_or(false, LoadedGame::modified) ||
-							alert::warn_confirm!("Do you want to discard the changes to the current file")
-						{
-							// Then load the card table if we got a file
-							if let Some(file_path) = self::ask_game_file_path() {
-								match LoadedGame::load(file_path) {
-									Ok(game) => *loaded_game = Some(game),
-									Err(err) => alert::error!("Unable to open file: {err:?}"),
-								}
-							}
+						if let Err(err) = self::on_open(loaded_game) {
+							alert::error!("Unable to open file: {err:?}");
 						}
 					}
 
@@ -118,7 +109,7 @@ impl epi::App for CardEditor {
 								Ok(()) => alert::info!("Successfully saved!"),
 								Err(err) => alert::error!("Unable to save file: {err:?}"),
 							},
-							_ => alert::warn!("You must first open a file to save"),
+							None => alert::warn!("You must first open a file to save"),
 						}
 					}
 
@@ -971,6 +962,28 @@ fn render_effect_opt(ui: &mut egui::Ui, effect: &mut Option<Effect>) {
 				ui.selectable_value(effect, None, "None");
 			});
 	});
+}
+
+/// On 'File > Open'.
+fn on_open(loaded_game: &mut Option<LoadedGame>) -> Result<(), anyhow::Error> {
+	// If we have a loaded game and it's modified, ask the user if they want to override it
+	if loaded_game.as_ref().map_or(false, LoadedGame::modified) &&
+		!alert::warn_confirm!("Do you want to discard the changes to the current file")
+	{
+		return Ok(());
+	}
+
+	// Else ask for the file path
+	let file_path = match self::ask_game_file_path() {
+		Some(path) => path,
+		None => return Ok(()),
+	};
+
+	// And try to load it
+	let game = LoadedGame::load(file_path).context("Unable to load game")?;
+	*loaded_game = Some(game);
+
+	Ok(())
 }
 
 /// Asks the user for the game file path
