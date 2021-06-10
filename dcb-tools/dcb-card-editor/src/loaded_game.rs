@@ -35,7 +35,11 @@ impl LoadedGame {
 	/// Loads a game from a path
 	pub fn load(file_path: PathBuf) -> Result<Self, anyhow::Error> {
 		// Open the file
-		let file = fs::File::open(&file_path).context("Unable to open game file")?;
+		let file = fs::File::with_options()
+			.read(true)
+			.write(true)
+			.open(&file_path)
+			.context("Unable to open game file")?;
 		let mut file = dcb_cdrom_xa::CdRomCursor::new(file);
 
 		// Open the card table file and parse it
@@ -67,10 +71,13 @@ impl LoadedGame {
 		let mut table_file = CardTable::open(&mut game_file).context("Unable to open table file")?;
 
 		// If it's larger than the file, return Err
+		let bytes_len: u64 = bytes.len().try_into().expect("Card table was larger than `u64`");
 		let file_len = table_file.stream_len().context("Unable to get file size")?;
 		anyhow::ensure!(
-			bytes.len().try_into().map_or(false, |len: u64| len < file_len),
-			"Card table is too big"
+			bytes_len <= file_len,
+			"Card table is too big ({} / {})",
+			size_format::SizeFormatterSI::new(bytes_len),
+			size_format::SizeFormatterSI::new(file_len),
 		);
 
 		// Then write it
