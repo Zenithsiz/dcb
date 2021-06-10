@@ -12,6 +12,7 @@
 )]
 
 // Modules
+mod diff_screen;
 mod edit_screen;
 mod loaded_game;
 mod overview_screen;
@@ -28,6 +29,7 @@ use dcb::card::{
 };
 use dcb_bytes::Validate;
 use dcb_util::{alert, AsciiTextBuffer, StrContainsCaseInsensitive};
+use diff_screen::DiffScreen;
 use edit_screen::EditScreen;
 use eframe::{egui, epi, NativeOptions};
 use either::Either;
@@ -71,6 +73,9 @@ pub struct CardEditor {
 
 	/// Overview screen
 	overview_screen: Option<OverviewScreen>,
+
+	/// Diff screen
+	diff_screen: Option<DiffScreen>,
 }
 
 impl Default for CardEditor {
@@ -80,6 +85,7 @@ impl Default for CardEditor {
 			open_edit_screens: vec![],
 			swap_screen:       None,
 			overview_screen:   None,
+			diff_screen:       None,
 		}
 	}
 }
@@ -91,6 +97,7 @@ impl epi::App for CardEditor {
 			open_edit_screens,
 			swap_screen,
 			overview_screen,
+			diff_screen,
 		} = self;
 
 		// Top panel
@@ -130,6 +137,12 @@ impl epi::App for CardEditor {
 							*overview_screen = Some(OverviewScreen::new(&loaded_game.card_table));
 						}
 					}
+
+					if let Some(_loaded_game) = loaded_game {
+						if ui.button("Diff").clicked() {
+							*diff_screen = Some(DiffScreen::new());
+						}
+					}
 				});
 			});
 		});
@@ -156,6 +169,19 @@ impl epi::App for CardEditor {
 			// If the window closed, destroy it
 			if !is_open {
 				*overview_screen = None;
+			}
+		}
+
+		// Draw diff screen
+		if let (Some(screen), Some(_loaded_game)) = (diff_screen.as_mut(), loaded_game.as_mut()) {
+			let mut is_open = true;
+			egui::Window::new("Diff screen")
+				.open(&mut is_open)
+				.show(ctx, |ui| screen.display(ui));
+
+			// If the window closed, destroy it
+			if !is_open {
+				*diff_screen = None;
 			}
 		}
 
