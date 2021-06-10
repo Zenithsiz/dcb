@@ -26,6 +26,9 @@ pub struct LoadedGame {
 
 	/// Hash of `card_table` within disk
 	file_card_table_hash: Cell<u64>,
+
+	/// Card search
+	card_search: String,
 }
 
 impl LoadedGame {
@@ -47,6 +50,7 @@ impl LoadedGame {
 			card_table,
 			file,
 			file_card_table_hash: Cell::new(file_card_table_hash),
+			card_search: String::new(),
 		})
 	}
 
@@ -93,9 +97,17 @@ impl LoadedGame {
 
 	/// Displays the card selection menu
 	pub fn display_card_selection(
-		&mut self, card_search: &str, ui: &mut egui::Ui, open_edit_screens: &mut Vec<EditScreen>,
-		tex_allocator: &mut dyn TextureAllocator,
+		&mut self, ui: &mut egui::Ui, open_edit_screens: &mut Vec<EditScreen>, tex_allocator: &mut dyn TextureAllocator,
 	) {
+		ui.heading("Card list");
+
+		ui.vertical(|ui| {
+			ui.label("Search");
+			ui.text_edit_singleline(&mut self.card_search);
+		});
+		ui.separator();
+
+		let card_search = &self.card_search;
 		let names = self
 			.card_table
 			.cards

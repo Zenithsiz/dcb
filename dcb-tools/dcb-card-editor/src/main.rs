@@ -62,9 +62,6 @@ pub struct CardEditor {
 	/// Loaded game
 	loaded_game: Option<LoadedGame>,
 
-	/// Card search
-	card_search: String,
-
 	/// All selected edit screens
 	open_edit_screens: Vec<EditScreen>,
 
@@ -79,7 +76,6 @@ impl Default for CardEditor {
 	fn default() -> Self {
 		Self {
 			loaded_game:       None,
-			card_search:       String::new(),
 			open_edit_screens: vec![],
 			swap_screen:       None,
 			overview_screen:   None,
@@ -91,7 +87,6 @@ impl epi::App for CardEditor {
 	fn update(&mut self, ctx: &egui::CtxRef, frame: &mut epi::Frame<'_>) {
 		let Self {
 			loaded_game,
-			card_search,
 			open_edit_screens,
 			swap_screen,
 			overview_screen,
@@ -173,19 +168,12 @@ impl epi::App for CardEditor {
 			}
 		}
 
-		egui::SidePanel::left("side_panel").show(ctx, |ui| {
-			ui.heading("Card list");
-
-			ui.vertical(|ui| {
-				ui.label("Search");
-				ui.text_edit_singleline(card_search);
+		// If we have a loaded game, display all cards
+		if let Some(loaded_game) = loaded_game {
+			egui::SidePanel::left("card-selection").show(ctx, |ui| {
+				loaded_game.display_card_selection(ui, open_edit_screens, frame.tex_allocator());
 			});
-
-			// If we have a loaded game, display all cards
-			if let Some(loaded_game) = loaded_game {
-				loaded_game.display_card_selection(card_search, ui, open_edit_screens, frame.tex_allocator());
-			}
-		});
+		}
 
 		// Display all screens
 		if let Some(loaded_game) = loaded_game {
