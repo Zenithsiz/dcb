@@ -25,7 +25,7 @@ pub struct LoadedGame {
 	pub card_table: CardTable,
 
 	/// Hash of `card_table` within disk
-	saved_card_table_hash: Cell<u64>,
+	file_card_table_hash: Cell<u64>,
 }
 
 impl LoadedGame {
@@ -41,12 +41,12 @@ impl LoadedGame {
 
 		// Then parse it
 		let card_table = CardTable::deserialize(&mut table_file).context("Unable to parse table")?;
-		let saved_card_table_hash = dcb_util::hash_of(&card_table);
+		let file_card_table_hash = dcb_util::hash_of(&card_table);
 
 		Ok(Self {
 			card_table,
 			file,
-			saved_card_table_hash: Cell::new(saved_card_table_hash),
+			file_card_table_hash: Cell::new(file_card_table_hash),
 		})
 	}
 
@@ -75,7 +75,7 @@ impl LoadedGame {
 			.context("Unable to write card table to file")?;
 
 		// And update our hash
-		self.saved_card_table_hash.set(dcb_util::hash_of(&self.card_table));
+		self.file_card_table_hash.set(dcb_util::hash_of(&self.card_table));
 
 		Ok(())
 	}
@@ -88,7 +88,7 @@ impl LoadedGame {
 
 	/// Returns if the card table has been modified from disk
 	pub fn modified(&self) -> bool {
-		dcb_util::hash_of(&self.card_table) != self.saved_card_table_hash.get()
+		dcb_util::hash_of(&self.card_table) != self.file_card_table_hash.get()
 	}
 
 	/// Displays the card selection menu
