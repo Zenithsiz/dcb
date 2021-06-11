@@ -34,7 +34,7 @@ pub enum DeserializeBytesError {
 
 /// Error type for [`Bytes::serialize_bytes`](dcb_bytes::Bytes::serialize_bytes)
 #[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
-#[allow(clippy::pub_enum_variant_names)] // It just happens they're all out of range, other errors may occur
+#[allow(clippy::enum_variant_names)] // It just happens they're all out of range, other errors may occur
 pub enum SerializeBytesError {
 	/// Out of range minute
 	#[error("Out of range minute {_0:#x}")]

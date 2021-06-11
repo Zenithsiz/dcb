@@ -109,7 +109,7 @@ impl GameFile {
 	) -> DisplayResults {
 		let mut preview_path = None;
 		let mut display_ctx = drv_tree::DisplayCtx {
-			search_str:    &file_search,
+			search_str:    file_search,
 			on_file_click: |path: &str| {
 				// If we have a swap window, call it's on file click
 				if let Some(swap_window) = swap_window {

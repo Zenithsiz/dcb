@@ -1,4 +1,4 @@
-#![doc(include = "digivolve_effect.md")]
+#![doc = include_str!("digivolve_effect.md")]
 
 // Imports
 use dcb_bytes::Bytes;

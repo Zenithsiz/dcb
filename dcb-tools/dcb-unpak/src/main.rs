@@ -37,7 +37,7 @@ fn main() -> Result<(), anyhow::Error> {
 		};
 
 		// Then extract the tree
-		if let Err(err) = self::extract_file(&input_file_path, &output_dir, &cli_data) {
+		if let Err(err) = self::extract_file(input_file_path, &output_dir, &cli_data) {
 			log::error!("Unable to extract files from {}: {:?}", input_file_path.display(), err);
 		}
 	}

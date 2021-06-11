@@ -1,4 +1,4 @@
-#![doc(include = "sector.md")]
+#![doc = include_str!("sector.md")]
 
 // TODO: Even with the form bit set, the data seems to only be 2048 bytes anyway, check what's happening
 
@@ -175,6 +175,7 @@ pub enum Data {
 impl Data {
 	/// Returns this data as form 1
 	#[must_use]
+	#[allow(clippy::unnecessary_wraps)] // When we figure out `Form2` this will return `None` for it.
 	pub const fn as_form1(&self) -> Option<&[u8; 2048]> {
 		match self {
 			Self::Form1(data) |

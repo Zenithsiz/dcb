@@ -53,7 +53,7 @@ pub fn proxy_sentinel_derive(input: proc_macro::TokenStream) -> proc_macro::Toke
 	let wrapper_type = wrapper_type.expect("You must supply the wrapper type via `proxy_sentinel(wrapper_type = ...)`");
 	// TODO: Do this better, it's awful
 	let wrapper_type: syn::TypePath =
-		syn::parse_str(&wrapper_type.to_token_stream().to_string().trim_matches('"')).expect("");
+		syn::parse_str(wrapper_type.to_token_stream().to_string().trim_matches('"')).expect("");
 	//let wrapper_type = syn::parse_macro_input!(wrapper_type_token_stream as );
 
 	let struct_name = input.ident;

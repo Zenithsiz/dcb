@@ -98,14 +98,14 @@ fn main() -> Result<(), anyhow::Error> {
 					}
 
 					// If we don't have a comment, remove the current alignment
-					if !func.inline_comments.contains_key(&pos) {
+					if !func.inline_comments.contains_key(pos) {
 						cur_inline_comment_alignment_max_inst_len = None;
 					}
 
 					// If we don't have any alignment padding, and this instruction and the next have inline comments,
 					// set the inline alignment
 					if cur_inline_comment_alignment_max_inst_len.is_none() &&
-						func.inline_comments.contains_key(&pos) &&
+						func.inline_comments.contains_key(pos) &&
 						func.inline_comments.contains_key(&(pos + 4))
 					{
 						let max_inst_len = (0..)
@@ -146,16 +146,16 @@ fn main() -> Result<(), anyhow::Error> {
 					}
 
 					// If we have the instruction buffer, pop it and use it
-					match inst_buffers.get(&pos) {
+					match inst_buffers.get(pos) {
 						Some(inst) => print!("{inst}"),
 						None => print!(
 							"{}",
-							self::inst_display(&inst, &exe, Some(func), &mut inst_arg_overrides, *pos)
+							self::inst_display(inst, &exe, Some(func), &mut inst_arg_overrides, *pos)
 						),
 					}
 
 					// If there's an inline comment, print it
-					if let Some(comment) = func.inline_comments.get(&pos) {
+					if let Some(comment) = func.inline_comments.get(pos) {
 						// Replace any newlines with '\n'
 						let modified_comment;
 						let comment = match comment.contains('\n') {
@@ -169,7 +169,7 @@ fn main() -> Result<(), anyhow::Error> {
 						// If we have alignment padding, apply it
 						if let Some(max_inst_len) = cur_inline_comment_alignment_max_inst_len {
 							let inst = inst_buffers
-								.get(&pos)
+								.get(pos)
 								.expect("Instruction wasn't in buffer during inline comment alignment");
 							let padding = max_inst_len - inst.len();
 							for _ in 0..padding {

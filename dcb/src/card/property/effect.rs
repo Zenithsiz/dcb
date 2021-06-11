@@ -1,4 +1,4 @@
-#![doc(include = "effect.md")]
+#![doc = include_str!("effect.md")]
 
 // Imports
 use crate::card::property::{self, AttackType, DigimonProperty, EffectOperation, PlayerType, Slot};
@@ -14,7 +14,7 @@ use dcb_bytes::Bytes;
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(tag = "type")]
 // TODO: Move this `allow` to the variant once clippy allows
-#[allow(clippy::pub_enum_variant_names)] // `Effect` on `VoidOpponentSupportEffect` isn't referring to the enum
+#[allow(clippy::enum_variant_names)] // `Effect` on `VoidOpponentSupportEffect` isn't referring to the enum
 pub enum Effect {
 	/// Changes a property of either digimon
 	///

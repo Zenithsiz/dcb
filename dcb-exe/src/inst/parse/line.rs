@@ -338,7 +338,7 @@ impl LineArgExpr {
 }
 
 /// Line label functions
-#[allow(clippy::pub_enum_variant_names)] // We'll have other functions eventually
+#[allow(clippy::enum_variant_names)] // We'll have other functions eventually
 #[derive(PartialEq, Clone, Copy, Debug)]
 pub enum LineLabelFunc {
 	/// Address lower 16-bits

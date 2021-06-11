@@ -1,7 +1,6 @@
-#![doc(include = "lib.md")]
+#![doc = include_str!("lib.md")]
 // Features
 #![feature(
-	external_doc,
 	seek_stream_len,
 	try_blocks,
 	associated_type_bounds,

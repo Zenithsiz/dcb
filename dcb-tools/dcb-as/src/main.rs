@@ -259,7 +259,7 @@ impl<'a> ParseCtx<'a> for Ctx<'a> {
 	}
 
 	fn label_pos(&self, label: &str) -> Option<Pos> {
-		self::pos_by_label_name(&self.labels_by_name, label)
+		self::pos_by_label_name(self.labels_by_name, label)
 	}
 }
 

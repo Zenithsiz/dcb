@@ -1,4 +1,4 @@
-#![doc(include = "digimon.md")]
+#![doc = include_str!("digimon.md")]
 
 // Modules
 pub mod error;

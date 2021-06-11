@@ -1,11 +1,10 @@
-#![doc(include = "lib.md")]
+#![doc = include_str!("lib.md")]
 // Features
 #![feature(
 	never_type,
 	unwrap_infallible,
 	format_args_capture,
 	array_methods,
-	external_doc,
 	str_internals
 )]
 // Lints

@@ -1,6 +1,6 @@
-#![doc(include = "lib.md")]
+#![doc = include_str!("lib.md")]
 // Features
-#![feature(never_type, unwrap_infallible, array_chunks, array_map, external_doc)]
+#![feature(never_type, unwrap_infallible, array_chunks, array_map)]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]
 // We'll disable the ones we don't need

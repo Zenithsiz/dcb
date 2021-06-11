@@ -5,7 +5,6 @@
 	never_type,
 	stmt_expr_attributes,
 	unwrap_infallible,
-	external_doc,
 	format_args_capture,
 	array_map,
 	iter_is_partitioned

@@ -1,4 +1,4 @@
-#![doc(include = "item.md")]
+#![doc = include_str!("item.md")]
 
 // Imports
 use crate::card::property::{
@@ -95,7 +95,7 @@ pub enum DeserializeBytesError {
 
 /// Error type for [`Bytes::serialize_bytes`](dcb_bytes::Bytes::serialize_bytes)
 #[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
-#[allow(clippy::pub_enum_variant_names)] // This is a general error, not a specific effect error
+#[allow(clippy::enum_variant_names)] // This is a general error, not a specific effect error
 pub enum SerializeBytesError {
 	/// Unable to write the first effect
 	#[error("Unable to write the first effect")]

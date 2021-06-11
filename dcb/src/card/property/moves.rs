@@ -1,4 +1,4 @@
-#![doc(include = "move.md")]
+#![doc = include_str!("move.md")]
 
 // Modules
 #[cfg(test)]

@@ -164,8 +164,8 @@ impl DiffScreen {
 										(lhs.effect_conditions.zip(rhs.effect_conditions)).iter().enumerate()
 									{
 										if lhs_cond != rhs_cond {
-											self::display_effect_condition_opt(ui, idx, &lhs_cond);
-											self::display_effect_condition_opt(ui, idx, &rhs_cond);
+											self::display_effect_condition_opt(ui, idx, lhs_cond);
+											self::display_effect_condition_opt(ui, idx, rhs_cond);
 											ui.end_row();
 										}
 									}
@@ -173,8 +173,8 @@ impl DiffScreen {
 										(lhs.effects.zip(rhs.effects)).iter().enumerate()
 									{
 										if lhs_effect != rhs_effect {
-											self::display_effect_opt(ui, idx, &lhs_effect);
-											self::display_effect_opt(ui, idx, &rhs_effect);
+											self::display_effect_opt(ui, idx, lhs_effect);
+											self::display_effect_opt(ui, idx, rhs_effect);
 											ui.end_row();
 										}
 									}
@@ -212,8 +212,8 @@ impl DiffScreen {
 										(lhs.effect_conditions.zip(rhs.effect_conditions)).iter().enumerate()
 									{
 										if lhs_cond != rhs_cond {
-											self::display_effect_condition_opt(ui, idx, &lhs_cond);
-											self::display_effect_condition_opt(ui, idx, &rhs_cond);
+											self::display_effect_condition_opt(ui, idx, lhs_cond);
+											self::display_effect_condition_opt(ui, idx, rhs_cond);
 											ui.end_row();
 										}
 									}
@@ -221,8 +221,8 @@ impl DiffScreen {
 										(lhs.effects.zip(rhs.effects)).iter().enumerate()
 									{
 										if lhs_effect != rhs_effect {
-											self::display_effect_opt(ui, idx, &lhs_effect);
-											self::display_effect_opt(ui, idx, &rhs_effect);
+											self::display_effect_opt(ui, idx, lhs_effect);
+											self::display_effect_opt(ui, idx, rhs_effect);
 											ui.end_row();
 										}
 									}

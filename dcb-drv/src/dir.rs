@@ -1,1 +1,1 @@
-#![doc(include = "dir.md")]
+#![doc = include_str!("dir.md")]

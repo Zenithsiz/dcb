@@ -42,6 +42,7 @@ impl<W> CdRomWriter<W> {
 // Write
 impl<W: Write> CdRomWriter<W> {
 	/// Writes the next sector data
+	#[allow(clippy::large_types_passed_by_value)] // `Sector` requires it to be by value. TODO: Change
 	pub fn write_sector(&mut self, data: [u8; 2048], subheader: SubHeader) -> Result<(), WriteSectorError> {
 		// Create the sector
 		let sector = Sector::new(data, self.cur_sector, subheader).map_err(WriteSectorError::Sector)?;

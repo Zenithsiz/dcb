@@ -1,4 +1,4 @@
-#![doc(include = "effect_condition.md")]
+#![doc = include_str!("effect_condition.md")]
 
 // Imports
 use crate::card::property::{self, DigimonProperty, EffectConditionOperation, MaybeDigimonProperty};

@@ -1,4 +1,4 @@
-#![doc(include = "edc.md")]
+#![doc = include_str!("edc.md")]
 
 // Imports
 use byteorder::{ByteOrder, LittleEndian};

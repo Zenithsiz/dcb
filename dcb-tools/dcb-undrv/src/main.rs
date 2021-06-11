@@ -136,7 +136,7 @@ fn extract_tree<R: io::Read + io::Seek>(
 				// Create the directory and recurse over it
 				dcb_util::try_create_folder(&path)
 					.with_context(|| format!("Unable to create directory {}", path.display()))?;
-				self::extract_tree(reader, ptr, &path, &cli_data)
+				self::extract_tree(reader, ptr, &path, cli_data)
 					.with_context(|| format!("Unable to extract directory {}", path.display()))?;
 
 				// Then set it's date

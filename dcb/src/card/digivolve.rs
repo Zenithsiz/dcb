@@ -1,4 +1,4 @@
-#![doc(include = "digivolve.md")]
+#![doc = include_str!("digivolve.md")]
 
 // Imports
 use crate::card::property::{digivolve_effect, DigivolveEffect};

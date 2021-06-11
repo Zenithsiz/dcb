@@ -1,4 +1,4 @@
-#![doc(include = "inst.md")]
+#![doc = include_str!("inst.md")]
 
 // Modules
 pub mod basic;
