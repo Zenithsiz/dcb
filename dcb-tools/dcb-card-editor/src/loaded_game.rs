@@ -9,7 +9,6 @@ use dcb_cdrom_xa::CdRomCursor;
 use dcb_util::StrContainsCaseInsensitive;
 use eframe::{egui, epi::TextureAllocator};
 use std::{
-	cell::Cell,
 	convert::TryInto,
 	fs,
 	io::{Seek, Write},
@@ -25,7 +24,7 @@ pub struct LoadedGame {
 	pub card_table: CardTable,
 
 	/// Hash of `card_table` within disk
-	file_card_table_hash: Cell<u64>,
+	file_card_table_hash: u64,
 
 	/// Card search
 	card_search: String,
@@ -53,7 +52,7 @@ impl LoadedGame {
 		Ok(Self {
 			card_table,
 			file,
-			file_card_table_hash: Cell::new(file_card_table_hash),
+			file_card_table_hash,
 			card_search: String::new(),
 		})
 	}
@@ -86,7 +85,7 @@ impl LoadedGame {
 			.context("Unable to write card table to file")?;
 
 		// And update our hash
-		self.file_card_table_hash.set(dcb_util::hash_of(&self.card_table));
+		self.file_card_table_hash = dcb_util::hash_of(&self.card_table);
 
 		Ok(())
 	}
@@ -99,7 +98,7 @@ impl LoadedGame {
 
 	/// Returns if the card table has been modified from disk
 	pub fn modified(&self) -> bool {
-		dcb_util::hash_of(&self.card_table) != self.file_card_table_hash.get()
+		dcb_util::hash_of(&self.card_table) != self.file_card_table_hash
 	}
 
 	/// Displays the card selection menu
