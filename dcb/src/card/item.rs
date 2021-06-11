@@ -1,16 +1,20 @@
 #![doc = include_str!("item.md")]
 
+// Modules
+mod diff;
+mod error;
+
+// Exports
+pub use diff::{DiffKind, DiffVisitor};
+pub use error::{DeserializeBytesError, SerializeBytesError};
+
 // Imports
-use crate::card::property::{
-	self, ArrowColor, Effect, EffectCondition, MaybeArrowColor, MaybeEffect, MaybeEffectCondition,
-};
+use crate::card::property::{ArrowColor, Effect, EffectCondition, MaybeArrowColor, MaybeEffect, MaybeEffectCondition};
 use byteorder::{ByteOrder, LittleEndian};
 use dcb_bytes::Bytes;
-use dcb_util::{
-	null_ascii_string::{self, NullAsciiString},
-	AsciiStrArr,
-};
+use dcb_util::{null_ascii_string::NullAsciiString, AsciiStrArr};
 use ref_cast::RefCast;
+use std::{iter, ops::Try};
 
 /// An item card
 ///
@@ -45,69 +49,37 @@ pub struct Item {
 	pub unknown_15: u32,
 }
 
-/// Error type for [`Bytes::deserialize_bytes`](dcb_bytes::Bytes::deserialize_bytes)
-#[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
-pub enum DeserializeBytesError {
-	/// Unable to read the digimon name
-	#[error("Unable to read the digimon name")]
-	Name(#[source] null_ascii_string::ReadError),
+impl Item {
+	/// Lists the differences between two items
+	pub fn diff<V: DiffVisitor>(&self, rhs: &Self, visitor: &mut V) -> V::Result {
+		let lhs = self;
 
-	/// Unable to read the first support effect description
-	#[error("Unable to read the first line of the effect description")]
-	EffectDescription1(#[source] null_ascii_string::ReadError),
+		if lhs.name != rhs.name {
+			visitor.visit_name(&lhs.name, &rhs.name)?;
+		}
+		for (idx, (lhs_desc, rhs_desc)) in
+			iter::zip(lhs.effect_description.each_ref(), rhs.effect_description.each_ref()).enumerate()
+		{
+			if lhs_desc != rhs_desc {
+				visitor.visit_effect_description(idx, lhs_desc, rhs_desc)?;
+			}
+		}
+		if lhs.effect_arrow_color != rhs.effect_arrow_color {
+			visitor.visit_effect_arrow_color(lhs.effect_arrow_color, rhs.effect_arrow_color)?;
+		}
+		for (idx, (lhs_cond, rhs_cond)) in iter::zip(lhs.effect_conditions, rhs.effect_conditions).enumerate() {
+			if lhs_cond != rhs_cond {
+				visitor.visit_effect_condition(idx, lhs_cond, rhs_cond)?;
+			}
+		}
+		for (idx, (lhs_effect, rhs_effect)) in iter::zip(lhs.effects.each_ref(), rhs.effects.each_ref()).enumerate() {
+			if lhs_effect != rhs_effect {
+				visitor.visit_effect(idx, lhs_effect, rhs_effect)?;
+			}
+		}
 
-	/// Unable to read the second support effect description
-	#[error("Unable to read the second line of the effect description")]
-	EffectDescription2(#[source] null_ascii_string::ReadError),
-
-	/// Unable to read the third support effect description
-	#[error("Unable to read the third line of the effect description")]
-	EffectDescription3(#[source] null_ascii_string::ReadError),
-
-	/// Unable to read the fourth support effect description
-	#[error("Unable to read the fourth line of the effect description")]
-	EffectDescription4(#[source] null_ascii_string::ReadError),
-
-	/// An unknown effect arrow color was found
-	#[error("Unknown effect arrow color found")]
-	ArrowColor(#[source] property::arrow_color::DeserializeBytesError),
-
-	/// Unable to read the first effect condition
-	#[error("Unable to read the first effect condition")]
-	EffectConditionFirst(#[source] property::effect_condition::DeserializeBytesError),
-
-	/// Unable to read the second effect condition
-	#[error("Unable to read the second effect condition")]
-	EffectConditionSecond(#[source] property::effect_condition::DeserializeBytesError),
-
-	/// Unable to read the first effect
-	#[error("Unable to read the first effect")]
-	EffectFirst(#[source] property::effect::DeserializeBytesError),
-
-	/// Unable to read the second effect
-	#[error("Unable to read the second effect")]
-	EffectSecond(#[source] property::effect::DeserializeBytesError),
-
-	/// Unable to read the third effect
-	#[error("Unable to read the third effect")]
-	EffectThird(#[source] property::effect::DeserializeBytesError),
-}
-
-/// Error type for [`Bytes::serialize_bytes`](dcb_bytes::Bytes::serialize_bytes)
-#[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
-#[allow(clippy::enum_variant_names)] // This is a general error, not a specific effect error
-pub enum SerializeBytesError {
-	/// Unable to write the first effect
-	#[error("Unable to write the first effect")]
-	EffectFirst(#[source] property::effect::SerializeBytesError),
-
-	/// Unable to write the second effect
-	#[error("Unable to write the second effect")]
-	EffectSecond(#[source] property::effect::SerializeBytesError),
-
-	/// Unable to write the third effect
-	#[error("Unable to write the third effect")]
-	EffectThird(#[source] property::effect::SerializeBytesError),
+		<V::Result as Try>::from_output(())
+	}
 }
 
 impl Bytes for Item {

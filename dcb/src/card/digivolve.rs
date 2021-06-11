@@ -1,12 +1,18 @@
 #![doc = include_str!("digivolve.md")]
 
+// Modules
+mod diff;
+mod error;
+
+// Exports
+pub use diff::{DiffKind, DiffVisitor};
+pub use error::DeserializeBytesError;
+
 // Imports
-use crate::card::property::{digivolve_effect, DigivolveEffect};
+use crate::card::property::DigivolveEffect;
 use dcb_bytes::Bytes;
-use dcb_util::{
-	null_ascii_string::{self, NullAsciiString},
-	AsciiStrArr,
-};
+use dcb_util::{null_ascii_string::NullAsciiString, AsciiStrArr};
+use std::{iter, ops::Try};
 
 /// A digivolve card
 ///
@@ -26,32 +32,27 @@ pub struct Digivolve {
 	pub effect: DigivolveEffect,
 }
 
-/// Error type for [`Bytes::deserialize_bytes`](dcb_bytes::Bytes::deserialize_bytes)
-#[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]
-pub enum DeserializeBytesError {
-	/// Unable to read the digimon name
-	#[error("Unable to read the digimon name")]
-	Name(#[source] null_ascii_string::ReadError),
+impl Digivolve {
+	/// Lists the differences between two items
+	pub fn diff<V: DiffVisitor>(&self, rhs: &Self, visitor: &mut V) -> V::Result {
+		let lhs = self;
 
-	/// Unable to read the first support effect description
-	#[error("Unable to read the first line of the effect description")]
-	EffectDescription1(#[source] null_ascii_string::ReadError),
+		if lhs.name != rhs.name {
+			visitor.visit_name(&lhs.name, &rhs.name)?;
+		}
+		for (idx, (lhs_desc, rhs_desc)) in
+			iter::zip(lhs.effect_description.each_ref(), rhs.effect_description.each_ref()).enumerate()
+		{
+			if lhs_desc != rhs_desc {
+				visitor.visit_effect_description(idx, lhs_desc, rhs_desc)?;
+			}
+		}
+		if lhs.effect != rhs.effect {
+			visitor.visit_effect(lhs.effect, rhs.effect)?;
+		}
 
-	/// Unable to read the second support effect description
-	#[error("Unable to read the second line of the effect description")]
-	EffectDescription2(#[source] null_ascii_string::ReadError),
-
-	/// Unable to read the third support effect description
-	#[error("Unable to read the third line of the effect description")]
-	EffectDescription3(#[source] null_ascii_string::ReadError),
-
-	/// Unable to read the fourth support effect description
-	#[error("Unable to read the fourth line of the effect description")]
-	EffectDescription4(#[source] null_ascii_string::ReadError),
-
-	/// Unable to parse the effect
-	#[error("Unable to parse the effect")]
-	Effect(#[source] digivolve_effect::DeserializeBytesError),
+		<V::Result as Try>::from_output(())
+	}
 }
 
 impl Bytes for Digivolve {

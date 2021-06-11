@@ -4,7 +4,7 @@
 use crate::loaded_game::LoadedGame;
 use anyhow::Context;
 use dcb::card::{
-	digimon,
+	digimon, digivolve, item,
 	property::{ArrowColor, CrossMoveEffect, Effect, EffectCondition},
 	Card,
 };
@@ -169,76 +169,66 @@ impl DiffScreen {
 									});
 								},
 								(Card::Item(lhs), Card::Item(rhs)) => {
-									if lhs.effect_description != rhs.effect_description {
-										ui.label("Effect description");
-										ui.label("Effect description");
-										ui.end_row();
-
-										for (idx, (lhs_desc, rhs_desc)) in
-											(lhs.effect_description.zip(rhs.effect_description)).iter().enumerate()
-										{
-											if lhs_desc == rhs_desc {
-												continue;
+									lhs.diff(rhs, &mut |diff: item::DiffKind| match diff {
+										item::DiffKind::Name(..) => {
+											debug_assert!(false, "Name was different");
+										},
+										item::DiffKind::EffectDescription { idx, lhs, rhs } => {
+											// Print header if we hadn't found any differences yet
+											if !effect_descriptions_diff_found {
+												ui.label("Effect description");
+												ui.label("Effect description");
+												ui.end_row();
 											}
+											effect_descriptions_diff_found = true;
 
-											ui.label(format!("\t#{}: {}", idx + 1, lhs_desc.as_str()));
-											ui.label(format!("\t#{}: {}", idx + 1, rhs_desc.as_str()));
+											ui.label(format!("\t#{}: {lhs}", idx + 1));
+											ui.label(format!("\t#{}: {rhs}", idx + 1));
 											ui.end_row();
-										}
-									}
-									if lhs.effect_arrow_color != rhs.effect_arrow_color {
-										ui.label(format!(
-											"Effect arrow color: {}",
-											lhs.effect_arrow_color.map_or("None", ArrowColor::as_str)
-										));
-										ui.label(format!(
-											"Effect arrow color: {}",
-											rhs.effect_arrow_color.map_or("None", ArrowColor::as_str)
-										));
-										ui.end_row();
-									}
-									for (idx, (lhs_cond, rhs_cond)) in
-										(lhs.effect_conditions.zip(rhs.effect_conditions)).iter().enumerate()
-									{
-										if lhs_cond != rhs_cond {
-											self::display_effect_condition_opt(ui, idx, lhs_cond);
-											self::display_effect_condition_opt(ui, idx, rhs_cond);
+										},
+										item::DiffKind::EffectArrowColor(lhs, rhs) => {
+											let lhs = lhs.map_or("None", ArrowColor::as_str);
+											let rhs = rhs.map_or("None", ArrowColor::as_str);
+											ui.label(format!("Effect arrow color: {lhs}"));
+											ui.label(format!("Effect arrow color: {rhs}"));
 											ui.end_row();
-										}
-									}
-									for (idx, (lhs_effect, rhs_effect)) in
-										(lhs.effects.zip(rhs.effects)).iter().enumerate()
-									{
-										if lhs_effect != rhs_effect {
-											self::display_effect_opt(ui, idx, lhs_effect);
-											self::display_effect_opt(ui, idx, rhs_effect);
+										},
+										item::DiffKind::EffectCondition { idx, lhs, rhs } => {
+											self::display_effect_condition_opt(ui, idx, &lhs);
+											self::display_effect_condition_opt(ui, idx, &rhs);
 											ui.end_row();
-										}
-									}
+										},
+										item::DiffKind::Effect { idx, lhs, rhs } => {
+											self::display_effect_opt(ui, idx, lhs);
+											self::display_effect_opt(ui, idx, rhs);
+											ui.end_row();
+										},
+									});
 								},
 								(Card::Digivolve(lhs), Card::Digivolve(rhs)) => {
-									if lhs.effect_description != rhs.effect_description {
-										ui.label("Effect description");
-										ui.label("Effect description");
-										ui.end_row();
-
-										for (idx, (lhs_desc, rhs_desc)) in
-											(lhs.effect_description.zip(rhs.effect_description)).iter().enumerate()
-										{
-											if lhs_desc == rhs_desc {
-												continue;
+									lhs.diff(rhs, &mut |diff: digivolve::DiffKind| match diff {
+										digivolve::DiffKind::Name(..) => {
+											debug_assert!(false, "Name was different");
+										},
+										digivolve::DiffKind::EffectDescription { idx, lhs, rhs } => {
+											// Print header if we hadn't found any differences yet
+											if !effect_descriptions_diff_found {
+												ui.label("Effect description");
+												ui.label("Effect description");
+												ui.end_row();
 											}
+											effect_descriptions_diff_found = true;
 
-											ui.label(format!("\t#{}: {}", idx + 1, lhs_desc.as_str()));
-											ui.label(format!("\t#{}: {}", idx + 1, rhs_desc.as_str()));
+											ui.label(format!("\t#{}: {lhs}", idx + 1));
+											ui.label(format!("\t#{}: {rhs}", idx + 1));
 											ui.end_row();
-										}
-									}
-									if lhs.effect != rhs.effect {
-										ui.label(format!("Effect: {}", lhs.effect));
-										ui.label(format!("Effect: {}", rhs.effect));
-										ui.end_row();
-									}
+										},
+										digivolve::DiffKind::Effect(lhs, rhs) => {
+											ui.label(format!("Effect: {lhs}"));
+											ui.label(format!("Effect: {rhs}"));
+											ui.end_row();
+										},
+									});
 								},
 								// If they're different card types, simply emit their card types
 								_ => {
