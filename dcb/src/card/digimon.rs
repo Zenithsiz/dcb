@@ -1,20 +1,23 @@
 #![doc = include_str!("digimon.md")]
 
 // Modules
+mod diff;
 mod error;
 
 // Exports
+pub use diff::{DiffKind, DiffVisitor};
 pub use error::{DeserializeBytesError, SerializeBytesError};
 
 // Imports
 use crate::card::property::{
 	ArrowColor, CrossMoveEffect, Effect, EffectCondition, Level, MaybeArrowColor, MaybeCrossMoveEffect, MaybeEffect,
-	MaybeEffectCondition, Move, Speciality,
+	MaybeEffectCondition, Move, Speciality, AttackType,
 };
 use byteorder::{ByteOrder, LittleEndian};
 use dcb_bytes::Bytes;
 use dcb_util::{null_ascii_string::NullAsciiString, AsciiStrArr};
 use ref_cast::RefCast;
+use std::{iter, ops::Try};
 
 /// A digimon card
 ///
@@ -86,6 +89,66 @@ pub struct Digimon {
 
 	/// Unknown field at `0xe2`
 	pub unknown_e2: u8,
+}
+
+impl Digimon {
+	/// Lists the differences between two digimons
+	pub fn diff<V: DiffVisitor>(&self, rhs: &Self, visitor: &mut V) -> V::Result {
+		let lhs = self;
+
+		if lhs.name != rhs.name {
+			visitor.visit_name(&lhs.name, &rhs.name)?;
+		}
+		if lhs.speciality != rhs.speciality {
+			visitor.visit_speciality(lhs.speciality, rhs.speciality)?;
+		}
+		if lhs.level != rhs.level {
+			visitor.visit_level(lhs.level, rhs.level)?;
+		}
+		if lhs.hp != rhs.hp {
+			visitor.visit_hp(lhs.hp, rhs.hp)?;
+		}
+		if lhs.dp_cost != rhs.dp_cost {
+			visitor.visit_dp_cost(lhs.dp_cost, rhs.dp_cost)?;
+		}
+		if lhs.dp_give != rhs.dp_give {
+			visitor.visit_dp_give(lhs.dp_give, rhs.dp_give)?;
+		}
+		for (attack, lhs_mv, rhs_mv) in [
+			(AttackType::Circle, &lhs.move_circle, &rhs.move_circle),
+			(AttackType::Triangle, &lhs.move_triangle, &rhs.move_triangle),
+			(AttackType::Cross, &lhs.move_cross, &rhs.move_cross),
+		] {
+			if lhs_mv != rhs_mv {
+				visitor.visit_move(attack, lhs_mv, rhs_mv)?;
+			}
+		}
+		if lhs.cross_move_effect != rhs.cross_move_effect {
+			visitor.visit_cross_move_effect(lhs.cross_move_effect, rhs.cross_move_effect)?;
+		}
+		for (idx, (lhs_desc, rhs_desc)) in
+			iter::zip(lhs.effect_description.each_ref(), rhs.effect_description.each_ref()).enumerate()
+		{
+			if lhs_desc != rhs_desc {
+				visitor.visit_effect_description(idx, lhs_desc, rhs_desc)?;
+			}
+		}
+		if lhs.effect_arrow_color != rhs.effect_arrow_color {
+			visitor.visit_effect_arrow_color(lhs.effect_arrow_color, rhs.effect_arrow_color)?;
+		}
+		for (idx, (lhs_cond, rhs_cond)) in iter::zip(lhs.effect_conditions, rhs.effect_conditions).enumerate() {
+			if lhs_cond != rhs_cond {
+				visitor.visit_effect_condition(idx, lhs_cond, rhs_cond)?;
+			}
+		}
+		for (idx, (lhs_effect, rhs_effect)) in iter::zip(lhs.effects.each_ref(), rhs.effects.each_ref()).enumerate() {
+			if lhs_effect != rhs_effect {
+				visitor.visit_effect(idx, lhs_effect, rhs_effect)?;
+			}
+		}
+
+		<V::Result as Try>::from_output(())
+	}
 }
 
 impl Bytes for Digimon {

@@ -4,6 +4,7 @@
 use crate::loaded_game::LoadedGame;
 use anyhow::Context;
 use dcb::card::{
+	digimon,
 	property::{ArrowColor, CrossMoveEffect, Effect, EffectCondition},
 	Card,
 };
@@ -83,101 +84,89 @@ impl DiffScreen {
 							ui.heading(name.as_str());
 							ui.end_row();
 
+							// If we already any difference in the effect descriptions
+							let mut effect_descriptions_diff_found = false;
+
 							// Check every property
 							match (lhs, rhs) {
 								(Card::Digimon(lhs), Card::Digimon(rhs)) => {
-									if lhs.speciality != rhs.speciality {
-										ui.label(format!("Speciality: {}", lhs.speciality.as_str()));
-										ui.label(format!("Speciality: {}", rhs.speciality.as_str()));
-										ui.end_row();
-									}
-									if lhs.level != rhs.level {
-										ui.label(format!("Level: {}", lhs.level.as_str()));
-										ui.label(format!("Level: {}", rhs.level.as_str()));
-										ui.end_row();
-									}
-									if lhs.hp != rhs.hp {
-										ui.label(format!("Hp: {}", lhs.hp));
-										ui.label(format!("Hp: {}", rhs.hp));
-										ui.end_row();
-									}
-									if lhs.dp_cost != rhs.dp_cost {
-										ui.label(format!("DP: {}", lhs.dp_cost));
-										ui.label(format!("DP: {}", rhs.dp_cost));
-										ui.end_row();
-									}
-									if lhs.dp_give != rhs.dp_give {
-										ui.label(format!("+P: {}", lhs.dp_give));
-										ui.label(format!("+P: {}", rhs.dp_give));
-										ui.end_row();
-									}
-									for (mv_name, lhs_mv, rhs_mv) in std::array::IntoIter::new([
-										("Circle", &lhs.move_circle, &rhs.move_circle),
-										("Triangle", &lhs.move_triangle, &rhs.move_triangle),
-										("Cross", &lhs.move_cross, &rhs.move_cross),
-									]) {
-										if lhs_mv.name != rhs_mv.name {
-											ui.label(format!("{} move name: {}", mv_name, lhs_mv.name));
-											ui.label(format!("{} move name: {}", mv_name, rhs_mv.name));
+									lhs.diff(rhs, &mut |diff: digimon::DiffKind| match diff {
+										digimon::DiffKind::Name(..) => {
+											debug_assert!(false, "Name was different");
+										},
+										digimon::DiffKind::Speciality(lhs, rhs) => {
+											ui.label(format!("Speciality: {lhs}"));
+											ui.label(format!("Speciality: {rhs}"));
 											ui.end_row();
-										}
-										if lhs_mv.power != rhs_mv.power {
-											ui.label(format!("{} move power: {}", mv_name, lhs_mv.power));
-											ui.label(format!("{} move power: {}", mv_name, rhs_mv.power));
+										},
+										digimon::DiffKind::Level(lhs, rhs) => {
+											ui.label(format!("Level: {lhs}"));
+											ui.label(format!("Level: {rhs}"));
 											ui.end_row();
-										}
-									}
-									if lhs.cross_move_effect != rhs.cross_move_effect {
-										self::display_cross_move_effect_opt(ui, &lhs.cross_move_effect);
-										self::display_cross_move_effect_opt(ui, &rhs.cross_move_effect);
-										ui.end_row();
-									}
-									if lhs.effect_description != rhs.effect_description {
-										ui.label("Effect description");
-										ui.label("Effect description");
-										ui.end_row();
-
-										for (idx, (lhs_desc, rhs_desc)) in
-											(lhs.effect_description.zip(rhs.effect_description)).iter().enumerate()
-										{
-											if lhs_desc == rhs_desc {
-												continue;
+										},
+										digimon::DiffKind::Hp(lhs, rhs) => {
+											ui.label(format!("Hp: {lhs}"));
+											ui.label(format!("Hp: {rhs}"));
+											ui.end_row();
+										},
+										digimon::DiffKind::DpCost(lhs, rhs) => {
+											ui.label(format!("DP: {lhs}"));
+											ui.label(format!("DP: {rhs}"));
+											ui.end_row();
+										},
+										digimon::DiffKind::DpGive(lhs, rhs) => {
+											ui.label(format!("+P: {lhs}"));
+											ui.label(format!("+P: {rhs}"));
+											ui.end_row();
+										},
+										digimon::DiffKind::Move { attack, lhs, rhs } => {
+											if lhs.name != rhs.name {
+												ui.label(format!("{attack} move name: {}", lhs.name));
+												ui.label(format!("{attack} move name: {}", rhs.name));
+												ui.end_row();
 											}
+											if lhs.power != rhs.power {
+												ui.label(format!("{attack} move power: {}", lhs.power));
+												ui.label(format!("{attack} move power: {}", rhs.power));
+												ui.end_row();
+											}
+										},
+										digimon::DiffKind::CrossMoveEffect(lhs, rhs) => {
+											self::display_cross_move_effect_opt(ui, &lhs);
+											self::display_cross_move_effect_opt(ui, &rhs);
+											ui.end_row();
+										},
+										digimon::DiffKind::EffectDescription { idx, lhs, rhs } => {
+											// Print header if we hadn't found any differences yet
+											if !effect_descriptions_diff_found {
+												ui.label("Effect description");
+												ui.label("Effect description");
+												ui.end_row();
+											}
+											effect_descriptions_diff_found = true;
 
-											ui.label(format!("\t#{}: {}", idx + 1, lhs_desc.as_str()));
-											ui.label(format!("\t#{}: {}", idx + 1, rhs_desc.as_str()));
+											ui.label(format!("\t#{}: {lhs}", idx + 1));
+											ui.label(format!("\t#{}: {rhs}", idx + 1));
 											ui.end_row();
-										}
-									}
-									if lhs.effect_arrow_color != rhs.effect_arrow_color {
-										ui.label(format!(
-											"Effect arrow color: {}",
-											lhs.effect_arrow_color.map_or("None", ArrowColor::as_str)
-										));
-										ui.label(format!(
-											"Effect arrow color: {}",
-											rhs.effect_arrow_color.map_or("None", ArrowColor::as_str)
-										));
-										ui.end_row();
-									}
-									for (idx, (lhs_cond, rhs_cond)) in
-										(lhs.effect_conditions.zip(rhs.effect_conditions)).iter().enumerate()
-									{
-										if lhs_cond != rhs_cond {
-											self::display_effect_condition_opt(ui, idx, lhs_cond);
-											self::display_effect_condition_opt(ui, idx, rhs_cond);
+										},
+										digimon::DiffKind::EffectArrowColor(lhs, rhs) => {
+											let lhs = lhs.map_or("None", ArrowColor::as_str);
+											let rhs = rhs.map_or("None", ArrowColor::as_str);
+											ui.label(format!("Effect arrow color: {lhs}"));
+											ui.label(format!("Effect arrow color: {rhs}"));
 											ui.end_row();
-										}
-									}
-									for (idx, (lhs_effect, rhs_effect)) in
-										(lhs.effects.zip(rhs.effects)).iter().enumerate()
-									{
-										if lhs_effect != rhs_effect {
-											self::display_effect_opt(ui, idx, lhs_effect);
-											self::display_effect_opt(ui, idx, rhs_effect);
+										},
+										digimon::DiffKind::EffectCondition { idx, lhs, rhs } => {
+											self::display_effect_condition_opt(ui, idx, &lhs);
+											self::display_effect_condition_opt(ui, idx, &rhs);
 											ui.end_row();
-										}
-									}
+										},
+										digimon::DiffKind::Effect { idx, lhs, rhs } => {
+											self::display_effect_opt(ui, idx, lhs);
+											self::display_effect_opt(ui, idx, rhs);
+											ui.end_row();
+										},
+									});
 								},
 								(Card::Item(lhs), Card::Item(rhs)) => {
 									if lhs.effect_description != rhs.effect_description {
