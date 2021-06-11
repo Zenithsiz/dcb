@@ -8,7 +8,12 @@
 	fn_traits,
 	decl_macro,
 	array_methods,
-	str_internals
+	str_internals,
+	auto_traits,
+	negative_impls,
+	try_trait_v2,
+	never_type,
+	control_flow_enum
 )]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]
@@ -89,6 +94,7 @@ pub mod null_ascii_string;
 pub mod signed_hex;
 pub mod string_contains_case_insensitive;
 pub mod task;
+pub mod try_or_empty;
 pub mod void;
 pub mod write_take;
 
@@ -110,6 +116,7 @@ pub use next_from_bytes::NextFromBytes;
 pub use null_ascii_string::NullAsciiString;
 pub use signed_hex::SignedHex;
 pub use string_contains_case_insensitive::StrContainsCaseInsensitive;
+pub use try_or_empty::TryOrEmpty;
 pub use void::Void;
 pub use write_take::WriteTake;
 
