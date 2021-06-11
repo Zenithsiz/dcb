@@ -1,10 +1,7 @@
 //! File swapping
 
 // Imports
-use crate::{
-	ptr,
-	DirEntryKind, DirPtr, Path,
-};
+use crate::{ptr, DirEntryKind, DirPtr, Path};
 use std::{io, mem};
 
 /// Swaps two files

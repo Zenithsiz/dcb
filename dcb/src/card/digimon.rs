@@ -10,8 +10,8 @@ pub use error::{DeserializeBytesError, SerializeBytesError};
 
 // Imports
 use crate::card::property::{
-	ArrowColor, CrossMoveEffect, Effect, EffectCondition, Level, MaybeArrowColor, MaybeCrossMoveEffect, MaybeEffect,
-	MaybeEffectCondition, Move, Speciality, AttackType,
+	ArrowColor, AttackType, CrossMoveEffect, Effect, EffectCondition, Level, MaybeArrowColor, MaybeCrossMoveEffect,
+	MaybeEffect, MaybeEffectCondition, Move, Speciality,
 };
 use byteorder::{ByteOrder, LittleEndian};
 use dcb_bytes::Bytes;
