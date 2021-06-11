@@ -1,12 +1,6 @@
 #![doc = include_str!("lib.md")]
 // Features
-#![feature(
-	never_type,
-	unwrap_infallible,
-	format_args_capture,
-	array_methods,
-	str_internals
-)]
+#![feature(never_type, unwrap_infallible, format_args_capture, array_methods, str_internals)]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]
 // We'll disable the ones we don't need
@@ -68,7 +62,7 @@
 pub mod date_time;
 pub mod dir;
 pub mod entry;
-pub mod error;
+mod error;
 pub mod string;
 pub mod volume_descriptor;
 

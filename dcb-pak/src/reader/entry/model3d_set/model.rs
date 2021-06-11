@@ -1,7 +1,7 @@
 //! Tmd model
 
 // Modules
-pub mod error;
+mod error;
 pub mod obj;
 
 // Exports

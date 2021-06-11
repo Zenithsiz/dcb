@@ -17,7 +17,7 @@
 //! `II.4.5.3`
 
 // Modules
-pub mod error;
+mod error;
 
 use std::ops::BitAnd;
 

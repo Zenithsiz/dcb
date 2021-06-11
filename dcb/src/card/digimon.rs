@@ -1,7 +1,7 @@
 #![doc = include_str!("digimon.md")]
 
 // Modules
-pub mod error;
+mod error;
 
 // Exports
 pub use error::{DeserializeBytesError, SerializeBytesError};

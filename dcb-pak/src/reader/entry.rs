@@ -2,7 +2,7 @@
 
 // Modules
 pub mod animation2d;
-pub mod error;
+mod error;
 pub mod model3d_set;
 
 // Exports

@@ -1,7 +1,7 @@
 //! 2D Animation
 
 // Modules
-pub mod error;
+mod error;
 pub mod model;
 
 // Exports

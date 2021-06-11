@@ -1,7 +1,7 @@
 //! Null-terminated ascii string helpers
 
 // Modules
-pub mod error;
+mod error;
 
 // Exports
 pub use error::ReadError;

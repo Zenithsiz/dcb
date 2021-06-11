@@ -1,7 +1,7 @@
 //! Data table nodes
 
 // Modules
-pub mod error;
+mod error;
 
 // Exports
 pub use error::InsertError;

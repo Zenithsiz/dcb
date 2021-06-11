@@ -1,7 +1,7 @@
 //! Executable reader.
 
 // Modules
-pub mod error;
+mod error;
 pub mod iter;
 pub mod opts;
 

@@ -2,7 +2,7 @@
 
 /// Modules
 pub mod arr;
-pub mod error;
+mod error;
 pub mod owned;
 pub mod slice;
 

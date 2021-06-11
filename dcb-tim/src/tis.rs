@@ -1,7 +1,7 @@
 //! `tim` Image collection
 
 // Modules
-pub mod error;
+mod error;
 
 // Exports
 pub use error::DeserializeError;

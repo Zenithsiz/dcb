@@ -1,7 +1,7 @@
 //! Instruction parsing
 
 // Modules
-pub mod error;
+mod error;
 pub mod line;
 
 // Exports

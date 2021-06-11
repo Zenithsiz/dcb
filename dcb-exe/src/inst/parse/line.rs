@@ -1,7 +1,7 @@
 //! Line parsing
 
 // Modules
-pub mod error;
+mod error;
 #[cfg(test)]
 pub mod test;
 

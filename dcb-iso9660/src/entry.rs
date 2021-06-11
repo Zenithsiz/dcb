@@ -1,7 +1,7 @@
 //! An entry
 
 // Modules
-pub mod error;
+mod error;
 pub mod file;
 
 // Exports

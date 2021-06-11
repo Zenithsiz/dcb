@@ -4,7 +4,7 @@
 //! All documentation in this module is from the Green Book (May 1994, Release 2).
 
 // Modules
-pub mod error;
+mod error;
 pub mod submode;
 
 // Exports

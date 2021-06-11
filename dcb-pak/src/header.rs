@@ -1,7 +1,7 @@
 //! Header
 
 // Modules
-pub mod error;
+mod error;
 pub mod kind;
 
 // Export

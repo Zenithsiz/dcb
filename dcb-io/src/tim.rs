@@ -2,7 +2,7 @@
 
 // Modules
 pub mod clut;
-pub mod error;
+mod error;
 
 // Exports
 pub use clut::Clut;

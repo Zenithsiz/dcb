@@ -5,7 +5,7 @@
 // Modules
 pub mod ecc;
 pub mod edc;
-pub mod error;
+mod error;
 pub mod header;
 
 // Exports

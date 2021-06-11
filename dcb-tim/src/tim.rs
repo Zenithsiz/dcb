@@ -1,7 +1,7 @@
 #![doc = include_str!("tim.md")]
 
 // Modules
-pub mod error;
+mod error;
 
 // Exports
 pub use error::{ColorsError, DeserializeError};

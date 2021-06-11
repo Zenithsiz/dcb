@@ -3,7 +3,7 @@
 //! See [`GameFile`] for details
 
 // Modules
-pub mod error;
+mod error;
 pub mod path;
 
 // Exports

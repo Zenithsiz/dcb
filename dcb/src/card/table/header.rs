@@ -1,7 +1,7 @@
 #![doc = include_str!("header.md")]
 
 // Modules
-pub mod error;
+mod error;
 
 // Exports
 pub use error::DeserializeBytesError;

@@ -1,7 +1,7 @@
 //! The table of all decks in the game
 
 // Modules
-pub mod error;
+mod error;
 
 // Exports
 pub use error::{DeserializeError, SerializeError};

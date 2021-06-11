@@ -2,7 +2,7 @@
 
 // Modules
 pub mod boot;
-pub mod error;
+mod error;
 pub mod kind;
 pub mod primary;
 

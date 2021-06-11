@@ -1,7 +1,7 @@
 //! Reader
 
 // Modules
-pub mod error;
+mod error;
 pub mod iter;
 
 // Exports

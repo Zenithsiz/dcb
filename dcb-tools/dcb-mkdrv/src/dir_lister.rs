@@ -1,7 +1,7 @@
 //! Directory lister
 
 // Modules
-pub mod error;
+mod error;
 
 // Exports
 pub use error::{NewError, NextError, ReadEntryError};

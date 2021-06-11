@@ -1,7 +1,7 @@
 #![doc = include_str!("table.md")]
 
 // Modules
-pub mod error;
+mod error;
 pub mod header;
 
 // Exports

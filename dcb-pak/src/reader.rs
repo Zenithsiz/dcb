@@ -2,7 +2,7 @@
 
 // Modules
 pub mod entry;
-pub mod error;
+mod error;
 
 // Exports
 pub use entry::PakEntryReader;

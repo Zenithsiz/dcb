@@ -6,7 +6,7 @@
 //! type.
 
 // Modules
-pub mod error;
+mod error;
 pub mod kind;
 pub mod table;
 

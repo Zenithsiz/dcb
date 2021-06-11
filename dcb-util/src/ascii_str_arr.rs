@@ -1,7 +1,7 @@
 //! Ascii string backed by an array
 
 // Modules
-pub mod error;
+mod error;
 mod visitor;
 
 // Exports

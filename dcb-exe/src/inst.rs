@@ -4,7 +4,7 @@
 pub mod basic;
 pub mod decode;
 pub mod directive;
-pub mod error;
+mod error;
 pub mod exec;
 pub mod fmt;
 pub mod label;

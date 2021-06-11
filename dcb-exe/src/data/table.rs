@@ -5,7 +5,7 @@
 //! See it's type documentation for more information on how it works.
 
 // Modules
-pub mod error;
+mod error;
 pub mod node;
 
 // Exports

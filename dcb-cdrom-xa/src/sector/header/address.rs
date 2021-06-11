@@ -1,7 +1,7 @@
 //! Sector address
 
 // Module
-pub mod error;
+mod error;
 
 // Exports
 pub use error::{DeserializeBytesError, FromSectorPosError, SerializeBytesError};

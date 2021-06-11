@@ -2,7 +2,7 @@
 
 // Modules
 pub mod address;
-pub mod error;
+mod error;
 pub mod subheader;
 
 // Exports
