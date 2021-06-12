@@ -99,6 +99,9 @@ impl DiffScreen {
 							ui.end_row();
 						},
 						CardChanges::DifferentType { lhs_id, rhs_id } => {
+							ui.heading(name.as_str());
+							ui.heading(name.as_str());
+							ui.end_row();
 							ui.label(lhs.cards[lhs_id].ty().as_str());
 							ui.label(rhs.cards[rhs_id].ty().as_str());
 							ui.end_row();
@@ -110,6 +113,10 @@ impl DiffScreen {
 						} => {
 							let lhs = &lhs.cards[lhs_id].as_digimon().expect("Id wasn't for a digimon");
 							let rhs = &rhs.cards[rhs_id].as_digimon().expect("Id wasn't for a digimon");
+
+							ui.heading(name.as_str());
+							ui.heading(name.as_str());
+							ui.end_row();
 
 							if changes.speciality {
 								ui.label(format!("Speciality: {}", lhs.speciality));
@@ -210,6 +217,11 @@ impl DiffScreen {
 						} => {
 							let lhs = &lhs.cards[lhs_id].as_item().expect("Id wasn't for an item");
 							let rhs = &rhs.cards[rhs_id].as_item().expect("Id wasn't for an item");
+
+							ui.heading(name.as_str());
+							ui.heading(name.as_str());
+							ui.end_row();
+
 							if changes.effect_description.iter().any(|&changed| changed) {
 								ui.label("Effect description");
 								ui.label("Effect description");
@@ -251,6 +263,11 @@ impl DiffScreen {
 						} => {
 							let lhs = &lhs.cards[lhs_id].as_digivolve().expect("Id wasn't for a digivolve");
 							let rhs = &rhs.cards[rhs_id].as_digivolve().expect("Id wasn't for a digivolve");
+
+							ui.heading(name.as_str());
+							ui.heading(name.as_str());
+							ui.end_row();
+
 							if changes.effect_description.iter().any(|&changed| changed) {
 								ui.label("Effect description");
 								ui.label("Effect description");
