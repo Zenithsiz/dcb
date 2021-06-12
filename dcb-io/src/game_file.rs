@@ -12,7 +12,7 @@ pub use path::Path;
 
 // Imports
 use dcb_drv::DirEntryKind;
-use dcb_util::IoCursor;
+use dcb_util::IoSlice;
 use std::io;
 
 /// Game file.
@@ -182,8 +182,8 @@ impl<T: io::Seek + io::Read + io::Write> GameFile<T> {
 }
 
 /// Driver cursor
-pub type DriveCursor<T> = IoCursor<T>;
+pub type DriveCursor<T> = IoSlice<T>;
 
 /// File cursor
 // TODO: Make proper file cursor in `dcb-drv` that allows expanding
-pub type FileCursor<T> = IoCursor<T>;
+pub type FileCursor<T> = IoSlice<T>;

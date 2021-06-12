@@ -17,7 +17,7 @@ use dcb_io::{
 	game_file::{OpenFileError, Path},
 	GameFile,
 };
-use dcb_util::IoCursor;
+use dcb_util::IoSlice;
 use std::{convert::TryInto, io};
 
 /// Table storing all cards.
@@ -172,7 +172,7 @@ impl Table {
 	/// Returns the table file on a game file
 	pub fn open<R: io::Seek + io::Read>(
 		game_file: &mut GameFile<R>,
-	) -> Result<IoCursor<IoCursor<&mut R>>, OpenFileError> {
+	) -> Result<IoSlice<IoSlice<&mut R>>, OpenFileError> {
 		let path = Path::from_ascii(Self::PATH).expect("Table path was invalid");
 		game_file.open_file(path)
 	}

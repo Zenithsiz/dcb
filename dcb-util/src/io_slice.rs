@@ -1,4 +1,4 @@
-//! Io cursor
+//! Io slice
 
 // Imports
 use crate::WriteTake;
@@ -7,12 +7,11 @@ use std::{
 	io::{self, Read, Seek, SeekFrom, Write},
 };
 
-/// Io cursor.
+/// Io slice.
 ///
-/// 'Slices' a piece of an inner cursor and only allows access
-/// to it.
+/// Slices an inner value to only allow access to a range.
 #[derive(Debug)]
-pub struct IoCursor<T> {
+pub struct IoSlice<T> {
 	/// Inner value
 	inner: T,
 
@@ -23,7 +22,7 @@ pub struct IoCursor<T> {
 	size: u64,
 }
 
-impl<T: Seek> IoCursor<T> {
+impl<T: Seek> IoSlice<T> {
 	/// Creates a new cursor given it's starting position and size
 	pub fn new(mut inner: T, start_pos: u64, size: u64) -> Result<Self, io::Error> {
 		// Seek to the start
@@ -32,7 +31,12 @@ impl<T: Seek> IoCursor<T> {
 		Ok(Self { inner, start_pos, size })
 	}
 
-	/// Returns the current position of the cursor
+	/// Consumes this slice and returns the inner value
+	pub fn into_inner(self) -> T {
+		self.inner
+	}
+
+	/// Returns the current position of the slice
 	pub fn cur_pos(&mut self) -> Result<u64, io::Error> {
 		let inner_pos = self.inner.stream_position()?;
 
@@ -40,7 +44,7 @@ impl<T: Seek> IoCursor<T> {
 	}
 }
 
-impl<T: Read + Seek> Read for IoCursor<T> {
+impl<T: Read + Seek> Read for IoSlice<T> {
 	fn read(&mut self, buf: &mut [u8]) -> Result<usize, io::Error> {
 		let len = u64::min(
 			buf.len().try_into().expect("Buffer length didn't fit into a `u64`"),
@@ -51,7 +55,7 @@ impl<T: Read + Seek> Read for IoCursor<T> {
 	}
 }
 
-impl<T: Write + Seek> Write for IoCursor<T> {
+impl<T: Write + Seek> Write for IoSlice<T> {
 	fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
 		let len = u64::min(
 			buf.len().try_into().expect("Buffer length didn't fit into a `u64`"),
@@ -66,7 +70,7 @@ impl<T: Write + Seek> Write for IoCursor<T> {
 	}
 }
 
-impl<T: Seek> Seek for IoCursor<T> {
+impl<T: Seek> Seek for IoSlice<T> {
 	fn seek(&mut self, pos: SeekFrom) -> io::Result<u64> {
 		match pos {
 			SeekFrom::Start(pos) => {
@@ -74,13 +78,17 @@ impl<T: Seek> Seek for IoCursor<T> {
 				let inner_pos = self.inner.seek(SeekFrom::Start(self.start_pos + pos))?;
 				Ok(inner_pos - self.start_pos)
 			},
-			SeekFrom::End(pos) => {
-				let pos = pos.clamp(-i64::try_from(self.size).expect("Size didn't fit into an `i64`"), 0);
-				let inner_pos = self
-					.inner
-					.seek(SeekFrom::Start(crate::signed_offset(self.start_pos + self.size, pos)))?;
+			// Special case `End(0)` for `stream_len`.
+			SeekFrom::End(0) => {
+				let inner_pos = self.inner.seek(SeekFrom::Start(self.start_pos + self.size))?;
 				Ok(inner_pos - self.start_pos)
 			},
+
+			SeekFrom::End(_) => todo!("Seeking from the end is not supported yet"),
+
+			// Special case `Current(0)` for `stream_position`
+			SeekFrom::Current(0) => self.cur_pos(),
+
 			SeekFrom::Current(offset) => {
 				let offset = match offset.is_positive() {
 					// If it's positive, check how much we have until the end

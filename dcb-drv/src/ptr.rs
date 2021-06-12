@@ -14,7 +14,7 @@ use crate::{path, DirEntryKind, Path};
 use ascii::AsciiStr;
 use core::str::lossy::Utf8Lossy;
 use dcb_bytes::Bytes;
-use dcb_util::IoCursor;
+use dcb_util::IoSlice;
 use std::io::{self, SeekFrom};
 
 /// File pointer
@@ -40,9 +40,9 @@ impl FilePtr {
 	}
 
 	/// Returns a cursor for this file
-	pub fn cursor<T: io::Seek>(self, cursor: T) -> Result<IoCursor<T>, FileCursorError> {
+	pub fn cursor<T: io::Seek>(self, cursor: T) -> Result<IoSlice<T>, FileCursorError> {
 		let pos = u64::from(self.sector_pos) * 0x800;
-		IoCursor::new(cursor, pos, u64::from(self.size)).map_err(FileCursorError::Seek)
+		IoSlice::new(cursor, pos, u64::from(self.size)).map_err(FileCursorError::Seek)
 	}
 }
 

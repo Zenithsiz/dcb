@@ -10,7 +10,7 @@ mod cli;
 use anyhow::Context;
 use byteorder::{ByteOrder, LittleEndian, ReadBytesExt};
 use cli::CliData;
-use dcb_util::{AsciiStrArr, IoCursor, NullAsciiString};
+use dcb_util::{AsciiStrArr, IoSlice, NullAsciiString};
 use std::{
 	convert::TryFrom,
 	fs,
@@ -125,8 +125,7 @@ impl M3d {
 		let tmds = (0..entries_len)
 			.map(|idx| {
 				let start_pos = reader.stream_position().context("Unable to get reader's position")?;
-				let mut file =
-					IoCursor::new(&mut reader, start_pos, u64::MAX).context("Unable to create inner file")?;
+				let mut file = IoSlice::new(&mut reader, start_pos, u64::MAX).context("Unable to create inner file")?;
 
 				Tmd::read(&mut file).with_context(|| format!("Unable to parse tmd {idx}@{start_pos:#x}"))
 			})
