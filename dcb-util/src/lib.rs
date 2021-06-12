@@ -13,7 +13,8 @@
 	negative_impls,
 	try_trait_v2,
 	never_type,
-	control_flow_enum
+	control_flow_enum,
+	unwrap_infallible
 )]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]
@@ -82,6 +83,7 @@ pub mod ascii_text_buffer;
 pub mod bcd;
 pub mod btree_map_par_iter;
 pub mod btree_map_vector;
+pub mod cached_value;
 pub mod discarding_sorted_merge_iter;
 pub mod display_wrapper;
 pub mod family;
@@ -106,6 +108,7 @@ pub use ascii_text_buffer::AsciiTextBuffer;
 pub use bcd::BcdU8;
 pub use btree_map_par_iter::BTreeMapParIter;
 pub use btree_map_vector::BTreeMapVector;
+pub use cached_value::CachedValue;
 pub use discarding_sorted_merge_iter::DiscardingSortedMergeIter;
 pub use display_wrapper::DisplayWrapper;
 pub use family::ResultFamily;
