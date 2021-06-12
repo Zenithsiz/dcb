@@ -441,6 +441,8 @@ fn render_cross_move_effect_opt(ui: &mut egui::Ui, cross_move_effect: &mut Optio
 				{
 					*cross_move_effect = Some(TRIPLE_AGAINST_DEFAULT);
 				}
+
+				ui.selectable_value(cross_move_effect, None, "None");
 			});
 
 		// Then display extra arguments
