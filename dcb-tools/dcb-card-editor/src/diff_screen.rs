@@ -27,7 +27,7 @@ pub struct DiffScreen {
 
 	/// Cached changes
 	#[allow(clippy::type_complexity)] // It's not very complex, just a function pointer
-	cached_changes: Option<CachedValue<TableChanges, fn(&CardTable, &CardTable) -> TableChanges>>,
+	cached_changes: Option<CachedValue<TableChanges, fn(&CardTable, &CardTable)>>,
 }
 
 impl DiffScreen {
