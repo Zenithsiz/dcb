@@ -9,7 +9,8 @@
 	never_type,
 	seek_stream_len,
 	try_blocks,
-	array_zip
+	array_zip,
+	unwrap_infallible
 )]
 
 // Modules
