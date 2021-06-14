@@ -396,8 +396,9 @@ impl Bytes for Effect {
 
 			51 => Self::OwnAttackBecomesEatUpHP,
 
-			52 => Self::AttackFirst{ player: Player   },
-			53 => Self::AttackFirst{ player: Opponent },
+			// Note: These are supposed to be in this order.
+			52 => Self::AttackFirst{ player: Opponent },
+			53 => Self::AttackFirst{ player: Player   },
 
 			&byte => return Err( DeserializeBytesError::EffectType { byte } ),
 		};
@@ -541,8 +542,8 @@ impl Bytes for Effect {
 			Self::OwnAttackBecomesEatUpHP => *bytes.effect_type = 51,
 
 			Self::AttackFirst { player } => *bytes.effect_type = match player {
-				Player   => 52,
-				Opponent => 53,
+				Opponent => 52,
+				Player   => 53,
 			},
 		}
 
