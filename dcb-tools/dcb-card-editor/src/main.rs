@@ -18,6 +18,7 @@ mod diff_screen;
 mod edit_screen;
 mod loaded_game;
 mod overview_screen;
+mod replace_str_screen;
 mod swap_screen;
 
 // Imports
@@ -39,6 +40,7 @@ use loaded_game::LoadedGame;
 use native_dialog::FileDialog;
 use overview_screen::OverviewScreen;
 use ref_cast::RefCast;
+use replace_str_screen::ReplaceStrScreen;
 use std::{
 	lazy::SyncLazy,
 	path::Path,
@@ -78,16 +80,20 @@ pub struct CardEditor {
 
 	/// Diff screen
 	diff_screen: Option<DiffScreen>,
+
+	/// Replace string screen
+	replace_str_screen: Option<ReplaceStrScreen>,
 }
 
 impl Default for CardEditor {
 	fn default() -> Self {
 		Self {
-			loaded_game:       None,
-			open_edit_screens: vec![],
-			swap_screen:       None,
-			overview_screen:   None,
-			diff_screen:       None,
+			loaded_game:        None,
+			open_edit_screens:  vec![],
+			swap_screen:        None,
+			overview_screen:    None,
+			diff_screen:        None,
+			replace_str_screen: None,
 		}
 	}
 }
@@ -100,6 +106,7 @@ impl epi::App for CardEditor {
 			swap_screen,
 			overview_screen,
 			diff_screen,
+			replace_str_screen,
 		} = self;
 
 		// Top panel
@@ -130,6 +137,10 @@ impl epi::App for CardEditor {
 				egui::menu::menu(ui, "Edit", |ui| {
 					if loaded_game.is_some() && ui.button("Swap").clicked() {
 						*swap_screen = Some(SwapScreen::new(0, 0));
+					}
+
+					if loaded_game.is_some() && ui.button("Replace string").clicked() {
+						*replace_str_screen = Some(ReplaceStrScreen::new());
 					}
 				});
 
@@ -182,6 +193,19 @@ impl epi::App for CardEditor {
 			egui::Window::new("Diff screen")
 				.open(&mut is_open)
 				.show(ctx, |ui| screen.display(ui, loaded_game));
+
+			// If the window closed, destroy it
+			if !is_open {
+				*diff_screen = None;
+			}
+		}
+
+		// Draw replace str screen
+		if let (Some(screen), Some(loaded_game)) = (replace_str_screen.as_mut(), loaded_game.as_mut()) {
+			let mut is_open = true;
+			egui::Window::new("Replace string screen")
+				.open(&mut is_open)
+				.show(ctx, |ui| screen.display(ui, &mut loaded_game.card_table));
 
 			// If the window closed, destroy it
 			if !is_open {

@@ -62,6 +62,36 @@ impl Card {
 		}
 	}
 
+	/// Returns the name of this card mutably
+	#[must_use]
+	pub fn name_mut(&mut self) -> &mut AsciiStrArr<0x14> {
+		match self {
+			Self::Digimon(digimon) => &mut digimon.name,
+			Self::Item(item) => &mut item.name,
+			Self::Digivolve(digivolve) => &mut digivolve.name,
+		}
+	}
+
+	/// Returns the effect description of this card
+	#[must_use]
+	pub const fn effect_description(&self) -> &[AsciiStrArr<0x14>; 4] {
+		match self {
+			Self::Digimon(digimon) => &digimon.effect_description,
+			Self::Item(item) => &item.effect_description,
+			Self::Digivolve(digivolve) => &digivolve.effect_description,
+		}
+	}
+
+	/// Returns the effect description of this card mutably
+	#[must_use]
+	pub fn effect_description_mut(&mut self) -> &mut [AsciiStrArr<0x14>; 4] {
+		match self {
+			Self::Digimon(digimon) => &mut digimon.effect_description,
+			Self::Item(item) => &mut item.effect_description,
+			Self::Digivolve(digivolve) => &mut digivolve.effect_description,
+		}
+	}
+
 	/// Returns this card's type
 	#[must_use]
 	pub const fn ty(&self) -> CardType {
