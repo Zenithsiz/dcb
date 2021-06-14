@@ -209,7 +209,7 @@ impl epi::App for CardEditor {
 
 			// If the window closed, destroy it
 			if !is_open {
-				*diff_screen = None;
+				*replace_str_screen = None;
 			}
 		}
 
