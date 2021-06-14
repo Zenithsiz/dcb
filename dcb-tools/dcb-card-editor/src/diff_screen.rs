@@ -312,7 +312,7 @@ fn display_cross_move_effect_opt(ui: &mut egui::Ui, effect: &Option<CrossMoveEff
 /// Displays an optional effect condition
 fn display_effect_condition_opt(ui: &mut egui::Ui, idx: usize, cond: &Option<EffectCondition>) {
 	ui.label(format!(
-		"Cross move effect #{}: {}",
+		"Effect condition #{}: {}",
 		idx + 1,
 		dcb_util::DisplayWrapper::new(|f| match cond {
 			// TODO: Properly display it
@@ -325,7 +325,7 @@ fn display_effect_condition_opt(ui: &mut egui::Ui, idx: usize, cond: &Option<Eff
 /// Displays an optional effect
 fn display_effect_opt(ui: &mut egui::Ui, idx: usize, effect: &Option<Effect>) {
 	ui.label(format!(
-		"Cross move effect #{}: {}",
+		"Effect #{}: {}",
 		idx + 1,
 		dcb_util::DisplayWrapper::new(|f| match effect {
 			// TODO: Properly display it
