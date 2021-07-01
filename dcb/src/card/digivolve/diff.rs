@@ -2,8 +2,8 @@
 
 // Imports
 use crate::card::property::DigivolveEffect;
-use zutil::{AsciiStrArr, TryOrEmpty};
 use std::ops::Try;
+use zutil::{AsciiStrArr, TryOrEmpty};
 
 /// Visitor trait for differences between two digivolves
 pub trait DiffVisitor {

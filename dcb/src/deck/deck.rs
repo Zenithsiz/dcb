@@ -4,11 +4,11 @@
 use crate::deck::{armor_evo, city, music, ArmorEvo, City, MaybeArmorEvo, MaybeCity, MaybeMusic, Music};
 use byteorder::{ByteOrder, LittleEndian};
 use dcb_bytes::Bytes;
+use ref_cast::RefCast;
 use zutil::{
 	null_ascii_string::{self, NullAsciiString},
 	AsciiStrArr,
 };
-use ref_cast::RefCast;
 
 /// Card id type
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]

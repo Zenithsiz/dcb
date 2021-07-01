@@ -15,9 +15,9 @@ use crate::card::property::{
 };
 use byteorder::{ByteOrder, LittleEndian};
 use dcb_bytes::Bytes;
-use zutil::{null_ascii_string::NullAsciiString, AsciiStrArr};
 use ref_cast::RefCast;
 use std::{iter, ops::Try};
+use zutil::{null_ascii_string::NullAsciiString, AsciiStrArr};
 
 /// A digimon card
 ///

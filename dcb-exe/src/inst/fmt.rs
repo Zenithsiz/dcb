@@ -4,9 +4,9 @@
 
 // Imports
 use crate::{inst::Register, Pos};
-use zutil::SignedHex;
 use itertools::Itertools;
 use std::fmt;
+use zutil::SignedHex;
 
 /// Instruction display
 // TODO: Move `'a` to gat once they are implemented

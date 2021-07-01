@@ -3,11 +3,11 @@
 // Imports
 use crate::{DirEntry, DirEntryKind, DirPtr, FilePtr};
 use chrono::NaiveDateTime;
-use zutil::{AsciiStrArr, MapBoxResult};
 use std::{
 	convert::TryInto,
 	io::{self, SeekFrom},
 };
+use zutil::{AsciiStrArr, MapBoxResult};
 
 /// A directory lister
 pub trait DirWriterLister:

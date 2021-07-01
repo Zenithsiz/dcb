@@ -12,8 +12,8 @@ use super::ptr::{DirPtr, FilePtr};
 use byteorder::{ByteOrder, LittleEndian};
 use chrono::NaiveDateTime;
 use dcb_bytes::Bytes;
-use zutil::{ascii_str_arr::AsciiChar, AsciiStrArr};
 use std::convert::TryInto;
+use zutil::{ascii_str_arr::AsciiChar, AsciiStrArr};
 
 /// A directory entry kind
 #[derive(PartialEq, Eq, Clone, Debug)]

@@ -17,8 +17,8 @@ use dcb_io::{
 	game_file::{OpenFileError, Path},
 	GameFile,
 };
-use zutil::IoSlice;
 use std::{convert::TryInto, io};
+use zutil::IoSlice;
 
 /// Table storing all cards.
 #[derive(PartialEq, Eq, Clone, Hash, Debug)]

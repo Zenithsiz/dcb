@@ -11,8 +11,8 @@ pub use error::DeserializeBytesError;
 // Imports
 use crate::card::property::DigivolveEffect;
 use dcb_bytes::Bytes;
-use zutil::{null_ascii_string::NullAsciiString, AsciiStrArr};
 use std::{iter, ops::Try};
+use zutil::{null_ascii_string::NullAsciiString, AsciiStrArr};
 
 /// A digivolve card
 ///

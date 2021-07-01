@@ -7,8 +7,8 @@ mod error;
 pub use error::{DeserializeBytesError, FromSectorPosError, SerializeBytesError};
 
 // Imports
-use zutil::BcdU8;
 use std::{convert::TryFrom, ops::Range};
+use zutil::BcdU8;
 
 /// Sector address
 // TODO: All of these are BCD, read and write them them as such.

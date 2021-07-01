@@ -3,9 +3,9 @@
 // Imports
 use anyhow::Context;
 use dcb_drv::{DirEntry, DirEntryKind, DirPtr, FilePtr};
-use zutil::{AsciiStrArr, StrContainsCaseInsensitive};
 use eframe::egui;
 use std::io;
+use zutil::{AsciiStrArr, StrContainsCaseInsensitive};
 
 /// Drv tree
 pub struct DrvTree {

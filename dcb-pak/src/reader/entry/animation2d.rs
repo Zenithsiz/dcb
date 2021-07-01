@@ -11,8 +11,8 @@ pub use frame::Frame;
 // Imports
 use byteorder::{ByteOrder, LittleEndian};
 use dcb_bytes::Bytes;
-use zutil::{null_ascii_string::NullAsciiString, AsciiStrArr};
 use std::io;
+use zutil::{null_ascii_string::NullAsciiString, AsciiStrArr};
 
 /// 2D Animation data
 #[derive(PartialEq, Eq, Clone, Debug)]

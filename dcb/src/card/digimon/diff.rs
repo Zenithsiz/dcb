@@ -4,8 +4,8 @@
 use crate::card::property::{
 	ArrowColor, AttackType, CrossMoveEffect, Effect, EffectCondition, Level, Move, Speciality,
 };
-use zutil::{AsciiStrArr, TryOrEmpty};
 use std::ops::Try;
+use zutil::{AsciiStrArr, TryOrEmpty};
 
 /// Visitor trait for differences between two digimon
 pub trait DiffVisitor {

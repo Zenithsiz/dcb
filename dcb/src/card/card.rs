@@ -10,8 +10,8 @@ pub use error::{DeserializeError, SerializeError};
 use super::property::CardType;
 use crate::{Digimon, Digivolve, Item};
 use dcb_bytes::{BytesReadExt, BytesWriteExt};
-use zutil::AsciiStrArr;
 use std::io;
+use zutil::AsciiStrArr;
 
 /// A card
 #[derive(PartialEq, Eq, Clone, Copy, Hash, Debug)]

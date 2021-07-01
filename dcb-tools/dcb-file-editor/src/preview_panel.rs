@@ -6,12 +6,12 @@ use anyhow::Context;
 use dcb_io::game_file::Path;
 use dcb_pak::PakFileReader;
 use dcb_tim::{Tim, Tis};
-use zutil::task::{self, ValueFuture};
 use eframe::{
 	egui::{self, Color32, TextureId},
 	epi::TextureAllocator,
 };
 use std::{collections::BTreeMap, io::BufReader, sync::Arc};
+use zutil::task::{self, ValueFuture};
 
 /// Preview panel
 #[derive(PartialEq, Clone)]

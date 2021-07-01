@@ -20,13 +20,13 @@ pub mod swap_window;
 
 // Imports
 use anyhow::Context;
-use zutil::{alert, task, Void};
 use eframe::{egui, epi, NativeOptions};
 use game_file::GameFile;
 use native_dialog::FileDialog;
 use preview_panel::{PreviewPanel, PreviewPanelBuilder};
 use std::{fs, path::PathBuf, sync::Arc, thread};
 use swap_window::SwapWindow;
+use zutil::{alert, task, Void};
 
 fn main() {
 	// Initialize the logger

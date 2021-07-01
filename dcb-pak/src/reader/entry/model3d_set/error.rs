@@ -2,8 +2,8 @@
 
 // Imports
 use super::model;
-use zutil::null_ascii_string;
 use std::io;
+use zutil::null_ascii_string;
 
 /// Error for [`Model3dSet::from_reader`](super::Model3dSet::from_reader)
 #[derive(Debug, thiserror::Error)]

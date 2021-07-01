@@ -31,7 +31,6 @@ use dcb::card::{
 	Card,
 };
 use dcb_bytes::Validate;
-use zutil::{alert, AsciiTextBuffer, StrContainsCaseInsensitive};
 use diff_screen::DiffScreen;
 use edit_screen::EditScreen;
 use eframe::{egui, epi, NativeOptions};
@@ -49,6 +48,7 @@ use std::{
 };
 use strum::IntoEnumIterator;
 use swap_screen::SwapScreen;
+use zutil::{alert, AsciiTextBuffer, StrContainsCaseInsensitive};
 
 fn main() {
 	// Initialize the logger

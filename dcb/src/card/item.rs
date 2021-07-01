@@ -12,9 +12,9 @@ pub use error::{DeserializeBytesError, SerializeBytesError};
 use crate::card::property::{ArrowColor, Effect, EffectCondition, MaybeArrowColor, MaybeEffect, MaybeEffectCondition};
 use byteorder::{ByteOrder, LittleEndian};
 use dcb_bytes::Bytes;
-use zutil::{null_ascii_string::NullAsciiString, AsciiStrArr};
 use ref_cast::RefCast;
 use std::{iter, ops::Try};
+use zutil::{null_ascii_string::NullAsciiString, AsciiStrArr};
 
 /// An item card
 ///

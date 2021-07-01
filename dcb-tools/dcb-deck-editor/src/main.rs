@@ -6,7 +6,6 @@
 // Imports
 use anyhow::Context;
 use dcb::{CardTable, Deck, DeckTable};
-use zutil::{AsciiTextBuffer, StrContainsCaseInsensitive};
 use eframe::{egui, epi, NativeOptions};
 use native_dialog::{FileDialog, MessageDialog, MessageType};
 use ref_cast::RefCast;
@@ -16,6 +15,7 @@ use std::{
 	io::{self, Read, Seek},
 	path::{Path, PathBuf},
 };
+use zutil::{AsciiTextBuffer, StrContainsCaseInsensitive};
 
 fn main() {
 	// Initialize the logger

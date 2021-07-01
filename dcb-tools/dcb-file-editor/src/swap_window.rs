@@ -4,9 +4,9 @@
 use crate::GameFile;
 use anyhow::Context;
 use dcb_io::game_file::Path;
-use zutil::{alert, task};
 use eframe::egui;
 use std::{mem, sync::Arc};
+use zutil::{alert, task};
 
 /// Swap window
 #[derive(PartialEq, Clone, Default)]

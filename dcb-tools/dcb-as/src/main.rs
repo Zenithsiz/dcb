@@ -16,7 +16,6 @@ use dcb_exe::{
 	},
 	Data, DataType, Pos,
 };
-use zutil::{AsciiStrArr, BTreeMapVector};
 use std::{
 	collections::{BTreeMap, HashMap},
 	convert::TryInto,
@@ -26,6 +25,7 @@ use std::{
 	rc::Rc,
 	str::FromStr,
 };
+use zutil::{AsciiStrArr, BTreeMapVector};
 
 fn main() -> Result<(), anyhow::Error> {
 	// Initialize the logger

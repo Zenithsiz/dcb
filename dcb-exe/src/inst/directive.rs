@@ -4,11 +4,11 @@
 use super::{parse::LineArg, DisplayCtx, InstDisplay, InstFmtArg, InstSize, Parsable, ParseCtx, ParseError};
 use crate::{DataType, Pos};
 use ascii::{AsciiChar, AsciiStr};
-use zutil::NextFromBytes;
 use std::{
 	array,
 	io::{self, Write},
 };
+use zutil::NextFromBytes;
 
 /// A directive
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]

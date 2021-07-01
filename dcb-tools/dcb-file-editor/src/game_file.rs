@@ -6,13 +6,13 @@ use crate::{
 };
 use anyhow::Context;
 use dcb_cdrom_xa::CdRomCursor;
-use zutil::MutexPoison;
 use eframe::egui;
 use std::{
 	fs,
 	io::{self, Write},
 	sync::Mutex,
 };
+use zutil::MutexPoison;
 
 /// Game file
 pub struct GameFile {

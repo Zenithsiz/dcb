@@ -12,8 +12,8 @@ pub use path::Path;
 
 // Imports
 use dcb_drv::DirEntryKind;
-use zutil::IoSlice;
 use std::io;
+use zutil::IoSlice;
 
 /// Game file.
 #[derive(PartialEq, Clone, Debug)]

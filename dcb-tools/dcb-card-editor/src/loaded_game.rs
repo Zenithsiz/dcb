@@ -6,7 +6,6 @@ use crate::EditScreen;
 use anyhow::Context;
 use dcb::CardTable;
 use dcb_cdrom_xa::CdRomCursor;
-use zutil::StrContainsCaseInsensitive;
 use eframe::{egui, epi::TextureAllocator};
 use std::{
 	convert::TryInto,
@@ -14,6 +13,7 @@ use std::{
 	io::{Seek, Write},
 	path::{Path, PathBuf},
 };
+use zutil::StrContainsCaseInsensitive;
 
 /// Loaded game
 pub struct LoadedGame {

@@ -10,8 +10,8 @@ pub use model::TmdModel;
 
 // Imports
 use byteorder::{ByteOrder, LittleEndian};
-use zutil::{null_ascii_string::NullAsciiString, AsciiStrArr};
 use std::{convert::TryFrom, io};
+use zutil::{null_ascii_string::NullAsciiString, AsciiStrArr};
 
 /// 3D Model set
 #[derive(PartialEq, Eq, Clone, Debug)]

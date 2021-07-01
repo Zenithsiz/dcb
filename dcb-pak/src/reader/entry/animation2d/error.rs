@@ -1,8 +1,8 @@
 //! Errors
 
 // Imports
-use zutil::null_ascii_string;
 use std::io;
+use zutil::null_ascii_string;
 
 /// Error for [`Animation2d::deserialize`](super::Animation2d::deserialize)
 #[derive(Debug, thiserror::Error)]
