@@ -7,7 +7,7 @@ mod error;
 pub use error::ValidateFileAlphabetError;
 
 // Imports
-use dcb_util::{alphabet::OnlyValidCharsAlphabet, Alphabet, StrAlphabet, StrArrAlphabet, StringAlphabet};
+use zutil::{alphabet::OnlyValidCharsAlphabet, Alphabet, StrAlphabet, StrArrAlphabet, StringAlphabet};
 
 /// A-character alphabet
 ///

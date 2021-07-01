@@ -48,7 +48,7 @@ impl Bytes for EffectCondition {
 	type SerializeError = !;
 
 	fn deserialize_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::DeserializeError> {
-		let bytes = dcb_util::array_split!(bytes,
+		let bytes = zutil::array_split!(bytes,
 			misfire     : 0x1,
 			zero_0      : 0x1,
 			property_cmp: 0x1,
@@ -94,7 +94,7 @@ impl Bytes for EffectCondition {
 	}
 
 	fn serialize_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::SerializeError> {
-		let bytes = dcb_util::array_split_mut!(bytes,
+		let bytes = zutil::array_split_mut!(bytes,
 			misfire     : 0x1,
 			zero_0      : 0x1,
 			property_cmp: 0x1,

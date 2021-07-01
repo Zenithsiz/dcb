@@ -4,7 +4,7 @@
 use super::{parse::LineArg, DisplayCtx, InstDisplay, InstFmtArg, InstSize, Parsable, ParseCtx, ParseError};
 use crate::{DataType, Pos};
 use ascii::{AsciiChar, AsciiStr};
-use dcb_util::NextFromBytes;
+use zutil::NextFromBytes;
 use std::{
 	array,
 	io::{self, Write},

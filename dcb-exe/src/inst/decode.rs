@@ -64,7 +64,7 @@ impl<'a> Iterator for DecodeIter<'a> {
 				DecodeError::InvalidDataLocation { data, err } => panic!(
 					"Attempted to decode in position {} from within data location {data}:\n{}",
 					self.cur_pos,
-					dcb_util::DisplayWrapper::new(|f| dcb_util::fmt_err(&err, f)),
+					zutil::DisplayWrapper::new(|f| zutil::fmt_err(&err, f)),
 				),
 				// If we're out of bytes, return `None`
 				DecodeError::NoBytes => return None,

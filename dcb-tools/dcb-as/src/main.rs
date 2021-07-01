@@ -16,7 +16,7 @@ use dcb_exe::{
 	},
 	Data, DataType, Pos,
 };
-use dcb_util::{AsciiStrArr, BTreeMapVector};
+use zutil::{AsciiStrArr, BTreeMapVector};
 use std::{
 	collections::{BTreeMap, HashMap},
 	convert::TryInto,
@@ -44,7 +44,7 @@ fn main() -> Result<(), anyhow::Error> {
 	} = cli::CliData::new();
 
 	// Get the header
-	let header: Header = dcb_util::parse_from_file(&header_path, serde_yaml::from_reader)
+	let header: Header = zutil::parse_from_file(&header_path, serde_yaml::from_reader)
 		.with_context(|| format!("Unable to read header file {header_path:?}"))?;
 
 	// Open the input and output file
@@ -61,7 +61,7 @@ fn main() -> Result<(), anyhow::Error> {
 
 	// Read all foreign data as labels.
 	let foreign_data_file_path = "resources/foreign_data.yaml";
-	let foreign_data: Vec<SerializedData> = dcb_util::parse_from_file(foreign_data_file_path, serde_yaml::from_reader)
+	let foreign_data: Vec<SerializedData> = zutil::parse_from_file(foreign_data_file_path, serde_yaml::from_reader)
 		.with_context(|| format!("Unable to read foreign data file {foreign_data_file_path:?}"))?;
 	for data in foreign_data {
 		let (pos, label) = data.into_data().into_label();

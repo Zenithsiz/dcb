@@ -35,7 +35,7 @@ impl TmdModel {
 		reader
 			.read_exact(&mut header_bytes)
 			.map_err(FromReaderError::ReadHeader)?;
-		let header_bytes = dcb_util::array_split!(&header_bytes,
+		let header_bytes = zutil::array_split!(&header_bytes,
 			magic   : [0x4],
 			flags   : [0x4],
 			objs_len: [0x4],

@@ -10,7 +10,7 @@ pub use model::TmdModel;
 
 // Imports
 use byteorder::{ByteOrder, LittleEndian};
-use dcb_util::{null_ascii_string::NullAsciiString, AsciiStrArr};
+use zutil::{null_ascii_string::NullAsciiString, AsciiStrArr};
 use std::{convert::TryFrom, io};
 
 /// 3D Model set
@@ -40,7 +40,7 @@ impl Model3dSet {
 			.read_exact(&mut header_bytes)
 			.map_err(FromReaderError::ReadHeader)?;
 
-		let header_bytes = dcb_util::array_split!(&header_bytes,
+		let header_bytes = zutil::array_split!(&header_bytes,
 			file_name : [0x10],
 			models_len: [0x4],
 			unknown0  : [0x20],
@@ -62,7 +62,7 @@ impl Model3dSet {
 		// Read the models
 		let mut models = vec![];
 		for unknown1 in unknown1_bytes.array_chunks::<12>() {
-			let unknown1 = dcb_util::array_split!(unknown1,
+			let unknown1 = zutil::array_split!(unknown1,
 				x0: [0x2],
 				y0: [0x2],
 				x1: [0x2],

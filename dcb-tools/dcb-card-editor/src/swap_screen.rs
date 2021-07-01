@@ -2,8 +2,8 @@
 
 // Imports
 use dcb::CardTable;
-use dcb_util::alert;
 use eframe::egui;
+use zutil::alert;
 
 /// Swap screen
 pub struct SwapScreen {

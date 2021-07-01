@@ -197,7 +197,7 @@ impl State {
 					"menu {menu:?}, {}",
 					buttons
 						.iter()
-						.map(|button| dcb_util::DisplayWrapper::new(move |f| write!(
+						.map(|button| zutil::DisplayWrapper::new(move |f| write!(
 							f,
 							"\"{}\"",
 							button.as_str().escape_debug()

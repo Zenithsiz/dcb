@@ -7,7 +7,7 @@ mod test;
 // Imports
 use byteorder::{ByteOrder, LittleEndian};
 use dcb_bytes::{Bytes, Validate, ValidateVisitor};
-use dcb_util::{
+use zutil::{
 	null_ascii_string::{self, NullAsciiString},
 	AsciiStrArr,
 };
@@ -41,7 +41,7 @@ impl Bytes for Move {
 
 	fn deserialize_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::DeserializeError> {
 		// Get all byte arrays we need
-		let bytes = dcb_util::array_split!(bytes,
+		let bytes = zutil::array_split!(bytes,
 			power  : [0x2],
 			unknown: [0x4],
 			name   : [0x16],
@@ -57,7 +57,7 @@ impl Bytes for Move {
 
 	fn serialize_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::SerializeError> {
 		// Get all byte arrays we need
-		let bytes = dcb_util::array_split_mut!(bytes,
+		let bytes = zutil::array_split_mut!(bytes,
 			power  : [0x2],
 			unknown: [0x4],
 			name   : [0x16],

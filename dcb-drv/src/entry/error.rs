@@ -1,7 +1,7 @@
 //! Errors
 
 // Imports
-use dcb_util::ascii_str_arr;
+use zutil::ascii_str_arr;
 
 /// Error for [`Bytes::deserialize_bytes`](dcb_bytes::Bytes::deserialize_bytes)
 #[derive(Debug, thiserror::Error)]

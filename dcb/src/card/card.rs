@@ -10,7 +10,7 @@ pub use error::{DeserializeError, SerializeError};
 use super::property::CardType;
 use crate::{Digimon, Digivolve, Item};
 use dcb_bytes::{BytesReadExt, BytesWriteExt};
-use dcb_util::AsciiStrArr;
+use zutil::AsciiStrArr;
 use std::io;
 
 /// A card

@@ -6,7 +6,7 @@ use crate::EditScreen;
 use anyhow::Context;
 use dcb::CardTable;
 use dcb_cdrom_xa::CdRomCursor;
-use dcb_util::StrContainsCaseInsensitive;
+use zutil::StrContainsCaseInsensitive;
 use eframe::{egui, epi::TextureAllocator};
 use std::{
 	convert::TryInto,
@@ -47,7 +47,7 @@ impl LoadedGame {
 
 		// Then parse it
 		let card_table = CardTable::deserialize(&mut table_file).context("Unable to parse table")?;
-		let file_card_table_hash = dcb_util::hash_of(&card_table);
+		let file_card_table_hash = zutil::hash_of(&card_table);
 
 		Ok(Self {
 			card_table,
@@ -85,7 +85,7 @@ impl LoadedGame {
 			.context("Unable to write card table to file")?;
 
 		// And update our hash
-		self.file_card_table_hash = dcb_util::hash_of(&self.card_table);
+		self.file_card_table_hash = zutil::hash_of(&self.card_table);
 
 		Ok(())
 	}
@@ -98,7 +98,7 @@ impl LoadedGame {
 
 	/// Returns if the card table has been modified from disk
 	pub fn modified(&self) -> bool {
-		dcb_util::hash_of(&self.card_table) != self.file_card_table_hash
+		zutil::hash_of(&self.card_table) != self.file_card_table_hash
 	}
 
 	/// Displays the card selection menu

@@ -53,7 +53,7 @@ impl Bytes for VolumeDescriptor {
 	type SerializeError = !;
 
 	fn deserialize_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::DeserializeError> {
-		let bytes = dcb_util::array_split!(bytes,
+		let bytes = zutil::array_split!(bytes,
 			kind      :  0x1,
 			magic     : [0x5],
 			version   :  0x1,

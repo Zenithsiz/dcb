@@ -2,7 +2,7 @@
 
 // Imports
 use crate::card::property::{ArrowColor, Effect, EffectCondition};
-use dcb_util::{AsciiStrArr, TryOrEmpty};
+use zutil::{AsciiStrArr, TryOrEmpty};
 use std::ops::Try;
 
 /// Visitor trait for differences between two items

@@ -1,19 +1,19 @@
 [package]
-name = "dcb-mkdrv"
-version = "0.1.0"
 authors = ["Filipe Rodrigues <filipejacintorodrigues1@gmail.com>"]
 edition = "2018"
+name = "dcb-mkdrv"
+version = "0.1.0"
 
 [dependencies]
 # Dcb
-dcb-util = { path = "../../dcb-util" }
-dcb-drv = { path = "../../dcb-drv" }
+dcb-drv = {path = "../../dcb-drv"}
+zutil = {git = "https://github.com/Zenithsiz/zutil"}
 
 # Util
-filetime = "0.2.14"
 chrono = "0.4.19"
-size_format = "1.0.2"
+filetime = "0.2.14"
 itertools = "0.10.0"
+size_format = "1.0.2"
 
 # Cmd
 clap = "2.33.3"

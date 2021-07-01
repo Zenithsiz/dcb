@@ -36,7 +36,7 @@ pub enum NextError {
 
 	/// Invalid file name
 	#[error("Invalid file name")]
-	InvalidEntryName(#[source] dcb_util::ascii_str_arr::FromBytesError<0x10>),
+	InvalidEntryName(#[source] zutil::ascii_str_arr::FromBytesError<0x10>),
 
 	/// File had no file name
 	#[error("file had no file name")]
@@ -44,7 +44,7 @@ pub enum NextError {
 
 	/// Invalid extension
 	#[error("Invalid extension")]
-	InvalidFileExtension(#[source] dcb_util::ascii_str_arr::FromBytesError<0x3>),
+	InvalidFileExtension(#[source] zutil::ascii_str_arr::FromBytesError<0x3>),
 
 	/// Unable to get entry date
 	#[error("Unable to get entry date")]

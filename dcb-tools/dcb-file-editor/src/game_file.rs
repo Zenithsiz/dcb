@@ -6,7 +6,7 @@ use crate::{
 };
 use anyhow::Context;
 use dcb_cdrom_xa::CdRomCursor;
-use dcb_util::MutexPoison;
+use zutil::MutexPoison;
 use eframe::egui;
 use std::{
 	fs,

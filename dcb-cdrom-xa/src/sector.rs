@@ -53,7 +53,7 @@ impl Bytes for Sector {
 	type SerializeError = SerializeBytesError;
 
 	fn deserialize_bytes(byte_array: &Self::ByteArray) -> Result<Self, Self::DeserializeError> {
-		let bytes = dcb_util::array_split!(byte_array,
+		let bytes = zutil::array_split!(byte_array,
 			header: [0x18 ],
 			rest  : [0x918],
 		);
@@ -62,7 +62,7 @@ impl Bytes for Sector {
 
 		let data = match header.subheader.submode.contains(SubMode::FORM) {
 			false => {
-				let bytes = dcb_util::array_split!(bytes.rest,
+				let bytes = zutil::array_split!(bytes.rest,
 					data  : [0x800],
 					edc   : [0x4  ],
 					ecc   : [0x114],
@@ -85,7 +85,7 @@ impl Bytes for Sector {
 			},
 
 			true => {
-				let bytes = dcb_util::array_split!(bytes.rest,
+				let bytes = zutil::array_split!(bytes.rest,
 					data  : [0x800],
 					rest  : [0x114],
 					edc   : [0x4  ],
@@ -116,7 +116,7 @@ impl Bytes for Sector {
 		};
 
 
-		let bytes = dcb_util::array_split_mut!(bytes,
+		let bytes = zutil::array_split_mut!(bytes,
 			header: [0x18 ],
 			rest  : [0x918],
 		);
@@ -127,7 +127,7 @@ impl Bytes for Sector {
 
 		match self.data {
 			Data::Form1(data) => {
-				let bytes = dcb_util::array_split_mut!(bytes.rest,
+				let bytes = zutil::array_split_mut!(bytes.rest,
 					data  : [0x800],
 					edc   : [0x4  ],
 					ecc   : [0x114],
@@ -143,7 +143,7 @@ impl Bytes for Sector {
 			},
 
 			Data::Form2(data) => {
-				let bytes = dcb_util::array_split_mut!(bytes.rest,
+				let bytes = zutil::array_split_mut!(bytes.rest,
 					data  : [0x800],
 					rest  : [0x114],
 					edc   : [0x4  ],

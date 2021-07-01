@@ -102,7 +102,7 @@ impl<R: Seek> Seek for CdRomCursor<R> {
 				let cur_outer_pos = self::inner_pos_to_outer(cur_inner_pos);
 
 				// Then calculate the outer and inner position we want to go to
-				let outer_pos = dcb_util::signed_offset(cur_outer_pos, offset);
+				let outer_pos = zutil::signed_offset(cur_outer_pos, offset);
 				self::outer_pos_to_inner(outer_pos)
 			},
 		};

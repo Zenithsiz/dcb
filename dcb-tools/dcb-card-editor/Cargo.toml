@@ -1,20 +1,19 @@
 [package]
-name = "dcb-card-editor"
-version = "0.1.4"
 authors = ["Filipe Rodrigues <filipejacintorodrigues1@gmail.com>"]
 edition = "2018"
+name = "dcb-card-editor"
+version = "0.1.4"
 
 [dependencies]
 # Dcb
-dcb = { path = "../../dcb" }
-dcb-bytes = { path = "../../dcb-bytes" }
-dcb-util = { path = "../../dcb-util", features = ["gui", "alert"] }
-dcb-cdrom-xa = { path = "../../dcb-cdrom-xa" }
-dcb-tim = { path = "../../dcb-tim" }
-dcb-io = { path = "../../dcb-io" }
+dcb = {path = "../../dcb"}
+dcb-bytes = {path = "../../dcb-bytes"}
+dcb-cdrom-xa = {path = "../../dcb-cdrom-xa"}
+dcb-io = {path = "../../dcb-io"}
+dcb-tim = {path = "../../dcb-tim"}
 
 # Gui
-eframe = { git = "https://github.com/emilk/egui" }
+eframe = {git = "https://github.com/emilk/egui"}
 
 # Logging
 log = "0.4.14"
@@ -24,12 +23,13 @@ simplelog = "0.10.0"
 anyhow = "1.0.40"
 
 # Utils
-native-dialog = "0.5.5"
-either = "1.6.1"
-ref-cast = "1.0.6"
 derive_more = "0.99.13"
-strum = { version = "0.20.0", features = ["derive"] }
+either = "1.6.1"
+native-dialog = "0.5.5"
+ref-cast = "1.0.6"
 size_format = "1.0.2"
+strum = {version = "0.20.0", features = ["derive"]}
+zutil = {git = "https://github.com/Zenithsiz/zutil", features = ["gui", "alert"]}
 
 # Serde
 serde_yaml = "0.8.17"

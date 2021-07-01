@@ -41,7 +41,7 @@ fn main() -> Result<(), anyhow::Error> {
 		let mut input_file = io::BufReader::new(input_file);
 
 		// Create output directory if it doesn't exist
-		dcb_util::try_create_folder(&output_dir)
+		zutil::try_create_folder(&output_dir)
 			.with_context(|| format!("Unable to create directory {}", output_dir.display()))?;
 
 		// Then extract the tree
@@ -55,7 +55,7 @@ fn main() -> Result<(), anyhow::Error> {
 			log::warn!(
 				"Unable to write date for output directory {}: {}",
 				output_dir.display(),
-				dcb_util::fmt_err_wrapper(&err)
+				zutil::fmt_err_wrapper(&err)
 			);
 		}
 	}
@@ -119,7 +119,7 @@ fn extract_tree<R: io::Read + io::Seek>(
 					log::warn!(
 						"Unable to write date for file {}: {}",
 						path.display(),
-						dcb_util::fmt_err_wrapper(&err)
+						zutil::fmt_err_wrapper(&err)
 					);
 				}
 			},
@@ -134,7 +134,7 @@ fn extract_tree<R: io::Read + io::Seek>(
 				}
 
 				// Create the directory and recurse over it
-				dcb_util::try_create_folder(&path)
+				zutil::try_create_folder(&path)
 					.with_context(|| format!("Unable to create directory {}", path.display()))?;
 				self::extract_tree(reader, ptr, &path, cli_data)
 					.with_context(|| format!("Unable to extract directory {}", path.display()))?;
@@ -146,7 +146,7 @@ fn extract_tree<R: io::Read + io::Seek>(
 					log::warn!(
 						"Unable to write date for directory {}: {}",
 						path.display(),
-						dcb_util::fmt_err_wrapper(&err)
+						zutil::fmt_err_wrapper(&err)
 					);
 				}
 			},

@@ -26,12 +26,12 @@ impl ExternalResources {
 		let inst_arg_overrides_path = &cli.inst_arg_overrides_path;
 
 		// Read all data
-		let known_data: Vec<SerializedData> = dcb_util::parse_from_file(&known_data_path, serde_yaml::from_reader)
-			.map_err(dcb_util::fmt_err_wrapper_owned)
+		let known_data: Vec<SerializedData> = zutil::parse_from_file(&known_data_path, serde_yaml::from_reader)
+			.map_err(zutil::fmt_err_wrapper_owned)
 			.map_err(|err| log::warn!("Unable to load game data from {known_data_path:?}: {err}"))
 			.unwrap_or_default();
-		let foreign_data: Vec<SerializedData> = dcb_util::parse_from_file(&foreign_data_path, serde_yaml::from_reader)
-			.map_err(dcb_util::fmt_err_wrapper_owned)
+		let foreign_data: Vec<SerializedData> = zutil::parse_from_file(&foreign_data_path, serde_yaml::from_reader)
+			.map_err(zutil::fmt_err_wrapper_owned)
 			.map_err(|err| log::warn!("Unable to load foreign data from {foreign_data_path:?}: {err}"))
 			.unwrap_or_default();
 
@@ -46,17 +46,17 @@ impl ExternalResources {
 			// Try to insert and log if we get an error.
 			if let Err(err) = data_table.insert(data) {
 				let data = err.data();
-				log::warn!("Unable to add data {data}: {}", dcb_util::fmt_err_wrapper(&err));
+				log::warn!("Unable to add data {data}: {}", zutil::fmt_err_wrapper(&err));
 			}
 			data_table
 		});
 
-		let func_table = dcb_util::parse_from_file(&known_funcs_path, serde_yaml::from_reader)
-			.map_err(dcb_util::fmt_err_wrapper_owned)
+		let func_table = zutil::parse_from_file(&known_funcs_path, serde_yaml::from_reader)
+			.map_err(zutil::fmt_err_wrapper_owned)
 			.map_err(|err| log::warn!("Unable to load functions from {known_funcs_path:?}: {err}"))
 			.unwrap_or_default();
-		let inst_arg_overrides = dcb_util::parse_from_file(&inst_arg_overrides_path, serde_yaml::from_reader)
-			.map_err(dcb_util::fmt_err_wrapper_owned)
+		let inst_arg_overrides = zutil::parse_from_file(&inst_arg_overrides_path, serde_yaml::from_reader)
+			.map_err(zutil::fmt_err_wrapper_owned)
 			.map_err(|err| log::warn!("Unable to load instruction overrides from {inst_arg_overrides_path:?}: {err}"))
 			.unwrap_or_default();
 

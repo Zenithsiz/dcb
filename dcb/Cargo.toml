@@ -1,29 +1,29 @@
 [package]
-name = "dcb"
-version = "0.1.0"
 authors = ["Filipe Rodrigues <filipejacintorodrigues1@gmail.com>"]
 edition = "2018"
+name = "dcb"
+version = "0.1.0"
 
 [dependencies]
 
 # Dcb
-dcb-bytes = { path = "../dcb-bytes" }
-dcb-util = { path = "../dcb-util" }
-dcb-io = { path = "../dcb-io" }
-dcb-bytes-derive = { path = "../dcb-bytes-derive" }
+dcb-bytes = {path = "../dcb-bytes"}
+dcb-bytes-derive = {path = "../dcb-bytes-derive"}
+dcb-io = {path = "../dcb-io"}
 
 # Log
 log = "0.4.13"
 
 # Util
+ascii = {version = "1.0.0", features = ["serde"]}
 byteorder = "1.4.2"
-ascii = { version = "1.0.0", features = ["serde"] }
+zutil = {git = "https://github.com/Zenithsiz/zutil"}
 
 # Serde
-serde = { version = "1.0.120", features = ["derive"] }
+serde = {version = "1.0.120", features = ["derive"]}
 
 # Derives
 derive_more = "0.99.11"
-thiserror = "1.0.23"
 ref-cast = "1.0.6"
-strum = { version = "0.20.0", features = ["derive"] }
+strum = {version = "0.20.0", features = ["derive"]}
+thiserror = "1.0.23"

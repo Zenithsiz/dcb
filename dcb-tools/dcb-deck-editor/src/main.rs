@@ -6,7 +6,7 @@
 // Imports
 use anyhow::Context;
 use dcb::{CardTable, Deck, DeckTable};
-use dcb_util::{AsciiTextBuffer, StrContainsCaseInsensitive};
+use zutil::{AsciiTextBuffer, StrContainsCaseInsensitive};
 use eframe::{egui, epi, NativeOptions};
 use native_dialog::{FileDialog, MessageDialog, MessageType};
 use ref_cast::RefCast;
@@ -102,7 +102,7 @@ impl DeckEditor {
 		// Seek to the deck file position and limit our writing to the file size
 		file.seek(io::SeekFrom::Start(Self::DECK_TABLE_OFFSET))
 			.context("Unable to seek to deck table")?;
-		let mut file = dcb_util::WriteTake::new(file, Self::DECK_TABLE_SIZE);
+		let mut file = zutil::WriteTake::new(file, Self::DECK_TABLE_SIZE);
 
 		// Then serialize it
 		deck_table.serialize(&mut file).context("Unable to serialize table")?;

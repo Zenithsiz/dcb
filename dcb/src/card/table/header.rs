@@ -36,7 +36,7 @@ impl Bytes for Header {
 	type SerializeError = !;
 
 	fn deserialize_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::DeserializeError> {
-		let bytes = dcb_util::array_split!(bytes,
+		let bytes = zutil::array_split!(bytes,
 			magic: [0x4],
 			digimons_len: [0x2],
 			items_len: 1,
@@ -59,7 +59,7 @@ impl Bytes for Header {
 	}
 
 	fn serialize_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::SerializeError> {
-		let bytes = dcb_util::array_split_mut!(bytes,
+		let bytes = zutil::array_split_mut!(bytes,
 			magic: [0x4],
 			digimons_len: [0x2],
 			items_len: 1,

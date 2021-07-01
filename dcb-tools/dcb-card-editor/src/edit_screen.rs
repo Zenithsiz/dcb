@@ -6,12 +6,12 @@ use anyhow::Context;
 use dcb::{card::Card, CardTable};
 use dcb_io::{game_file::Path, GameFile};
 use dcb_tim::Tim;
-use dcb_util::alert;
 use eframe::{
 	egui::{self, Color32, TextureId},
 	epi::TextureAllocator,
 };
 use std::io;
+use zutil::alert;
 
 /// An edit screen
 pub struct EditScreen {

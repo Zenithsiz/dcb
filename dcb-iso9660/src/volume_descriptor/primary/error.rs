@@ -2,7 +2,7 @@
 
 // Imports
 use crate::{date_time, entry};
-use dcb_util::alphabet;
+use zutil::alphabet;
 
 /// Error type for [`Bytes::deserialize_bytes`](dcb_bytes::Bytes::deserialize_bytes)
 #[derive(Debug, thiserror::Error)]

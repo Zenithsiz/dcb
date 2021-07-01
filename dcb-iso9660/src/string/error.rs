@@ -1,9 +1,9 @@
 //! Errors
 
 // Imports
-use dcb_util::alphabet;
+use zutil::alphabet;
 
-/// Error for [`Alphabet`](dcb_util::Alphabet)'s impl of [`AlphabetFileAlphabet`](super::FileAlphabet)
+/// Error for [`Alphabet`](zutil::Alphabet)'s impl of [`AlphabetFileAlphabet`](super::FileAlphabet)
 #[derive(Debug, thiserror::Error)]
 pub enum ValidateFileAlphabetError {
 	/// Invalid name character

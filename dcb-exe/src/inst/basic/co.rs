@@ -266,7 +266,7 @@ impl<'a> InstDisplay<'a> for Inst {
 	fn mnemonic<Ctx: DisplayCtx>(&'a self, _ctx: &Ctx) -> Self::Mnemonic {
 		/// Wrapper necessary for `impl Trait` to work without using `Ctx`.
 		fn wrapper(n: u32, kind: Kind) -> impl fmt::Display {
-			dcb_util::DisplayWrapper::new(move |f| match kind {
+			zutil::DisplayWrapper::new(move |f| match kind {
 				Kind::CopN { .. } => write!(f, "cop{n}"),
 				Kind::MoveFrom { kind, .. } => match kind {
 					RegisterKind::Control => write!(f, "cfc{n}"),

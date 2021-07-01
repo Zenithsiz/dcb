@@ -3,7 +3,7 @@
 // Imports
 use anyhow::Context;
 use dcb_drv::{DirEntry, DirEntryKind, DirPtr, FilePtr};
-use dcb_util::{AsciiStrArr, StrContainsCaseInsensitive};
+use zutil::{AsciiStrArr, StrContainsCaseInsensitive};
 use eframe::egui;
 use std::io;
 

@@ -12,7 +12,7 @@ use super::ptr::{DirPtr, FilePtr};
 use byteorder::{ByteOrder, LittleEndian};
 use chrono::NaiveDateTime;
 use dcb_bytes::Bytes;
-use dcb_util::{ascii_str_arr::AsciiChar, AsciiStrArr};
+use zutil::{ascii_str_arr::AsciiChar, AsciiStrArr};
 use std::convert::TryInto;
 
 /// A directory entry kind
@@ -85,7 +85,7 @@ impl Bytes for DirEntry {
 	type SerializeError = !;
 
 	fn deserialize_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::DeserializeError> {
-		let bytes = dcb_util::array_split!(bytes,
+		let bytes = zutil::array_split!(bytes,
 			kind      :  0x1,
 			extension : [0x3],
 			sector_pos: [0x4],
@@ -125,7 +125,7 @@ impl Bytes for DirEntry {
 	}
 
 	fn serialize_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::SerializeError> {
-		let bytes = dcb_util::array_split_mut!(bytes,
+		let bytes = zutil::array_split_mut!(bytes,
 			kind      :  0x1,
 			extension : [0x3],
 			sector_pos: [0x4],

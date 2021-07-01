@@ -10,13 +10,13 @@ mod cli;
 use anyhow::Context;
 use byteorder::{ByteOrder, LittleEndian, ReadBytesExt};
 use cli::CliData;
-use dcb_util::{AsciiStrArr, IoSlice, NullAsciiString};
 use std::{
 	convert::TryFrom,
 	fs,
 	io::{self, SeekFrom},
 	path::Path,
 };
+use zutil::{AsciiStrArr, IoSlice, NullAsciiString};
 
 
 fn main() -> Result<(), anyhow::Error> {
@@ -61,7 +61,7 @@ fn extract_file(input_path: &Path, output_dir: &Path) -> Result<(), anyhow::Erro
 
 	let m3d: M3d = M3d::read(&mut file).context("Unable to read m3d")?;
 
-	dcb_util::try_create_folder(output_dir).context("Unable to create output directory")?;
+	zutil::try_create_folder(output_dir).context("Unable to create output directory")?;
 
 	let mut output = fs::File::create(output_dir.join("final.obj")).context("Unable to create output file")?;
 
@@ -155,7 +155,7 @@ impl M3dEntry {
 		let mut bytes = [0; 0xc];
 		reader.read_exact(&mut bytes).context("Unable to read entry")?;
 
-		let bytes = dcb_util::array_split!(&bytes,
+		let bytes = zutil::array_split!(&bytes,
 			len: [0x4],
 			x: [0x2],
 			y: [0x2],
@@ -388,7 +388,7 @@ impl Index {
 			(0xc, 0x8, 0x0, 0x3c) => {
 				let mut bytes = [0; 32];
 				reader.read_exact(&mut bytes)?;
-				let bytes = dcb_util::array_split!(&bytes,
+				let bytes = zutil::array_split!(&bytes,
 					uv0: [0x2],
 					_unknown0: [0x2],
 					uv1: [0x2],

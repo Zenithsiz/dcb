@@ -1,13 +1,13 @@
 [package]
-name = "dcb-undrv"
-version = "0.1.0"
 authors = ["Filipe Rodrigues <filipejacintorodrigues1@gmail.com>"]
 edition = "2018"
+name = "dcb-undrv"
+version = "0.1.0"
 
 [dependencies]
 # Dcb
-dcb-util = { path = "../../dcb-util" }
-dcb-drv = { path = "../../dcb-drv" }
+dcb-drv = {path = "../../dcb-drv"}
+zutil = {git = "https://github.com/Zenithsiz/zutil"}
 
 # Util
 filetime = "0.2.14"

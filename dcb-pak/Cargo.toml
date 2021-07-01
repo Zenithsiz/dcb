@@ -1,14 +1,14 @@
 [package]
-name = "dcb-pak"
-version = "0.1.0"
 authors = ["Filipe Rodrigues <filipejacintorodrigues1@gmail.com>"]
 edition = "2018"
+name = "dcb-pak"
+version = "0.1.0"
 
 [dependencies]
 
 # Dcb
-dcb-bytes = { path = "../dcb-bytes" }
-dcb-util = { path = "../dcb-util" }
+dcb-bytes = {path = "../dcb-bytes"}
+zutil = {git = "https://github.com/Zenithsiz/zutil"}
 
 # Log
 log = "0.4.13"

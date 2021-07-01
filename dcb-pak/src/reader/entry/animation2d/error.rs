@@ -1,7 +1,7 @@
 //! Errors
 
 // Imports
-use dcb_util::null_ascii_string;
+use zutil::null_ascii_string;
 use std::io;
 
 /// Error for [`Animation2d::deserialize`](super::Animation2d::deserialize)

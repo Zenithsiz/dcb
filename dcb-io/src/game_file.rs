@@ -12,7 +12,7 @@ pub use path::Path;
 
 // Imports
 use dcb_drv::DirEntryKind;
-use dcb_util::IoSlice;
+use zutil::IoSlice;
 use std::io;
 
 /// Game file.

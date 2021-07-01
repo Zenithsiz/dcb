@@ -126,7 +126,7 @@ impl IntoIterator for DirLister {
 						.map_err(NextError::InvalidFileExtension)?;
 					let size = reader.stream_len().ok();
 
-					let prefix = dcb_util::DisplayWrapper::new(|f| {
+					let prefix = zutil::DisplayWrapper::new(|f| {
 						match depth {
 							0 => (),
 							_ => {
@@ -143,7 +143,7 @@ impl IntoIterator for DirLister {
 						Ok(())
 					});
 
-					let size = dcb_util::DisplayWrapper::new(|f| match size {
+					let size = zutil::DisplayWrapper::new(|f| match size {
 						Some(size) => write!(f, "{}B", size_format::SizeFormatterSI::new(size)),
 						None => write!(f, "Unknown Size"),
 					});

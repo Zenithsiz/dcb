@@ -36,7 +36,7 @@ fn main() -> Result<(), anyhow::Error> {
 	};
 
 	// Create output directory if it doesn't exist
-	dcb_util::try_create_folder(&output_dir)
+	zutil::try_create_folder(&output_dir)
 		.with_context(|| format!("Unable to create directory {}", output_dir.display()))?;
 
 	// Open the file.

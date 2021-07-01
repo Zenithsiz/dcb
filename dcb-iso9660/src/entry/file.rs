@@ -111,10 +111,10 @@ impl<'a, R: io::Seek> io::Seek for FileReader<'a, R> {
 
 			// Seeking before start results in going to start
 			// Note: We're fine with an overflow if `pos == i64::MIN`.
-			io::SeekFrom::End(pos) => dcb_util::saturating_signed_offset(self.size, -pos).clamp(0, self.size),
+			io::SeekFrom::End(pos) => zutil::saturating_signed_offset(self.size, -pos).clamp(0, self.size),
 
 			// Both combined
-			io::SeekFrom::Current(pos) => dcb_util::saturating_signed_offset(self.cur_pos, pos).clamp(0, self.size),
+			io::SeekFrom::Current(pos) => zutil::saturating_signed_offset(self.cur_pos, pos).clamp(0, self.size),
 		};
 
 		// If we don't end up in the same sector, flush our sector and seek to the next sector

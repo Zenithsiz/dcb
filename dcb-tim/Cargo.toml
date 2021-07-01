@@ -1,23 +1,23 @@
 [package]
-name = "dcb-tim"
-version = "0.1.0"
 authors = ["Filipe Rodrigues <filipejacintorodrigues1@gmail.com>"]
 edition = "2018"
+name = "dcb-tim"
+version = "0.1.0"
 
 [dependencies]
 
 # Dcb
-dcb-bytes = { path = "../dcb-bytes" }
-dcb-util = { path = "../dcb-util" }
+dcb-bytes = {path = "../dcb-bytes"}
+zutil = {git = "https://github.com/Zenithsiz/zutil"}
 
 # Log
 log = "0.4.13"
 
 # Util
-byteorder = "1.4.2"
 bitmatch = "0.1.1"
-int-conv = "0.1.4"
+byteorder = "1.4.2"
 derive_more = "0.99.14"
+int-conv = "0.1.4"
 
 # Derives
 thiserror = "1.0.23"

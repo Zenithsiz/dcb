@@ -126,7 +126,7 @@ impl DirEntry {
 			.read_exact(&mut header_bytes)
 			.map_err(FromReaderError::ReadHeader)?;
 
-		let header_bytes = dcb_util::array_split!(&header_bytes,
+		let header_bytes = zutil::array_split!(&header_bytes,
 			record_size                  :  0x1,
 			extended_attribute_record_len:  0x1,
 			extent_location_lsb          : [0x4],
@@ -176,7 +176,7 @@ impl DirEntry {
 	pub fn to_writer<W: io::Write>(&self, writer: &mut W) -> Result<(), ToWriterError> {
 		// Write the header
 		let mut header_bytes = [0u8; 0x21];
-		let header = dcb_util::array_split_mut!(&mut header_bytes,
+		let header = zutil::array_split_mut!(&mut header_bytes,
 			record_size                  :  0x1,
 			extended_attribute_record_len:  0x1,
 			extent_location_lsb          : [0x4],

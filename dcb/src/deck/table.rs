@@ -72,7 +72,7 @@ impl Table {
 	pub fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<(), SerializeError> {
 		// Write header
 		let mut header_bytes = [0u8; 0x8];
-		let header = dcb_util::array_split_mut!(&mut header_bytes,
+		let header = zutil::array_split_mut!(&mut header_bytes,
 			magic: [0x4],
 
 			decks_count: 1,

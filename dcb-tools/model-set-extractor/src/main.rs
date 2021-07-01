@@ -33,7 +33,7 @@ fn extract_file(input_file: &Path, output_dir: &Path) -> Result<(), anyhow::Erro
 
 	let model_set = Model3dSet::from_reader(&mut input_file).context("Unable to parse file")?;
 
-	dcb_util::try_create_folder(output_dir)
+	zutil::try_create_folder(output_dir)
 		.with_context(|| format!("Unable to create directory {}", output_dir.display()))?;
 	for (idx, (pos, size, ..)) in model_set.models.iter().enumerate() {
 		// Get the filename

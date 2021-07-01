@@ -4,7 +4,7 @@
 
 // Imports
 use crate::{inst::Register, Pos};
-use dcb_util::SignedHex;
+use zutil::SignedHex;
 use itertools::Itertools;
 use std::fmt;
 

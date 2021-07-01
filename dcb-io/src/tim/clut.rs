@@ -44,7 +44,7 @@ impl Clut {
 			.read_exact(&mut header_bytes)
 			.map_err(DeserializeError::ReadHeader)?;
 
-		let header_bytes = dcb_util::array_split!(&header_bytes,
+		let header_bytes = zutil::array_split!(&header_bytes,
 			length: [0x4],
 			x     : [0x2],
 			y     : [0x2],

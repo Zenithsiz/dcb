@@ -68,7 +68,7 @@ impl Extend<Func> for FuncTable {
 			Err(err) => log::warn!(
 				"Function {} failed validation, ignoring:\n{}",
 				func.name,
-				dcb_util::fmt_err_wrapper(&err)
+				zutil::fmt_err_wrapper(&err)
 			),
 		}
 	}

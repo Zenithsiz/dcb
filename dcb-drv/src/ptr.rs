@@ -14,7 +14,7 @@ use crate::{path, DirEntryKind, Path};
 use ascii::AsciiStr;
 use core::str::lossy::Utf8Lossy;
 use dcb_bytes::Bytes;
-use dcb_util::IoSlice;
+use zutil::IoSlice;
 use std::io::{self, SeekFrom};
 
 /// File pointer

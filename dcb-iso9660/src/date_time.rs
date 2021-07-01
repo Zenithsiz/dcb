@@ -45,7 +45,7 @@ impl Bytes for DecDateTime {
 	type SerializeError = !;
 
 	fn deserialize_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::DeserializeError> {
-		let bytes = dcb_util::array_split!(bytes,
+		let bytes = zutil::array_split!(bytes,
 			year          : [0x4],
 			month         : [0x2],
 			day           : [0x2],
@@ -78,7 +78,7 @@ impl Bytes for DecDateTime {
 
 	// TODO: Error checking
 	fn serialize_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::SerializeError> {
-		let bytes = dcb_util::array_split_mut!(bytes,
+		let bytes = zutil::array_split_mut!(bytes,
 			year          : [0x4],
 			month         : [0x2],
 			day           : [0x2],

@@ -6,7 +6,7 @@ use anyhow::Context;
 use dcb_io::game_file::Path;
 use dcb_pak::PakFileReader;
 use dcb_tim::{Tim, Tis};
-use dcb_util::task::{self, ValueFuture};
+use zutil::task::{self, ValueFuture};
 use eframe::{
 	egui::{self, Color32, TextureId},
 	epi::TextureAllocator,

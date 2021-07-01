@@ -12,7 +12,7 @@ pub use error::{DeserializeBytesError, SerializeBytesError};
 use crate::card::property::{ArrowColor, Effect, EffectCondition, MaybeArrowColor, MaybeEffect, MaybeEffectCondition};
 use byteorder::{ByteOrder, LittleEndian};
 use dcb_bytes::Bytes;
-use dcb_util::{null_ascii_string::NullAsciiString, AsciiStrArr};
+use zutil::{null_ascii_string::NullAsciiString, AsciiStrArr};
 use ref_cast::RefCast;
 use std::{iter, ops::Try};
 
@@ -89,7 +89,7 @@ impl Bytes for Item {
 
 	fn deserialize_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::DeserializeError> {
 		// Split bytes
-		let bytes = dcb_util::array_split!(bytes,
+		let bytes = zutil::array_split!(bytes,
 			name                : [0x15],
 			unknown_15          : [0x4],
 			condition_first     : [0x20],
@@ -160,7 +160,7 @@ impl Bytes for Item {
 
 	fn serialize_bytes(&self, bytes: &mut Self::ByteArray) -> Result<(), Self::SerializeError> {
 		// Split bytes
-		let bytes = dcb_util::array_split_mut!(bytes,
+		let bytes = zutil::array_split_mut!(bytes,
 			name                : [0x15],
 			unknown_15          : [0x4],
 			condition_first     : [0x20],

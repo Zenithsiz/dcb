@@ -2,7 +2,7 @@
 
 // Imports
 use super::Header;
-use dcb_util::null_ascii_string;
+use zutil::null_ascii_string;
 
 /// Error type for [`Bytes::deserialize_bytes`](dcb_bytes::Bytes::deserialize_bytes)
 #[derive(PartialEq, Eq, Clone, Copy, Debug, thiserror::Error)]

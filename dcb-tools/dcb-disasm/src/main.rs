@@ -56,7 +56,7 @@ fn main() -> Result<(), anyhow::Error> {
 
 	// If we should print a header, create a `.header` file with the input
 	if let Some(header_path) = &cli.header_path {
-		dcb_util::write_to_file(header_path, exe.header(), serde_yaml::to_writer)
+		zutil::write_to_file(header_path, exe.header(), serde_yaml::to_writer)
 			.with_context(|| format!("Unable to write header to file {header_path:?}"))?;
 	}
 
@@ -251,7 +251,7 @@ pub fn inst_display<'a>(
 	pos: Pos,
 ) -> impl fmt::Display + 'a {
 	// Overload the target of as many as possible using `inst_target`.
-	dcb_util::DisplayWrapper::new(move |f| {
+	zutil::DisplayWrapper::new(move |f| {
 		// Build the context and get the mnemonic + args
 		let ctx = DisplayCtx::new(exe, func, pos);
 		let mnemonic = inst.mnemonic(&ctx);

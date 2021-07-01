@@ -1,13 +1,13 @@
 [package]
-name = "dcb-unpak"
-version = "0.1.0"
 authors = ["Filipe Rodrigues <filipejacintorodrigues1@gmail.com>"]
 edition = "2018"
+name = "dcb-unpak"
+version = "0.1.0"
 
 [dependencies]
 # Dcb
-dcb-pak = { path = "../../dcb-pak" }
-dcb-util = { path = "../../dcb-util" }
+dcb-pak = {path = "../../dcb-pak"}
+zutil = {git = "https://github.com/Zenithsiz/zutil"}
 
 # Cmd
 clap = "2.33.3"

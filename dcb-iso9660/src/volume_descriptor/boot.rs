@@ -29,7 +29,7 @@ impl Bytes for BootRecordVolumeDescriptor {
 	type SerializeError = !;
 
 	fn deserialize_bytes(bytes: &Self::ByteArray) -> Result<Self, Self::DeserializeError> {
-		let bytes = dcb_util::array_split!(bytes,
+		let bytes = zutil::array_split!(bytes,
 			system_id: [0x20],
 			boot_id  : [0x20],
 			data     : [0x7b9],

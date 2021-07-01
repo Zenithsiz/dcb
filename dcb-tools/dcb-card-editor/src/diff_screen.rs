@@ -11,11 +11,9 @@ use dcb::{
 	},
 	CardTable,
 };
-use dcb_util::{
-	btree_map_par_iter::ParIterValue, AsciiStrArr, BTreeMapParIter, CachedValue, StrContainsCaseInsensitive,
-};
 use eframe::egui::{self, Color32};
 use std::{collections::BTreeMap, path::PathBuf};
+use zutil::{kv_par_iter::ParIterValue, AsciiStrArr, CachedValue, KVParIter, StrContainsCaseInsensitive};
 
 /// Diff screen
 pub struct DiffScreen {
@@ -302,7 +300,7 @@ impl DiffScreen {
 fn display_cross_move_effect_opt(ui: &mut egui::Ui, effect: &Option<CrossMoveEffect>) {
 	ui.label(format!(
 		"Cross move effect: {}",
-		dcb_util::DisplayWrapper::new(|f| match effect {
+		zutil::DisplayWrapper::new(|f| match effect {
 			Some(effect) => write!(f, "{effect}"),
 			None => write!(f, "None"),
 		})
@@ -314,7 +312,7 @@ fn display_effect_condition_opt(ui: &mut egui::Ui, idx: usize, cond: &Option<Eff
 	ui.label(format!(
 		"Effect condition #{}: {}",
 		idx + 1,
-		dcb_util::DisplayWrapper::new(|f| match cond {
+		zutil::DisplayWrapper::new(|f| match cond {
 			// TODO: Properly display it
 			Some(cond) => write!(f, "{cond:#?}"),
 			None => write!(f, "None"),
@@ -327,7 +325,7 @@ fn display_effect_opt(ui: &mut egui::Ui, idx: usize, effect: &Option<Effect>) {
 	ui.label(format!(
 		"Effect #{}: {}",
 		idx + 1,
-		dcb_util::DisplayWrapper::new(|f| match effect {
+		zutil::DisplayWrapper::new(|f| match effect {
 			// TODO: Properly display it
 			Some(effect) => write!(f, "{effect:#?}"),
 			None => write!(f, "None"),
@@ -357,7 +355,7 @@ impl TableChanges {
 			.map(|(idx, card)| (card.name(), (idx, card)))
 			.collect::<BTreeMap<_, _>>();
 
-		let card_changes = BTreeMapParIter::new(&lhs_names, &rhs_names)
+		let card_changes = KVParIter::new(&lhs_names, &rhs_names)
 			.map(|(&&name, cards)| {
 				let changes = match cards {
 					ParIterValue::Both(&(lhs_id, lhs), &(rhs_id, rhs)) => match (lhs, rhs) {

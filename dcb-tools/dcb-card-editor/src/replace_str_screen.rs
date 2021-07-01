@@ -2,8 +2,8 @@
 
 // Imports
 use dcb::CardTable;
-use dcb_util::{alert, ascii_str_arr::AsciiChar, AsciiStrArr};
 use eframe::egui;
+use zutil::{alert, ascii_str_arr::AsciiChar, AsciiStrArr};
 
 /// Replace string screen
 pub struct ReplaceStrScreen {

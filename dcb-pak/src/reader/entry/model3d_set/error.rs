@@ -2,7 +2,7 @@
 
 // Imports
 use super::model;
-use dcb_util::null_ascii_string;
+use zutil::null_ascii_string;
 use std::io;
 
 /// Error for [`Model3dSet::from_reader`](super::Model3dSet::from_reader)

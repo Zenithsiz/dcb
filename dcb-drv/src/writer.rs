@@ -3,7 +3,7 @@
 // Imports
 use crate::{DirEntry, DirEntryKind, DirPtr, FilePtr};
 use chrono::NaiveDateTime;
-use dcb_util::{AsciiStrArr, MapBoxResult};
+use zutil::{AsciiStrArr, MapBoxResult};
 use std::{
 	convert::TryInto,
 	io::{self, SeekFrom},

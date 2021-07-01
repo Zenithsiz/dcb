@@ -31,7 +31,7 @@ use dcb::card::{
 	Card,
 };
 use dcb_bytes::Validate;
-use dcb_util::{alert, AsciiTextBuffer, StrContainsCaseInsensitive};
+use zutil::{alert, AsciiTextBuffer, StrContainsCaseInsensitive};
 use diff_screen::DiffScreen;
 use edit_screen::EditScreen;
 use eframe::{egui, epi, NativeOptions};

@@ -17,7 +17,7 @@ use dcb_io::{
 	game_file::{OpenFileError, Path},
 	GameFile,
 };
-use dcb_util::IoSlice;
+use zutil::IoSlice;
 use std::{convert::TryInto, io};
 
 /// Table storing all cards.

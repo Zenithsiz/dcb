@@ -1,22 +1,22 @@
 [package]
-name = "dcb-as"
-version = "0.1.0"
 authors = ["Filipe Rodrigues <filipejacintorodrigues1@gmail.com>"]
 edition = "2018"
+name = "dcb-as"
+version = "0.1.0"
 
 [dependencies]
 # Dcb
-dcb = { path = "../../dcb" }
-dcb-bytes = { path = "../../dcb-bytes" }
-dcb-exe = { path = "../../dcb-exe" }
-dcb-util = { path = "../../dcb-util" }
+dcb = {path = "../../dcb"}
+dcb-bytes = {path = "../../dcb-bytes"}
+dcb-exe = {path = "../../dcb-exe"}
+zutil = {git = "https://github.com/Zenithsiz/zutil"}
 
 # Text
 ascii = "1.0"
 
 # Helpers
-int-conv = "0.1"
 byteorder = "1.3"
+int-conv = "0.1"
 itertools = "0.10.0"
 
 # Cmd

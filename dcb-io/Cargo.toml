@@ -1,24 +1,24 @@
 [package]
-name = "dcb-io"
-version = "0.1.0"
 authors = ["Filipe Rodrigues <filipejacintorodrigues1@gmail.com>"]
 edition = "2018"
+name = "dcb-io"
+version = "0.1.0"
 
 [dependencies]
 
 # Dcb
-dcb-bytes = { path = "../dcb-bytes" }
-dcb-util = { path = "../dcb-util" }
-dcb-cdrom-xa = { path = "../dcb-cdrom-xa" }
-dcb-drv = { path = "../dcb-drv" }
+dcb-bytes = {path = "../dcb-bytes"}
+dcb-cdrom-xa = {path = "../dcb-cdrom-xa"}
+dcb-drv = {path = "../dcb-drv"}
+zutil = {git = "https://github.com/Zenithsiz/zutil"}
 
 # Log
 log = "0.4.13"
 
 # Util
+ascii = "1.0.0"
 byteorder = "1.4.2"
 chrono = "0.4.19"
-ascii = "1.0.0"
 ref-cast = "1.0.6"
 
 # Derives

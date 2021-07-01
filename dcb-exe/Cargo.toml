@@ -1,29 +1,29 @@
 [package]
-name = "dcb-exe"
-version = "0.1.0"
 authors = ["Filipe Rodrigues <filipejacintorodrigues1@gmail.com>"]
 edition = "2018"
+name = "dcb-exe"
+version = "0.1.0"
 
 [dependencies]
 
 # Dcb
-dcb-bytes = { path = "../dcb-bytes" }
-dcb-util = { path = "../dcb-util" }
+dcb-bytes = {path = "../dcb-bytes"}
+zutil = {git = "https://github.com/Zenithsiz/zutil", features = ["use_serde"]}
 
 # Log
 log = "0.4.13"
 
 # Util
-byteorder = "1.4.2"
-ascii = { version = "1.0.0", features = ["serde"] }
-int-conv = "0.1.4"
-bitmatch = "0.1.1"
-snailquote = "0.3.0"
+ascii = {version = "1.0.0", features = ["serde"]}
 auto_enums = "0.7.12"
+bitmatch = "0.1.1"
+byteorder = "1.4.2"
+int-conv = "0.1.4"
 itertools = "0.10.0"
+snailquote = "0.3.0"
 
 # Serde
-serde = { version = "1.0.120", features = ["derive"] }
+serde = {version = "1.0.120", features = ["derive"]}
 serde_yaml = "0.8.15"
 
 # Derives
