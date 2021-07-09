@@ -98,13 +98,6 @@ impl EditScreen {
 							ui.vertical(|ui| {
 								ui.add_space(ui.min_rect().width());
 								ui.image(id, tim.size().map(|c| c as f32));
-
-								if ui.button("Export").clicked() {
-									todo!();
-								}
-								if ui.button("Import").clicked() {
-									todo!();
-								}
 							});
 							ui.separator();
 						}
