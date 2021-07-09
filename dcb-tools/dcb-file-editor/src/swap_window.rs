@@ -124,17 +124,17 @@ impl SwapFileStatus {
 		}
 	}
 
-	/// Returns `true` if the swap_file_status is [`Setting`].
+	/// Returns `true` if the swap_file_status is [`Self::Setting`].
 	pub fn is_setting(&self) -> bool {
 		matches!(self, Self::Setting(..))
 	}
 
-	/// Returns `true` if the swap_file_status is [`Set`].
+	/// Returns `true` if the swap_file_status is [`Self::Set`].
 	pub fn is_set(&self) -> bool {
 		matches!(self, Self::Set(..))
 	}
 
-	/// Returns `true` if the swap_file_status is [`Unset`].
+	/// Returns `true` if the swap_file_status is [`Self::Unset`].
 	pub fn is_unset(&self) -> bool {
 		matches!(self, Self::Unset)
 	}
