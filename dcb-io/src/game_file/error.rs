@@ -25,7 +25,7 @@ pub enum OpenFileError {
 
 	/// Unable to find file
 	#[error("Unable to find file")]
-	FindFile(#[source] ptr::FindError),
+	FindFile(#[source] ptr::dir::FindError),
 
 	/// Found directory
 	#[error("Found directory")]
@@ -33,7 +33,7 @@ pub enum OpenFileError {
 
 	/// Unable to open file
 	#[error("Unable to open file")]
-	OpenFile(#[source] ptr::FileCursorError),
+	OpenFile(#[source] ptr::file::FileCursorError),
 }
 
 

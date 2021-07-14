@@ -36,11 +36,11 @@ pub fn swap_files<T: io::Seek + io::Read + io::Write>(
 pub enum SwapFilesError {
 	/// Unable to find lhs file
 	#[error("Unable to find lhs file")]
-	FindLhs(#[source] ptr::FindError),
+	FindLhs(#[source] ptr::dir::FindError),
 
 	/// Unable to find rhs file
 	#[error("Unable to find rhs file")]
-	FindRhs(#[source] ptr::FindError),
+	FindRhs(#[source] ptr::dir::FindError),
 
 	/// Both paths must be files
 	#[error("Both paths must be files")]
@@ -48,9 +48,9 @@ pub enum SwapFilesError {
 
 	/// Unable to write lhs file entry
 	#[error("Unable to write lhs file entry")]
-	WriteLhs(#[source] ptr::WriteEntryError),
+	WriteLhs(#[source] ptr::entry::WriteEntryError),
 
 	/// Unable to write rhs file entry
 	#[error("Unable to write rhs file entry")]
-	WriteRhs(#[source] ptr::WriteEntryError),
+	WriteRhs(#[source] ptr::entry::WriteEntryError),
 }

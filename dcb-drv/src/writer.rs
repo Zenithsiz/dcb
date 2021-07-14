@@ -45,7 +45,7 @@ pub enum WriteDirError<E: std::error::Error + 'static> {
 
 	/// Unable to write all directory entries
 	#[error("Unable to write directory entries")]
-	WriteEntries(#[source] crate::ptr::WriteEntriesError),
+	WriteEntries(#[source] crate::ptr::dir::WriteEntriesError),
 }
 
 /// A directory writer
