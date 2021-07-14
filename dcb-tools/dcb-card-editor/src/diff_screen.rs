@@ -13,7 +13,7 @@ use dcb::{
 };
 use eframe::egui::{self, Color32};
 use std::{collections::BTreeMap, path::PathBuf};
-use zutil::{kv_par_iter::ParIterValue, AsciiStrArr, CachedValue, KVParIter, StrContainsCaseInsensitive};
+use zutil::{keyed_par_iter::ParIterValue, AsciiStrArr, CachedValue, KeyedParIter, StrContainsCaseInsensitive};
 
 /// Diff screen
 pub struct DiffScreen {
@@ -341,7 +341,8 @@ pub struct TableChanges {
 
 impl TableChanges {
 	pub fn new(lhs: &CardTable, rhs: &CardTable) -> Self {
-		// Then get the cards by their names on each loaded game
+		// Get the cards by their names on each loaded game
+		// TODO: Maybe just collect into a `Vec` and sort?
 		let lhs_names = lhs
 			.cards
 			.iter()
@@ -355,10 +356,11 @@ impl TableChanges {
 			.map(|(idx, card)| (card.name(), (idx, card)))
 			.collect::<BTreeMap<_, _>>();
 
-		let card_changes = KVParIter::new(&lhs_names, &rhs_names)
-			.map(|(&&name, cards)| {
+		let card_changes = KeyedParIter::new(lhs_names, rhs_names)
+			.map(zutil::keyed_par_iter::ParIterValue::key_value)
+			.map(|(&name, cards)| {
 				let changes = match cards {
-					ParIterValue::Both(&(lhs_id, lhs), &(rhs_id, rhs)) => match (lhs, rhs) {
+					ParIterValue::Both((lhs_id, lhs), (rhs_id, rhs)) => match (lhs, rhs) {
 						(lhs, rhs) if lhs == rhs => CardChanges::Equal { lhs_id, rhs_id },
 
 						(Card::Digimon(lhs), Card::Digimon(rhs)) => {
@@ -425,8 +427,8 @@ impl TableChanges {
 						},
 						_ => CardChanges::DifferentType { lhs_id, rhs_id },
 					},
-					ParIterValue::Left(&(id, _)) => CardChanges::OnlyInLhs { id },
-					ParIterValue::Right(&(id, _)) => CardChanges::OnlyInRhs { id },
+					ParIterValue::Left((id, _)) => CardChanges::OnlyInLhs { id },
+					ParIterValue::Right((id, _)) => CardChanges::OnlyInRhs { id },
 				};
 				(name, changes)
 			})
