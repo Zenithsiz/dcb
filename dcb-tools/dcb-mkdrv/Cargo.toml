@@ -7,7 +7,7 @@ version = "0.1.0"
 [dependencies]
 # Dcb
 dcb-drv = {path = "../../dcb-drv"}
-zutil = {git = "https://github.com/Zenithsiz/zutil"}
+zutil = {git = "https://github.com/Zenithsiz/zutil", rev = "72b065ff"}
 
 # Util
 chrono = "0.4.19"

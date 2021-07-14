@@ -7,7 +7,7 @@ version = "0.1.0"
 [dependencies]
 # Dcb
 dcb-pak = {path = "../../dcb-pak"}
-zutil = {git = "https://github.com/Zenithsiz/zutil"}
+zutil = {git = "https://github.com/Zenithsiz/zutil", rev = "72b065ff"}
 
 # Cmd
 clap = "2.33.3"

@@ -8,7 +8,7 @@ version = "0.1.0"
 
 # Dcb
 dcb-bytes = {path = "../dcb-bytes"}
-zutil = {git = "https://github.com/Zenithsiz/zutil"}
+zutil = {git = "https://github.com/Zenithsiz/zutil", rev = "72b065ff"}
 
 # Log
 bitflags = "1.2.1"

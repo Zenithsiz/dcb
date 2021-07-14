@@ -6,7 +6,7 @@ version = "0.1.0"
 
 [dependencies]
 # Dcb
-zutil = {git = "https://github.com/Zenithsiz/zutil"}
+zutil = {git = "https://github.com/Zenithsiz/zutil", rev = "72b065ff"}
 
 # Cmd
 clap = "2.33.3"

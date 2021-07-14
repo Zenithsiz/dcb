@@ -9,7 +9,7 @@ version = "0.1.0"
 dcb = {path = "../../dcb"}
 dcb-bytes = {path = "../../dcb-bytes"}
 dcb-exe = {path = "../../dcb-exe"}
-zutil = {git = "https://github.com/Zenithsiz/zutil"}
+zutil = {git = "https://github.com/Zenithsiz/zutil", rev = "72b065ff"}
 
 # Text
 ascii = "1.0"
