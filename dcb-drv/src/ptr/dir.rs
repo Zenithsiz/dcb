@@ -2,6 +2,8 @@
 
 // Modules
 mod error;
+#[cfg(test)]
+mod test;
 
 // Exports
 pub use error::{FindEntryError, FindError, ReadEntriesError, ReadEntryError, WriteEntriesError};
@@ -71,7 +73,12 @@ impl DirPtr {
 				Some(DirEntry::deserialize_bytes(&bytes).map_err(ReadEntryError::ParseEntry)?)
 			};
 
-			entry.transpose()
+			// If the error was `ReadEntry` with an unexpected eof, return `None` instead
+			// TODO: Maybe only allow this at the end of a sector?
+			match entry {
+				Err(ReadEntryError::ReadEntry(err)) if err.kind() == io::ErrorKind::UnexpectedEof => None,
+				entry => entry.transpose(),
+			}
 		});
 
 		Ok(iter)
