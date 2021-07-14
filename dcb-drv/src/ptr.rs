@@ -146,6 +146,8 @@ impl DirPtr {
 				// Note: We don't support parent directories as we'd have to store all
 				//       of the parent directories, because directories don't have
 				//       access to their parents
+				// TODO: Using recursion / stack allocation outside of the loop we could easily store
+				//       all parent dirs we've been through, without any heap allocations.
 				Some(path::Component::ParentDir) => return Err(FindError::ParentDir),
 
 				// On a normal entry, find the entry in the current dir
