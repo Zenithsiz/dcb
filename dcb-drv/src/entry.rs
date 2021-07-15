@@ -16,7 +16,7 @@ use std::convert::TryInto;
 use zutil::{ascii_str_arr::AsciiChar, AsciiStrArr};
 
 /// A directory entry kind
-#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum DirEntryKind {
 	/// A file
 	File {
@@ -62,6 +62,15 @@ impl DirEntryKind {
 		match *self {
 			Self::Dir { ptr } => Some(ptr),
 			_ => None,
+		}
+	}
+
+	/// Returns the sector position of this entry
+	#[must_use]
+	pub const fn sector_pos(&self) -> u32 {
+		match self {
+			DirEntryKind::File { ptr, .. } => ptr.sector_pos,
+			DirEntryKind::Dir { ptr } => ptr.sector_pos,
 		}
 	}
 }

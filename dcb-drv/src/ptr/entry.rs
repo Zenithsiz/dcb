@@ -15,10 +15,10 @@ use std::io::{self, SeekFrom};
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Debug)]
 pub struct DirEntryPtr {
 	/// Directory
-	dir: DirPtr,
+	pub dir: DirPtr,
 
 	/// Entry
-	entry: u32,
+	pub entry: u32,
 }
 
 impl DirEntryPtr {
