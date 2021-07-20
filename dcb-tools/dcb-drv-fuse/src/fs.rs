@@ -6,8 +6,10 @@ use anyhow::Context;
 use ascii::{AsciiChar, AsciiStr};
 use dcb_drv::{DirEntry, DirEntryKind, DirPtr, FilePtr};
 use fuser::Filesystem;
+use itertools::Itertools;
 use std::{
 	collections::{hash_map, HashMap},
+	convert::TryInto,
 	ffi::{OsStr, OsString},
 	fs,
 	io::{Read, Seek, SeekFrom},
@@ -184,6 +186,42 @@ impl DrvFs {
 
 		Ok(())
 	}
+
+	fn statfs(&mut self, _req: &fuser::Request<'_>, _ino: u64) -> Result<StatFs, anyhow::Error> {
+		// Get the total file length
+		let len = self.file.stream_len().context("Unable to get file len")?;
+
+		// Then count the number of files
+		fn count_files(dir_ptr: DirPtr, file: &mut fs::File) -> Result<usize, anyhow::Error> {
+			let dir_entries = dir_ptr
+				.read_entries(file)
+				.context("Unable to read directory")?
+				.try_collect::<_, Vec<_>, _>()
+				.context("Unable to read entries")?;
+
+			let mut total = 0;
+			for entry in dir_entries {
+				total += match entry.kind {
+					DirEntryKind::File { .. } => 1,
+					DirEntryKind::Dir { ptr } => 1 + count_files(ptr, file).context("Unable to count files")?,
+				};
+			}
+
+			Ok(total)
+		}
+		let files = count_files(DirPtr::root(), &mut self.file).context("Unable to count files")?;
+
+		Ok(StatFs {
+			blocks:           (len + 0x7ff) / 0x800,
+			blocks_free:      0,
+			blocks_available: 0,
+			files:            files.try_into().context("Unable to get file count as `u64`")?,
+			files_free:       0,
+			block_size:       0x800,
+			name_len:         0x10,
+			fragment_size:    0x800,
+		})
+	}
 }
 
 impl Filesystem for DrvFs {
@@ -227,6 +265,25 @@ impl Filesystem for DrvFs {
 			Ok(()) => reply.ok(),
 			Err(err) => {
 				log::error!("Unable to read directory {ino}/{offset}: {err:?}");
+				reply.error(libc::ENOENT);
+			},
+		}
+	}
+
+	fn statfs(&mut self, req: &fuser::Request<'_>, ino: u64, reply: fuser::ReplyStatfs) {
+		match self.statfs(req, ino) {
+			Ok(stats) => reply.statfs(
+				stats.blocks,
+				stats.blocks_free,
+				stats.blocks_available,
+				stats.files,
+				stats.files_free,
+				stats.block_size,
+				stats.name_len,
+				stats.fragment_size,
+			),
+			Err(err) => {
+				log::error!("Unable to get stats for {ino}: {err:?}");
 				reply.error(libc::ENOENT);
 			},
 		}
@@ -315,4 +372,16 @@ impl From<DirEntryKind> for InodeKind {
 			DirEntryKind::Dir { ptr } => Self::Dir { ptr },
 		}
 	}
+}
+
+/// Filesystem stats
+struct StatFs {
+	pub blocks:           u64,
+	pub blocks_free:      u64,
+	pub blocks_available: u64,
+	pub files:            u64,
+	pub files_free:       u64,
+	pub block_size:       u32,
+	pub name_len:         u32,
+	pub fragment_size:    u32,
 }

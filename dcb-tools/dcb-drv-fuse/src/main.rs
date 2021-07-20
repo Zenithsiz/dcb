@@ -1,7 +1,7 @@
 //! `dcb-drv` as a `FUSE` filesystem
 
 // Features
-#![feature(format_args_capture, try_blocks)]
+#![feature(format_args_capture, try_blocks, seek_stream_len)]
 
 // Modules
 mod cli;
