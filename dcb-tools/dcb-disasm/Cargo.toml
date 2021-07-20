@@ -8,7 +8,7 @@ version = "0.1.0"
 # Dcb
 dcb = {path = "../../dcb"}
 dcb-exe = {path = "../../dcb-exe"}
-zutil = {git = "https://github.com/Zenithsiz/zutil", rev = "72b065ff"}
+zutil = {git = "https://github.com/Zenithsiz/zutil", rev = "8c9cb2d"}
 
 # Text
 ascii = "1.0"
