@@ -15,7 +15,7 @@ use std::{
 	io::{self, Read, Seek},
 	path::{Path, PathBuf},
 };
-use zutil::{AsciiTextBuffer, StrContainsCaseInsensitive};
+use zutil::{alert, AsciiTextBuffer, StrContainsCaseInsensitive};
 
 fn main() {
 	// Initialize the logger
@@ -192,6 +192,26 @@ impl epi::App for DeckEditor {
 						}
 					}
 
+					if ui.button("Export").clicked() {
+						match loaded_game {
+							Some(loaded_game) => match self::on_export(loaded_game) {
+								Ok(()) => alert::info!("Successfully exported!"),
+								Err(err) => alert::error!("Unable to export file: {err:?}"),
+							},
+							None => alert::warn!("You must first open a game file to export"),
+						}
+					}
+
+					if ui.button("Import").clicked() {
+						match loaded_game {
+							Some(loaded_game) => match self::on_import(loaded_game) {
+								Ok(()) => alert::info!("Successfully imported!"),
+								Err(err) => alert::error!("Unable to import file: {err:?}"),
+							},
+							None => alert::warn!("You must first open a game file to import"),
+						}
+					}
+
 					if ui.button("Quit").clicked() {
 						frame.quit();
 					}
@@ -326,4 +346,51 @@ fn render_deck(ui: &mut egui::Ui, deck: &mut Deck, card_table: &mut CardTable) {
 			});
 		}
 	});
+}
+
+
+/// On 'File > Export'.
+fn on_export(loaded_game: &mut LoadedGame) -> Result<(), anyhow::Error> {
+	// Ask for the file path
+	let cur_dir_path = std::env::current_dir().expect("Unable to get current directory path");
+	let file_path = FileDialog::new()
+		.set_location(&cur_dir_path)
+		.add_filter("Exported file", &["json"])
+		.show_save_single_file()
+		.expect("Unable to ask user for file");
+	let file_path = match file_path {
+		Some(path) => path,
+		None => return Ok(()),
+	};
+
+	let file = fs::File::create(file_path).context("Unable to create file")?;
+	serde_json::to_writer_pretty(file, &loaded_game.deck_table).context("Unable to write to file")
+}
+
+/// On 'File > Import'.
+fn on_import(loaded_game: &mut LoadedGame) -> Result<(), anyhow::Error> {
+	// If we have a loaded game and it's modified, ask the user if they want to override it
+	if !alert::warn_confirm!("Do you want to discard the changes to the current file") {
+		return Ok(());
+	}
+
+	// Else ask for the file path
+	let cur_dir_path = std::env::current_dir().expect("Unable to get current directory path");
+	let file_path = FileDialog::new()
+		.set_location(&cur_dir_path)
+		.add_filter("Exported file", &["json"])
+		.show_open_single_file()
+		.expect("Unable to ask user for file");
+	let file_path = match file_path {
+		Some(path) => path,
+		None => return Ok(()),
+	};
+
+	// And try to load it and parse it
+	let file = fs::File::open(file_path).context("Unable to open file")?;
+	let deck_table = serde_json::from_reader(file).context("Unable to parse file")?;
+
+	loaded_game.deck_table = deck_table;
+
+	Ok(())
 }

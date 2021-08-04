@@ -29,4 +29,5 @@ strum = {version = "0.20.0", features = ["derive"]}
 zutil = {git = "https://github.com/Zenithsiz/zutil", rev = "8c9cb2d", features = ["gui"]}
 
 # Serde
+serde_json = "1.0.66"
 serde_yaml = "0.8.17"
