@@ -42,6 +42,8 @@ A card editor for the game.
 
 - Check the differences from 2 games with the `Diff` tool.
 
+#### See the examples/ directory for some examples for this binary to be imported
+
 ### [Windows download](https://github.com/Zenithsiz/dcb/releases/tag/card-editor-0.1.4)
 
 ## **dcb-deck-editor**
@@ -70,7 +72,6 @@ A deck editor for the game.
 
 Other binaries are found in `dcb-tools`, although most will be command line tools to help pack or unpack the
 game files into other format.
-
 
 # Libraries
 
