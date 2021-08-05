@@ -21,7 +21,12 @@ use byteorder::{ByteOrder, LittleEndian};
 use cli::CliData;
 use encoding_rs::SHIFT_JIS;
 use itertools::Itertools;
-use std::{collections::HashMap, convert::TryInto, fs};
+use std::{
+	assert_matches::assert_matches,
+	collections::{BTreeMap, HashMap},
+	convert::TryInto,
+	fs,
+};
 
 
 fn main() -> Result<(), anyhow::Error> {
@@ -67,7 +72,7 @@ fn main() -> Result<(), anyhow::Error> {
 				},
 			}
 		})
-		.collect::<Result<Vec<_>, anyhow::Error>>()
+		.collect::<Result<BTreeMap<_, _>, anyhow::Error>>()
 		.context("Unable to parse commands")?;
 
 	log::info!("Found {} commands", commands.len());
@@ -81,7 +86,7 @@ fn main() -> Result<(), anyhow::Error> {
 	};
 	let labels: HashMap<u32, String> = commands
 		.iter()
-		.filter_map(|&(pos, ref command)| match *command {
+		.filter_map(|(pos, command)| match *command {
 			Command::Jump { addr, .. } => Some((addr, next_label("jump"))),
 			Command::DisplayScene {
 				value0: 0xf | 0xe,
@@ -96,6 +101,14 @@ fn main() -> Result<(), anyhow::Error> {
 		if let Some(label) = labels.get(&pos) {
 			println!("{label}:");
 		};
+
+		print!("{pos:#010x}: ");
+
+		let bytes = &contents[(pos as usize)..((pos as usize) + command.size())];
+		print!(
+			"[0x{}] ",
+			bytes.iter().format_with("", |value, f| f(&format_args!("{value:02x}")))
+		);
 
 		state
 			.parse_next(&labels, command)
@@ -129,20 +142,20 @@ impl State {
 		match (&mut *self, command) {
 			(State::Start, Command::DisplayBuffer) => println!("display_buffer"),
 			(State::Start, Command::WaitInput) => println!("wait_input"),
-			(State::Start, Command::NewScreen) => println!("new_screen"),
+			(State::Start, Command::ClearScreen) => println!("clear_screen"),
+			(State::Start, Command::DisplayBattleCafe) => println!("display_battle_cafe"),
+			(State::Start, Command::DisplayPlayerRoom) => println!("display_player_room"),
+			(State::Start, Command::DisplayCardList) => println!("display_card_list"),
+			(State::Start, Command::DisplayChoosePartner) => println!("display_choose_partner"),
+			(State::Start, Command::DisplayBattleArena) => println!("display_battle_arena"),
+			(State::Start, Command::DisplayKeyboard) => println!("display_keyboard"),
+			(State::Start, Command::DisplayEditPartner) => println!("display_edit_partner"),
+			(State::Start, Command::DisplayTextBox) => println!("display_text_box"),
 			(State::Start, Command::SetValue { var, value0, value1 }) => {
 				println!("set_value {var:#x}, {value0:#x}, {value1:#x}")
 			},
-			(
-				State::Start,
-				Command::Unknown07 {
-					value0,
-					kind,
-					value1,
-					value2,
-				},
-			) => {
-				println!("unknown_07 {value0:#x}, {kind:#x}, {value1:#x}, {value2:#x}")
+			(State::Start, Command::Unknown07 { value0, value1, value2 }) => {
+				println!("unknown_07 {value0:#x}, {value1:#x}, {value2:#x}")
 			},
 			(
 				State::Start,
@@ -160,7 +173,10 @@ impl State {
 				None => println!("jump {value:#x}, {kind:#x}, {addr:#010x}"),
 			},
 			(State::Start, Command::Unknown0a { value, kind }) => println!("unknown_0a {value:#x}, {kind:#x}"),
-			(State::Start, Command::OpenMenu { menu }) => *self = State::Menu { menu, buttons: vec![] },
+			(State::Start, Command::OpenMenu { menu }) => {
+				*self = State::Menu { menu, buttons: vec![] };
+				println!("open_menu {}", menu.as_str());
+			},
 			(State::Start, Command::DisplayScene { value0, value1 }) => match (value0, value1) {
 				(0x2, _) => println!("battle {value1:#x}"),
 
@@ -192,30 +208,21 @@ impl State {
 				(0x1, _, 0xffff, 0xffff) => println!("set_light_unknown {place:#x}"),
 				_ => println!("set_light {kind:#x}, {place:#x}, {brightness:#x}, {value:#x}"),
 			},
-			(State::Menu { menu, buttons }, Command::FinishMenu) => {
-				println!(
-					"menu {menu:?}, {}",
-					buttons
-						.iter()
-						.map(|button| zutil::DisplayWrapper::new(move |f| write!(
-							f,
-							"\"{}\"",
-							button.as_str().escape_debug()
-						)))
-						.format(", ")
-				);
-
+			(State::Menu { .. }, Command::FinishMenu) => {
 				*self = State::Start;
+				println!("finish_menu");
 			},
 			(State::Menu { menu, buttons }, Command::AddMenuOption { button }) => {
 				anyhow::ensure!(
 					menu.supports_button(button),
-					"Menu {:?} doesn't support button \"{}\"",
-					menu,
+					"Menu {} doesn't support button \"{}\"",
+					menu.as_str(),
 					button.as_str()
 				);
 
-				buttons.push(button)
+				buttons.push(button);
+
+				println!("add_menu \"{}\"", button.as_str().escape_debug());
 			},
 			(_, Command::FinishMenu) => anyhow::bail!("Can only call `finish_menu` when mid-menu"),
 			(_, Command::AddMenuOption { .. }) => anyhow::bail!("Can only call `add_menu_option` when mid-menu"),
@@ -242,6 +249,14 @@ pub enum Menu {
 }
 
 impl Menu {
+	/// Returns a string representing this menu
+	pub fn as_str(&self) -> &'static str {
+		match self {
+			Menu::Three => "three",
+			Menu::Five => "five",
+		}
+	}
+
 	/// Returns if a button may be used in this menu
 	pub fn supports_button(self, button: MenuButton) -> bool {
 		use MenuButton::*;
@@ -340,19 +355,31 @@ pub enum Command<'a> {
 	/// Wait for input
 	WaitInput,
 
-	/// New screen
-	NewScreen,
+	/// Clear screen
+	ClearScreen,
 
 	/// Finish menu
 	FinishMenu,
 
+	DisplayBattleCafe,
+	DisplayPlayerRoom,
+	DisplayCardList,
+	DisplayChoosePartner,
+	DisplayBattleArena,
+	DisplayKeyboard,
+	DisplayEditPartner,
+	DisplayTextBox,
+
 	/// Set value
-	SetValue { var: u8, value0: u32, value1: u32 },
+	SetValue {
+		var:    u8,
+		value0: u32,
+		value1: u32,
+	},
 
 	/// Unknown07
 	Unknown07 {
 		value0: u8,
-		kind:   u8,
 		value1: u32,
 		value2: u32,
 	},
@@ -366,22 +393,39 @@ pub enum Command<'a> {
 	},
 
 	/// Jump
-	Jump { value: u8, kind: u8, addr: u32 },
+	Jump {
+		value: u8,
+		kind:  u8,
+		addr:  u32,
+	},
 
 	/// Unknown 0a
-	Unknown0a { value: u8, kind: u8 },
+	Unknown0a {
+		value: u8,
+		kind:  u8,
+	},
 
 	/// Open menu
-	OpenMenu { menu: Menu },
+	OpenMenu {
+		menu: Menu,
+	},
 
 	/// Add menu option
-	AddMenuOption { button: MenuButton },
+	AddMenuOption {
+		button: MenuButton,
+	},
 
 	/// Display scene
-	DisplayScene { value0: u8, value1: u16 },
+	DisplayScene {
+		value0: u8,
+		value1: u16,
+	},
 
 	/// Set buffer
-	SetBuffer { kind: u8, bytes: &'a [u8] },
+	SetBuffer {
+		kind:  u8,
+		bytes: &'a [u8],
+	},
 
 	/// Set brightness
 	SetBrightness {
@@ -396,10 +440,18 @@ impl<'a> Command<'a> {
 	/// Parses a command
 	pub fn parse(slice: &'a [u8]) -> Option<Self> {
 		let command = match *slice.get(..0x4)? {
-			[0x0a, 0x0, 0x4, 0x0] => Self::DisplayBuffer,
-			[0x0a, 0x0, 0x5, 0x0] => Self::WaitInput,
-			[0x0a, 0x0, 0x6, 0x0] => Self::NewScreen,
-			[0x0a, 0x0, 0x1, 0x0] => Self::FinishMenu,
+			[0x0a, 0x0, 0x01, 0x0] => Self::FinishMenu,
+			[0x0a, 0x0, 0x02, 0x0] => Self::DisplayBattleCafe,
+			[0x0a, 0x0, 0x04, 0x0] => Self::DisplayBuffer,
+			[0x0a, 0x0, 0x05, 0x0] => Self::WaitInput,
+			[0x0a, 0x0, 0x06, 0x0] => Self::ClearScreen,
+			[0x0a, 0x0, 0x07, 0x0] => Self::DisplayPlayerRoom,
+			[0x0a, 0x0, 0x09, 0x0] => Self::DisplayCardList,
+			[0x0a, 0x0, 0x0a, 0x0] => Self::DisplayChoosePartner,
+			[0x0a, 0x0, 0x0c, 0x0] => Self::DisplayBattleArena,
+			[0x0a, 0x0, 0x0f, 0x0] => Self::DisplayKeyboard,
+			[0x0a, 0x0, 0x11, 0x0] => Self::DisplayEditPartner,
+			[0x0a, 0x0, 0x16, 0x0] => Self::DisplayTextBox,
 			[0x0a, 0x0, value, kind] => Self::Unknown0a { value, kind },
 
 			// Set variable
@@ -409,22 +461,23 @@ impl<'a> Command<'a> {
 
 				Self::SetValue { var, value0, value1 }
 			},
-			[0x07, 0x0, value0, kind] => {
+			[0x07, 0x0, value0, 0x1] => {
 				let value1 = LittleEndian::read_u32(slice.get(0x4..0x8)?);
 				let value2 = LittleEndian::read_u32(slice.get(0x8..0xc)?);
 
-				Self::Unknown07 {
-					value0,
-					kind,
-					value1,
-					value2,
-				}
+				// value2 == 0 => value1 = 0
+				// value1 == 1 => value2 = 1
+
+				Self::Unknown07 { value0, value1, value2 }
 			},
 
 			// Choice jump
 			[0x09, 0x0, value0, kind] => {
 				let value1 = LittleEndian::read_u32(slice.get(0x4..0x8)?);
 				let value2 = LittleEndian::read_u32(slice.get(0x8..0xc)?);
+
+				assert_matches!(kind, 0 | 1, "Unknown choice jump kind");
+				assert_matches!(value1, 3 | 5, "Unknown choice jump value1");
 
 				// value1: 0x3 0x5
 				// kind: 0x0 0x1
@@ -447,6 +500,8 @@ impl<'a> Command<'a> {
 			// Jump?
 			[0x05, 0x0, value, kind] => {
 				let addr = LittleEndian::read_u32(slice.get(0x4..0x8)?);
+
+				assert_matches!(kind, 0 | 1 | 2, "Unknown jump kind");
 
 				Self::Jump { value, kind, addr }
 			},
@@ -548,8 +603,16 @@ impl<'a> Command<'a> {
 		match self {
 			Command::DisplayBuffer => 4,
 			Command::WaitInput => 4,
-			Command::NewScreen => 4,
+			Command::ClearScreen => 4,
 			Command::FinishMenu => 4,
+			Command::DisplayBattleCafe => 4,
+			Command::DisplayPlayerRoom => 4,
+			Command::DisplayCardList => 4,
+			Command::DisplayChoosePartner => 4,
+			Command::DisplayBattleArena => 4,
+			Command::DisplayKeyboard => 4,
+			Command::DisplayEditPartner => 4,
+			Command::DisplayTextBox => 4,
 			Command::SetValue { .. } => 0xc,
 			Command::Unknown07 { .. } => 0xc,
 			Command::ChoiceJump { .. } => 0xc,
