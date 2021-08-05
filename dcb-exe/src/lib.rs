@@ -10,12 +10,11 @@
 #![feature(
 	format_args_capture,
 	never_type,
-	bindings_after_at,
 	iter_map_while,
 	array_chunks,
 	const_btree_new,
 	unwrap_infallible,
-	min_type_alias_impl_trait,
+	type_alias_impl_trait,
 	assert_matches,
 	extend_one,
 	exclusive_range_pattern,

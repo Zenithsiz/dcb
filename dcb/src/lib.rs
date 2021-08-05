@@ -6,7 +6,6 @@
 	stmt_expr_attributes,
 	unwrap_infallible,
 	format_args_capture,
-	array_map,
 	iter_is_partitioned,
 	try_trait_v2,
 	array_zip,

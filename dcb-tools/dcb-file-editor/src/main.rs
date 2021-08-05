@@ -2,7 +2,6 @@
 
 // Features
 #![feature(
-	array_map,
 	with_options,
 	format_args_capture,
 	once_cell,

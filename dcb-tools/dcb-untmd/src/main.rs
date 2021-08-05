@@ -1,7 +1,7 @@
 //! `.tmd` extractor
 
 // Features
-#![feature(format_args_capture, array_map, seek_stream_len)]
+#![feature(format_args_capture, seek_stream_len)]
 
 // Modules
 mod cli;

@@ -1,7 +1,7 @@
 //! Deck editor
 
 // Features
-#![feature(array_map, with_options, format_args_capture, once_cell, never_type)]
+#![feature(with_options, format_args_capture, once_cell, never_type)]
 
 // Imports
 use anyhow::Context;

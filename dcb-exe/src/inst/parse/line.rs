@@ -10,7 +10,7 @@ pub use error::{ParseArgError, ParseFuncError, ParseLineError, ParseLiteralError
 
 // Imports
 use crate::inst::Register;
-use std::str::FromStr;
+use std::{assert_matches::assert_matches, str::FromStr};
 
 /// A line
 #[derive(PartialEq, Clone, Debug)]
