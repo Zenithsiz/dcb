@@ -185,14 +185,14 @@ impl State {
 			(
 				State::Start,
 				Command::Test {
-					value0,
+					var,
 					kind,
 					value1,
 					value2,
 				},
-			) => match values.get(&value0) {
+			) => match values.get(&var) {
 				Some(value) => println!("test {value}, {kind:#x}, {value1:#x}, {value2:#x}"),
-				None => println!("test {value0:#x}, {kind:#x}, {value1:#x}, {value2:#x}"),
+				None => println!("test {var:#x}, {kind:#x}, {value1:#x}, {value2:#x}"),
 			},
 
 			(State::Start, Command::Jump { value, kind, addr }) => match labels.get(&addr) {
@@ -413,7 +413,7 @@ pub enum Command<'a> {
 
 	/// Test
 	Test {
-		value0: u8,
+		var:    u8,
 		kind:   u8,
 		value1: u32,
 		value2: u32,
@@ -486,6 +486,8 @@ impl<'a> Command<'a> {
 				let value0 = LittleEndian::read_u32(slice.get(0x4..0x8)?);
 				let value1 = LittleEndian::read_u32(slice.get(0x8..0xc)?);
 
+				assert_matches!(value0, 0 | 6, "Unknown set_value value1");
+
 				Self::SetValue { var, value0, value1 }
 			},
 			[0x07, 0x0, value0, 0x1] => {
@@ -499,7 +501,7 @@ impl<'a> Command<'a> {
 			},
 
 			// Test
-			[0x09, 0x0, value0, kind] => {
+			[0x09, 0x0, var, kind] => {
 				let value1 = LittleEndian::read_u32(slice.get(0x4..0x8)?);
 				let value2 = LittleEndian::read_u32(slice.get(0x8..0xc)?);
 
@@ -517,7 +519,7 @@ impl<'a> Command<'a> {
 				// value2: If 0x0, they both choose "No"
 
 				Self::Test {
-					value0,
+					var,
 					kind,
 					value1,
 					value2,
