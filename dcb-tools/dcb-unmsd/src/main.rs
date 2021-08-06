@@ -195,9 +195,13 @@ impl State {
 				None => println!("test {var:#x}, {value1:#x}, {value2:#x}"),
 			},
 
-			(State::Start, Command::Jump { value, addr }) => match labels.get(&addr) {
-				Some(label) => println!("jump {value:#x}, {label}"),
-				None => println!("jump {value:#x}, {addr:#010x}"),
+			(State::Start, Command::Jump { var, addr }) => {
+				let label = match labels.get(&addr) {
+					Some(label) => label.to_owned(),
+					None => format!("{addr:#010x}"),
+				};
+
+				println!("jump {var:#x}, {label}")
 			},
 			(State::Start, Command::Unknown0a { value }) => println!("unknown_0a {value:#x}"),
 			(State::Start, Command::OpenMenu { menu }) => {
@@ -413,8 +417,8 @@ pub enum Command<'a> {
 
 	/// Jump
 	Jump {
-		value: u16,
-		addr:  u32,
+		var:  u16,
+		addr: u32,
 	},
 
 	/// Unknown 0a
@@ -500,11 +504,11 @@ impl<'a> Command<'a> {
 			},
 
 			// Jump?
-			[0x05, 0x0, value0, value1] => {
-				let value = LittleEndian::read_u16(&[value0, value1]);
+			[0x05, 0x0, var0, var1] => {
+				let var = LittleEndian::read_u16(&[var0, var1]);
 				let addr = LittleEndian::read_u32(slice.get(0x4..0x8)?);
 
-				Self::Jump { value, addr }
+				Self::Jump { var, addr }
 			},
 
 			// Open menu
