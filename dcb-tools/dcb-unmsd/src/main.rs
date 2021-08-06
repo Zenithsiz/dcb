@@ -79,7 +79,7 @@ fn main() -> Result<(), anyhow::Error> {
 
 	// Get all value names
 	let values: Result<_, anyhow::Error> = try {
-		let known_values_file_path = format!("{}.values", cli_data.input_file.display());
+		let known_values_file_path = cli_data.input_file.with_file_name("msd.values");
 		let known_values_file = std::fs::File::open(known_values_file_path).context("Unable to open values file")?;
 		serde_yaml::from_reader::<_, HashMap<u16, String>>(known_values_file).context("Unable to parse values file")?
 	};
