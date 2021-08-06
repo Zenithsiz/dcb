@@ -78,17 +78,34 @@ fn main() -> Result<(), anyhow::Error> {
 	log::info!("Found {} commands", commands.len());
 
 	// Get all value names
-	let known_values_file_path = format!("{}.values", cli_data.input_file.display());
-	let known_values_file = std::fs::File::open(known_values_file_path).context("Unable to open values file")?;
-	let values =
-		serde_yaml::from_reader::<_, HashMap<u8, String>>(known_values_file).context("Unable to parse values file")?;
+	let values: Result<_, anyhow::Error> = try {
+		let known_values_file_path = format!("{}.values", cli_data.input_file.display());
+		let known_values_file = std::fs::File::open(known_values_file_path).context("Unable to open values file")?;
+		serde_yaml::from_reader::<_, HashMap<u8, String>>(known_values_file).context("Unable to parse values file")?
+	};
+	let values = match values {
+		Ok(values) => values,
+		Err(err) => {
+			log::warn!("Unable to load values: {err:?}");
+			HashMap::new()
+		},
+	};
 
 
 	// Get all labels
-	let known_labels_file_path = format!("{}.labels", cli_data.input_file.display());
-	let known_labels_file = std::fs::File::open(known_labels_file_path).context("Unable to open labels file")?;
-	let mut labels =
-		serde_yaml::from_reader::<_, HashMap<u32, String>>(known_labels_file).context("Unable to parse labels file")?;
+	let labels: Result<_, anyhow::Error> = try {
+		let known_labels_file_path = format!("{}.labels", cli_data.input_file.display());
+		let known_labels_file = std::fs::File::open(known_labels_file_path).context("Unable to open labels file")?;
+		serde_yaml::from_reader::<_, HashMap<u32, String>>(known_labels_file).context("Unable to parse labels file")?
+	};
+	let mut labels = match labels {
+		Ok(labels) => labels,
+		Err(err) => {
+			log::warn!("Unable to load labels: {err:?}");
+			HashMap::new()
+		},
+	};
+
 	let heuristic_labels = commands
 		.iter()
 		.filter_map(|(_pos, command)| match *command {
