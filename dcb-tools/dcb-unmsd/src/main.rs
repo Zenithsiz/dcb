@@ -81,7 +81,7 @@ fn main() -> Result<(), anyhow::Error> {
 	let values: Result<_, anyhow::Error> = try {
 		let known_values_file_path = format!("{}.values", cli_data.input_file.display());
 		let known_values_file = std::fs::File::open(known_values_file_path).context("Unable to open values file")?;
-		serde_yaml::from_reader::<_, HashMap<u8, String>>(known_values_file).context("Unable to parse values file")?
+		serde_yaml::from_reader::<_, HashMap<u16, String>>(known_values_file).context("Unable to parse values file")?
 	};
 	let values = match values {
 		Ok(values) => values,
@@ -161,7 +161,7 @@ pub enum State {
 impl State {
 	/// Parses the next command
 	pub fn parse_next(
-		&mut self, labels: &HashMap<u32, String>, values: &HashMap<u8, String>, command: Command,
+		&mut self, labels: &HashMap<u32, String>, values: &HashMap<u16, String>, command: Command,
 	) -> Result<(), anyhow::Error> {
 		match (&mut *self, command) {
 			(State::Start, Command::DisplayBuffer) => println!("display_buffer"),
@@ -179,25 +179,14 @@ impl State {
 				Some(value) => println!("set_value {value}, {value0:#x}, {value1:#x}"),
 				None => println!("set_value {var:#x}, {value0:#x}, {value1:#x}"),
 			},
-			(State::Start, Command::Unknown07 { value0, value1, value2 }) => {
-				println!("unknown_07 {value0:#x}, {value1:#x}, {value2:#x}")
-			},
-			(
-				State::Start,
-				Command::Test {
-					var,
-					kind,
-					value1,
-					value2,
-				},
-			) => match values.get(&var) {
-				Some(value) => println!("test {value}, {kind:#x}, {value1:#x}, {value2:#x}"),
-				None => println!("test {var:#x}, {kind:#x}, {value1:#x}, {value2:#x}"),
+			(State::Start, Command::Test { var, value1, value2 }) => match values.get(&var) {
+				Some(value) => println!("test {value}, {value1:#x}, {value2:#x}"),
+				None => println!("test {var:#x}, {value1:#x}, {value2:#x}"),
 			},
 
-			(State::Start, Command::Jump { value, kind, addr }) => match labels.get(&addr) {
-				Some(label) => println!("jump {value:#x}, {kind:#x}, {label}"),
-				None => println!("jump {value:#x}, {kind:#x}, {addr:#010x}"),
+			(State::Start, Command::Jump { value, addr }) => match labels.get(&addr) {
+				Some(label) => println!("jump {value:#x}, {label}"),
+				None => println!("jump {value:#x}, {addr:#010x}"),
 			},
 			(State::Start, Command::Unknown0a { value, kind }) => println!("unknown_0a {value:#x}, {kind:#x}"),
 			(State::Start, Command::OpenMenu { menu }) => {
@@ -399,30 +388,21 @@ pub enum Command<'a> {
 
 	/// Set value
 	SetValue {
-		var:    u8,
+		var:    u16,
 		value0: u32,
 		value1: u32,
 	},
 
-	/// Unknown07
-	Unknown07 {
-		value0: u8,
-		value1: u32,
-		value2: u32,
-	},
-
 	/// Test
 	Test {
-		var:    u8,
-		kind:   u8,
+		var:    u16,
 		value1: u32,
 		value2: u32,
 	},
 
 	/// Jump
 	Jump {
-		value: u8,
-		kind:  u8,
+		value: u16,
 		addr:  u32,
 	},
 
@@ -482,30 +462,22 @@ impl<'a> Command<'a> {
 			[0x0a, 0x0, value, kind] => Self::Unknown0a { value, kind },
 
 			// Set variable
-			[0x07, 0x0, var, 0x0] => {
+			[0x07, 0x0, var0, var1] => {
+				let var = LittleEndian::read_u16(&[var0, var1]);
 				let value0 = LittleEndian::read_u32(slice.get(0x4..0x8)?);
 				let value1 = LittleEndian::read_u32(slice.get(0x8..0xc)?);
 
-				assert_matches!(value0, 0 | 6, "Unknown set_value value1");
+				//assert_matches!(value0, 0 | 6, "Unknown set_value value1");
 
 				Self::SetValue { var, value0, value1 }
 			},
-			[0x07, 0x0, value0, 0x1] => {
-				let value1 = LittleEndian::read_u32(slice.get(0x4..0x8)?);
-				let value2 = LittleEndian::read_u32(slice.get(0x8..0xc)?);
-
-				// value2 == 0 => value1 = 0
-				// value1 == 1 => value2 = 1
-
-				Self::Unknown07 { value0, value1, value2 }
-			},
 
 			// Test
-			[0x09, 0x0, var, kind] => {
+			[0x09, 0x0, var0, var1] => {
+				let var = LittleEndian::read_u16(&[var0, var1]);
 				let value1 = LittleEndian::read_u32(slice.get(0x4..0x8)?);
 				let value2 = LittleEndian::read_u32(slice.get(0x8..0xc)?);
 
-				assert_matches!(kind, 0 | 1, "Unknown test kind");
 				assert_matches!(value1, 3 | 5, "Unknown test value1");
 
 				// value1: 0x3 0x5
@@ -518,21 +490,15 @@ impl<'a> Command<'a> {
 
 				// value2: If 0x0, they both choose "No"
 
-				Self::Test {
-					var,
-					kind,
-					value1,
-					value2,
-				}
+				Self::Test { var, value1, value2 }
 			},
 
 			// Jump?
-			[0x05, 0x0, value, kind] => {
+			[0x05, 0x0, value0, value1] => {
+				let value = LittleEndian::read_u16(&[value0, value1]);
 				let addr = LittleEndian::read_u32(slice.get(0x4..0x8)?);
 
-				assert_matches!(kind, 0 | 1 | 2, "Unknown jump kind");
-
-				Self::Jump { value, kind, addr }
+				Self::Jump { value, addr }
 			},
 
 			// Open menu
@@ -643,7 +609,6 @@ impl<'a> Command<'a> {
 			Command::DisplayEditPartner => 4,
 			Command::DisplayTextBox => 4,
 			Command::SetValue { .. } => 0xc,
-			Command::Unknown07 { .. } => 0xc,
 			Command::Test { .. } => 0xc,
 			Command::Jump { .. } => 8,
 			Command::Unknown0a { .. } => 4,
