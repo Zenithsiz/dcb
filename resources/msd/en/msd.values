@@ -35,4 +35,4 @@
 0x0115: "arena_4_active"
 0x0167: "can_battle_apokarimon"
 0x016c: "battles_done"
-0x016d: "rosemon_consecutive_wins"
+0x016d: "battle_cafe_special_consecutive_wins"
