@@ -1,4 +1,5 @@
 # Project
+!/resources/
 /resources/*
 !/resources/foreign_data.yaml
 !/resources/game_data.yaml
@@ -14,3 +15,11 @@
 
 # Logs
 /latest.log
+
+# Msd values + labels
+!/resources/msd/
+/resources/msd/*
+!/resources/msd/en/
+/resources/msd/en/*
+!/resources/msd/en/*.labels
+!/resources/msd/en/*.values

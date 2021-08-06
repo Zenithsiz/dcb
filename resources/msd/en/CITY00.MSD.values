@@ -1,0 +1,9 @@
+---
+0x0001: "chosen_menu_button"
+0x0002: "chosen_battle_cafe_button"
+0x0017: "talked_to_betamon"
+0x001e: "done_intro"
+0x0033: "talked_to_babamon_early"
+0x0036: "arena_open"
+0x0167: "can_battle_apokarimon"
+0x016d: "rosemon_consecutive_wins"
