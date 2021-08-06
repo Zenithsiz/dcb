@@ -175,9 +175,20 @@ impl State {
 			(State::Start, Command::DisplayKeyboard) => println!("display_keyboard"),
 			(State::Start, Command::DisplayEditPartner) => println!("display_edit_partner"),
 			(State::Start, Command::DisplayTextBox) => println!("display_text_box"),
-			(State::Start, Command::SetValue { var, value0, value1 }) => match values.get(&var) {
-				Some(value) => println!("set_value {value}, {value0:#x}, {value1:#x}"),
-				None => println!("set_value {var:#x}, {value0:#x}, {value1:#x}"),
+			(State::Start, Command::SetValue { var, op, value1 }) => {
+				let value = match values.get(&var) {
+					Some(value) => value.to_owned(),
+					None => format!("{var:#x}"),
+				};
+
+				let op = match op {
+					0 => "set",
+					1 => "add",
+					6 => "other",
+					_ => unreachable!(),
+				};
+
+				println!("set_value {value}, {op}, {value1:#x}");
 			},
 			(State::Start, Command::Test { var, value1, value2 }) => match values.get(&var) {
 				Some(value) => println!("test {value}, {value1:#x}, {value2:#x}"),
@@ -389,7 +400,7 @@ pub enum Command<'a> {
 	/// Set value
 	SetValue {
 		var:    u16,
-		value0: u32,
+		op:     u32,
 		value1: u32,
 	},
 
@@ -465,12 +476,16 @@ impl<'a> Command<'a> {
 			// Set variable
 			[0x07, 0x0, var0, var1] => {
 				let var = LittleEndian::read_u16(&[var0, var1]);
-				let value0 = LittleEndian::read_u32(slice.get(0x4..0x8)?);
+				let op = LittleEndian::read_u32(slice.get(0x4..0x8)?);
 				let value1 = LittleEndian::read_u32(slice.get(0x8..0xc)?);
 
-				assert_matches!(value0, 0 | 1 | 6, "Unknown set_value value1");
+				// 0 => Set
+				// 1 => Add
+				// 6 => ???
 
-				Self::SetValue { var, value0, value1 }
+				assert_matches!(op, 0 | 1 | 6, "Unknown set_value operation");
+
+				Self::SetValue { var, op, value1 }
 			},
 
 			// Test
