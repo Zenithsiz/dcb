@@ -468,7 +468,7 @@ impl<'a> Command<'a> {
 				let value0 = LittleEndian::read_u32(slice.get(0x4..0x8)?);
 				let value1 = LittleEndian::read_u32(slice.get(0x8..0xc)?);
 
-				//assert_matches!(value0, 0 | 6, "Unknown set_value value1");
+				assert_matches!(value0, 0 | 1 | 6, "Unknown set_value value1");
 
 				Self::SetValue { var, value0, value1 }
 			},
