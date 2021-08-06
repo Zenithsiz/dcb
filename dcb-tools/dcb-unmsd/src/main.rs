@@ -188,7 +188,7 @@ impl State {
 				Some(label) => println!("jump {value:#x}, {label}"),
 				None => println!("jump {value:#x}, {addr:#010x}"),
 			},
-			(State::Start, Command::Unknown0a { value, kind }) => println!("unknown_0a {value:#x}, {kind:#x}"),
+			(State::Start, Command::Unknown0a { value }) => println!("unknown_0a {value:#x}"),
 			(State::Start, Command::OpenMenu { menu }) => {
 				*self = State::Menu { menu, buttons: vec![] };
 				println!("open_menu {}", menu.as_str());
@@ -408,8 +408,7 @@ pub enum Command<'a> {
 
 	/// Unknown 0a
 	Unknown0a {
-		value: u8,
-		kind:  u8,
+		value: u16,
 	},
 
 	/// Open menu
@@ -459,7 +458,9 @@ impl<'a> Command<'a> {
 			[0x0a, 0x0, 0x0f, 0x0] => Self::DisplayKeyboard,
 			[0x0a, 0x0, 0x11, 0x0] => Self::DisplayEditPartner,
 			[0x0a, 0x0, 0x16, 0x0] => Self::DisplayTextBox,
-			[0x0a, 0x0, value, kind] => Self::Unknown0a { value, kind },
+			[0x0a, 0x0, value0, value1] => Self::Unknown0a {
+				value: LittleEndian::read_u16(&[value0, value1]),
+			},
 
 			// Set variable
 			[0x07, 0x0, var0, var1] => {
@@ -479,16 +480,6 @@ impl<'a> Command<'a> {
 				let value2 = LittleEndian::read_u32(slice.get(0x8..0xc)?);
 
 				assert_matches!(value1, 3 | 5, "Unknown test value1");
-
-				// value1: 0x3 0x5
-				// kind: 0x0 0x1
-
-				// value1: If 0x3, then buttons work normally
-				// value1: If 0x1, then buttons work reverse
-				// value1: If 0x5, they both choose "No"
-				// value1: If 0x7, they both choose "Yes"
-
-				// value2: If 0x0, they both choose "No"
 
 				Self::Test { var, value1, value2 }
 			},
