@@ -77,18 +77,29 @@ fn main() -> Result<(), anyhow::Error> {
 
 	log::info!("Found {} commands", commands.len());
 
-	// Get all jumps
-	let labels: HashMap<u32, String> = commands
+	// Get all value names
+	let known_values_file_path = format!("{}.values", cli_data.input_file.display());
+	let known_values_file = std::fs::File::open(known_values_file_path).context("Unable to open values file")?;
+	let values =
+		serde_yaml::from_reader::<_, HashMap<u8, String>>(known_values_file).context("Unable to parse values file")?;
+
+
+	// Get all labels
+	let known_labels_file_path = format!("{}.labels", cli_data.input_file.display());
+	let known_labels_file = std::fs::File::open(known_labels_file_path).context("Unable to open labels file")?;
+	let mut labels =
+		serde_yaml::from_reader::<_, HashMap<u32, String>>(known_labels_file).context("Unable to parse labels file")?;
+	let heuristic_labels = commands
 		.iter()
 		.filter_map(|(_pos, command)| match *command {
-			Command::Jump { addr, .. } => Some(addr),
+			Command::Jump { addr, .. } if !labels.contains_key(&addr) => Some(addr),
 			_ => None,
 		})
 		.unique()
 		.sorted()
 		.enumerate()
-		.map(|(idx, addr)| (addr, format!("jump_{idx}")))
-		.collect();
+		.map(|(idx, addr)| (addr, format!("jump_{idx}")));
+	labels.extend(heuristic_labels);
 
 	let mut state = State::Start;
 	for (pos, command) in commands {
@@ -105,7 +116,7 @@ fn main() -> Result<(), anyhow::Error> {
 		);
 
 		state
-			.parse_next(&labels, command)
+			.parse_next(&labels, &values, command)
 			.with_context(|| format!("Unable to parse command at {pos:#010x} in current context"))?;
 	}
 
@@ -132,7 +143,9 @@ pub enum State {
 
 impl State {
 	/// Parses the next command
-	pub fn parse_next(&mut self, labels: &HashMap<u32, String>, command: Command) -> Result<(), anyhow::Error> {
+	pub fn parse_next(
+		&mut self, labels: &HashMap<u32, String>, values: &HashMap<u8, String>, command: Command,
+	) -> Result<(), anyhow::Error> {
 		match (&mut *self, command) {
 			(State::Start, Command::DisplayBuffer) => println!("display_buffer"),
 			(State::Start, Command::WaitInput) => println!("wait_input"),
@@ -145,23 +158,26 @@ impl State {
 			(State::Start, Command::DisplayKeyboard) => println!("display_keyboard"),
 			(State::Start, Command::DisplayEditPartner) => println!("display_edit_partner"),
 			(State::Start, Command::DisplayTextBox) => println!("display_text_box"),
-			(State::Start, Command::SetValue { var, value0, value1 }) => {
-				println!("set_value {var:#x}, {value0:#x}, {value1:#x}")
+			(State::Start, Command::SetValue { var, value0, value1 }) => match values.get(&var) {
+				Some(value) => println!("set_value {value}, {value0:#x}, {value1:#x}"),
+				None => println!("set_value {var:#x}, {value0:#x}, {value1:#x}"),
 			},
 			(State::Start, Command::Unknown07 { value0, value1, value2 }) => {
 				println!("unknown_07 {value0:#x}, {value1:#x}, {value2:#x}")
 			},
 			(
 				State::Start,
-				Command::ChoiceJump {
+				Command::Test {
 					value0,
 					kind,
 					value1,
 					value2,
 				},
-			) => {
-				println!("menu_choice_offsets {value0:#x}, {kind:#x}, {value1:#x}, {value2:#x}")
+			) => match values.get(&value0) {
+				Some(value) => println!("test {value}, {kind:#x}, {value1:#x}, {value2:#x}"),
+				None => println!("test {value0:#x}, {kind:#x}, {value1:#x}, {value2:#x}"),
 			},
+
 			(State::Start, Command::Jump { value, kind, addr }) => match labels.get(&addr) {
 				Some(label) => println!("jump {value:#x}, {kind:#x}, {label}"),
 				None => println!("jump {value:#x}, {kind:#x}, {addr:#010x}"),
@@ -378,8 +394,8 @@ pub enum Command<'a> {
 		value2: u32,
 	},
 
-	/// Choice jump
-	ChoiceJump {
+	/// Test
+	Test {
 		value0: u8,
 		kind:   u8,
 		value1: u32,
@@ -465,13 +481,13 @@ impl<'a> Command<'a> {
 				Self::Unknown07 { value0, value1, value2 }
 			},
 
-			// Choice jump
+			// Test
 			[0x09, 0x0, value0, kind] => {
 				let value1 = LittleEndian::read_u32(slice.get(0x4..0x8)?);
 				let value2 = LittleEndian::read_u32(slice.get(0x8..0xc)?);
 
-				assert_matches!(kind, 0 | 1, "Unknown choice jump kind");
-				assert_matches!(value1, 3 | 5, "Unknown choice jump value1");
+				assert_matches!(kind, 0 | 1, "Unknown test kind");
+				assert_matches!(value1, 3 | 5, "Unknown test value1");
 
 				// value1: 0x3 0x5
 				// kind: 0x0 0x1
@@ -483,7 +499,7 @@ impl<'a> Command<'a> {
 
 				// value2: If 0x0, they both choose "No"
 
-				Self::ChoiceJump {
+				Self::Test {
 					value0,
 					kind,
 					value1,
@@ -609,7 +625,7 @@ impl<'a> Command<'a> {
 			Command::DisplayTextBox => 4,
 			Command::SetValue { .. } => 0xc,
 			Command::Unknown07 { .. } => 0xc,
-			Command::ChoiceJump { .. } => 0xc,
+			Command::Test { .. } => 0xc,
 			Command::Jump { .. } => 8,
 			Command::Unknown0a { .. } => 4,
 			Command::OpenMenu { .. } => 8,

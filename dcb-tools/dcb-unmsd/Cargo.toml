@@ -24,3 +24,6 @@ itertools = "0.10.0"
 
 # Strings
 encoding_rs = "0.8.28"
+
+# Serde
+serde_yaml = "0.8.17"
