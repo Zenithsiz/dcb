@@ -78,22 +78,16 @@ fn main() -> Result<(), anyhow::Error> {
 	log::info!("Found {} commands", commands.len());
 
 	// Get all jumps
-	let mut last_label_number = 0;
-	let mut next_label = |name| {
-		let num = last_label_number;
-		last_label_number += 1;
-		format!("{name}_{num}")
-	};
 	let labels: HashMap<u32, String> = commands
 		.iter()
-		.filter_map(|(pos, command)| match *command {
-			Command::Jump { addr, .. } => Some((addr, next_label("jump"))),
-			Command::DisplayScene {
-				value0: 0xf | 0xe,
-				value1,
-			} => Some((pos + 4 * u32::from(value1), next_label("scene"))),
+		.filter_map(|(_pos, command)| match *command {
+			Command::Jump { addr, .. } => Some(addr),
 			_ => None,
 		})
+		.unique()
+		.sorted()
+		.enumerate()
+		.map(|(idx, addr)| (addr, format!("jump_{idx}")))
 		.collect();
 
 	let mut state = State::Start;
