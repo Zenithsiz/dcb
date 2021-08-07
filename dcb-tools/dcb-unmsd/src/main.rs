@@ -297,12 +297,8 @@ impl State {
 			(State::Start, Inst::WaitInput) => println!("wait_input"),
 			(State::Start, Inst::EmptyTextBox) => println!("clear_screen"),
 			(State::Start, Inst::SetBgBattleCafe) => println!("display_battle_cafe"),
-			(State::Start, Inst::OpenPlayerRoom) => println!("display_player_room"),
-			(State::Start, Inst::OpenCardList) => println!("display_card_list"),
-			(State::Start, Inst::OpenChoosePartner) => println!("display_choose_partner"),
+			(State::Start, Inst::OpenScreen(screen)) => println!("open_screen \"{}\"", screen.as_str().escape_debug()),
 			(State::Start, Inst::SetBgBattleArena) => println!("display_battle_arena"),
-			(State::Start, Inst::OpenKeyboard) => println!("display_keyboard"),
-			(State::Start, Inst::OpenEditPartner) => println!("display_edit_partner"),
 			(State::Start, Inst::DisplayCenterTextBox) => println!("display_text_box"),
 			(State::Start, Inst::ChangeVar { var, op, value: value1 }) => {
 				let value = match values.get(&var) {

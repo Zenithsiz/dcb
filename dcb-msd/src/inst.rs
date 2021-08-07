@@ -5,13 +5,13 @@
 //! The first word of the instruction is the mnemonic, with the words following being data.
 
 // Imports
-use crate::ComboBox;
+use crate::{ComboBox, Screen};
 use byteorder::{ByteOrder, LittleEndian};
 use std::assert_matches::assert_matches;
 
 /// Instruction
 // TODO: Merge common instructions
-#[derive(PartialEq, Clone, Debug)]
+#[derive(PartialEq, Eq, Clone, Copy, Hash, Debug)]
 pub enum Inst<'a> {
 	/// Displays the text buffer in the text box.
 	///
@@ -33,26 +33,12 @@ pub enum Inst<'a> {
 	/// Sets the background to the battle cafe
 	SetBgBattleCafe,
 
+	/// Opens a screen
+	OpenScreen(Screen),
+
 	/// Sets the background to the battle arena
 	// TODO: Check what texture it uses, looks all messed up most of the times.
 	SetBgBattleArena,
-
-	/// Opens the player room
-	OpenPlayerRoom,
-
-	/// Opens the card list
-	OpenCardList,
-
-	/// Opens the partner chooser screen
-	// TODO: Figure out parameters for this, they're all veemon
-	OpenChoosePartner,
-
-	/// Opens the keyboard
-	// TODO: Check where the text goes
-	OpenKeyboard,
-
-	/// Opens the partner edit screen
-	OpenEditPartner,
 
 	/// Opens the center text box
 	// TODO: Rename, somewhat confusing
@@ -174,12 +160,12 @@ impl<'a> Inst<'a> {
 			[0x0a, 0x0, 0x04, 0x0] => Self::DisplayTextBuffer,
 			[0x0a, 0x0, 0x05, 0x0] => Self::WaitInput,
 			[0x0a, 0x0, 0x06, 0x0] => Self::EmptyTextBox,
-			[0x0a, 0x0, 0x07, 0x0] => Self::OpenPlayerRoom,
-			[0x0a, 0x0, 0x09, 0x0] => Self::OpenCardList,
-			[0x0a, 0x0, 0x0a, 0x0] => Self::OpenChoosePartner,
+			[0x0a, 0x0, 0x07, 0x0] => Self::OpenScreen(Screen::PlayerRoom),
+			[0x0a, 0x0, 0x09, 0x0] => Self::OpenScreen(Screen::CardList),
+			[0x0a, 0x0, 0x0a, 0x0] => Self::OpenScreen(Screen::ChoosePartner),
 			[0x0a, 0x0, 0x0c, 0x0] => Self::SetBgBattleArena,
-			[0x0a, 0x0, 0x0f, 0x0] => Self::OpenKeyboard,
-			[0x0a, 0x0, 0x11, 0x0] => Self::OpenEditPartner,
+			[0x0a, 0x0, 0x0f, 0x0] => Self::OpenScreen(Screen::Keyboard),
+			[0x0a, 0x0, 0x11, 0x0] => Self::OpenScreen(Screen::EditPartner),
 			[0x0a, 0x0, 0x16, 0x0] => Self::DisplayCenterTextBox,
 			[0x0a, 0x0, value0, value1] => Self::Unknown0a {
 				value: LittleEndian::read_u16(&[value0, value1]),
@@ -324,12 +310,8 @@ impl<'a> Inst<'a> {
 			Inst::EmptyTextBox => 4,
 			Inst::ComboBoxAwait => 4,
 			Inst::SetBgBattleCafe => 4,
-			Inst::OpenPlayerRoom => 4,
-			Inst::OpenCardList => 4,
-			Inst::OpenChoosePartner => 4,
+			Inst::OpenScreen(_) => 4,
 			Inst::SetBgBattleArena => 4,
-			Inst::OpenKeyboard => 4,
-			Inst::OpenEditPartner => 4,
 			Inst::DisplayCenterTextBox => 4,
 			Inst::ChangeVar { .. } => 0xc,
 			Inst::Test { .. } => 0xc,

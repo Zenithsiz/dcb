@@ -61,7 +61,9 @@
 // Modules
 pub mod inst;
 pub mod menu;
+pub mod screen;
 
 // Exports
 pub use inst::Inst;
 pub use menu::{ComboBox, ComboBoxButton};
+pub use screen::Screen;
