@@ -56,7 +56,7 @@ fn main() -> Result<(), anyhow::Error> {
 				Ok(pos) => pos,
 				Err(_) => return Some(Err(anyhow::anyhow!("Position {:#x} didn't fit into a `u32`", pos))),
 			};
-			match Inst::parse(it.as_slice()) {
+			match Inst::decode(it.as_slice()) {
 				Some(inst) => {
 					it.advance_by(inst.size())
 						.expect("Iterator had less elements than size of instruction");

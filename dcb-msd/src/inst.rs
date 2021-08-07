@@ -148,12 +148,10 @@ pub enum Inst<'a> {
 }
 
 impl<'a> Inst<'a> {
-	/// Parses an instruction from a slice of bytes.
-	///
-	/// Ignores everything after the instruction
+	/// Decodes an instruction
 	#[must_use]
 	#[allow(clippy::too_many_lines)] // TODO: Simplify
-	pub fn parse(slice: &'a [u8]) -> Option<Self> {
+	pub fn decode(slice: &'a [u8]) -> Option<Self> {
 		let inst = match LittleEndian::read_u16(slice.get(..0x2)?) {
 			// Jump
 			0x05 => {
@@ -169,9 +167,7 @@ impl<'a> Inst<'a> {
 				let op = LittleEndian::read_u32(slice.get(0x4..0x8)?);
 				let value = LittleEndian::read_u32(slice.get(0x8..0xc)?);
 
-				// 0 => Set
-				// 1 => Add
-				// 6 => ???
+				// 0 => Set, 1 => Add, 6 => ???
 
 				assert_matches!(op, 0 | 1 | 6, "Unknown set_value operation");
 
@@ -182,17 +178,13 @@ impl<'a> Inst<'a> {
 			0x08 => {
 				let buffer = LittleEndian::read_u16(slice.get(0x2..0x4)?);
 				let len = usize::from(LittleEndian::read_u16(slice.get(0x4..0x6)?));
-				if len == 0 {
-					return None;
-				}
-
 				let bytes = slice.get(0x6..(0x6 + len))?;
 
-
-				if bytes[0..(len - 1)].iter().any(|&ch| ch == 0) {
+				// If any bytes except the last are null or the last isn't null, return `None`.
+				if bytes.iter().take(len.checked_sub(1)?).any(|&ch| ch == 0) {
 					return None;
 				}
-				if bytes[len - 1] != 0 {
+				if *bytes.get(len.checked_sub(1)?)? != 0 {
 					return None;
 				}
 
@@ -269,10 +261,6 @@ impl<'a> Inst<'a> {
 						return None;
 					}
 					let value1 = LittleEndian::read_u16(slice.get(0x6..0x8)?);
-
-					// If 0x2 is skipped, battle doesn't happen
-
-					// value0: 0x2 0x3 0x4 0x6 0x7 0x8 0x9 0xa 0xc 0xd 0xe 0xf 0x10 0x11 0x12 0x13 0x14 0x15
 
 					Self::DisplayScene { value0, value1 }
 				},
