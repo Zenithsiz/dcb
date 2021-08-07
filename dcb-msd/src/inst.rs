@@ -281,18 +281,17 @@ impl<'a> Inst<'a> {
 			// Set brightness
 			0x0d => {
 				let kind = LittleEndian::read_u16(slice.get(0x2..0x4)?);
-				if slice.get(0x4..0x6)? != [0x0, 0x0] {
-					return None;
-				}
 				let place = LittleEndian::read_u16(slice.get(0x6..0x8)?);
-				if slice.get(0x8..0xa)? != [0x0, 0x0] {
-					return None;
-				}
 				let brightness = LittleEndian::read_u16(slice.get(0xa..0xc)?);
-				if slice.get(0xc..0xe)? != [0x0, 0x0] {
+				let value = LittleEndian::read_u16(slice.get(0xe..0x10)?);
+
+				// If any of the padding is non-zero, return
+				if slice.get(0x4..0x6)? != [0x0, 0x0] ||
+					slice.get(0x8..0xa)? != [0x0, 0x0] ||
+					slice.get(0xc..0xe)? != [0x0, 0x0]
+				{
 					return None;
 				}
-				let value = LittleEndian::read_u16(slice.get(0xe..0x10)?);
 
 				Self::SetBrightness {
 					kind,
