@@ -55,3 +55,7 @@
 0x0167: "can_battle_apokarimon"
 0x016c: "battles_done"
 0x016d: "battle_cafe_special_consecutive_wins"
+
+0x0168: "city00_arena_4_unknown"
+0x00bb: "city00_arena_3_unknown"
+0x00a0: "city00_arena_2_unknown"

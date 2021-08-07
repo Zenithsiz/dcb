@@ -27,9 +27,7 @@ use std::{
 	collections::{BTreeMap, HashMap},
 	convert::TryInto,
 	fs,
-	io::Write,
 };
-use zutil::Void;
 
 
 fn main() -> Result<(), anyhow::Error> {
@@ -121,6 +119,7 @@ fn main() -> Result<(), anyhow::Error> {
 		.map(|(idx, addr)| (addr, format!("jump_{idx}")));
 	labels.extend(heuristic_labels);
 
+	/*
 	#[derive(Clone, Debug)]
 	enum CallCond {
 		None,
@@ -244,6 +243,7 @@ fn main() -> Result<(), anyhow::Error> {
 		}
 	}
 	writeln!(dot_file, "}}").context("Unable to write to dot file")?;
+	*/
 
 	let mut state = State::Start;
 	for (pos, command) in commands {
