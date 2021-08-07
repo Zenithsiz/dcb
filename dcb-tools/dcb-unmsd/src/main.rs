@@ -122,17 +122,23 @@ fn main() -> Result<(), anyhow::Error> {
 	labels.extend(heuristic_labels);
 
 	#[derive(Clone, Debug)]
+	enum CallCond {
+		None,
+		VarEq { var: u16, value: u32 },
+	}
+
+	#[derive(Clone, Debug)]
 	struct Block {
 		start: u32,
 		end:   u32,
 
-		calls: BTreeMap<u32, u32>,
+		calls: BTreeMap<u32, (u32, CallCond)>,
 	}
 
 	let blocks = labels
 		.keys()
 		.map(|&pos| {
-			let (end, label_at_end, unconditional_jump) = commands
+			let (end_pos, label_at_end, unconditional_jump) = commands
 				.range(pos..)
 				.tuple_windows()
 				.find_map(|((&cur_pos, cur), (&next_pos, next))| {
@@ -167,9 +173,19 @@ fn main() -> Result<(), anyhow::Error> {
 				.unwrap_or_else(|| (commands.last_key_value().map_or(0, |(&pos, _)| pos), false, None));
 
 			let mut calls = commands
-				.range(pos..end)
-				.filter_map(|(&pos, command)| match *command {
-					Command::Jump { addr, .. } => Some((pos, addr)),
+				.range(pos..end_pos)
+				.tuple_windows()
+				.filter_map(|((&cur_pos, cur), (&next_pos, next))| match (cur, next) {
+					(Command::Test { var, value2: value, .. }, Command::Jump { addr, .. }) => Some((
+						next_pos,
+						(*addr, CallCond::VarEq {
+							var:   *var,
+							value: *value,
+						}),
+					)),
+
+					// Diverging calls
+					(_, Command::Jump { addr, .. }) => Some((cur_pos, (*addr, CallCond::None))),
 					_ => None,
 				})
 				.collect::<BTreeMap<_, _>>();
@@ -177,16 +193,20 @@ fn main() -> Result<(), anyhow::Error> {
 			// Check if we need to add any extra calls
 			match (label_at_end, unconditional_jump) {
 				// If we ended on a label without diverging, add a call the label
-				(true, None) => calls.insert(end, end).void(),
+				(true, None) => calls.insert(end_pos, (end_pos, CallCond::None)).void(),
 
 				// If we ended by diverging, insert a call to it.
-				(_, Some((pos, addr))) => calls.insert(pos, addr).void(),
+				(_, Some((pos, addr))) => calls.insert(pos, (addr, CallCond::None)).void(),
 
 				// Else no extra calls
 				_ => (),
 			}
 
-			(pos, Block { start: pos, end, calls })
+			(pos, Block {
+				start: pos,
+				end: end_pos,
+				calls,
+			})
 		})
 		.collect::<BTreeMap<u32, Block>>();
 
@@ -195,14 +215,32 @@ fn main() -> Result<(), anyhow::Error> {
 
 	writeln!(dot_file, "digraph \"G\" {{").context("Unable to write to dot file")?;
 	for block in blocks.values() {
-		let label = labels.get(&block.start).expect("Block had no label");
-		writeln!(dot_file, "\t{label};").context("Unable to write to dot file")?;
-		for call_pos in block.calls.values().unique() {
+		let block_label = labels.get(&block.start).expect("Block had no label");
+		writeln!(dot_file, "\t{block_label};").context("Unable to write to dot file")?;
+		// TODO: Move unique from here to `calls` maybe?
+		//       Might not work with two separate values going to the same address.
+		for (call_pos, cond) in block.calls.values().unique_by(|(call_pos, _)| call_pos) {
 			let call_label = match labels.get(call_pos) {
 				Some(label) => label.to_owned(),
 				None => format!("\"{call_pos:#x}\""),
 			};
-			writeln!(dot_file, "\t{label} -> {call_label};").context("Unable to write to dot file")?;
+			let cond_label = match cond {
+				CallCond::None => "Otherwise".to_owned(),
+				CallCond::VarEq { var, value } => {
+					let var_label = match values.get(var) {
+						Some(label) => label.to_owned(),
+						None => format!("{var:#x}"),
+					};
+
+					format!("{var_label} == {value}")
+				},
+			};
+			writeln!(
+				dot_file,
+				"\t{block_label} -> {call_label} [label = \"{}\"];",
+				cond_label.escape_debug()
+			)
+			.context("Unable to write to dot file")?;
 		}
 	}
 	writeln!(dot_file, "}}").context("Unable to write to dot file")?;
