@@ -9,7 +9,8 @@
 	exact_size_is_empty,
 	iter_advance_by,
 	try_blocks,
-	cow_is_borrowed
+	cow_is_borrowed,
+	map_first_last
 )]
 
 // Modules
@@ -26,7 +27,9 @@ use std::{
 	collections::{BTreeMap, HashMap},
 	convert::TryInto,
 	fs,
+	io::Write,
 };
+use zutil::Void;
 
 
 fn main() -> Result<(), anyhow::Error> {
@@ -118,11 +121,98 @@ fn main() -> Result<(), anyhow::Error> {
 		.map(|(idx, addr)| (addr, format!("jump_{idx}")));
 	labels.extend(heuristic_labels);
 
+	#[derive(Clone, Debug)]
+	struct Block {
+		start: u32,
+		end:   u32,
+
+		calls: BTreeMap<u32, u32>,
+	}
+
+	let blocks = labels
+		.keys()
+		.map(|&pos| {
+			let (end, label_at_end, unconditional_jump) = commands
+				.range(pos..)
+				.tuple_windows()
+				.find_map(|((&cur_pos, cur), (&next_pos, next))| {
+					// If the first instruction is a jump, it's unconditional
+					if pos == cur_pos {
+						if let Command::Jump { addr, .. } = *cur {
+							return Some((next_pos, labels.contains_key(&next_pos), Some((cur_pos, addr))));
+						}
+					}
+
+					// Else check if the next instruction is a label
+					if labels.contains_key(&next_pos) {
+						// Note: Here the unconditional must be `None` or we would have
+						//       returned on the previous iteration or above.
+						return Some((next_pos, true, None));
+					}
+
+					// Else check for a non-test + jump combo.
+					match (cur, next) {
+						// Ignore test-jumps
+						(Command::Test { .. }, Command::Jump { .. }) => None,
+
+						// Else a non-test jump should be unconditional
+						// Note: `unconditional_jump` should be false here always I believe, else it's dead code?
+						(_, Command::Jump { .. }) => Some((next_pos + next.size() as u32, false, match *cur {
+							Command::Jump { addr, .. } => Some((cur_pos, addr)),
+							_ => None,
+						})),
+						_ => None,
+					}
+				})
+				.unwrap_or_else(|| (commands.last_key_value().map_or(0, |(&pos, _)| pos), false, None));
+
+			let mut calls = commands
+				.range(pos..end)
+				.filter_map(|(&pos, command)| match *command {
+					Command::Jump { addr, .. } => Some((pos, addr)),
+					_ => None,
+				})
+				.collect::<BTreeMap<_, _>>();
+
+			// Check if we need to add any extra calls
+			match (label_at_end, unconditional_jump) {
+				// If we ended on a label without diverging, add a call the label
+				(true, None) => calls.insert(end, end).void(),
+
+				// If we ended by diverging, insert a call to it.
+				(_, Some((pos, addr))) => calls.insert(pos, addr).void(),
+
+				// Else no extra calls
+				_ => (),
+			}
+
+			(pos, Block { start: pos, end, calls })
+		})
+		.collect::<BTreeMap<u32, Block>>();
+
+	let dot_file_path = format!("{}.dot", cli_data.input_file.display());
+	let mut dot_file = std::fs::File::create(dot_file_path).context("Unable to create dot file")?;
+
+	writeln!(dot_file, "digraph \"G\" {{").context("Unable to write to dot file")?;
+	for block in blocks.values() {
+		let label = labels.get(&block.start).expect("Block had no label");
+		writeln!(dot_file, "\t{label};").context("Unable to write to dot file")?;
+		for call_pos in block.calls.values().unique() {
+			let call_label = match labels.get(call_pos) {
+				Some(label) => label.to_owned(),
+				None => format!("\"{call_pos:#x}\""),
+			};
+			writeln!(dot_file, "\t{label} -> {call_label};").context("Unable to write to dot file")?;
+		}
+	}
+	writeln!(dot_file, "}}").context("Unable to write to dot file")?;
+
 	let mut state = State::Start;
 	for (pos, command) in commands {
 		if let Some(label) = labels.get(&pos) {
 			println!("{label}:");
 		};
+
 
 		print!("{pos:#010x}: ");
 

@@ -1,4 +1,5 @@
 ---
+0x0000a9e8: "arena_1_check_open"
 0x0000a9fc: "arena_1_closed"
 0x0000aa60: "arena_1_enter_menu"
 0x0000aaec: "arena_1_enter_menu_no"
@@ -35,7 +36,9 @@
 0x0000cb5c: "arena_1_leave_menu"
 0x0000cbd0: "arena_1_leave_menu_no"
 0x0000cbd8: "arena_1_leave_menu_yes"
-0x0000cbec: "arena_2_closed"
+0x0000cbec: "arenas_2_3_4_5_check_open"
+0x0000cc28: "arena_2_check_open"
+0x0000cc3c: "arena_2_closed"
 0x0000cca0: "arena_2_enter_menu"
 0x0000cd18: "arena_2_enter_menu_no"
 0x0000cd20: "arena_2_enter_menu_yes"
