@@ -126,11 +126,13 @@ fn main() -> Result<(), anyhow::Error> {
 
 		print!("{pos:#010x}: ");
 
+		/*
 		let bytes = &contents[(pos as usize)..((pos as usize) + command.size())];
 		print!(
 			"[0x{}] ",
 			bytes.iter().format_with("", |value, f| f(&format_args!("{value:02x}")))
 		);
+		*/
 
 		state
 			.parse_next(&labels, &values, command)
