@@ -111,7 +111,7 @@ pub enum Inst<'a> {
 	// TODO: Figure out
 	DisplayScene {
 		/// Unknown
-		value0: u8,
+		value0: u16,
 
 		/// Unknown
 		value1: u16,
@@ -124,7 +124,7 @@ pub enum Inst<'a> {
 	// TODO: Have `buffer` be an enum of the buffers and move the explanation there
 	SetBuffer {
 		/// The buffer to set
-		buffer: u8,
+		buffer: u16,
 
 		/// The bytes to set
 		bytes: &'a [u8],
@@ -134,7 +134,7 @@ pub enum Inst<'a> {
 	// TODO: Figure out the rest
 	SetBrightness {
 		/// Unknown
-		kind: u8,
+		kind: u16,
 
 		/// Place
 		place: u16,
@@ -154,28 +154,20 @@ impl<'a> Inst<'a> {
 	#[must_use]
 	#[allow(clippy::too_many_lines)] // TODO: Simplify
 	pub fn parse(slice: &'a [u8]) -> Option<Self> {
-		let inst = match *slice.get(..0x4)? {
-			[0x0a, 0x0, 0x01, 0x0] => Self::ComboBoxAwait,
-			[0x0a, 0x0, 0x02, 0x0] => Self::SetBgBattleCafe,
-			[0x0a, 0x0, 0x04, 0x0] => Self::DisplayTextBuffer,
-			[0x0a, 0x0, 0x05, 0x0] => Self::WaitInput,
-			[0x0a, 0x0, 0x06, 0x0] => Self::EmptyTextBox,
-			[0x0a, 0x0, 0x07, 0x0] => Self::OpenScreen(Screen::PlayerRoom),
-			[0x0a, 0x0, 0x09, 0x0] => Self::OpenScreen(Screen::CardList),
-			[0x0a, 0x0, 0x0a, 0x0] => Self::OpenScreen(Screen::ChoosePartner),
-			[0x0a, 0x0, 0x0c, 0x0] => Self::SetBgBattleArena,
-			[0x0a, 0x0, 0x0f, 0x0] => Self::OpenScreen(Screen::Keyboard),
-			[0x0a, 0x0, 0x11, 0x0] => Self::OpenScreen(Screen::EditPartner),
-			[0x0a, 0x0, 0x16, 0x0] => Self::DisplayCenterTextBox,
-			[0x0a, 0x0, value0, value1] => Self::Unknown0a {
-				value: LittleEndian::read_u16(&[value0, value1]),
+		let inst = match LittleEndian::read_u16(slice.get(..0x2)?) {
+			// Jump
+			0x05 => {
+				let var = LittleEndian::read_u16(slice.get(0x2..0x4)?);
+				let addr = LittleEndian::read_u32(slice.get(0x4..0x8)?);
+
+				Self::Jump { var, addr }
 			},
 
-			// Set variable
-			[0x07, 0x0, var0, var1] => {
-				let var = LittleEndian::read_u16(&[var0, var1]);
+			// Change variable
+			0x07 => {
+				let var = LittleEndian::read_u16(slice.get(0x2..0x4)?);
 				let op = LittleEndian::read_u32(slice.get(0x4..0x8)?);
-				let value1 = LittleEndian::read_u32(slice.get(0x8..0xc)?);
+				let value = LittleEndian::read_u32(slice.get(0x8..0xc)?);
 
 				// 0 => Set
 				// 1 => Add
@@ -183,72 +175,12 @@ impl<'a> Inst<'a> {
 
 				assert_matches!(op, 0 | 1 | 6, "Unknown set_value operation");
 
-				Self::ChangeVar { var, op, value: value1 }
-			},
-
-			// Test
-			[0x09, 0x0, var0, var1] => {
-				let var = LittleEndian::read_u16(&[var0, var1]);
-				let value1 = LittleEndian::read_u32(slice.get(0x4..0x8)?);
-				let value2 = LittleEndian::read_u32(slice.get(0x8..0xc)?);
-
-				assert_matches!(value1, 3 | 5, "Unknown test value1");
-
-				Self::Test {
-					var,
-					op: value1,
-					value: value2,
-				}
-			},
-
-			// Jump?
-			[0x05, 0x0, var0, var1] => {
-				let var = LittleEndian::read_u16(&[var0, var1]);
-				let addr = LittleEndian::read_u32(slice.get(0x4..0x8)?);
-
-				Self::Jump { var, addr }
-			},
-
-			// Open combo box
-			[0x0b, 0x0, 0x0, 0x0] => {
-				if slice.get(0x4..0x6)? != [0x0, 0x0] {
-					return None;
-				}
-				let value = LittleEndian::read_u16(slice.get(0x6..0x8)?);
-
-				// value: 0x61 0x78
-				let combo_box = match value {
-					0x61 => ComboBox::Small,
-					0x78 => ComboBox::Large,
-					_ => return None,
-				};
-
-				Self::OpenComboBox { combo_box }
-			},
-			[0x0b, 0x0, 0x1, 0x0] => {
-				if slice.get(0x4..0x6)? != [0x0, 0x0] {
-					return None;
-				}
-				let value = LittleEndian::read_u16(slice.get(0x6..0x8)?);
-
-				Self::AddComboBoxButton { value }
-			},
-			// Display scene?
-			[0x0b, 0x0, value0, 0x0] => {
-				if slice.get(0x4..0x6)? != [0x0, 0x0] {
-					return None;
-				}
-				let value1 = LittleEndian::read_u16(slice.get(0x6..0x8)?);
-
-				// If 0x2 is skipped, battle doesn't happen
-
-				// value0: 0x2 0x3 0x4 0x6 0x7 0x8 0x9 0xa 0xc 0xd 0xe 0xf 0x10 0x11 0x12 0x13 0x14 0x15
-
-				Self::DisplayScene { value0, value1 }
+				Self::ChangeVar { var, op, value }
 			},
 
 			// Set buffer
-			[0x08, 0x0, kind, 0x0] => {
+			0x08 => {
+				let buffer = LittleEndian::read_u16(slice.get(0x2..0x4)?);
 				let len = usize::from(LittleEndian::read_u16(slice.get(0x4..0x6)?));
 				if len == 0 {
 					return None;
@@ -265,13 +197,90 @@ impl<'a> Inst<'a> {
 				}
 
 				Self::SetBuffer {
-					buffer: kind,
-					bytes:  &bytes[..(len - 1)],
+					buffer,
+					bytes: &bytes[..(len - 1)],
 				}
 			},
 
+			// Test
+			0x09 => {
+				let var = LittleEndian::read_u16(slice.get(0x2..0x4)?);
+				let value1 = LittleEndian::read_u32(slice.get(0x4..0x8)?);
+				let value2 = LittleEndian::read_u32(slice.get(0x8..0xc)?);
+
+				assert_matches!(value1, 3 | 5, "Unknown test value1");
+
+				Self::Test {
+					var,
+					op: value1,
+					value: value2,
+				}
+			},
+
+			// Misc.
+			0x0a => match LittleEndian::read_u16(slice.get(0x2..0x4)?) {
+				0x01 => Self::ComboBoxAwait,
+				0x02 => Self::SetBgBattleCafe,
+				0x04 => Self::DisplayTextBuffer,
+				0x05 => Self::WaitInput,
+				0x06 => Self::EmptyTextBox,
+				0x07 => Self::OpenScreen(Screen::PlayerRoom),
+				0x09 => Self::OpenScreen(Screen::CardList),
+				0x0a => Self::OpenScreen(Screen::ChoosePartner),
+				0x0c => Self::SetBgBattleArena,
+				0x0f => Self::OpenScreen(Screen::Keyboard),
+				0x11 => Self::OpenScreen(Screen::EditPartner),
+				0x16 => Self::DisplayCenterTextBox,
+				value => Self::Unknown0a { value },
+			},
+
+			// ???
+			0x0b => match LittleEndian::read_u16(slice.get(0x2..0x4)?) {
+				// Open combo box
+				0x0 => {
+					if slice.get(0x4..0x6)? != [0x0, 0x0] {
+						return None;
+					}
+					let value = LittleEndian::read_u16(slice.get(0x6..0x8)?);
+
+					// value: 0x61 0x78
+					let combo_box = match value {
+						0x61 => ComboBox::Small,
+						0x78 => ComboBox::Large,
+						_ => return None,
+					};
+
+					Self::OpenComboBox { combo_box }
+				},
+
+				// Add combo box button
+				0x1 => {
+					if slice.get(0x4..0x6)? != [0x0, 0x0] {
+						return None;
+					}
+					let value = LittleEndian::read_u16(slice.get(0x6..0x8)?);
+
+					Self::AddComboBoxButton { value }
+				},
+
+				// Display scene?
+				value0 => {
+					if slice.get(0x4..0x6)? != [0x0, 0x0] {
+						return None;
+					}
+					let value1 = LittleEndian::read_u16(slice.get(0x6..0x8)?);
+
+					// If 0x2 is skipped, battle doesn't happen
+
+					// value0: 0x2 0x3 0x4 0x6 0x7 0x8 0x9 0xa 0xc 0xd 0xe 0xf 0x10 0x11 0x12 0x13 0x14 0x15
+
+					Self::DisplayScene { value0, value1 }
+				},
+			},
+
 			// Set brightness
-			[0x0d, 0x0, kind, 0x0] => {
+			0x0d => {
+				let kind = LittleEndian::read_u16(slice.get(0x2..0x4)?);
 				if slice.get(0x4..0x6)? != [0x0, 0x0] {
 					return None;
 				}
@@ -292,7 +301,6 @@ impl<'a> Inst<'a> {
 					value,
 				}
 			},
-
 			_ => return None,
 		};
 
