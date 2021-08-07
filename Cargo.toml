@@ -9,6 +9,7 @@ members = [
   "dcb-iso9660",
   "dcb-cdrom-xa",
   "dcb-drv",
+  "dcb-msd",
   "dcb-pak",
   "dcb-tim",
   "dcb-tools/dcb-uniso-bin",
