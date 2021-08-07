@@ -8,12 +8,12 @@
 mod error;
 
 // Exports
-pub use error::EncodeError;
+pub use error::{DisplayError, EncodeError};
 
 // Imports
 use crate::{ComboBox, Screen};
 use byteorder::{ByteOrder, LittleEndian};
-use std::{assert_matches::assert_matches, io};
+use std::{assert_matches::assert_matches, fmt, io};
 use zutil::TryIntoAs;
 
 /// Instruction
@@ -102,6 +102,7 @@ pub enum Inst<'a> {
 	/// Opens a combo box
 	OpenComboBox {
 		/// The combo box being opened
+		// TODO: Just have the value here for now
 		combo_box: ComboBox,
 	},
 
@@ -384,6 +385,62 @@ impl<'a> Inst<'a> {
 				f.write_all(&[0x0, 0x0])?;
 				f.write_all(&value.to_le_bytes())?;
 			},
+		}
+
+		Ok(())
+	}
+
+	/// Displays an instruction
+	pub fn display<W: fmt::Write>(&self, f: &mut W) -> Result<(), DisplayError> {
+		match self {
+			Inst::DisplayTextBuffer => writeln!(f, "display_buffer")?,
+			Inst::WaitInput => writeln!(f, "wait_input")?,
+			Inst::EmptyTextBox => writeln!(f, "clear_screen")?,
+			Inst::SetBgBattleCafe => writeln!(f, "display_battle_cafe")?,
+			Inst::OpenScreen(screen) => writeln!(f, "open_screen \"{}\"", screen.as_str().escape_debug())?,
+			Inst::SetBgBattleArena => writeln!(f, "display_battle_arena")?,
+			Inst::DisplayCenterTextBox => writeln!(f, "display_text_box")?,
+			Inst::ChangeVar { var, op, value: value1 } => writeln!(f, "set_value {var:#x}, {op}, {value1:#x}")?,
+			Inst::Test {
+				var,
+				op: value1,
+				value: value2,
+			} => writeln!(f, "test {var:#x}, {value1:#x}, {value2:#x}")?,
+
+			Inst::Jump { var, addr } => writeln!(f, "jump {var:#x}, {addr:#x}")?,
+			Inst::Unknown0a { value } => writeln!(f, "unknown_0a {value:#x}")?,
+			Inst::OpenComboBox { combo_box: menu } => writeln!(f, "open_menu {}", menu.as_str())?,
+			Inst::DisplayScene { value0, value1 } => match (value0, value1) {
+				(0x2, _) => writeln!(f, "battle {value1:#x}")?,
+
+				_ => writeln!(f, "display_scene {value0:#x}, {value1:#x}")?,
+			},
+			Inst::SetBuffer { buffer: kind, bytes } => {
+				writeln!(f, "set_buffer {kind:#x}, {bytes:?}")?;
+				//let s = SHIFT_JIS
+				//	.decode_without_bom_handling_and_without_replacement(bytes);
+
+				/*
+				match kind {
+					0x4 => writeln!(f, "set_text_buffer \"{}\"", s.escape_debug())?,
+					_ => writeln!(f, "set_buffer {kind:#x}, \"{}\"", s.escape_debug())?,
+				}
+				*/
+			},
+
+			Inst::SetBrightness {
+				kind,
+				place,
+				brightness,
+				value,
+			} => match (kind, place, brightness, value) {
+				(0x0, 0x0, _, 0xa) => writeln!(f, "set_light_left_char {brightness:#x}")?,
+				(0x0, 0x1, _, 0xa) => writeln!(f, "set_light_right_char {brightness:#x}")?,
+				(0x1, _, 0xffff, 0xffff) => writeln!(f, "set_light_unknown {place:#x}")?,
+				_ => writeln!(f, "set_light {kind:#x}, {place:#x}, {brightness:#x}, {value:#x}")?,
+			},
+			Inst::ComboBoxAwait => writeln!(f, "finish_menu")?,
+			Inst::AddComboBoxButton { value } => writeln!(f, "add_menu {value:#x}")?,
 		}
 
 		Ok(())
