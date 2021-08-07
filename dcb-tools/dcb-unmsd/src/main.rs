@@ -205,6 +205,7 @@ impl State {
 
 				println!("jump {var:#x}, {label}")
 			},
+			(State::Start, Command::Reset) => println!("reset"),
 			(State::Start, Command::Unknown0a { value }) => println!("unknown_0a {value:#x}"),
 			(State::Start, Command::OpenMenu { menu }) => {
 				*self = State::Menu { menu, buttons: vec![] };
@@ -410,6 +411,9 @@ pub enum Command<'a> {
 		value1: u32,
 	},
 
+	/// Reset
+	Reset,
+
 	/// Test
 	Test {
 		var:    u16,
@@ -478,6 +482,11 @@ impl<'a> Command<'a> {
 			[0x0a, 0x0, value0, value1] => Self::Unknown0a {
 				value: LittleEndian::read_u16(&[value0, value1]),
 			},
+
+			// Reset
+			// Maybe var = `0x0` is the program counter?
+			// Played around with this idea, but couldn't jump anywhere other than 0 even with dividing positions by 4
+			[0x07, 0x0, 0x0, 0x0] if slice.get(0x4..0xc)? == [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0] => Self::Reset,
 
 			// Set variable
 			[0x07, 0x0, var0, var1] => {
@@ -621,6 +630,7 @@ impl<'a> Command<'a> {
 			Command::DisplayEditPartner => 4,
 			Command::DisplayTextBox => 4,
 			Command::SetValue { .. } => 0xc,
+			Command::Reset => 0xc,
 			Command::Test { .. } => 0xc,
 			Command::Jump { .. } => 8,
 			Command::Unknown0a { .. } => 4,
