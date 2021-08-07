@@ -214,8 +214,6 @@ impl State {
 			(State::Start, Command::DisplayScene { value0, value1 }) => match (value0, value1) {
 				(0x2, _) => println!("battle {value1:#x}"),
 
-				(0xf, _) => println!("battle1 {value1:#x}"),
-				(0xe, _) => println!("battle2 {value1:#x}"),
 				_ => println!("display_scene {value0:#x}, {value1:#x}"),
 			},
 			(State::Start, Command::SetBuffer { kind, bytes }) => {
