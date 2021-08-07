@@ -4,10 +4,17 @@
 //!
 //! The first word of the instruction is the mnemonic, with the words following being data.
 
+// Modules
+mod error;
+
+// Exports
+pub use error::EncodeError;
+
 // Imports
 use crate::{ComboBox, Screen};
 use byteorder::{ByteOrder, LittleEndian};
-use std::assert_matches::assert_matches;
+use std::{assert_matches::assert_matches, io};
+use zutil::TryIntoAs;
 
 /// Instruction
 // TODO: Merge common instructions
@@ -197,16 +204,12 @@ impl<'a> Inst<'a> {
 			// Test
 			0x09 => {
 				let var = LittleEndian::read_u16(slice.get(0x2..0x4)?);
-				let value1 = LittleEndian::read_u32(slice.get(0x4..0x8)?);
-				let value2 = LittleEndian::read_u32(slice.get(0x8..0xc)?);
+				let op = LittleEndian::read_u32(slice.get(0x4..0x8)?);
+				let value = LittleEndian::read_u32(slice.get(0x8..0xc)?);
 
-				assert_matches!(value1, 3 | 5, "Unknown test value1");
+				assert_matches!(op, 3 | 5, "Unknown test operation");
 
-				Self::Test {
-					var,
-					op: value1,
-					value: value2,
-				}
+				Self::Test { var, op, value }
 			},
 
 			// Misc.
@@ -292,6 +295,98 @@ impl<'a> Inst<'a> {
 		};
 
 		Some(inst)
+	}
+
+	/// Encodes this instruction
+	// TODO: Improve
+	pub fn encode<W: io::Write>(&self, f: &mut W) -> Result<(), EncodeError> {
+		match self {
+			Inst::DisplayTextBuffer => f.write_all(&[0xa, 0x0, 0x4, 0x0])?,
+			Inst::WaitInput => f.write_all(&[0xa, 0x0, 0x5, 0x0])?,
+			Inst::EmptyTextBox => f.write_all(&[0xa, 0x0, 0x6, 0x0])?,
+			Inst::SetBgBattleCafe => f.write_all(&[0xa, 0x0, 0x2, 0x0])?,
+			Inst::OpenScreen(screen) => match screen {
+				Screen::PlayerRoom => f.write_all(&[0xa, 0x0, 0x7, 0x0])?,
+				Screen::CardList => f.write_all(&[0xa, 0x0, 0x9, 0x0])?,
+				Screen::ChoosePartner => f.write_all(&[0xa, 0x0, 0xa, 0x0])?,
+				Screen::EditPartner => f.write_all(&[0xa, 0x0, 0x11, 0x0])?,
+				Screen::Keyboard => f.write_all(&[0xa, 0x0, 0xf, 0x0])?,
+			},
+			Inst::SetBgBattleArena => f.write_all(&[0xa, 0x0, 0xc, 0x0])?,
+			Inst::DisplayCenterTextBox => f.write_all(&[0xa, 0x0, 0x16, 0x0])?,
+			Inst::ChangeVar { var, op, value } => {
+				f.write_all(&[0x7, 0x0])?;
+				f.write_all(&var.to_le_bytes())?;
+				f.write_all(&op.to_le_bytes())?;
+				f.write_all(&value.to_le_bytes())?;
+			},
+			Inst::Test { var, op, value } => {
+				f.write_all(&[0x9, 0x0])?;
+				f.write_all(&var.to_le_bytes())?;
+				f.write_all(&op.to_le_bytes())?;
+				f.write_all(&value.to_le_bytes())?;
+			},
+			Inst::Jump { var, addr } => {
+				f.write_all(&[0x5, 0x0])?;
+				f.write_all(&var.to_le_bytes())?;
+				f.write_all(&addr.to_le_bytes())?;
+			},
+			Inst::Unknown0a { value } => {
+				f.write_all(&[0xa, 0x0])?;
+				f.write_all(&value.to_le_bytes())?;
+			},
+			Inst::OpenComboBox { combo_box } => {
+				f.write_all(&[0xb, 0x0, 0x0, 0x0])?;
+				f.write_all(&[0x0, 0x0])?;
+				f.write_all(
+					&match combo_box {
+						ComboBox::Small => 0x61u16,
+						ComboBox::Large => 0x78,
+					}
+					.to_le_bytes(),
+				)?;
+			},
+			Inst::AddComboBoxButton { value } => {
+				f.write_all(&[0xb, 0x0, 0x1, 0x0])?;
+				f.write_all(&[0x0, 0x0])?;
+				f.write_all(&value.to_le_bytes())?;
+			},
+			Inst::ComboBoxAwait => f.write_all(&[0xa, 0x0, 0x1, 0x0])?,
+			Inst::DisplayScene { value0, value1 } => {
+				f.write_all(&[0xb, 0x0])?;
+				f.write_all(&value0.to_be_bytes())?;
+				f.write_all(&[0x0, 0x0])?;
+				f.write_all(&value1.to_le_bytes())?;
+			},
+			Inst::SetBuffer { buffer, bytes } => {
+				f.write_all(&[0x8, 0x0])?;
+				f.write_all(&buffer.to_le_bytes())?;
+
+				let len = bytes.len().try_into_as::<u16>().map_err(EncodeError::LenToU16)?;
+				f.write_all(&len.to_le_bytes())?;
+				f.write_all(bytes)?;
+
+				let nulls_len = 4 - (bytes.len() + 2) % 4;
+				f.write_all(&[0; 4][..nulls_len])?;
+			},
+			Inst::SetBrightness {
+				kind,
+				place,
+				brightness,
+				value,
+			} => {
+				f.write_all(&[0xd, 0x0])?;
+				f.write_all(&kind.to_be_bytes())?;
+				f.write_all(&[0x0, 0x0])?;
+				f.write_all(&place.to_le_bytes())?;
+				f.write_all(&[0x0, 0x0])?;
+				f.write_all(&brightness.to_le_bytes())?;
+				f.write_all(&[0x0, 0x0])?;
+				f.write_all(&value.to_le_bytes())?;
+			},
+		}
+
+		Ok(())
 	}
 
 	/// Returns this instruction's size
