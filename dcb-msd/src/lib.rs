@@ -1,7 +1,7 @@
 //! `.MSD` files
 
 // Features
-#![feature(assert_matches, format_args_capture)]
+#![feature(assert_matches, format_args_capture, generic_associated_types)]
 // Lints
 #![warn(clippy::restriction, clippy::pedantic, clippy::nursery)]
 // We'll disable the ones we don't need

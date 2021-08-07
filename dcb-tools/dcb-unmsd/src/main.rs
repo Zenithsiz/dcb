@@ -10,7 +10,8 @@
 	iter_advance_by,
 	try_blocks,
 	cow_is_borrowed,
-	map_first_last
+	map_first_last,
+	generic_associated_types
 )]
 
 // Modules
@@ -20,12 +21,11 @@ mod cli;
 use anyhow::Context;
 use cli::CliData;
 use dcb_msd::{ComboBox, ComboBoxButton, Inst};
-use encoding_rs::SHIFT_JIS;
 use itertools::Itertools;
 use std::{
 	collections::{BTreeMap, HashMap},
 	convert::TryInto,
-	fs,
+	fs, mem,
 };
 
 
@@ -77,16 +77,16 @@ fn main() -> Result<(), anyhow::Error> {
 
 	log::info!("Found {} instructions", insts.len());
 
-	// Get all value names
-	let values: Result<_, anyhow::Error> = try {
-		let known_values_file_path = cli_data.input_file.with_file_name("msd.values");
-		let known_values_file = std::fs::File::open(known_values_file_path).context("Unable to open values file")?;
-		serde_yaml::from_reader::<_, HashMap<u16, String>>(known_values_file).context("Unable to parse values file")?
+	// Get all variable names
+	let vars: Result<_, anyhow::Error> = try {
+		let known_vars_file_path = cli_data.input_file.with_file_name("msd.vars");
+		let known_vars_file = std::fs::File::open(known_vars_file_path).context("Unable to open vars file")?;
+		serde_yaml::from_reader::<_, HashMap<u16, String>>(known_vars_file).context("Unable to parse vars file")?
 	};
-	let values = match values {
-		Ok(values) => values,
+	let vars = match vars {
+		Ok(vars) => vars,
 		Err(err) => {
-			log::warn!("Unable to load values: {err:?}");
+			log::warn!("Unable to load variables: {err:?}");
 			HashMap::new()
 		},
 	};
@@ -253,6 +253,13 @@ fn main() -> Result<(), anyhow::Error> {
 
 		print!("{pos:#010x}: ");
 
+		let mut stdout = std::io::stdout();
+		let ctx = state.display_ctx(&labels, &vars);
+		inst.display(&mut stdout, &ctx).context("Unable to display")?;
+		mem::drop(ctx);
+
+		println!();
+
 		/*
 		let bytes = &contents[(pos as usize)..((pos as usize) + inst.size())];
 		print!(
@@ -262,7 +269,7 @@ fn main() -> Result<(), anyhow::Error> {
 		*/
 
 		state
-			.parse_next(&labels, &values, inst)
+			.apply(inst)
 			.with_context(|| format!("Unable to parse instruction at {pos:#010x} in current context"))?;
 	}
 
@@ -288,102 +295,24 @@ pub enum State {
 }
 
 impl State {
-	/// Parses the next instruction
-	pub fn parse_next(
-		&mut self, labels: &HashMap<u32, String>, values: &HashMap<u16, String>, inst: Inst,
-	) -> Result<(), anyhow::Error> {
+	/// Applies `inst` to this state machine
+	pub fn apply(&mut self, inst: Inst) -> Result<(), anyhow::Error> {
 		match (&mut *self, inst) {
-			(State::Start, Inst::DisplayTextBuffer) => println!("display_buffer"),
-			(State::Start, Inst::WaitInput) => println!("wait_input"),
-			(State::Start, Inst::EmptyTextBox) => println!("clear_screen"),
-			(State::Start, Inst::SetBgBattleCafe) => println!("display_battle_cafe"),
-			(State::Start, Inst::OpenScreen(screen)) => println!("open_screen \"{}\"", screen.as_str().escape_debug()),
-			(State::Start, Inst::SetBgBattleArena) => println!("display_battle_arena"),
-			(State::Start, Inst::DisplayCenterTextBox) => println!("display_text_box"),
-			(State::Start, Inst::ChangeVar { var, op, value: value1 }) => {
-				let value = match values.get(&var) {
-					Some(value) => value.to_owned(),
-					None => format!("{var:#x}"),
-				};
-
-				let op = match op {
-					0 => "set",
-					1 => "add",
-					6 => "other",
-					_ => unreachable!(),
-				};
-
-				println!("set_value {value}, {op}, {value1:#x}");
+			(Self::Start, Inst::OpenComboBox { combo_box: menu }) => {
+				*self = Self::Menu { menu, buttons: vec![] };
 			},
-			(
-				State::Start,
-				Inst::Test {
-					var,
-					op: value1,
-					value: value2,
-				},
-			) => match values.get(&var) {
-				Some(value) => println!("test {value}, {value1:#x}, {value2:#x}"),
-				None => println!("test {var:#x}, {value1:#x}, {value2:#x}"),
+			(Self::Menu { .. }, Inst::ComboBoxAwait) => {
+				*self = Self::Start;
 			},
-
-			(State::Start, Inst::Jump { var, addr }) => {
-				let label = match labels.get(&addr) {
-					Some(label) => label.to_owned(),
-					None => format!("{addr:#010x}"),
-				};
-
-				println!("jump {var:#x}, {label}")
-			},
-			(State::Start, Inst::Unknown0a { value }) => println!("unknown_0a {value:#x}"),
-			(State::Start, Inst::OpenComboBox { combo_box: menu }) => {
-				*self = State::Menu { menu, buttons: vec![] };
-				println!("open_menu {}", menu.as_str());
-			},
-			(State::Start, Inst::DisplayScene { value0, value1 }) => match (value0, value1) {
-				(0x2, _) => println!("battle {value1:#x}"),
-
-				_ => println!("display_scene {value0:#x}, {value1:#x}"),
-			},
-			(State::Start, Inst::SetBuffer { buffer: kind, bytes }) => {
-				let s = SHIFT_JIS
-					.decode_without_bom_handling_and_without_replacement(bytes)
-					.context("Unable to parse text buffer as utf-8")?;
-
-				match kind {
-					0x4 => println!("set_text_buffer \"{}\"", s.escape_debug()),
-					_ => println!("set_buffer {kind:#x}, \"{}\"", s.escape_debug()),
-				}
-			},
-			(
-				State::Start,
-				Inst::SetBrightness {
-					kind,
-					place,
-					brightness,
-					value,
-				},
-			) => match (kind, place, brightness, value) {
-				(0x0, 0x0, _, 0xa) => println!("set_light_left_char {brightness:#x}"),
-				(0x0, 0x1, _, 0xa) => println!("set_light_right_char {brightness:#x}"),
-				(0x1, _, 0xffff, 0xffff) => println!("set_light_unknown {place:#x}"),
-				_ => println!("set_light {kind:#x}, {place:#x}, {brightness:#x}, {value:#x}"),
-			},
-			(State::Menu { .. }, Inst::ComboBoxAwait) => {
-				*self = State::Start;
-				println!("finish_menu");
-			},
-			(State::Menu { menu, buttons }, Inst::AddComboBoxButton { value }) => {
+			(Self::Menu { menu, buttons }, Inst::AddComboBoxButton { value }) => {
 				let button = menu.parse_button(value).context("Menu doesn't support button")?;
-
 				buttons.push(button);
-
-				println!("add_menu \"{}\"", button.as_str().escape_debug());
 			},
 			(_, Inst::ComboBoxAwait) => anyhow::bail!("Can only call `finish_menu` when mid-menu"),
 			(_, Inst::AddComboBoxButton { .. }) => anyhow::bail!("Can only call `add_menu_option` when mid-menu"),
 
-			(State::Menu { .. }, inst) => anyhow::bail!("Cannot execute instruction {:?} mid-menu", inst),
+			(Self::Menu { .. }, inst) => anyhow::bail!("Cannot execute instruction {:?} mid-menu", inst),
+			_ => (),
 		}
 		Ok(())
 	}
@@ -391,8 +320,52 @@ impl State {
 	/// Drops this state
 	pub fn finish(self) -> Result<(), anyhow::Error> {
 		match self {
-			State::Start => Ok(()),
-			State::Menu { .. } => anyhow::bail!("Must call `finish_menu` to finish menu"),
+			Self::Start => Ok(()),
+			Self::Menu { .. } => anyhow::bail!("Must call `finish_menu` to finish menu"),
 		}
+	}
+
+	/// Returns the display context for this state
+	pub fn display_ctx<'a>(
+		&'a self, labels: &'a HashMap<u32, String>, vars: &'a HashMap<u16, String>,
+	) -> impl dcb_msd::inst::DisplayCtx + 'a {
+		DisplayCtx {
+			state: self,
+			labels,
+			vars,
+		}
+	}
+}
+
+
+/// Display context
+struct DisplayCtx<'a> {
+	/// State
+	state: &'a State,
+
+	/// Labels
+	labels: &'a HashMap<u32, String>,
+
+	/// Variables
+	vars: &'a HashMap<u16, String>,
+}
+
+impl<'a> dcb_msd::inst::DisplayCtx for DisplayCtx<'a> {
+	type PosLabel<'b> = &'b str;
+	type VarLabel<'b> = &'b str;
+
+	fn cur_combo_box(&self) -> Option<ComboBox> {
+		match self.state {
+			State::Start => None,
+			State::Menu { menu, .. } => Some(*menu),
+		}
+	}
+
+	fn pos_label(&self, pos: u32) -> Option<Self::PosLabel<'_>> {
+		self.labels.get(&pos).map(String::as_str)
+	}
+
+	fn var_label(&self, var: u16) -> Option<Self::VarLabel<'_>> {
+		self.vars.get(&var).map(String::as_str)
 	}
 }

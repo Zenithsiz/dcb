@@ -22,4 +22,4 @@
 !/resources/msd/en/
 /resources/msd/en/*
 !/resources/msd/en/*.labels
-!/resources/msd/en/*.values
+!/resources/msd/en/*.vars

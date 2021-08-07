@@ -1,7 +1,7 @@
 //! Errors
 
 // Imports
-use std::{fmt, io, num::TryFromIntError};
+use std::{io, num::TryFromIntError};
 
 /// Error for [`Inst::encode`](super::Inst::encode)
 #[derive(Debug, thiserror::Error)]
@@ -20,5 +20,5 @@ pub enum EncodeError {
 pub enum DisplayError {
 	/// Unable to write
 	#[error("Unable to write")]
-	Write(#[from] fmt::Error),
+	Write(#[from] io::Error),
 }
