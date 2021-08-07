@@ -19,7 +19,7 @@ mod cli;
 // Imports
 use anyhow::Context;
 use cli::CliData;
-use dcb_msd::{ComboBox, ComboBoxButton, Command};
+use dcb_msd::{ComboBox, ComboBoxButton, Inst};
 use encoding_rs::SHIFT_JIS;
 use itertools::Itertools;
 use std::{
@@ -47,8 +47,8 @@ fn main() -> Result<(), anyhow::Error> {
 	// Skip header
 	contents.drain(..0x10);
 
-	// Parse all commands
-	let commands = contents
+	// Parse all instructions
+	let insts = contents
 		.iter()
 		.batching(|it| {
 			let pos = it.as_slice().as_ptr() as usize - contents.as_slice().as_ptr() as usize;
@@ -56,16 +56,16 @@ fn main() -> Result<(), anyhow::Error> {
 				Ok(pos) => pos,
 				Err(_) => return Some(Err(anyhow::anyhow!("Position {:#x} didn't fit into a `u32`", pos))),
 			};
-			match Command::parse(it.as_slice()) {
-				Some(command) => {
-					it.advance_by(command.size())
-						.expect("Iterator had less elements than size of command");
-					Some(Ok((pos, command)))
+			match Inst::parse(it.as_slice()) {
+				Some(inst) => {
+					it.advance_by(inst.size())
+						.expect("Iterator had less elements than size of instruction");
+					Some(Ok((pos, inst)))
 				},
 				None => match it.is_empty() {
 					true => None,
 					false => Some(Err(anyhow::anyhow!(
-						"Unable to parse command at {:#010x}: {:?}",
+						"Unable to parse instruction at {:#010x}: {:?}",
 						pos,
 						&it.as_slice()[..4]
 					))),
@@ -73,9 +73,9 @@ fn main() -> Result<(), anyhow::Error> {
 			}
 		})
 		.collect::<Result<BTreeMap<_, _>, anyhow::Error>>()
-		.context("Unable to parse commands")?;
+		.context("Unable to parse instructions")?;
 
-	log::info!("Found {} commands", commands.len());
+	log::info!("Found {} instructions", insts.len());
 
 	// Get all value names
 	let values: Result<_, anyhow::Error> = try {
@@ -106,10 +106,10 @@ fn main() -> Result<(), anyhow::Error> {
 		},
 	};
 
-	let heuristic_labels = commands
+	let heuristic_labels = insts
 		.iter()
-		.filter_map(|(_pos, command)| match *command {
-			Command::Jump { addr, .. } if !labels.contains_key(&addr) => Some(addr),
+		.filter_map(|(_pos, inst)| match *inst {
+			Inst::Jump { addr, .. } if !labels.contains_key(&addr) => Some(addr),
 			_ => None,
 		})
 		.unique()
@@ -245,7 +245,7 @@ fn main() -> Result<(), anyhow::Error> {
 	*/
 
 	let mut state = State::Start;
-	for (pos, command) in commands {
+	for (pos, inst) in insts {
 		if let Some(label) = labels.get(&pos) {
 			println!("{label}:");
 		};
@@ -254,7 +254,7 @@ fn main() -> Result<(), anyhow::Error> {
 		print!("{pos:#010x}: ");
 
 		/*
-		let bytes = &contents[(pos as usize)..((pos as usize) + command.size())];
+		let bytes = &contents[(pos as usize)..((pos as usize) + inst.size())];
 		print!(
 			"[0x{}] ",
 			bytes.iter().format_with("", |value, f| f(&format_args!("{value:02x}")))
@@ -262,8 +262,8 @@ fn main() -> Result<(), anyhow::Error> {
 		*/
 
 		state
-			.parse_next(&labels, &values, command)
-			.with_context(|| format!("Unable to parse command at {pos:#010x} in current context"))?;
+			.parse_next(&labels, &values, inst)
+			.with_context(|| format!("Unable to parse instruction at {pos:#010x} in current context"))?;
 	}
 
 	state.finish().context("Unable to finish state")?;
@@ -288,23 +288,23 @@ pub enum State {
 }
 
 impl State {
-	/// Parses the next command
+	/// Parses the next instruction
 	pub fn parse_next(
-		&mut self, labels: &HashMap<u32, String>, values: &HashMap<u16, String>, command: Command,
+		&mut self, labels: &HashMap<u32, String>, values: &HashMap<u16, String>, inst: Inst,
 	) -> Result<(), anyhow::Error> {
-		match (&mut *self, command) {
-			(State::Start, Command::DisplayTextBuffer) => println!("display_buffer"),
-			(State::Start, Command::WaitInput) => println!("wait_input"),
-			(State::Start, Command::EmptyTextBox) => println!("clear_screen"),
-			(State::Start, Command::SetBgBattleCafe) => println!("display_battle_cafe"),
-			(State::Start, Command::OpenPlayerRoom) => println!("display_player_room"),
-			(State::Start, Command::OpenCardList) => println!("display_card_list"),
-			(State::Start, Command::OpenChoosePartner) => println!("display_choose_partner"),
-			(State::Start, Command::SetBgBattleArena) => println!("display_battle_arena"),
-			(State::Start, Command::OpenKeyboard) => println!("display_keyboard"),
-			(State::Start, Command::OpenEditPartner) => println!("display_edit_partner"),
-			(State::Start, Command::DisplayCenterTextBox) => println!("display_text_box"),
-			(State::Start, Command::ChangeVar { var, op, value: value1 }) => {
+		match (&mut *self, inst) {
+			(State::Start, Inst::DisplayTextBuffer) => println!("display_buffer"),
+			(State::Start, Inst::WaitInput) => println!("wait_input"),
+			(State::Start, Inst::EmptyTextBox) => println!("clear_screen"),
+			(State::Start, Inst::SetBgBattleCafe) => println!("display_battle_cafe"),
+			(State::Start, Inst::OpenPlayerRoom) => println!("display_player_room"),
+			(State::Start, Inst::OpenCardList) => println!("display_card_list"),
+			(State::Start, Inst::OpenChoosePartner) => println!("display_choose_partner"),
+			(State::Start, Inst::SetBgBattleArena) => println!("display_battle_arena"),
+			(State::Start, Inst::OpenKeyboard) => println!("display_keyboard"),
+			(State::Start, Inst::OpenEditPartner) => println!("display_edit_partner"),
+			(State::Start, Inst::DisplayCenterTextBox) => println!("display_text_box"),
+			(State::Start, Inst::ChangeVar { var, op, value: value1 }) => {
 				let value = match values.get(&var) {
 					Some(value) => value.to_owned(),
 					None => format!("{var:#x}"),
@@ -321,7 +321,7 @@ impl State {
 			},
 			(
 				State::Start,
-				Command::Test {
+				Inst::Test {
 					var,
 					op: value1,
 					value: value2,
@@ -331,7 +331,7 @@ impl State {
 				None => println!("test {var:#x}, {value1:#x}, {value2:#x}"),
 			},
 
-			(State::Start, Command::Jump { var, addr }) => {
+			(State::Start, Inst::Jump { var, addr }) => {
 				let label = match labels.get(&addr) {
 					Some(label) => label.to_owned(),
 					None => format!("{addr:#010x}"),
@@ -339,17 +339,17 @@ impl State {
 
 				println!("jump {var:#x}, {label}")
 			},
-			(State::Start, Command::Unknown0a { value }) => println!("unknown_0a {value:#x}"),
-			(State::Start, Command::OpenComboBox { combo_box: menu }) => {
+			(State::Start, Inst::Unknown0a { value }) => println!("unknown_0a {value:#x}"),
+			(State::Start, Inst::OpenComboBox { combo_box: menu }) => {
 				*self = State::Menu { menu, buttons: vec![] };
 				println!("open_menu {}", menu.as_str());
 			},
-			(State::Start, Command::DisplayScene { value0, value1 }) => match (value0, value1) {
+			(State::Start, Inst::DisplayScene { value0, value1 }) => match (value0, value1) {
 				(0x2, _) => println!("battle {value1:#x}"),
 
 				_ => println!("display_scene {value0:#x}, {value1:#x}"),
 			},
-			(State::Start, Command::SetBuffer { buffer: kind, bytes }) => {
+			(State::Start, Inst::SetBuffer { buffer: kind, bytes }) => {
 				let s = SHIFT_JIS
 					.decode_without_bom_handling_and_without_replacement(bytes)
 					.context("Unable to parse text buffer as utf-8")?;
@@ -361,7 +361,7 @@ impl State {
 			},
 			(
 				State::Start,
-				Command::SetBrightness {
+				Inst::SetBrightness {
 					kind,
 					place,
 					brightness,
@@ -373,21 +373,21 @@ impl State {
 				(0x1, _, 0xffff, 0xffff) => println!("set_light_unknown {place:#x}"),
 				_ => println!("set_light {kind:#x}, {place:#x}, {brightness:#x}, {value:#x}"),
 			},
-			(State::Menu { .. }, Command::ComboBoxAwait) => {
+			(State::Menu { .. }, Inst::ComboBoxAwait) => {
 				*self = State::Start;
 				println!("finish_menu");
 			},
-			(State::Menu { menu, buttons }, Command::AddComboBoxButton { value }) => {
+			(State::Menu { menu, buttons }, Inst::AddComboBoxButton { value }) => {
 				let button = menu.parse_button(value).context("Menu doesn't support button")?;
 
 				buttons.push(button);
 
 				println!("add_menu \"{}\"", button.as_str().escape_debug());
 			},
-			(_, Command::ComboBoxAwait) => anyhow::bail!("Can only call `finish_menu` when mid-menu"),
-			(_, Command::AddComboBoxButton { .. }) => anyhow::bail!("Can only call `add_menu_option` when mid-menu"),
+			(_, Inst::ComboBoxAwait) => anyhow::bail!("Can only call `finish_menu` when mid-menu"),
+			(_, Inst::AddComboBoxButton { .. }) => anyhow::bail!("Can only call `add_menu_option` when mid-menu"),
 
-			(State::Menu { .. }, command) => anyhow::bail!("Cannot execute command {:?} mid-menu", command),
+			(State::Menu { .. }, inst) => anyhow::bail!("Cannot execute instruction {:?} mid-menu", inst),
 		}
 		Ok(())
 	}

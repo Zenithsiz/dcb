@@ -63,5 +63,5 @@ pub mod inst;
 pub mod menu;
 
 // Exports
-pub use inst::Command;
+pub use inst::Inst;
 pub use menu::{ComboBox, ComboBoxButton};

@@ -9,10 +9,10 @@ use crate::ComboBox;
 use byteorder::{ByteOrder, LittleEndian};
 use std::assert_matches::assert_matches;
 
-/// Command
-// TODO: Merge common commands
+/// Instruction
+// TODO: Merge common instructions
 #[derive(PartialEq, Clone, Debug)]
-pub enum Command<'a> {
+pub enum Inst<'a> {
 	/// Displays the text buffer in the text box.
 	///
 	/// Displays the text in the text buffer and scrolls to the next line.
@@ -161,14 +161,14 @@ pub enum Command<'a> {
 	},
 }
 
-impl<'a> Command<'a> {
-	/// Parses a command from a slice of bytes.
+impl<'a> Inst<'a> {
+	/// Parses an instruction from a slice of bytes.
 	///
-	/// Ignores everything after the command.
+	/// Ignores everything after the instruction
 	#[must_use]
 	#[allow(clippy::too_many_lines)] // TODO: Simplify
 	pub fn parse(slice: &'a [u8]) -> Option<Self> {
-		let command = match *slice.get(..0x4)? {
+		let inst = match *slice.get(..0x4)? {
 			[0x0a, 0x0, 0x01, 0x0] => Self::ComboBoxAwait,
 			[0x0a, 0x0, 0x02, 0x0] => Self::SetBgBattleCafe,
 			[0x0a, 0x0, 0x04, 0x0] => Self::DisplayTextBuffer,
@@ -310,39 +310,39 @@ impl<'a> Command<'a> {
 			_ => return None,
 		};
 
-		Some(command)
+		Some(inst)
 	}
 
-	/// Returns this command's size
+	/// Returns this instruction's size
 	#[must_use]
 	pub const fn size(&self) -> usize {
 		// TODO: Combine them
 		#[allow(clippy::match_same_arms)] // We want to explicitly not combine them for now
 		match self {
-			Command::DisplayTextBuffer => 4,
-			Command::WaitInput => 4,
-			Command::EmptyTextBox => 4,
-			Command::ComboBoxAwait => 4,
-			Command::SetBgBattleCafe => 4,
-			Command::OpenPlayerRoom => 4,
-			Command::OpenCardList => 4,
-			Command::OpenChoosePartner => 4,
-			Command::SetBgBattleArena => 4,
-			Command::OpenKeyboard => 4,
-			Command::OpenEditPartner => 4,
-			Command::DisplayCenterTextBox => 4,
-			Command::ChangeVar { .. } => 0xc,
-			Command::Test { .. } => 0xc,
-			Command::Jump { .. } => 8,
-			Command::Unknown0a { .. } => 4,
-			Command::OpenComboBox { .. } => 8,
-			Command::AddComboBoxButton { .. } => 8,
-			Command::DisplayScene { .. } => 8,
-			Command::SetBuffer { bytes, .. } => {
+			Inst::DisplayTextBuffer => 4,
+			Inst::WaitInput => 4,
+			Inst::EmptyTextBox => 4,
+			Inst::ComboBoxAwait => 4,
+			Inst::SetBgBattleCafe => 4,
+			Inst::OpenPlayerRoom => 4,
+			Inst::OpenCardList => 4,
+			Inst::OpenChoosePartner => 4,
+			Inst::SetBgBattleArena => 4,
+			Inst::OpenKeyboard => 4,
+			Inst::OpenEditPartner => 4,
+			Inst::DisplayCenterTextBox => 4,
+			Inst::ChangeVar { .. } => 0xc,
+			Inst::Test { .. } => 0xc,
+			Inst::Jump { .. } => 8,
+			Inst::Unknown0a { .. } => 4,
+			Inst::OpenComboBox { .. } => 8,
+			Inst::AddComboBoxButton { .. } => 8,
+			Inst::DisplayScene { .. } => 8,
+			Inst::SetBuffer { bytes, .. } => {
 				let len = bytes.len() + 2;
 				4 + len + (4 - len % 4)
 			},
-			Command::SetBrightness { .. } => 16,
+			Inst::SetBrightness { .. } => 16,
 		}
 	}
 }
