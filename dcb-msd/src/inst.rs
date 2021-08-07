@@ -4,120 +4,186 @@
 //!
 //! The first word of the instruction is the mnemonic, with the words following being data.
 
+// Imports
+use crate::ComboBox;
+use byteorder::{ByteOrder, LittleEndian};
 use std::assert_matches::assert_matches;
 
-use byteorder::{ByteOrder, LittleEndian};
-
-use crate::ComboBox;
-
-
 /// Command
+// TODO: Merge common commands
 #[derive(PartialEq, Clone, Debug)]
 pub enum Command<'a> {
-	/// Display buffer
-	DisplayBuffer,
+	/// Displays the text buffer in the text box.
+	///
+	/// Displays the text in the text buffer and scrolls to the next line.
+	/// If the text box is full, waits for input until displaying the next line.
+	DisplayTextBuffer,
 
-	/// Wait for input
+	/// Wait for input from the user.
+	///
+	/// Pauses execution until the users sends input.
 	WaitInput,
 
-	/// Clear screen
-	ClearScreen,
+	/// Empty text box
+	///
+	/// Empties the text box, removing all characters and setting
+	/// the cursor to the first line.
+	EmptyTextBox,
 
-	/// Finish combo box
-	FinishComboBox,
+	/// Sets the background to the battle cafe
+	SetBgBattleCafe,
 
-	DisplayBattleCafe,
-	DisplayPlayerRoom,
-	DisplayCardList,
-	DisplayChoosePartner,
-	DisplayBattleArena,
-	DisplayKeyboard,
-	DisplayEditPartner,
-	DisplayTextBox,
+	/// Sets the background to the battle arena
+	// TODO: Check what texture it uses, looks all messed up most of the times.
+	SetBgBattleArena,
 
-	/// Set value
-	SetValue {
-		var:    u16,
-		op:     u32,
-		value1: u32,
+	/// Opens the player room
+	OpenPlayerRoom,
+
+	/// Opens the card list
+	OpenCardList,
+
+	/// Opens the partner chooser screen
+	// TODO: Figure out parameters for this, they're all veemon
+	OpenChoosePartner,
+
+	/// Opens the keyboard
+	// TODO: Check where the text goes
+	OpenKeyboard,
+
+	/// Opens the partner edit screen
+	OpenEditPartner,
+
+	/// Opens the center text box
+	// TODO: Rename, somewhat confusing
+	DisplayCenterTextBox,
+
+	/// Changes a variable value
+	///
+	/// Depending on `op`, either sets or adds `value` to the `var` variable
+	// TODO: Make `op` an enum
+	ChangeVar {
+		/// Variable
+		var: u16,
+
+		/// Operation
+		op: u32,
+
+		/// Value
+		value: u32,
 	},
 
-	/// Reset
-	Reset,
-
-	/// Test
+	/// Tests if a variable has a value
+	///
+	/// Depending on `op`, either checks if `var` is equal to, or less than `value`
+	// TODO: Confirm less than
+	// TODO: Explain that it skips the next instruction if false, maybe rename to `exec_if` or something
 	Test {
-		var:    u16,
-		value1: u32,
-		value2: u32,
+		/// Variable
+		var: u16,
+
+		/// Operation
+		op: u32,
+
+		/// Value
+		value: u32,
 	},
 
-	/// Jump
+	/// Jumps to `addr`
+	// TODO: Figure out `var`, seems to somewhat coincide with the label number, but that would be weird
 	Jump {
-		var:  u16,
+		/// Unknown
+		var: u16,
+
+		/// Address to jump to
 		addr: u32,
 	},
 
-	/// Unknown 0a
+	/// Unknown `0a`.
+	// TODO:
 	Unknown0a {
+		/// Unknown
 		value: u16,
 	},
 
-	/// Open combo box
+	/// Opens a combo box
 	OpenComboBox {
+		/// The combo box being opened
 		combo_box: ComboBox,
 	},
 
-	/// Add combo box option
-	AddComboBoxOption {
+	/// Adds a combo box button
+	AddComboBoxButton {
+		/// The button value
 		value: u16,
 	},
 
+	/// Awaits the user's selection on the combo box
+	ComboBoxAwait,
+
 	/// Display scene
+	// TODO: Figure out
 	DisplayScene {
+		/// Unknown
 		value0: u8,
+
+		/// Unknown
 		value1: u16,
 	},
 
-	/// Set buffer
+	/// Sets buffer `buffer` to `bytes`.
+	///
+	/// The following are the known buffers:
+	/// - 0x4: Text buffer
+	// TODO: Have `buffer` be an enum of the buffers and move the explanation there
 	SetBuffer {
-		kind:  u8,
+		/// The buffer to set
+		buffer: u8,
+
+		/// The bytes to set
 		bytes: &'a [u8],
 	},
 
-	/// Set brightness
+	/// Sets the brightness of `place` to `brightness`.
+	// TODO: Figure out the rest
 	SetBrightness {
-		kind:       u8,
-		place:      u16,
+		/// Unknown
+		kind: u8,
+
+		/// Place
+		place: u16,
+
+		/// Brightness
 		brightness: u16,
-		value:      u16,
+
+		/// Unknown
+		value: u16,
 	},
 }
 
 impl<'a> Command<'a> {
-	/// Parses a command
+	/// Parses a command from a slice of bytes.
+	///
+	/// Ignores everything after the command.
+	#[must_use]
+	#[allow(clippy::too_many_lines)] // TODO: Simplify
 	pub fn parse(slice: &'a [u8]) -> Option<Self> {
 		let command = match *slice.get(..0x4)? {
-			[0x0a, 0x0, 0x01, 0x0] => Self::FinishComboBox,
-			[0x0a, 0x0, 0x02, 0x0] => Self::DisplayBattleCafe,
-			[0x0a, 0x0, 0x04, 0x0] => Self::DisplayBuffer,
+			[0x0a, 0x0, 0x01, 0x0] => Self::ComboBoxAwait,
+			[0x0a, 0x0, 0x02, 0x0] => Self::SetBgBattleCafe,
+			[0x0a, 0x0, 0x04, 0x0] => Self::DisplayTextBuffer,
 			[0x0a, 0x0, 0x05, 0x0] => Self::WaitInput,
-			[0x0a, 0x0, 0x06, 0x0] => Self::ClearScreen,
-			[0x0a, 0x0, 0x07, 0x0] => Self::DisplayPlayerRoom,
-			[0x0a, 0x0, 0x09, 0x0] => Self::DisplayCardList,
-			[0x0a, 0x0, 0x0a, 0x0] => Self::DisplayChoosePartner,
-			[0x0a, 0x0, 0x0c, 0x0] => Self::DisplayBattleArena,
-			[0x0a, 0x0, 0x0f, 0x0] => Self::DisplayKeyboard,
-			[0x0a, 0x0, 0x11, 0x0] => Self::DisplayEditPartner,
-			[0x0a, 0x0, 0x16, 0x0] => Self::DisplayTextBox,
+			[0x0a, 0x0, 0x06, 0x0] => Self::EmptyTextBox,
+			[0x0a, 0x0, 0x07, 0x0] => Self::OpenPlayerRoom,
+			[0x0a, 0x0, 0x09, 0x0] => Self::OpenCardList,
+			[0x0a, 0x0, 0x0a, 0x0] => Self::OpenChoosePartner,
+			[0x0a, 0x0, 0x0c, 0x0] => Self::SetBgBattleArena,
+			[0x0a, 0x0, 0x0f, 0x0] => Self::OpenKeyboard,
+			[0x0a, 0x0, 0x11, 0x0] => Self::OpenEditPartner,
+			[0x0a, 0x0, 0x16, 0x0] => Self::DisplayCenterTextBox,
 			[0x0a, 0x0, value0, value1] => Self::Unknown0a {
 				value: LittleEndian::read_u16(&[value0, value1]),
 			},
-
-			// Reset
-			// Maybe var = `0x0` is the program counter?
-			// Played around with this idea, but couldn't jump anywhere other than 0 even with dividing positions by 4
-			[0x07, 0x0, 0x0, 0x0] if slice.get(0x4..0xc)? == [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0] => Self::Reset,
 
 			// Set variable
 			[0x07, 0x0, var0, var1] => {
@@ -131,7 +197,7 @@ impl<'a> Command<'a> {
 
 				assert_matches!(op, 0 | 1 | 6, "Unknown set_value operation");
 
-				Self::SetValue { var, op, value1 }
+				Self::ChangeVar { var, op, value: value1 }
 			},
 
 			// Test
@@ -142,7 +208,11 @@ impl<'a> Command<'a> {
 
 				assert_matches!(value1, 3 | 5, "Unknown test value1");
 
-				Self::Test { var, value1, value2 }
+				Self::Test {
+					var,
+					op: value1,
+					value: value2,
+				}
 			},
 
 			// Jump?
@@ -175,7 +245,7 @@ impl<'a> Command<'a> {
 				}
 				let value = LittleEndian::read_u16(slice.get(0x6..0x8)?);
 
-				Self::AddComboBoxOption { value }
+				Self::AddComboBoxButton { value }
 			},
 			// Display scene?
 			[0x0b, 0x0, value0, 0x0] => {
@@ -209,8 +279,8 @@ impl<'a> Command<'a> {
 				}
 
 				Self::SetBuffer {
-					kind,
-					bytes: &bytes[..(len - 1)],
+					buffer: kind,
+					bytes:  &bytes[..(len - 1)],
 				}
 			},
 
@@ -244,27 +314,29 @@ impl<'a> Command<'a> {
 	}
 
 	/// Returns this command's size
-	pub fn size(&self) -> usize {
+	#[must_use]
+	pub const fn size(&self) -> usize {
+		// TODO: Combine them
+		#[allow(clippy::match_same_arms)] // We want to explicitly not combine them for now
 		match self {
-			Command::DisplayBuffer => 4,
+			Command::DisplayTextBuffer => 4,
 			Command::WaitInput => 4,
-			Command::ClearScreen => 4,
-			Command::FinishComboBox => 4,
-			Command::DisplayBattleCafe => 4,
-			Command::DisplayPlayerRoom => 4,
-			Command::DisplayCardList => 4,
-			Command::DisplayChoosePartner => 4,
-			Command::DisplayBattleArena => 4,
-			Command::DisplayKeyboard => 4,
-			Command::DisplayEditPartner => 4,
-			Command::DisplayTextBox => 4,
-			Command::SetValue { .. } => 0xc,
-			Command::Reset => 0xc,
+			Command::EmptyTextBox => 4,
+			Command::ComboBoxAwait => 4,
+			Command::SetBgBattleCafe => 4,
+			Command::OpenPlayerRoom => 4,
+			Command::OpenCardList => 4,
+			Command::OpenChoosePartner => 4,
+			Command::SetBgBattleArena => 4,
+			Command::OpenKeyboard => 4,
+			Command::OpenEditPartner => 4,
+			Command::DisplayCenterTextBox => 4,
+			Command::ChangeVar { .. } => 0xc,
 			Command::Test { .. } => 0xc,
 			Command::Jump { .. } => 8,
 			Command::Unknown0a { .. } => 4,
 			Command::OpenComboBox { .. } => 8,
-			Command::AddComboBoxOption { .. } => 8,
+			Command::AddComboBoxButton { .. } => 8,
 			Command::DisplayScene { .. } => 8,
 			Command::SetBuffer { bytes, .. } => {
 				let len = bytes.len() + 2;

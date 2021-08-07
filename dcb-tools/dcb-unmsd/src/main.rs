@@ -293,18 +293,18 @@ impl State {
 		&mut self, labels: &HashMap<u32, String>, values: &HashMap<u16, String>, command: Command,
 	) -> Result<(), anyhow::Error> {
 		match (&mut *self, command) {
-			(State::Start, Command::DisplayBuffer) => println!("display_buffer"),
+			(State::Start, Command::DisplayTextBuffer) => println!("display_buffer"),
 			(State::Start, Command::WaitInput) => println!("wait_input"),
-			(State::Start, Command::ClearScreen) => println!("clear_screen"),
-			(State::Start, Command::DisplayBattleCafe) => println!("display_battle_cafe"),
-			(State::Start, Command::DisplayPlayerRoom) => println!("display_player_room"),
-			(State::Start, Command::DisplayCardList) => println!("display_card_list"),
-			(State::Start, Command::DisplayChoosePartner) => println!("display_choose_partner"),
-			(State::Start, Command::DisplayBattleArena) => println!("display_battle_arena"),
-			(State::Start, Command::DisplayKeyboard) => println!("display_keyboard"),
-			(State::Start, Command::DisplayEditPartner) => println!("display_edit_partner"),
-			(State::Start, Command::DisplayTextBox) => println!("display_text_box"),
-			(State::Start, Command::SetValue { var, op, value1 }) => {
+			(State::Start, Command::EmptyTextBox) => println!("clear_screen"),
+			(State::Start, Command::SetBgBattleCafe) => println!("display_battle_cafe"),
+			(State::Start, Command::OpenPlayerRoom) => println!("display_player_room"),
+			(State::Start, Command::OpenCardList) => println!("display_card_list"),
+			(State::Start, Command::OpenChoosePartner) => println!("display_choose_partner"),
+			(State::Start, Command::SetBgBattleArena) => println!("display_battle_arena"),
+			(State::Start, Command::OpenKeyboard) => println!("display_keyboard"),
+			(State::Start, Command::OpenEditPartner) => println!("display_edit_partner"),
+			(State::Start, Command::DisplayCenterTextBox) => println!("display_text_box"),
+			(State::Start, Command::ChangeVar { var, op, value: value1 }) => {
 				let value = match values.get(&var) {
 					Some(value) => value.to_owned(),
 					None => format!("{var:#x}"),
@@ -319,7 +319,14 @@ impl State {
 
 				println!("set_value {value}, {op}, {value1:#x}");
 			},
-			(State::Start, Command::Test { var, value1, value2 }) => match values.get(&var) {
+			(
+				State::Start,
+				Command::Test {
+					var,
+					op: value1,
+					value: value2,
+				},
+			) => match values.get(&var) {
 				Some(value) => println!("test {value}, {value1:#x}, {value2:#x}"),
 				None => println!("test {var:#x}, {value1:#x}, {value2:#x}"),
 			},
@@ -332,7 +339,6 @@ impl State {
 
 				println!("jump {var:#x}, {label}")
 			},
-			(State::Start, Command::Reset) => println!("reset"),
 			(State::Start, Command::Unknown0a { value }) => println!("unknown_0a {value:#x}"),
 			(State::Start, Command::OpenComboBox { combo_box: menu }) => {
 				*self = State::Menu { menu, buttons: vec![] };
@@ -343,7 +349,7 @@ impl State {
 
 				_ => println!("display_scene {value0:#x}, {value1:#x}"),
 			},
-			(State::Start, Command::SetBuffer { kind, bytes }) => {
+			(State::Start, Command::SetBuffer { buffer: kind, bytes }) => {
 				let s = SHIFT_JIS
 					.decode_without_bom_handling_and_without_replacement(bytes)
 					.context("Unable to parse text buffer as utf-8")?;
@@ -367,19 +373,19 @@ impl State {
 				(0x1, _, 0xffff, 0xffff) => println!("set_light_unknown {place:#x}"),
 				_ => println!("set_light {kind:#x}, {place:#x}, {brightness:#x}, {value:#x}"),
 			},
-			(State::Menu { .. }, Command::FinishComboBox) => {
+			(State::Menu { .. }, Command::ComboBoxAwait) => {
 				*self = State::Start;
 				println!("finish_menu");
 			},
-			(State::Menu { menu, buttons }, Command::AddComboBoxOption { value }) => {
+			(State::Menu { menu, buttons }, Command::AddComboBoxButton { value }) => {
 				let button = menu.parse_button(value).context("Menu doesn't support button")?;
 
 				buttons.push(button);
 
 				println!("add_menu \"{}\"", button.as_str().escape_debug());
 			},
-			(_, Command::FinishComboBox) => anyhow::bail!("Can only call `finish_menu` when mid-menu"),
-			(_, Command::AddComboBoxOption { .. }) => anyhow::bail!("Can only call `add_menu_option` when mid-menu"),
+			(_, Command::ComboBoxAwait) => anyhow::bail!("Can only call `finish_menu` when mid-menu"),
+			(_, Command::AddComboBoxButton { .. }) => anyhow::bail!("Can only call `add_menu_option` when mid-menu"),
 
 			(State::Menu { .. }, command) => anyhow::bail!("Cannot execute command {:?} mid-menu", command),
 		}
