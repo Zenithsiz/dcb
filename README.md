@@ -44,7 +44,7 @@ A card editor for the game.
 
 #### See the examples/ directory for some examples for this binary to be imported
 
-### [Windows download](https://github.com/Zenithsiz/dcb/releases/tag/card-editor-0.1.4)
+### [Windows download](https://github.com/Zenithsiz/dcb/releases/tag/card-editor-0.1.5)
 
 ## **dcb-deck-editor**
 
@@ -66,7 +66,7 @@ A deck editor for the game.
 
 *Warning: Editing the cards while editing a deck will **not** update the deck viewer*
 
-### [Windows download](https://github.com/Zenithsiz/dcb/releases/tag/deck-editor-0.1.0)
+### [Windows download](https://github.com/Zenithsiz/dcb/releases/tag/deck-editor-0.1.1)
 
 ## + Others
 
