@@ -21,6 +21,18 @@ pub trait ExecCtx:
 	/// Returns the current program counter
 	fn pc(&self) -> Pos;
 
+	/// Loads a register `reg`
+	fn load_reg(&self, reg: Register) -> u32;
+
+	/// Stores a register `reg`
+	fn store_reg(&mut self, reg: Register, value: u32);
+
+	/// Loads a mult register `reg`
+	fn load_mult_reg(&self, reg: MultReg) -> u32;
+
+	/// Stores a mult register `reg`
+	fn store_mult_reg(&mut self, reg: MultReg, value: u32);
+
 	/// Queues a jump
 	fn queue_jump(&mut self, pos: Pos) -> Result<(), ExecError>;
 

@@ -354,6 +354,30 @@ impl ExecCtx for ExecState {
 		self.pc
 	}
 
+	fn load_reg(&self, reg: Register) -> u32 {
+		let idx: usize = reg.idx().try_into().expect("Register index didn't fit into `usize`");
+		self.regs[idx]
+	}
+
+	fn store_reg(&mut self, reg: Register, value: u32) {
+		let idx: usize = reg.idx().try_into().expect("Register index didn't fit into `usize`");
+		self.regs[idx] = value;
+	}
+
+	fn load_mult_reg(&self, reg: MultReg) -> u32 {
+		match reg {
+			MultReg::Lo => self.lo_hi_reg[0],
+			MultReg::Hi => self.lo_hi_reg[1],
+		}
+	}
+
+	fn store_mult_reg(&mut self, reg: MultReg, value: u32) {
+		match reg {
+			MultReg::Lo => self.lo_hi_reg[0] = value,
+			MultReg::Hi => self.lo_hi_reg[1] = value,
+		}
+	}
+
 	fn queue_jump(&mut self, pos: Pos) -> Result<(), ExecError> {
 		match self.jump_target {
 			JumpTarget::None => {
