@@ -406,11 +406,18 @@ impl<'a> Inst<'a> {
 			Inst::OpenScreen(screen) => write!(f, "open_screen \"{}\"", screen.as_str().escape_debug())?,
 			Inst::SetBgBattleArena => write!(f, "set_bg \"Battle Arena\"")?,
 			Inst::DisplayCenterTextBox => write!(f, "display_center_text_box")?,
-			Inst::ChangeVar { var, op, value } => match op {
-				0 => write!(f, "set_value {var:#x}, {value:#x}")?,
-				1 => write!(f, "add_value {var:#x}, {value:#x}")?,
-				6 => write!(f, "???_value {var:#x}, {value:#x}")?,
-				_ => unreachable!(),
+			Inst::ChangeVar { var, op, value } => {
+				let var = zutil::DisplayWrapper::new(|f| match ctx.var_label(*var) {
+					Some(label) => write!(f, "{label}"),
+					None => write!(f, "{var:#x}"),
+				});
+
+				match op {
+					0 => write!(f, "set_value {var}, {value:#x}")?,
+					1 => write!(f, "add_value {var}, {value:#x}")?,
+					6 => write!(f, "???_value {var}, {value:#x}")?,
+					_ => unreachable!(),
+				}
 			},
 			Inst::Test { var, op, value } => {
 				let var = zutil::DisplayWrapper::new(|f| match ctx.var_label(*var) {
