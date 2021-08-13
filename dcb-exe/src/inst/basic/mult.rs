@@ -33,11 +33,14 @@ pub enum MultMode {
 
 /// Multiplication register
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
+#[derive(derive_more::Display)]
 pub enum MultReg {
 	/// Lo
+	#[display(fmt = "$lo")]
 	Lo,
 
 	/// Hi
+	#[display(fmt = "$hi")]
 	Hi,
 }
 

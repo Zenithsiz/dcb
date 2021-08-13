@@ -34,6 +34,7 @@ use std::{
 	convert::TryInto,
 	fmt, fs,
 	io::{self, BufReader, Read, Seek, Write},
+	mem,
 	ops::{Index, IndexMut},
 	slice::SliceIndex,
 };
@@ -293,7 +294,12 @@ impl ExecState {
 		// And display the results
 		for result in self.results.borrow_mut().drain(..) {
 			match result {
-				ExecResult::WroteRegister { reg, prev, new } => println!("[{reg}] {prev:#x} => {new:#x}"),
+				ExecResult::ReadRegister { reg, value } if reg != Register::Zr => println!("[{reg}] {value:#x}"),
+				ExecResult::ReadMultRegister { reg, value } => println!("[{reg}] {value:#x}"),
+				ExecResult::WroteRegister { reg, prev, value } if reg != Register::Zr => {
+					println!("[{reg}] {prev:#x} => {value:#x}")
+				},
+				ExecResult::WroteMultRegister { reg, prev, value } => println!("[{reg}] {prev:#x} => {value:#x}"),
 				ExecResult::ReadWord { pos, value } => println!("[{pos:010}] {value:#x}"),
 				ExecResult::ReadHalfWord { pos, value } => println!("[{pos:010}] {value:#x}"),
 				ExecResult::ReadByte { pos, value } => println!("[{pos:010}] {value:#x}"),
@@ -301,6 +307,7 @@ impl ExecState {
 				ExecResult::WriteHalfWord { pos, prev, value } => println!("[{pos:010}] {prev:#x} => {value:#x}"),
 				ExecResult::WriteByte { pos, prev, value } => println!("[{pos:010}] {prev:#x} => {value:#x}"),
 				ExecResult::QueuedJump { pos } => println!("=> [{pos:010}]"),
+				_ => (),
 			}
 		}
 
@@ -323,9 +330,17 @@ impl ExecState {
 
 /// Execution result
 pub enum ExecResult {
+	/// Read from register `dst`
+	ReadRegister { reg: Register, value: u32 },
+
+	/// Read from mult register `dst`
+	ReadMultRegister { reg: MultReg, value: u32 },
+
 	/// Wrote to register `dst`
-	// TODO: These once we don't use `Index` for getting / setting registers.
-	WroteRegister { reg: Register, prev: u32, new: u32 },
+	WroteRegister { reg: Register, prev: u32, value: u32 },
+
+	/// Wrote to mult register `dst`
+	WroteMultRegister { reg: MultReg, prev: u32, value: u32 },
 
 	/// Read a word from `pos`
 	ReadWord { pos: Pos, value: u32 },
@@ -356,26 +371,38 @@ impl ExecCtx for ExecState {
 
 	fn load_reg(&self, reg: Register) -> u32 {
 		let idx: usize = reg.idx().try_into().expect("Register index didn't fit into `usize`");
-		self.regs[idx]
+		let value = self.regs[idx];
+		self.results.borrow_mut().push(ExecResult::ReadRegister { reg, value });
+		value
 	}
 
 	fn store_reg(&mut self, reg: Register, value: u32) {
 		let idx: usize = reg.idx().try_into().expect("Register index didn't fit into `usize`");
-		self.regs[idx] = value;
+		let prev = mem::replace(&mut self.regs[idx], value);
+		self.results
+			.get_mut()
+			.push(ExecResult::WroteRegister { reg, prev, value });
 	}
 
 	fn load_mult_reg(&self, reg: MultReg) -> u32 {
-		match reg {
+		let value = match reg {
 			MultReg::Lo => self.lo_hi_reg[0],
 			MultReg::Hi => self.lo_hi_reg[1],
-		}
+		};
+		self.results
+			.borrow_mut()
+			.push(ExecResult::ReadMultRegister { reg, value });
+		value
 	}
 
 	fn store_mult_reg(&mut self, reg: MultReg, value: u32) {
-		match reg {
-			MultReg::Lo => self.lo_hi_reg[0] = value,
-			MultReg::Hi => self.lo_hi_reg[1] = value,
-		}
+		let prev = match reg {
+			MultReg::Lo => mem::replace(&mut self.lo_hi_reg[0], value),
+			MultReg::Hi => mem::replace(&mut self.lo_hi_reg[1], value),
+		};
+		self.results
+			.get_mut()
+			.push(ExecResult::WroteMultRegister { reg, prev, value });
 	}
 
 	fn queue_jump(&mut self, pos: Pos) -> Result<(), ExecError> {
