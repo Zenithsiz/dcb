@@ -17,7 +17,8 @@ log = "0.4.13"
 # Util
 ascii = {version = "1.0.0", features = ["serde"]}
 byteorder = "1.4.2"
-zutil = {git = "https://github.com/Zenithsiz/zutil", rev = "8c9cb2d"}
+#zutil = {git = "https://github.com/Zenithsiz/zutil", rev = "8c9cb2d"}
+zutil = {path = "../../zutil"}
 
 # Serde
 serde = {version = "1.0.120", features = ["derive"]}
