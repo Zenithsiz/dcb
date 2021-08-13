@@ -7,7 +7,9 @@
 	box_syntax,
 	trivial_bounds,
 	slice_index_methods,
-	never_type
+	never_type,
+	label_break_value,
+	stdio_locked
 )]
 
 // Modules
@@ -30,10 +32,11 @@ use itertools::{Itertools, Position};
 use std::{
 	convert::TryInto,
 	fmt, fs,
-	io::{self, BufReader, Read, Seek},
+	io::{self, BufReader, Read, Seek, Write},
 	ops::{Index, IndexMut},
 	slice::SliceIndex,
 };
+use zutil::TryIntoAs;
 
 fn main() -> Result<(), anyhow::Error> {
 	// Initialize the logger
@@ -107,13 +110,83 @@ fn main() -> Result<(), anyhow::Error> {
 		should_stop: false,
 	};
 
-	while !exec_state.should_stop {
-		exec_state
-			.exec()
-			.with_context(|| format!("Failed to execute at {}", exec_state.pc()))?;
+	let stdin = io::stdin();
+	let mut stdout = io::stdout();
+	let mut input_str = String::new();
+	let mut input_state = InputState::BreakEvery;
+	'exec_loop: while !exec_state.should_stop {
+		let run_once = |exec_state: &mut ExecState, input_state| {
+			exec_state
+				.exec(input_state)
+				.with_context(|| format!("Failed to execute at {}", exec_state.pc()))
+		};
+
+		match input_state {
+			InputState::BreakEvery => run_once(&mut exec_state, &input_state)?,
+			InputState::RunUntil { pos } => {
+				while exec_state.pc != pos {
+					run_once(&mut exec_state, &input_state)?;
+				}
+			},
+		};
+
+		loop {
+			// TODO: Cache `input_args` maybe
+			print!(">>> ");
+			stdout.flush().context("Unable to flush stdout")?;
+			input_str.clear();
+			stdin.read_line(&mut input_str).context("Unable to read input")?;
+
+			if input_str.is_empty() {
+				println!();
+				break 'exec_loop;
+			}
+
+			let input_args: Vec<_> = input_str.split_whitespace().collect();
+			match input_state.update(&input_args) {
+				Ok(()) => break,
+				Err(err) => println!("Unable to update input state: {err:?}"),
+			}
+		}
 	}
 
 	Ok(())
+}
+
+/// Input state
+enum InputState {
+	/// Break every instruction
+	BreakEvery,
+
+	/// Run until
+	RunUntil { pos: Pos },
+}
+
+impl InputState {
+	/// Updates the input state from arguments
+	pub fn update(&mut self, args: &[&str]) -> Result<(), anyhow::Error> {
+		match args {
+			// Next
+			["n"] => *self = InputState::BreakEvery,
+
+			// Run until
+			["r", pos] => {
+				let pos = self::parse_number(pos)
+					.context("Unable to parse position")?
+					.try_into_as::<u32>()
+					.map(Pos)
+					.context("Position didn't fit into a `u32`")?;
+				*self = InputState::RunUntil { pos };
+			},
+
+			// Keep same
+			[] => (),
+
+			_ => anyhow::bail!("Unknown arguments {:?}", args),
+		}
+
+		Ok(())
+	}
 }
 
 /// Memory
@@ -190,7 +263,7 @@ pub struct ExecState {
 
 impl ExecState {
 	/// Executes the next instruction
-	fn exec(&mut self) -> Result<(), ExecError> {
+	fn exec(&mut self, input_state: &InputState) -> Result<(), ExecError> {
 		// Read the next instruction
 		let inst = self.read_word(self.pc)?;
 
@@ -198,7 +271,16 @@ impl ExecState {
 		let inst = basic::Inst::decode(inst).ok_or(ExecError::DecodeInst)?;
 
 		// Display it
-		println!("{:010}: {}", self.pc, self::inst_display(&inst, self, self.pc));
+		// TODO: Check what registers changed in the op and print them, maybe also memory locations
+		//       with a countdown until the change is actually realized or something.
+		let print_inst = || println!("{:010}: {}", self.pc, self::inst_display(&inst, self, self.pc));
+		match *input_state {
+			InputState::BreakEvery => print_inst(),
+			InputState::RunUntil { pos } if self.pc + 4 == pos && matches!(self.jump_target, JumpTarget::None) => {
+				print_inst()
+			},
+			_ => (),
+		}
 
 		// Then execute the instruction
 		inst.exec(self)?;
@@ -468,4 +550,32 @@ impl inst::DisplayCtx for DisplayCtx {
 	fn pos_label(&self, _pos: Pos) -> Option<(Self::Label, i64)> {
 		None
 	}
+}
+
+
+/// Parses a number with a possible base
+pub fn parse_number(s: &str) -> Result<i64, anyhow::Error> {
+	// Check if it's negative
+	let (is_neg, num) = match s.chars().next() {
+		Some('+') => (false, &s[1..]),
+		Some('-') => (true, &s[1..]),
+		_ => (false, s),
+	};
+
+	// Check if we have a base
+	let (base, num) = match num.as_bytes() {
+		[b'0', b'x', ..] => (16, &num[2..]),
+		[b'0', b'o', ..] => (8, &num[2..]),
+		[b'0', b'b', ..] => (2, &num[2..]),
+		_ => (10, num),
+	};
+
+	// Parse it
+	let num = i64::from_str_radix(num, base).context("Unable to parse number")?;
+	let num = match is_neg {
+		true => -num,
+		false => num,
+	};
+
+	Ok(num)
 }
