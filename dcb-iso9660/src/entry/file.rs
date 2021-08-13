@@ -40,6 +40,12 @@ impl<'a, R> FileReader<'a, R> {
 		}
 	}
 
+	/// Returns the file size
+	#[must_use]
+	pub const fn size(&self) -> u64 {
+		self.size
+	}
+
 	/// Returns the remaining bytes from this file
 	#[must_use]
 	pub const fn remaining(&self) -> u64 {
