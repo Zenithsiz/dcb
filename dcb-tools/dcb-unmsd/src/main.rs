@@ -244,6 +244,23 @@ fn main() -> Result<(), anyhow::Error> {
 	writeln!(dot_file, "}}").context("Unable to write to dot file")?;
 	*/
 
+	/*
+	let jumps = insts.values().filter_map(|inst| match inst {
+		Inst::Jump { var, addr } => Some((var, addr)),
+		_ => None,
+	});
+
+	let mut jump_vars = HashMap::new();
+	for (var, addr) in jumps {
+		match jump_vars.get(var) {
+			Some(&prev_addr) => assert_eq!(prev_addr, addr, "Variable {var:#x} had "),
+			None => jump_vars.insert(var, addr).void(),
+		}
+	}
+
+	println!("{jump_vars:#x?}");
+	*/
+
 	match cli_data.to_yaml {
 		true => self::print_yaml(&insts).context("Unable to print instructions in yaml")?,
 		false => self::print_asm(&insts, &labels, &vars).context("Unable to print instructions in asm")?,
