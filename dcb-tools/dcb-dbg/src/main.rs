@@ -1,6 +1,14 @@
 //! Decompiler
 
-#![feature(try_blocks, format_args_capture, iter_map_while, box_syntax)]
+#![feature(
+	try_blocks,
+	format_args_capture,
+	iter_map_while,
+	box_syntax,
+	trivial_bounds,
+	slice_index_methods,
+	never_type
+)]
 
 // Modules
 mod args;
@@ -11,16 +19,20 @@ use anyhow::Context;
 use byteorder::{ByteOrder, LittleEndian};
 use dcb_exe::{
 	inst::{
+		self,
 		basic::{self, mult::MultReg, Decode},
 		exec::{ExecCtx, ExecError, Executable},
-		Register,
+		InstDisplay, InstFmtArg, Register,
 	},
 	Pos,
 };
+use itertools::{Itertools, Position};
 use std::{
 	convert::TryInto,
-	fs,
+	fmt, fs,
+	io::{self, BufReader, Read, Seek},
 	ops::{Index, IndexMut},
+	slice::SliceIndex,
 };
 
 fn main() -> Result<(), anyhow::Error> {
@@ -35,19 +47,53 @@ fn main() -> Result<(), anyhow::Error> {
 	// Get all arguments
 	let args = Args::new();
 
-	// Open the input file
-	let input_bytes = fs::read(&args.input_path).context("Unable to read input file")?;
+	// Setup memory
+	let mut memory = box Memory::new();
 
-	// Then put them at `0x10000`
-	let mut memory = vec![0; 0x10000];
-	memory.extend_from_slice(&input_bytes[0x800..]);
+	// Open the input file and unbin it
+	let game_file = fs::File::open(&args.game_path).context("Unable to open game file")?;
+	let game_file = BufReader::new(game_file);
+	let mut game_file = dcb_cdrom_xa::CdRomReader::new(game_file);
+	let game_fs = dcb_iso9660::FilesystemReader::new(&mut game_file).context("Unable to open game file as iso9660")?;
+	let game_root_dir = game_fs
+		.root_dir()
+		.read_dir(&mut game_file)
+		.context("Unable to read game files")?;
+
+	// Note: In other executables, we should read the `SYSTEM.CNF` to
+	//       determine the executable file. For `dcb` we simply know which
+	//       one it is and all it's data.
+
+	// Read the executable file, skipping the header
+	let exec_file = game_root_dir
+		.entries()
+		.iter()
+		.find(|entry| entry.is_file() && entry.name.as_bytes() == b"SLUS_013.28;1")
+		.context("Unable to find game executable file")?;
+	let mut exec_file = exec_file
+		.read_file(&mut game_file)
+		.context("Unable to read game executable")?;
+
+	let exec_contents = {
+		let mut bytes = Vec::with_capacity(exec_file.size().try_into().expect("`u64` didn't fit into `usize`"));
+		exec_file
+			.seek(io::SeekFrom::Start(0x800))
+			.context("Unable to seek past game executable header")?;
+		exec_file
+			.read_to_end(&mut bytes)
+			.context("Unable to read all of game executable")?;
+		bytes
+	};
+
+	// Then write it into memory at `0x10000`
+	memory[0x10000..(0x10000 + exec_contents.len())].copy_from_slice(&exec_contents);
 
 	// Create the executor
 	let mut exec_state = ExecState {
-		pc:          Pos(0x80010000),
-		regs:        [0; 32],
-		lo_hi_reg:   [0; 2],
-		memory:      memory.into(),
+		pc: Pos(0x80056270),
+		regs: [0; 32],
+		lo_hi_reg: [0; 2],
+		memory,
 		jump_target: JumpTarget::None,
 		should_stop: false,
 	};
@@ -58,8 +104,58 @@ fn main() -> Result<(), anyhow::Error> {
 			.with_context(|| format!("Failed to execute at {}", exec_state.pc()))?;
 	}
 
-
 	Ok(())
+}
+
+/// Memory
+// TODO: Have this work with `u32`s externally.
+pub struct Memory {
+	/// All bytes
+	bytes: [u8; 0x200000],
+}
+
+impl Memory {
+	/// Creates a new memory chunk
+	#[allow(clippy::new_without_default)] // We want an explicit constructor
+	pub fn new() -> Self {
+		Self { bytes: [0; 0x200000] }
+	}
+
+	/// Returns the bytes at `index`
+	pub fn get<I>(&self, index: I) -> Option<&I::Output>
+	where
+		I: SliceIndex<[u8]>,
+	{
+		index.get(&self.bytes)
+	}
+
+	/// Returns the bytes at `index` mutably
+	pub fn get_mut<I>(&mut self, index: I) -> Option<&mut I::Output>
+	where
+		I: SliceIndex<[u8]>,
+	{
+		index.get_mut(&mut self.bytes)
+	}
+}
+
+impl<I> Index<I> for Memory
+where
+	[u8]: Index<I>,
+{
+	type Output = <[u8] as Index<I>>::Output;
+
+	fn index(&self, index: I) -> &Self::Output {
+		&self.bytes[index]
+	}
+}
+
+impl<I> IndexMut<I> for Memory
+where
+	[u8]: IndexMut<I>,
+{
+	fn index_mut(&mut self, index: I) -> &mut Self::Output {
+		&mut self.bytes[index]
+	}
 }
 
 /// Execution state
@@ -74,7 +170,7 @@ pub struct ExecState {
 	lo_hi_reg: [u32; 2],
 
 	/// Memory
-	memory: Box<[u8]>,
+	memory: Box<Memory>,
 
 	/// Jump target
 	jump_target: JumpTarget,
@@ -92,8 +188,12 @@ impl ExecState {
 		// Parse the instruction
 		let inst = basic::Inst::decode(inst).ok_or(ExecError::DecodeInst)?;
 
+		// Display it
+		println!("{:010}: {}", self.pc, self::inst_display(&inst, self, self.pc));
+
 		// Then execute the instruction
 		inst.exec(self)?;
+
 
 		// Then update our pc depending on whether we have a jump
 		self.pc = match self.jump_target {
@@ -306,4 +406,57 @@ pub enum JumpTarget {
 
 	/// Jump now
 	JumpNow(Pos),
+}
+
+
+/// Returns a display-able for an instruction inside a possible function
+#[must_use]
+pub fn inst_display<'a>(inst: &'a basic::Inst, state: &'a ExecState, pos: Pos) -> impl fmt::Display + 'a {
+	// Overload the target of as many as possible using `inst_target`.
+	zutil::DisplayWrapper::new(move |f| {
+		// Build the context and get the mnemonic + args
+		let ctx = DisplayCtx { pos };
+		let mnemonic = inst.mnemonic(&ctx);
+
+		write!(f, "{mnemonic}")?;
+		for arg in inst.args(&ctx).with_position() {
+			// Write ',' if it's first, then a space
+			match &arg {
+				Position::First(_) | Position::Only(_) => write!(f, " "),
+				_ => write!(f, ", "),
+			}?;
+			let arg = arg.into_inner();
+
+			// Then write the argument
+			arg.write(f, &ctx)?
+		}
+
+		for arg in inst.args(&ctx) {
+			match arg {
+				InstFmtArg::Register(reg) => write!(f, "# {reg} = {:#x}", state[reg])?,
+				InstFmtArg::RegisterOffset { register, .. } => write!(f, "# {register} = {:#x}", state[register])?,
+				_ => (),
+			}
+		}
+
+		Ok(())
+	})
+}
+
+/// Displaying context for instructions.
+pub struct DisplayCtx {
+	/// Current Position
+	pos: Pos,
+}
+
+impl inst::DisplayCtx for DisplayCtx {
+	type Label = !;
+
+	fn cur_pos(&self) -> Pos {
+		self.pos
+	}
+
+	fn pos_label(&self, _pos: Pos) -> Option<(Self::Label, i64)> {
+		None
+	}
 }

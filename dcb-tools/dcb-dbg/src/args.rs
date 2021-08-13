@@ -7,59 +7,35 @@ use std::path::PathBuf;
 /// Arguments
 #[derive(PartialEq, Clone, Debug)]
 pub struct Args {
-	/// The input file
-	pub input_path: PathBuf,
-
-	/// The header file
-	pub header_path: PathBuf,
+	/// The game file
+	pub game_path: PathBuf,
 }
 
 impl Args {
 	/// Returns all arguments
 	pub fn new() -> Self {
-		const INPUT_FILE_STR: &str = "input-file";
-		const HEADER_FILE_STR: &str = "header-file";
+		const GAME_FILE_STR: &str = "game-file";
 
 		// Get all matches from cli
 		let matches = ClapApp::new("Dcb Debugger")
 			.version("0.0")
 			.author("Filipe [...] <[...]@gmail.com>")
-			.about("Compiles code from assembly, runs and debugs it")
+			.about("Runs and debugs the game")
 			.arg(
-				ClapArg::with_name(INPUT_FILE_STR)
-					.help("Sets the input file to use")
+				ClapArg::with_name(GAME_FILE_STR)
+					.help("Sets the game file")
 					.required(true)
 					.index(1),
-			)
-			.arg(
-				ClapArg::with_name(HEADER_FILE_STR)
-					.help("Sets the header file to use")
-					.long("header")
-					.short("h"),
 			)
 			.get_matches();
 
 		// Get the input filename
-		// Note: required
-		let input_path = matches
-			.value_of(INPUT_FILE_STR)
+		let game_path = matches
+			.value_of(GAME_FILE_STR)
 			.map(PathBuf::from)
-			.expect("Unable to get required argument `input-file`");
-
-		// Get the header filename
-		let header_path = match matches.value_of(HEADER_FILE_STR) {
-			Some(path) => PathBuf::from(path),
-			None => {
-				let mut path = input_path.clone().into_os_string();
-				path.push(".header");
-				PathBuf::from(path)
-			},
-		};
+			.expect("Unable to get required argument");
 
 		// Return the cli data
-		Self {
-			input_path,
-			header_path,
-		}
+		Self { game_path }
 	}
 }
