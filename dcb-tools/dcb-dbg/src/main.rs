@@ -24,12 +24,13 @@ use dcb_exe::{
 		self,
 		basic::{self, mult::MultReg, Decode},
 		exec::{ExecCtx, ExecError, Executable},
-		InstDisplay, InstFmtArg, Register,
+		InstDisplay, Register,
 	},
 	Pos,
 };
 use itertools::{Itertools, Position};
 use std::{
+	cell::RefCell,
 	convert::TryInto,
 	fmt, fs,
 	io::{self, BufReader, Read, Seek, Write},
@@ -108,6 +109,7 @@ fn main() -> Result<(), anyhow::Error> {
 		memory,
 		jump_target: JumpTarget::None,
 		should_stop: false,
+		results: RefCell::new(vec![]),
 	};
 
 	let stdin = io::stdin();
@@ -259,6 +261,9 @@ pub struct ExecState {
 
 	/// If the processor should stop
 	should_stop: bool,
+
+	/// Results
+	results: RefCell<Vec<ExecResult>>,
 }
 
 impl ExecState {
@@ -273,7 +278,7 @@ impl ExecState {
 		// Display it
 		// TODO: Check what registers changed in the op and print them, maybe also memory locations
 		//       with a countdown until the change is actually realized or something.
-		let print_inst = || println!("{:010}: {}", self.pc, self::inst_display(&inst, self, self.pc));
+		let print_inst = || println!("{:010}: {}", self.pc, self::inst_display(&inst, self.pc));
 		match *input_state {
 			InputState::BreakEvery => print_inst(),
 			InputState::RunUntil { pos } if self.pc + 4 == pos && matches!(self.jump_target, JumpTarget::None) => {
@@ -285,6 +290,19 @@ impl ExecState {
 		// Then execute the instruction
 		inst.exec(self)?;
 
+		// And display the results
+		for result in self.results.borrow_mut().drain(..) {
+			match result {
+				ExecResult::WroteRegister { reg, prev, new } => println!("[{reg}] {prev:#x} => {new:#x}"),
+				ExecResult::ReadWord { pos, value } => println!("[{pos:010}] {value:#x}"),
+				ExecResult::ReadHalfWord { pos, value } => println!("[{pos:010}] {value:#x}"),
+				ExecResult::ReadByte { pos, value } => println!("[{pos:010}] {value:#x}"),
+				ExecResult::WriteWord { pos, prev, value } => println!("[{pos:010}] {prev:#x} => {value:#x}"),
+				ExecResult::WriteHalfWord { pos, prev, value } => println!("[{pos:010}] {prev:#x} => {value:#x}"),
+				ExecResult::WriteByte { pos, prev, value } => println!("[{pos:010}] {prev:#x} => {value:#x}"),
+				ExecResult::QueuedJump { pos } => println!("=> [{pos:010}]"),
+			}
+		}
 
 		// Then update our pc depending on whether we have a jump
 		self.pc = match self.jump_target {
@@ -303,6 +321,34 @@ impl ExecState {
 	}
 }
 
+/// Execution result
+pub enum ExecResult {
+	/// Wrote to register `dst`
+	// TODO: These once we don't use `Index` for getting / setting registers.
+	WroteRegister { reg: Register, prev: u32, new: u32 },
+
+	/// Read a word from `pos`
+	ReadWord { pos: Pos, value: u32 },
+
+	/// Read a half-word from `pos`
+	ReadHalfWord { pos: Pos, value: u16 },
+
+	/// Read a byte from `pos`
+	ReadByte { pos: Pos, value: u8 },
+
+	/// Wrote a word to `pos`
+	WriteWord { pos: Pos, prev: u32, value: u32 },
+
+	/// Wrote a half-word to `pos`
+	WriteHalfWord { pos: Pos, prev: u16, value: u16 },
+
+	/// Wrote a byte to `pos`
+	WriteByte { pos: Pos, prev: u8, value: u8 },
+
+	/// Queued a jump to `pos`
+	QueuedJump { pos: Pos },
+}
+
 impl ExecCtx for ExecState {
 	fn pc(&self) -> Pos {
 		self.pc
@@ -312,6 +358,7 @@ impl ExecCtx for ExecState {
 		match self.jump_target {
 			JumpTarget::None => {
 				self.jump_target = JumpTarget::JumpNext(pos);
+				self.results.get_mut().push(ExecResult::QueuedJump { pos });
 				Ok(())
 			},
 			_ => Err(ExecError::JumpWhileJumping),
@@ -330,11 +377,13 @@ impl ExecCtx for ExecState {
 		let idx = idx.try_into().expect("Memory position didn't fit into `usize`");
 
 		// Then read from memory
-		let mem = self
+		let value = self
 			.memory
 			.get(idx..(idx + 4))
+			.map(LittleEndian::read_u32)
 			.ok_or(ExecError::MemoryOutOfBounds { pos })?;
-		Ok(LittleEndian::read_u32(mem))
+		self.results.borrow_mut().push(ExecResult::ReadWord { pos, value });
+		Ok(value)
 	}
 
 	fn read_half_word(&self, pos: Pos) -> Result<u16, ExecError> {
@@ -348,11 +397,13 @@ impl ExecCtx for ExecState {
 		let idx = idx.try_into().expect("Memory position didn't fit into `usize`");
 
 		// Then read from memory
-		let mem = self
+		let value = self
 			.memory
 			.get(idx..(idx + 2))
+			.map(LittleEndian::read_u16)
 			.ok_or(ExecError::MemoryOutOfBounds { pos })?;
-		Ok(LittleEndian::read_u16(mem))
+		self.results.borrow_mut().push(ExecResult::ReadHalfWord { pos, value });
+		Ok(value)
 	}
 
 	/// Reads a byte from a memory position
@@ -362,10 +413,13 @@ impl ExecCtx for ExecState {
 		let idx: usize = idx.try_into().expect("Memory position didn't fit into `usize`");
 
 		// Then read from memory
-		self.memory
+		let value = self
+			.memory
 			.get(idx)
 			.copied()
-			.ok_or(ExecError::MemoryOutOfBounds { pos })
+			.ok_or(ExecError::MemoryOutOfBounds { pos })?;
+		self.results.borrow_mut().push(ExecResult::ReadByte { pos, value });
+		Ok(value)
 	}
 
 	/// Stores a word to a memory position
@@ -384,7 +438,9 @@ impl ExecCtx for ExecState {
 			.memory
 			.get_mut(idx..(idx + 4))
 			.ok_or(ExecError::MemoryOutOfBounds { pos })?;
+		let prev = LittleEndian::read_u32(mem);
 		LittleEndian::write_u32(mem, value);
+		self.results.get_mut().push(ExecResult::WriteWord { pos, prev, value });
 		Ok(())
 	}
 
@@ -404,7 +460,11 @@ impl ExecCtx for ExecState {
 			.memory
 			.get_mut(idx..(idx + 2))
 			.ok_or(ExecError::MemoryOutOfBounds { pos })?;
+		let prev = LittleEndian::read_u16(mem);
 		LittleEndian::write_u16(mem, value);
+		self.results
+			.get_mut()
+			.push(ExecResult::WriteHalfWord { pos, prev, value });
 		Ok(())
 	}
 
@@ -416,7 +476,9 @@ impl ExecCtx for ExecState {
 
 		// Then write to memory
 		let mem = self.memory.get_mut(idx).ok_or(ExecError::MemoryOutOfBounds { pos })?;
+		let prev = *mem;
 		*mem = value;
+		self.results.get_mut().push(ExecResult::WriteByte { pos, prev, value });
 
 		Ok(())
 	}
@@ -502,7 +564,7 @@ pub enum JumpTarget {
 
 /// Returns a display-able for an instruction inside a possible function
 #[must_use]
-pub fn inst_display<'a>(inst: &'a basic::Inst, state: &'a ExecState, pos: Pos) -> impl fmt::Display + 'a {
+pub fn inst_display(inst: &basic::Inst, pos: Pos) -> impl fmt::Display + '_ {
 	// Overload the target of as many as possible using `inst_target`.
 	zutil::DisplayWrapper::new(move |f| {
 		// Build the context and get the mnemonic + args
@@ -520,14 +582,6 @@ pub fn inst_display<'a>(inst: &'a basic::Inst, state: &'a ExecState, pos: Pos) -
 
 			// Then write the argument
 			arg.write(f, &ctx)?
-		}
-
-		for arg in inst.args(&ctx) {
-			match arg {
-				InstFmtArg::Register(reg) => write!(f, "# {reg} = {:#x}", state[reg])?,
-				InstFmtArg::RegisterOffset { register, .. } => write!(f, "# {register} = {:#x}", state[register])?,
-				_ => (),
-			}
 		}
 
 		Ok(())
