@@ -1,9 +1,6 @@
 # We're fine with unstable features
 unstable_features = true
 
-
-
-
 binop_separator = "Back"
 blank_lines_lower_bound = 0
 blank_lines_upper_bound = 2
@@ -14,7 +11,7 @@ condense_wildcard_suffixes = true
 control_brace_style = "AlwaysSameLine"
 empty_item_single_line = true
 enum_discrim_align_threshold = 100
-error_on_line_overflow = true
+error_on_line_overflow = false
 error_on_unformatted = false
 fn_args_layout = "Compressed"
 fn_single_line = false
@@ -25,7 +22,7 @@ format_macro_bodies = true
 format_macro_matchers = true
 format_strings = true
 hard_tabs = true
-imports_granularity="Crate"
+imports_granularity = "Crate"
 imports_indent = "Block"
 imports_layout = "Mixed"
 indent_style = "Block"

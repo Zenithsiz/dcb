@@ -5,7 +5,7 @@ use super::{Decodable, Encodable};
 use crate::inst::{
 	basic, parse::LineArg, DisplayCtx, InstDisplay, InstFmtArg, InstSize, Parsable, ParseCtx, ParseError, Register,
 };
-use std::{convert::TryFrom};
+use std::convert::TryFrom;
 
 /// No-op
 ///
