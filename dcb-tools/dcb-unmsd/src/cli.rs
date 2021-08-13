@@ -9,12 +9,16 @@ use std::path::PathBuf;
 pub struct CliData {
 	/// Input files
 	pub input_file: PathBuf,
+
+	/// Deserialize to `yaml`
+	pub to_yaml: bool,
 }
 
 impl CliData {
 	/// Constructs all of the cli data given and returns it
 	pub fn new() -> Self {
-		const INPUT_FILE_STR: &str = "input-files";
+		const INPUT_FILE_STR: &str = "input-file";
+		const TO_YAML_STR: &str = "to-yaml";
 
 		// Get all matches from cli
 		let matches = ClapApp::new("MSD Extractor")
@@ -25,7 +29,13 @@ impl CliData {
 				ClapArg::with_name(INPUT_FILE_STR)
 					.help("The input file to use")
 					.required(true)
-					.multiple(true),
+					.index(1),
+			)
+			.arg(
+				ClapArg::with_name(TO_YAML_STR)
+					.help("If yaml should be output instead of asm")
+					.long("yaml")
+					.takes_value(false),
 			)
 			.get_matches();
 
@@ -36,7 +46,9 @@ impl CliData {
 			.map(PathBuf::from)
 			.expect("Unable to get required argument `input-file`");
 
+		let to_yaml = matches.is_present(TO_YAML_STR);
+
 		// Return the data
-		Self { input_file }
+		Self { input_file, to_yaml }
 	}
 }

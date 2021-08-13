@@ -244,9 +244,33 @@ fn main() -> Result<(), anyhow::Error> {
 	writeln!(dot_file, "}}").context("Unable to write to dot file")?;
 	*/
 
+	match cli_data.to_yaml {
+		true => self::print_yaml(&insts).context("Unable to print instructions in yaml")?,
+		false => self::print_asm(&insts, &labels, &vars).context("Unable to print instructions in asm")?,
+	}
+
+	Ok(())
+}
+
+/// Prints all instructions in yaml format
+// TODO: Support labels?
+fn print_yaml(insts: &BTreeMap<u32, Inst>) -> Result<(), anyhow::Error> {
+	let stdout = std::io::stdout();
+
+	let values: Vec<_> = insts.values().collect();
+
+	serde_yaml::to_writer(stdout, &values).context("Unable to write instructions to stdout")?;
+
+	Ok(())
+}
+
+/// Prints all instructions in assembly format
+fn print_asm(
+	insts: &BTreeMap<u32, Inst>, labels: &HashMap<u32, String>, vars: &HashMap<u16, String>,
+) -> Result<(), anyhow::Error> {
 	let mut state = State::Start;
 	for (pos, inst) in insts {
-		if let Some(label) = labels.get(&pos) {
+		if let Some(label) = labels.get(pos) {
 			println!("{label}:");
 		};
 
@@ -254,7 +278,7 @@ fn main() -> Result<(), anyhow::Error> {
 		print!("{pos:#010x}: ");
 
 		let mut stdout = std::io::stdout();
-		let ctx = state.display_ctx(&labels, &vars);
+		let ctx = state.display_ctx(labels, vars);
 		inst.display(&mut stdout, &ctx).context("Unable to display")?;
 		mem::drop(ctx);
 
@@ -272,13 +296,13 @@ fn main() -> Result<(), anyhow::Error> {
 			.apply(inst)
 			.with_context(|| format!("Unable to parse instruction at {pos:#010x} in current context"))?;
 	}
-
 	state.finish().context("Unable to finish state")?;
-
 	Ok(())
 }
 
 /// State
+// TODO: Remove, this was just to verify how stuff worked, it isn't necessary anymore.
+//       Although maybe reintroduce it when parsing to catch mistakes?
 #[derive(PartialEq, Clone, Debug)]
 pub enum State {
 	/// Start
@@ -296,8 +320,8 @@ pub enum State {
 
 impl State {
 	/// Applies `inst` to this state machine
-	pub fn apply(&mut self, inst: Inst) -> Result<(), anyhow::Error> {
-		match (&mut *self, inst) {
+	pub fn apply(&mut self, inst: &Inst) -> Result<(), anyhow::Error> {
+		match (&mut *self, *inst) {
 			(Self::Start, Inst::OpenComboBox { combo_box: menu }) => {
 				*self = Self::Menu { menu, buttons: vec![] };
 			},

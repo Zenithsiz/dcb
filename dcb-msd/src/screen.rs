@@ -2,6 +2,7 @@
 
 /// Screens
 #[derive(PartialEq, Eq, Clone, Copy, Hash, Debug)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub enum Screen {
 	/// Player room
 	PlayerRoom,

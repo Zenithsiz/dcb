@@ -23,6 +23,7 @@ use zutil::TryIntoAs;
 /// Instruction
 // TODO: Merge common instructions
 #[derive(PartialEq, Eq, Clone, Copy, Hash, Debug)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub enum Inst<'a> {
 	/// Displays the text buffer in the text box.
 	///
@@ -139,6 +140,7 @@ pub enum Inst<'a> {
 		buffer: u16,
 
 		/// The bytes to set
+		#[serde(with = "serde_shift_jis_str")]
 		bytes: &'a [u8],
 	},
 
@@ -501,6 +503,44 @@ impl<'a> Inst<'a> {
 				4 + len + (4 - len % 4)
 			},
 			Inst::SetBrightness { .. } => 16,
+		}
+	}
+}
+
+
+/// Helper module to serialize and deserialize bytes as `shift_jis`
+mod serde_shift_jis_str {
+	use std::borrow::Cow;
+
+	// Imports
+	use encoding_rs::SHIFT_JIS;
+	use serde::{Deserialize, Deserializer, Serializer};
+
+	/// Serialize
+	pub fn serialize<S>(bytes: &[u8], serializer: S) -> Result<S::Ok, S::Error>
+	where
+		S: Serializer,
+	{
+		// TODO: Not panic here, not sure how to get a `S::Error` though?
+		let s = SHIFT_JIS
+			.decode_without_bom_handling_and_without_replacement(bytes)
+			.expect("Unable to decode as `SHIFT_JIS`");
+
+		serializer.serialize_str(&*s)
+	}
+
+	/// Deserialize
+	pub fn deserialize<'de, D>(deserializer: D) -> Result<&'de [u8], D::Error>
+	where
+		D: Deserializer<'de>,
+	{
+		// TODO: Not panic on bad encoding + non-borrowed encoding
+		let s = <&str>::deserialize(deserializer)?;
+		let (s, ..) = SHIFT_JIS.encode(s);
+
+		match s {
+			Cow::Borrowed(s) => Ok(s),
+			Cow::Owned(_) => panic!("Unable to deserialize"),
 		}
 	}
 }

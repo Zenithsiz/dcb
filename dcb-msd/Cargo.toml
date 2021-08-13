@@ -20,3 +20,6 @@ zutil = {git = "https://github.com/Zenithsiz/zutil", rev = "8c9cb2d"}
 
 # Strings
 encoding_rs = "0.8.28"
+
+# Serde
+serde = "1.0.127"

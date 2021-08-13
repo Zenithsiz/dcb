@@ -2,6 +2,7 @@
 
 /// Combo box
 #[derive(PartialEq, Eq, Clone, Copy, Hash, Debug)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub enum ComboBox {
 	/// Small combo box with 3 buttons
 	Small,
