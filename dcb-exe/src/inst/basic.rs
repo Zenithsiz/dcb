@@ -168,12 +168,12 @@ impl<'a> InstDisplay<'a> for Inst {
 			Inst::Alu  (inst) => inst.args(ctx),
 			Inst::Cond (inst) => inst.args(ctx),
 			Inst::Jmp  (inst) => inst.args(ctx),
-			Inst::Load (inst) => inst.args(ctx),
-			Inst::Lui  (inst) => inst.args(ctx),
+			Inst::Load (inst) => inst.args(ctx).into_iter(),
+			Inst::Lui  (inst) => inst.args(ctx).into_iter(),
 			Inst::Mult (inst) => inst.args(ctx),
 			Inst::Shift(inst) => inst.args(ctx),
-			Inst::Store(inst) => inst.args(ctx),
-			Inst::Sys  (inst) => inst.args(ctx),
+			Inst::Store(inst) => inst.args(ctx).into_iter(),
+			Inst::Sys  (inst) => inst.args(ctx).into_iter(),
 			Inst::Co   (inst) => inst.args(ctx),
 		}
 	}

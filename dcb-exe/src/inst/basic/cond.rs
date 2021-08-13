@@ -12,7 +12,7 @@ use crate::{
 	Pos,
 };
 use int_conv::{SignExtended, Signed, Truncated, ZeroExtended};
-use std::{array, convert::TryInto};
+use std::convert::TryInto;
 
 /// Instruction kind
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -232,23 +232,21 @@ impl<'a> InstDisplay<'a> for Inst {
 		let target = Self::target_of(offset, ctx.cur_pos());
 
 		match (arg, kind) {
-			(Register::Zr, Kind::Equal(Register::Zr)) => array::IntoIter::new([InstFmtArg::Target(target)]),
-			(_, Kind::Equal(Register::Zr)) => {
-				array::IntoIter::new([InstFmtArg::Register(arg), InstFmtArg::Target(target)])
-			},
-			(_, Kind::Equal(reg)) => array::IntoIter::new([
+			(Register::Zr, Kind::Equal(Register::Zr)) => [InstFmtArg::Target(target)].into_iter(),
+			(_, Kind::Equal(Register::Zr)) => [InstFmtArg::Register(arg), InstFmtArg::Target(target)].into_iter(),
+			(_, Kind::Equal(reg)) => [
 				InstFmtArg::Register(arg),
 				InstFmtArg::Register(reg),
 				InstFmtArg::Target(target),
-			]),
-			(_, Kind::NotEqual(Register::Zr)) => {
-				array::IntoIter::new([InstFmtArg::Register(arg), InstFmtArg::Target(target)])
-			},
-			(_, Kind::NotEqual(reg)) => array::IntoIter::new([
+			]
+			.into_iter(),
+			(_, Kind::NotEqual(Register::Zr)) => [InstFmtArg::Register(arg), InstFmtArg::Target(target)].into_iter(),
+			(_, Kind::NotEqual(reg)) => [
 				InstFmtArg::Register(arg),
 				InstFmtArg::Register(reg),
 				InstFmtArg::Target(target),
-			]),
+			]
+			.into_iter(),
 			(
 				_,
 				Kind::LessOrEqualZero |
@@ -257,7 +255,7 @@ impl<'a> InstDisplay<'a> for Inst {
 				Kind::GreaterOrEqualZero |
 				Kind::LessThanZeroLink |
 				Kind::GreaterOrEqualZeroLink,
-			) => array::IntoIter::new([InstFmtArg::Register(arg), InstFmtArg::Target(target)]),
+			) => [InstFmtArg::Register(arg), InstFmtArg::Target(target)].into_iter(),
 		}
 	}
 }

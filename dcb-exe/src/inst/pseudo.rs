@@ -133,14 +133,14 @@ impl<'a> InstDisplay<'a> for Inst {
 	#[rustfmt::skip]
 	fn args<Ctx: DisplayCtx>(&'a self, ctx: &Ctx) -> Self::Args {
 		match self {
-			Inst::LoadImm (inst) => inst.args(ctx),
+			Inst::LoadImm (inst) => inst.args(ctx).into_iter(),
 			Inst::Nop     (inst) => inst.args(ctx),
-			Inst::MoveReg (inst) => inst.args(ctx),
-			Inst::LoadArr (inst) => inst.args(ctx),
-			Inst::StoreArr(inst) => inst.args(ctx),
-			Inst::Load    (inst) => inst.args(ctx),
-			Inst::Store   (inst) => inst.args(ctx),
-			Inst::Bios    (inst) => inst.args(ctx),
+			Inst::MoveReg (inst) => inst.args(ctx).into_iter(),
+			Inst::LoadArr (inst) => inst.args(ctx).into_iter(),
+			Inst::StoreArr(inst) => inst.args(ctx).into_iter(),
+			Inst::Load    (inst) => inst.args(ctx).into_iter(),
+			Inst::Store   (inst) => inst.args(ctx).into_iter(),
+			Inst::Bios    (inst) => inst.args(ctx).into_iter(),
 		}
 	}
 }

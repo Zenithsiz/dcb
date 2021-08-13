@@ -10,7 +10,6 @@ use crate::{
 	},
 	Pos,
 };
-use std::array;
 
 /// Jmp register instruction kind
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -115,8 +114,8 @@ impl<'a> InstDisplay<'a> for Inst {
 
 		match kind {
 			// If linking with `$ra`, don't output it
-			Kind::Jump | Kind::JumpLink(Register::Ra) => array::IntoIter::new([InstFmtArg::Register(target)]),
-			Kind::JumpLink(reg) => array::IntoIter::new([InstFmtArg::Register(target), InstFmtArg::Register(reg)]),
+			Kind::Jump | Kind::JumpLink(Register::Ra) => [InstFmtArg::Register(target)].into_iter(),
+			Kind::JumpLink(reg) => [InstFmtArg::Register(target), InstFmtArg::Register(reg)].into_iter(),
 		}
 	}
 }

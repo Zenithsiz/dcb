@@ -12,7 +12,6 @@ use crate::{
 	Pos,
 };
 use int_conv::{SignExtended, Signed, Truncated, ZeroExtended};
-use std::array;
 
 /// Instruction kind
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -159,7 +158,7 @@ impl<'a> Parsable<'a> for Inst {
 }
 
 impl<'a> InstDisplay<'a> for Inst {
-	type Args = array::IntoIter<InstFmtArg<'a>, 2>;
+	type Args = [InstFmtArg<'a>; 2];
 	type Mnemonic = &'static str;
 
 	fn mnemonic<Ctx: DisplayCtx>(&'a self, _ctx: &Ctx) -> Self::Mnemonic {
@@ -171,7 +170,7 @@ impl<'a> InstDisplay<'a> for Inst {
 			value, addr, offset, ..
 		} = self;
 
-		array::IntoIter::new([InstFmtArg::Register(value), InstFmtArg::register_offset(addr, offset)])
+		[InstFmtArg::Register(value), InstFmtArg::register_offset(addr, offset)]
 	}
 }
 

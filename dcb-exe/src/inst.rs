@@ -190,7 +190,7 @@ impl<'a> InstDisplay<'a> for Inst<'a> {
 		match self {
 			Inst::Basic    (inst) => inst.args(ctx),
 			Inst::Pseudo   (inst) => inst.args(ctx),
-			Inst::Directive(inst) => inst.args(ctx),
+			Inst::Directive(inst) => inst.args(ctx).into_iter(),
 		}
 	}
 }

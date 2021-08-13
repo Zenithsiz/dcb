@@ -8,7 +8,6 @@ use crate::inst::{
 	DisplayCtx, InstDisplay, InstFmtArg, Parsable, ParseCtx, ParseError, Register,
 };
 use int_conv::Signed;
-use std::array;
 
 /// Shift register instruction kind
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -129,12 +128,13 @@ impl<'a> InstDisplay<'a> for Inst {
 
 		// If `$dst` and `$lhs` are the same, only print one of them
 		match dst == lhs {
-			true => array::IntoIter::new([InstFmtArg::Register(dst), InstFmtArg::Register(rhs)]),
-			false => array::IntoIter::new([
+			true => [InstFmtArg::Register(dst), InstFmtArg::Register(rhs)].into_iter(),
+			false => [
 				InstFmtArg::Register(dst),
 				InstFmtArg::Register(lhs),
 				InstFmtArg::Register(rhs),
-			]),
+			]
+			.into_iter(),
 		}
 	}
 }

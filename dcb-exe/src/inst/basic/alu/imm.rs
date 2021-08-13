@@ -8,7 +8,7 @@ use crate::inst::{
 	DisplayCtx, InstDisplay, InstFmtArg, Parsable, ParseCtx, ParseError, Register,
 };
 use int_conv::{SignExtended, Signed, Truncated, ZeroExtended};
-use std::{array, convert::TryInto};
+use std::convert::TryInto;
 
 /// Instruction kind
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -172,12 +172,13 @@ impl<'a> InstDisplay<'a> for Inst {
 		// If we're not `slti[u]` and if `$dst` and `$lhs` are the same,
 		// only return one of them
 		match !matches!(kind, Kind::SetLessThan(_) | Kind::SetLessThanUnsigned(_)) && dst == lhs {
-			true => array::IntoIter::new([InstFmtArg::Register(dst), InstFmtArg::literal(value)]),
-			false => array::IntoIter::new([
+			true => [InstFmtArg::Register(dst), InstFmtArg::literal(value)].into_iter(),
+			false => [
 				InstFmtArg::Register(dst),
 				InstFmtArg::Register(lhs),
 				InstFmtArg::literal(value),
-			]),
+			]
+			.into_iter(),
 		}
 	}
 }

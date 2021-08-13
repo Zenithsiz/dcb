@@ -67,7 +67,7 @@ impl<'a> InstDisplay<'a> for Inst {
 	#[auto_enums::auto_enum(Iterator)]
 	fn args<Ctx: DisplayCtx>(&'a self, ctx: &Ctx) -> Self::Args {
 		match self {
-			Inst::Imm(inst) => inst.args(ctx),
+			Inst::Imm(inst) => inst.args(ctx).into_iter(),
 			Inst::Reg(inst) => inst.args(ctx).into_iter(),
 		}
 	}

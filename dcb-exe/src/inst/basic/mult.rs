@@ -9,7 +9,6 @@ use crate::inst::{
 	DisplayCtx, InstDisplay, InstFmtArg, Parsable, ParseCtx, ParseError, Register,
 };
 use int_conv::{SignExtended, Signed, Split, ZeroExtended};
-use std::array;
 
 /// Operation kind
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -232,10 +231,8 @@ impl<'a> InstDisplay<'a> for Inst {
 	#[auto_enums::auto_enum(Iterator)]
 	fn args<Ctx: DisplayCtx>(&'a self, _ctx: &Ctx) -> Self::Args {
 		match *self {
-			Self::Mult { lhs, rhs, .. } => array::IntoIter::new([InstFmtArg::Register(lhs), InstFmtArg::Register(rhs)]),
-			Self::MoveFrom { dst: arg, .. } | Self::MoveTo { src: arg, .. } => {
-				array::IntoIter::new([InstFmtArg::Register(arg)])
-			},
+			Self::Mult { lhs, rhs, .. } => [InstFmtArg::Register(lhs), InstFmtArg::Register(rhs)].into_iter(),
+			Self::MoveFrom { dst: arg, .. } | Self::MoveTo { src: arg, .. } => [InstFmtArg::Register(arg)].into_iter(),
 		}
 	}
 }

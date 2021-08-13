@@ -10,7 +10,6 @@ use crate::{
 	},
 	Pos,
 };
-use std::array;
 
 /// Jmp immediate instruction kind
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -120,7 +119,7 @@ impl<'a> Parsable<'a> for Inst {
 }
 
 impl<'a> InstDisplay<'a> for Inst {
-	type Args = array::IntoIter<InstFmtArg<'a>, 1>;
+	type Args = [InstFmtArg<'a>; 1];
 	type Mnemonic = &'static str;
 
 	fn mnemonic<Ctx: DisplayCtx>(&'a self, _ctx: &Ctx) -> Self::Mnemonic {
@@ -128,7 +127,7 @@ impl<'a> InstDisplay<'a> for Inst {
 	}
 
 	fn args<Ctx: DisplayCtx>(&'a self, ctx: &Ctx) -> Self::Args {
-		array::IntoIter::new([InstFmtArg::Target(Self::target_of(self.imm, ctx.cur_pos()))])
+		[InstFmtArg::Target(Self::target_of(self.imm, ctx.cur_pos()))]
 	}
 }
 

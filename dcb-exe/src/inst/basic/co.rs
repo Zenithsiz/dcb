@@ -8,7 +8,7 @@ use crate::inst::{
 	DisplayCtx, InstDisplay, InstFmtArg, Parsable, ParseCtx, ParseError, Register,
 };
 use int_conv::{Signed, Truncated, ZeroExtended};
-use std::{array, convert::TryInto, fmt};
+use std::{convert::TryInto, fmt};
 
 /// Co-processor register kind
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -292,19 +292,15 @@ impl<'a> InstDisplay<'a> for Inst {
 	fn args<Ctx: DisplayCtx>(&'a self, _ctx: &Ctx) -> Self::Args {
 		let &Self { kind, .. } = self;
 		match kind {
-			Kind::CopN { imm } => array::IntoIter::new([InstFmtArg::literal(imm)]),
-			Kind::MoveFrom { dst, src, .. } => {
-				array::IntoIter::new([InstFmtArg::Register(dst), InstFmtArg::literal(src)])
-			},
-			Kind::MoveTo { dst, src, .. } => {
-				array::IntoIter::new([InstFmtArg::Register(src), InstFmtArg::literal(dst)])
-			},
-			Kind::Branch { offset, .. } => array::IntoIter::new([InstFmtArg::literal(offset)]),
+			Kind::CopN { imm } => [InstFmtArg::literal(imm)].into_iter(),
+			Kind::MoveFrom { dst, src, .. } => [InstFmtArg::Register(dst), InstFmtArg::literal(src)].into_iter(),
+			Kind::MoveTo { dst, src, .. } => [InstFmtArg::Register(src), InstFmtArg::literal(dst)].into_iter(),
+			Kind::Branch { offset, .. } => [InstFmtArg::literal(offset)].into_iter(),
 			Kind::Load { dst, src, offset } => {
-				array::IntoIter::new([InstFmtArg::literal(dst), InstFmtArg::register_offset(src, offset)])
+				[InstFmtArg::literal(dst), InstFmtArg::register_offset(src, offset)].into_iter()
 			},
 			Kind::Store { dst, src, offset } => {
-				array::IntoIter::new([InstFmtArg::literal(dst), InstFmtArg::register_offset(src, offset)])
+				[InstFmtArg::literal(dst), InstFmtArg::register_offset(src, offset)].into_iter()
 			},
 		}
 	}

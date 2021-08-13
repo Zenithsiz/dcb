@@ -9,7 +9,7 @@ use crate::{
 	Pos,
 };
 use int_conv::{Join, SignExtended, Signed, Split};
-use std::{array, convert::TryInto};
+use std::convert::TryInto;
 
 /// Immediate kind
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -108,7 +108,7 @@ impl<'a> Encodable<'a> for Inst {
 					false => addr.lo_hi(),
 				};
 
-				std::array::IntoIter::new([
+				[
 					basic::Inst::Lui(basic::lui::Inst {
 						dst:   self.dst,
 						value: hi,
@@ -118,12 +118,13 @@ impl<'a> Encodable<'a> for Inst {
 						lhs:  self.dst,
 						kind: basic::alu::imm::Kind::AddUnsigned(lo.as_signed()),
 					})),
-				])
+				]
+				.into_iter()
 			},
 			Kind::Word(value) => {
 				let (lo, hi) = value.lo_hi();
 
-				std::array::IntoIter::new([
+				[
 					basic::Inst::Lui(basic::lui::Inst {
 						dst:   self.dst,
 						value: hi,
@@ -133,7 +134,8 @@ impl<'a> Encodable<'a> for Inst {
 						lhs:  self.dst,
 						kind: basic::alu::imm::Kind::Or(lo),
 					})),
-				])
+				]
+				.into_iter()
 			},
 			Kind::HalfWordUnsigned(value) => {
 				std::iter::once(basic::Inst::Alu(basic::alu::Inst::Imm(basic::alu::imm::Inst {
@@ -189,7 +191,7 @@ impl<'a> Parsable<'a> for Inst {
 }
 
 impl<'a> InstDisplay<'a> for Inst {
-	type Args = array::IntoIter<InstFmtArg<'a>, 2>;
+	type Args = [InstFmtArg<'a>; 2];
 	type Mnemonic = &'static str;
 
 	fn mnemonic<Ctx: DisplayCtx>(&'a self, _ctx: &Ctx) -> Self::Mnemonic {
@@ -205,7 +207,7 @@ impl<'a> InstDisplay<'a> for Inst {
 			Kind::HalfWordUnsigned(value) => InstFmtArg::literal(value),
 			Kind::HalfWordSigned(value) => InstFmtArg::literal(value),
 		};
-		array::IntoIter::new([InstFmtArg::Register(dst), arg])
+		[InstFmtArg::Register(dst), arg]
 	}
 }
 

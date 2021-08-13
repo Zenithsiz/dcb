@@ -5,7 +5,7 @@ use super::{Decodable, Encodable};
 use crate::inst::{
 	basic, parse::LineArg, DisplayCtx, InstDisplay, InstFmtArg, InstSize, Parsable, ParseCtx, ParseError, Register,
 };
-use std::{array, convert::TryFrom};
+use std::{convert::TryFrom};
 
 /// No-op
 ///
@@ -79,8 +79,8 @@ impl<'a> InstDisplay<'a> for Inst {
 
 		let len = i64::try_from(len).expect("Too many nops");
 		match len {
-			1 => array::IntoIter::new([]),
-			_ => array::IntoIter::new([InstFmtArg::Literal(len)]),
+			1 => [].into_iter(),
+			_ => [InstFmtArg::Literal(len)].into_iter(),
 		}
 	}
 }

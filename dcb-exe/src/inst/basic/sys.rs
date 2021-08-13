@@ -8,7 +8,6 @@ use crate::inst::{
 	parse::LineArg,
 	DisplayCtx, InstDisplay, InstFmtArg, Parsable, ParseCtx, ParseError, Register,
 };
-use std::array;
 
 /// Sys instruction func
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -107,7 +106,7 @@ impl<'a> Parsable<'a> for Inst {
 }
 
 impl<'a> InstDisplay<'a> for Inst {
-	type Args = array::IntoIter<InstFmtArg<'a>, 1>;
+	type Args = [InstFmtArg<'a>; 1];
 	type Mnemonic = &'static str;
 
 	fn mnemonic<Ctx: DisplayCtx>(&'a self, _ctx: &Ctx) -> Self::Mnemonic {
@@ -115,7 +114,7 @@ impl<'a> InstDisplay<'a> for Inst {
 	}
 
 	fn args<Ctx: DisplayCtx>(&'a self, _ctx: &Ctx) -> Self::Args {
-		array::IntoIter::new([InstFmtArg::literal(self.comment)])
+		[InstFmtArg::literal(self.comment)]
 	}
 }
 

@@ -6,7 +6,7 @@ use super::{nop, Decodable, Encodable};
 use crate::inst::{
 	basic, parse::LineArg, DisplayCtx, InstDisplay, InstFmtArg, InstSize, Parsable, ParseCtx, ParseError, Register,
 };
-use std::{array, convert::TryInto};
+use std::convert::TryInto;
 
 /// Bios function kind
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -126,7 +126,7 @@ impl<'a> Encodable<'a> for Inst {
 		};
 
 		match self.kind {
-			Kind::Jump => array::IntoIter::new([
+			Kind::Jump => [
 				basic::Inst::Alu(basic::alu::Inst::Imm(basic::alu::imm::Inst {
 					dst:  Register::T2,
 					lhs:  Register::Zr,
@@ -141,8 +141,9 @@ impl<'a> Encodable<'a> for Inst {
 					lhs:  Register::Zr,
 					kind: basic::alu::imm::Kind::AddUnsigned(self.num.into()),
 				})),
-			]),
-			Kind::JumpLink => array::IntoIter::new([
+			]
+			.into_iter(),
+			Kind::JumpLink => [
 				basic::Inst::Alu(basic::alu::Inst::Imm(basic::alu::imm::Inst {
 					dst:  Register::T1,
 					lhs:  Register::Zr,
@@ -158,7 +159,8 @@ impl<'a> Encodable<'a> for Inst {
 					kind:   basic::jmp::reg::Kind::JumpLink(Register::Ra),
 				})),
 				nop::Inst::INST,
-			]),
+			]
+			.into_iter(),
 		}
 	}
 }
@@ -187,7 +189,7 @@ impl<'a> Parsable<'a> for Inst {
 }
 
 impl<'a> InstDisplay<'a> for Inst {
-	type Args = array::IntoIter<InstFmtArg<'a>, 1>;
+	type Args = [InstFmtArg<'a>; 1];
 	type Mnemonic = &'static str;
 
 	#[rustfmt::skip]
@@ -203,7 +205,7 @@ impl<'a> InstDisplay<'a> for Inst {
 	}
 
 	fn args<Ctx: DisplayCtx>(&'a self, _ctx: &Ctx) -> Self::Args {
-		array::IntoIter::new([InstFmtArg::literal(self.num)])
+		[InstFmtArg::literal(self.num)]
 	}
 }
 

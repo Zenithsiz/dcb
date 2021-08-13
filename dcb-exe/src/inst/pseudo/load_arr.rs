@@ -5,7 +5,6 @@ use super::{Decodable, Encodable};
 use crate::inst::{
 	basic, parse::LineArg, DisplayCtx, InstDisplay, InstFmtArg, InstSize, Parsable, ParseCtx, ParseError, Register,
 };
-use std::array;
 
 /// Load instruction kind
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -176,7 +175,7 @@ impl<'a> Parsable<'a> for Inst {
 }
 
 impl<'a> InstDisplay<'a> for Inst {
-	type Args = array::IntoIter<InstFmtArg<'a>, 2>;
+	type Args = [InstFmtArg<'a>; 2];
 	type Mnemonic = &'static str;
 
 	fn mnemonic<Ctx: DisplayCtx>(&'a self, _ctx: &Ctx) -> Self::Mnemonic {
@@ -190,10 +189,10 @@ impl<'a> InstDisplay<'a> for Inst {
 	}
 
 	fn args<Ctx: DisplayCtx>(&'a self, _ctx: &Ctx) -> Self::Args {
-		array::IntoIter::new([
+		[
 			InstFmtArg::RegArray(&self.registers),
 			InstFmtArg::register_offset(self.addr, self.offset),
-		])
+		]
 	}
 }
 

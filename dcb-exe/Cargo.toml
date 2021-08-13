@@ -1,6 +1,8 @@
+cargo-features = ["edition2021"]
+
 [package]
 authors = ["Filipe Rodrigues <filipejacintorodrigues1@gmail.com>"]
-edition = "2018"
+edition = "2021"
 name = "dcb-exe"
 version = "0.1.0"
 

@@ -4,10 +4,7 @@
 use super::{parse::LineArg, DisplayCtx, InstDisplay, InstFmtArg, InstSize, Parsable, ParseCtx, ParseError};
 use crate::{DataType, Pos};
 use ascii::{AsciiChar, AsciiStr};
-use std::{
-	array,
-	io::{self, Write},
-};
+use std::io::{self, Write};
 use zutil::NextFromBytes;
 
 /// A directive
@@ -189,7 +186,7 @@ impl<'a> Parsable<'a> for Directive<'a> {
 }
 
 impl<'a> InstDisplay<'a> for Directive<'a> {
-	type Args = array::IntoIter<InstFmtArg<'a>, 1>;
+	type Args = [InstFmtArg<'a>; 1];
 	type Mnemonic = &'static str;
 
 	fn mnemonic<Ctx: DisplayCtx>(&'a self, _ctx: &Ctx) -> Self::Mnemonic {
@@ -208,7 +205,7 @@ impl<'a> InstDisplay<'a> for Directive<'a> {
 			Directive::Db(value) => InstFmtArg::literal(value),
 			Directive::Ascii(s) => InstFmtArg::String(s.as_str()),
 		};
-		array::IntoIter::new([arg])
+		[arg]
 	}
 }
 

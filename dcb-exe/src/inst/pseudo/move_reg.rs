@@ -5,7 +5,7 @@ use super::{Decodable, Encodable};
 use crate::inst::{
 	basic, parse::LineArg, DisplayCtx, InstDisplay, InstFmtArg, InstSize, Parsable, ParseCtx, ParseError, Register,
 };
-use std::{array, convert::TryInto};
+use std::convert::TryInto;
 
 /// Move register instruction
 ///
@@ -68,7 +68,7 @@ impl<'a> Parsable<'a> for Inst {
 }
 
 impl<'a> InstDisplay<'a> for Inst {
-	type Args = array::IntoIter<InstFmtArg<'a>, 2>;
+	type Args = [InstFmtArg<'a>; 2];
 	type Mnemonic = &'static str;
 
 	fn mnemonic<Ctx: DisplayCtx>(&'a self, _ctx: &Ctx) -> Self::Mnemonic {
@@ -78,7 +78,7 @@ impl<'a> InstDisplay<'a> for Inst {
 	fn args<Ctx: DisplayCtx>(&'a self, _ctx: &Ctx) -> Self::Args {
 		let &Self { dst, src } = self;
 
-		array::IntoIter::new([InstFmtArg::Register(dst), InstFmtArg::Register(src)])
+		[InstFmtArg::Register(dst), InstFmtArg::Register(src)]
 	}
 }
 
