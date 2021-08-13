@@ -263,7 +263,7 @@ fn main() -> Result<(), anyhow::Error> {
 
 	match cli_data.to_yaml {
 		true => self::print_yaml(&insts).context("Unable to print instructions in yaml")?,
-		false => self::print_asm(&insts, &labels, &vars).context("Unable to print instructions in asm")?,
+		false => self::print_asm(&contents, &insts, &labels, &vars).context("Unable to print instructions in asm")?,
 	}
 
 	Ok(())
@@ -283,16 +283,21 @@ fn print_yaml(insts: &BTreeMap<u32, Inst>) -> Result<(), anyhow::Error> {
 
 /// Prints all instructions in assembly format
 fn print_asm(
-	insts: &BTreeMap<u32, Inst>, labels: &HashMap<u32, String>, vars: &HashMap<u16, String>,
+	contents: &[u8], insts: &BTreeMap<u32, Inst>, labels: &HashMap<u32, String>, vars: &HashMap<u16, String>,
 ) -> Result<(), anyhow::Error> {
 	let mut state = State::Start;
-	for (pos, inst) in insts {
-		if let Some(label) = labels.get(pos) {
+	for (&pos, inst) in insts {
+		if let Some(label) = labels.get(&pos) {
 			println!("{label}:");
 		};
 
-
 		print!("{pos:#010x}: ");
+
+		let bytes = &contents[(pos as usize)..((pos as usize) + inst.size())];
+		print!(
+			"[0x{}] ",
+			bytes.iter().format_with("", |value, f| f(&format_args!("{value:02x}")))
+		);
 
 		let mut stdout = std::io::stdout();
 		let ctx = state.display_ctx(labels, vars);
@@ -300,14 +305,6 @@ fn print_asm(
 		mem::drop(ctx);
 
 		println!();
-
-		/*
-		let bytes = &contents[(pos as usize)..((pos as usize) + inst.size())];
-		print!(
-			"[0x{}] ",
-			bytes.iter().format_with("", |value, f| f(&format_args!("{value:02x}")))
-		);
-		*/
 
 		state
 			.apply(inst)

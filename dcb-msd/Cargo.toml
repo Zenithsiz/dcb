@@ -15,6 +15,7 @@ thiserror = "1.0.26"
 # Utility
 byteorder = "1.4.3"
 dbg_hex = {git = "https://github.com/Zenithsiz/dbg_hex"}
+derive_more = "0.99.16"
 itertools = "0.10.0"
 zutil = {git = "https://github.com/Zenithsiz/zutil", rev = "8c9cb2d"}
 

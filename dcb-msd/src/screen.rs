@@ -18,6 +18,9 @@ pub enum Screen {
 
 	/// Keyboard
 	Keyboard,
+
+	/// Battle arena intro
+	BattleArenaIntro,
 }
 
 impl Screen {
@@ -30,6 +33,7 @@ impl Screen {
 			Screen::ChoosePartner => "Choose Partner",
 			Screen::EditPartner => "Edit Partner",
 			Screen::Keyboard => "Keyboard",
+			Screen::BattleArenaIntro => "Battle Arena Intro",
 		}
 	}
 }

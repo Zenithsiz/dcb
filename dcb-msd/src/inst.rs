@@ -56,6 +56,18 @@ pub enum Inst<'a> {
 	// TODO: Rename, somewhat confusing
 	DisplayCenterTextBox,
 
+	/// Resets the game completion to 0 points.
+	ResetGameCompletion,
+
+	/// Transitions between the single red flashing light at the beginning
+	/// of each city to the proper menu interface
+	StartTransition,
+
+	/// Resets all of the partners in the choose partner menu.
+	///
+	/// Partners may then be added with `DisplayScene 0xa`
+	ResetChoosePartner,
+
 	/// Changes a variable value
 	///
 	/// Depending on `op`, either sets or adds `value` to the `var` variable
@@ -119,6 +131,9 @@ pub enum Inst<'a> {
 
 	/// Awaits the user's selection on the combo box
 	ComboBoxAwait,
+
+	/// Awaits the user's selection on the battle cafe
+	BattleCafeAwait,
 
 	/// Display scene
 	// TODO: Figure out
@@ -221,17 +236,22 @@ impl<'a> Inst<'a> {
 
 			// Misc.
 			0x0a => match LittleEndian::read_u16(slice.get(0x2..0x4)?) {
+				0x00 => Self::StartTransition,
 				0x01 => Self::ComboBoxAwait,
 				0x02 => Self::SetBgBattleCafe,
+				0x03 => Self::BattleCafeAwait,
 				0x04 => Self::DisplayTextBuffer,
 				0x05 => Self::WaitInput,
 				0x06 => Self::EmptyTextBox,
 				0x07 => Self::OpenScreen(Screen::PlayerRoom),
 				0x09 => Self::OpenScreen(Screen::CardList),
 				0x0a => Self::OpenScreen(Screen::ChoosePartner),
+				0x0b => Self::ResetChoosePartner,
 				0x0c => Self::SetBgBattleArena,
+				0x0d => Self::OpenScreen(Screen::BattleArenaIntro),
 				0x0f => Self::OpenScreen(Screen::Keyboard),
 				0x11 => Self::OpenScreen(Screen::EditPartner),
+				0x13 => Self::ResetGameCompletion,
 				0x16 => Self::DisplayCenterTextBox,
 				value => Self::Unknown0a { value },
 			},
@@ -308,41 +328,45 @@ impl<'a> Inst<'a> {
 	// TODO: Improve
 	pub fn encode<W: io::Write>(&self, f: &mut W) -> Result<(), EncodeError> {
 		match self {
-			Inst::DisplayTextBuffer => f.write_all(&[0xa, 0x0, 0x4, 0x0])?,
-			Inst::WaitInput => f.write_all(&[0xa, 0x0, 0x5, 0x0])?,
-			Inst::EmptyTextBox => f.write_all(&[0xa, 0x0, 0x6, 0x0])?,
-			Inst::SetBgBattleCafe => f.write_all(&[0xa, 0x0, 0x2, 0x0])?,
-			Inst::OpenScreen(screen) => match screen {
+			Self::DisplayTextBuffer => f.write_all(&[0xa, 0x0, 0x4, 0x0])?,
+			Self::WaitInput => f.write_all(&[0xa, 0x0, 0x5, 0x0])?,
+			Self::EmptyTextBox => f.write_all(&[0xa, 0x0, 0x6, 0x0])?,
+			Self::SetBgBattleCafe => f.write_all(&[0xa, 0x0, 0x2, 0x0])?,
+			Self::OpenScreen(screen) => match screen {
 				Screen::PlayerRoom => f.write_all(&[0xa, 0x0, 0x7, 0x0])?,
 				Screen::CardList => f.write_all(&[0xa, 0x0, 0x9, 0x0])?,
 				Screen::ChoosePartner => f.write_all(&[0xa, 0x0, 0xa, 0x0])?,
 				Screen::EditPartner => f.write_all(&[0xa, 0x0, 0x11, 0x0])?,
 				Screen::Keyboard => f.write_all(&[0xa, 0x0, 0xf, 0x0])?,
+				Screen::BattleArenaIntro => f.write_all(&[0xa, 0x0, 0xd, 0x0])?,
 			},
-			Inst::SetBgBattleArena => f.write_all(&[0xa, 0x0, 0xc, 0x0])?,
-			Inst::DisplayCenterTextBox => f.write_all(&[0xa, 0x0, 0x16, 0x0])?,
-			Inst::ChangeVar { var, op, value } => {
+			Self::SetBgBattleArena => f.write_all(&[0xa, 0x0, 0xc, 0x0])?,
+			Self::DisplayCenterTextBox => f.write_all(&[0xa, 0x0, 0x16, 0x0])?,
+			Self::ResetGameCompletion => f.write_all(&[0xa, 0x0, 0x13, 0x0])?,
+			Self::StartTransition => f.write_all(&[0xa, 0x0, 0x0, 0x0])?,
+			Self::ResetChoosePartner => f.write_all(&[0xa, 0x0, 0xb, 0x0])?,
+			Self::ChangeVar { var, op, value } => {
 				f.write_all(&[0x7, 0x0])?;
 				f.write_all(&var.to_le_bytes())?;
 				f.write_all(&op.to_le_bytes())?;
 				f.write_all(&value.to_le_bytes())?;
 			},
-			Inst::Test { var, op, value } => {
+			Self::Test { var, op, value } => {
 				f.write_all(&[0x9, 0x0])?;
 				f.write_all(&var.to_le_bytes())?;
 				f.write_all(&op.to_le_bytes())?;
 				f.write_all(&value.to_le_bytes())?;
 			},
-			Inst::Jump { var, addr } => {
+			Self::Jump { var, addr } => {
 				f.write_all(&[0x5, 0x0])?;
 				f.write_all(&var.to_le_bytes())?;
 				f.write_all(&addr.to_le_bytes())?;
 			},
-			Inst::Unknown0a { value } => {
+			Self::Unknown0a { value } => {
 				f.write_all(&[0xa, 0x0])?;
 				f.write_all(&value.to_le_bytes())?;
 			},
-			Inst::OpenComboBox { combo_box } => {
+			Self::OpenComboBox { combo_box } => {
 				f.write_all(&[0xb, 0x0, 0x0, 0x0])?;
 				f.write_all(&[0x0, 0x0])?;
 				f.write_all(
@@ -353,19 +377,20 @@ impl<'a> Inst<'a> {
 					.to_le_bytes(),
 				)?;
 			},
-			Inst::AddComboBoxButton { value } => {
+			Self::AddComboBoxButton { value } => {
 				f.write_all(&[0xb, 0x0, 0x1, 0x0])?;
 				f.write_all(&[0x0, 0x0])?;
 				f.write_all(&value.to_le_bytes())?;
 			},
-			Inst::ComboBoxAwait => f.write_all(&[0xa, 0x0, 0x1, 0x0])?,
-			Inst::DisplayScene { value0, value1 } => {
+			Self::ComboBoxAwait => f.write_all(&[0xa, 0x0, 0x1, 0x0])?,
+			Self::BattleCafeAwait => f.write_all(&[0xa, 0x0, 0x3, 0x0])?,
+			Self::DisplayScene { value0, value1 } => {
 				f.write_all(&[0xb, 0x0])?;
 				f.write_all(&value0.to_be_bytes())?;
 				f.write_all(&[0x0, 0x0])?;
 				f.write_all(&value1.to_le_bytes())?;
 			},
-			Inst::SetBuffer { buffer, bytes } => {
+			Self::SetBuffer { buffer, bytes } => {
 				f.write_all(&[0x8, 0x0])?;
 				f.write_all(&buffer.to_le_bytes())?;
 
@@ -376,7 +401,7 @@ impl<'a> Inst<'a> {
 				let nulls_len = 4 - (bytes.len() + 2) % 4;
 				f.write_all(&[0; 4][..nulls_len])?;
 			},
-			Inst::SetBrightness {
+			Self::SetBrightness {
 				kind,
 				place,
 				brightness,
@@ -397,29 +422,68 @@ impl<'a> Inst<'a> {
 	}
 
 	/// Displays an instruction
+	#[allow(clippy::too_many_lines)] // TODO: Refactor
 	pub fn display<W: io::Write, Ctx: DisplayCtx>(&self, f: &mut W, ctx: &Ctx) -> Result<(), DisplayError> {
 		match self {
-			Inst::DisplayTextBuffer => write!(f, "display_text_buffer")?,
-			Inst::WaitInput => write!(f, "wait_input")?,
-			Inst::EmptyTextBox => write!(f, "empty_text_box")?,
-			Inst::SetBgBattleCafe => write!(f, "set_bg \"Battle Cafe\"")?,
-			Inst::OpenScreen(screen) => write!(f, "open_screen \"{}\"", screen.as_str().escape_debug())?,
-			Inst::SetBgBattleArena => write!(f, "set_bg \"Battle Arena\"")?,
-			Inst::DisplayCenterTextBox => write!(f, "display_center_text_box")?,
-			Inst::ChangeVar { var, op, value } => {
-				let var = zutil::DisplayWrapper::new(|f| match ctx.var_label(*var) {
+			Self::DisplayTextBuffer => write!(f, "display_text_buffer")?,
+			Self::WaitInput => write!(f, "wait_input")?,
+			Self::EmptyTextBox => write!(f, "empty_text_box")?,
+			Self::SetBgBattleCafe => write!(f, "set_bg \"Battle Cafe\"")?,
+			Self::OpenScreen(screen) => write!(f, "open_screen \"{}\"", screen.as_str().escape_debug())?,
+			Self::SetBgBattleArena => write!(f, "set_bg \"Battle Arena\"")?,
+			Self::DisplayCenterTextBox => write!(f, "display_center_text_box")?,
+			Self::ResetGameCompletion => write!(f, "reset_game_completion")?,
+			Self::StartTransition => write!(f, "start_transition")?,
+			Self::ResetChoosePartner => write!(f, "reset_choose_partner")?,
+			Self::ChangeVar { var, op, value } => {
+				let var_label = zutil::DisplayWrapper::new(|f| match ctx.var_label(*var) {
 					Some(label) => write!(f, "{label}"),
 					None => write!(f, "{var:#x}"),
 				});
 
-				match op {
-					0 => write!(f, "set_value {var}, {value:#x}")?,
-					1 => write!(f, "add_value {var}, {value:#x}")?,
-					6 => write!(f, "???_value {var}, {value:#x}")?,
+				match (var, op) {
+					// Arena intro colors
+					(0x5, 0) => {
+						#[derive(derive_more::Display)]
+						#[allow(clippy::missing_docs_in_private_items)] // Just for formatting
+						enum Color {
+							Yellow,
+							Black,
+							Green,
+							Blue,
+							Red,
+						}
+
+						let colors = self::bits_iterator(*value)
+							.take(5)
+							.zip([Color::Yellow, Color::Black, Color::Green, Color::Blue, Color::Red])
+							.filter_map(|(set, color)| set.then_some(color));
+
+						write!(f, "set_arena_match_intro_colors {}", colors.format("+"))?;
+					},
+
+					// Arena match intro index
+					(0xb, 0) => {
+						let idx = zutil::DisplayWrapper::new(|f| match value {
+							0 => write!(f, "1st"),
+							1 => write!(f, "2nd"),
+							2 => write!(f, "3rd"),
+							3 => write!(f, "4th"),
+							4 => write!(f, "5th"),
+							5 => write!(f, "Last"),
+							_ => write!(f, "{value:#x}"),
+						});
+
+						write!(f, "set_arena_match_intro_idx \"{idx}\"")?;
+					},
+
+					(_, 0) => write!(f, "set_var {var_label}, {value:#x}")?,
+					(_, 1) => write!(f, "add_var {var_label}, {value:#x}")?,
+					(_, 6) => write!(f, "???_var {var_label}, {value:#x}")?,
 					_ => unreachable!(),
 				}
 			},
-			Inst::Test { var, op, value } => {
+			Self::Test { var, op, value } => {
 				let var = zutil::DisplayWrapper::new(|f| match ctx.var_label(*var) {
 					Some(label) => write!(f, "{label}"),
 					None => write!(f, "{var:#x}"),
@@ -432,7 +496,7 @@ impl<'a> Inst<'a> {
 				}
 			},
 
-			Inst::Jump { var, addr } => {
+			Self::Jump { var, addr } => {
 				let addr = zutil::DisplayWrapper::new(|f| match ctx.pos_label(*addr) {
 					Some(label) => write!(f, "{label}"),
 					None => write!(f, "{addr:#x}"),
@@ -440,14 +504,40 @@ impl<'a> Inst<'a> {
 
 				write!(f, "jump {var:#x}, {addr}")?;
 			},
-			Inst::Unknown0a { value } => write!(f, "unknown_0a {value:#x}")?,
-			Inst::OpenComboBox { combo_box: menu } => write!(f, "open_menu {}", menu.as_str())?,
-			Inst::DisplayScene { value0, value1 } => match (value0, value1) {
-				(0x2, _) => write!(f, "battle {value1:#x}")?,
+			Self::Unknown0a { value } => write!(f, "unknown_0a {value:#x}")?,
+			Self::OpenComboBox { combo_box: menu } => write!(f, "open_menu {}", menu.as_str())?,
+			Self::DisplayScene { value0, value1 } => match (value0, value1) {
+				(0x2, value) => write!(f, "battle {value:#x}")?,
+				(0x8, location) => {
+					let location = zutil::DisplayWrapper::new(|f| match location {
+						1 => write!(f, "Battle Cafe"),
+						2 => write!(f, "Battle Arena"),
+						3 => write!(f, "Extra Arena"),
+						4 => write!(f, "Beet Arena"),
+						5 => write!(f, "Haunted Arena"),
+						_ => write!(f, "<Unknown arena>"),
+					});
+
+					write!(f, "display_location \"{location}\"")?;
+				},
+				(0xa, partner) => {
+					let partner = zutil::DisplayWrapper::new(|f| match partner {
+						0 => write!(f, "Veemon"),
+						1 => write!(f, "Hawkmon"),
+						2 => write!(f, "Armadillomon"),
+						3 => write!(f, "Gatomon"),
+						4 => write!(f, "Patamon"),
+						5 => write!(f, "Wormmon"),
+						_ => write!(f, "<Unknown partner>"),
+					});
+
+					write!(f, "add_partner \"{partner}\"")?;
+				},
+				(0x12, value) => write!(f, "add_completion_points {value}")?,
 
 				_ => write!(f, "display_scene {value0:#x}, {value1:#x}")?,
 			},
-			Inst::SetBuffer { buffer, bytes } => {
+			Self::SetBuffer { buffer, bytes } => {
 				let bytes = zutil::DisplayWrapper::new(|f| {
 					match SHIFT_JIS.decode_without_bom_handling_and_without_replacement(bytes) {
 						Some(s) => {
@@ -466,7 +556,7 @@ impl<'a> Inst<'a> {
 				}
 			},
 
-			Inst::SetBrightness {
+			Self::SetBrightness {
 				kind,
 				place,
 				brightness,
@@ -477,8 +567,9 @@ impl<'a> Inst<'a> {
 				(0x1, _, 0xffff, 0xffff) => write!(f, "set_light_unknown {place:#x}")?,
 				_ => write!(f, "set_light {kind:#x}, {place:#x}, {brightness:#x}, {value:#x}")?,
 			},
-			Inst::ComboBoxAwait => write!(f, "combo_box_await")?,
-			Inst::AddComboBoxButton { value } => write!(f, "combo_box_add_button {value:#x}")?,
+			Self::ComboBoxAwait => write!(f, "combo_box_await")?,
+			Self::BattleCafeAwait => write!(f, "battle_cafe_await")?,
+			Self::AddComboBoxButton { value } => write!(f, "combo_box_add_button {value:#x}")?,
 		}
 
 		Ok(())
@@ -490,26 +581,30 @@ impl<'a> Inst<'a> {
 		// TODO: Combine them
 		#[allow(clippy::match_same_arms)] // We want to explicitly not combine them for now
 		match self {
-			Inst::DisplayTextBuffer => 4,
-			Inst::WaitInput => 4,
-			Inst::EmptyTextBox => 4,
-			Inst::ComboBoxAwait => 4,
-			Inst::SetBgBattleCafe => 4,
-			Inst::OpenScreen(_) => 4,
-			Inst::SetBgBattleArena => 4,
-			Inst::DisplayCenterTextBox => 4,
-			Inst::ChangeVar { .. } => 0xc,
-			Inst::Test { .. } => 0xc,
-			Inst::Jump { .. } => 8,
-			Inst::Unknown0a { .. } => 4,
-			Inst::OpenComboBox { .. } => 8,
-			Inst::AddComboBoxButton { .. } => 8,
-			Inst::DisplayScene { .. } => 8,
-			Inst::SetBuffer { bytes, .. } => {
+			Self::DisplayTextBuffer => 4,
+			Self::WaitInput => 4,
+			Self::EmptyTextBox => 4,
+			Self::ComboBoxAwait => 4,
+			Self::BattleCafeAwait => 4,
+			Self::SetBgBattleCafe => 4,
+			Self::OpenScreen(_) => 4,
+			Self::SetBgBattleArena => 4,
+			Self::DisplayCenterTextBox => 4,
+			Self::ResetGameCompletion => 4,
+			Self::StartTransition => 4,
+			Self::ResetChoosePartner => 4,
+			Self::ChangeVar { .. } => 0xc,
+			Self::Test { .. } => 0xc,
+			Self::Jump { .. } => 8,
+			Self::Unknown0a { .. } => 4,
+			Self::OpenComboBox { .. } => 8,
+			Self::AddComboBoxButton { .. } => 8,
+			Self::DisplayScene { .. } => 8,
+			Self::SetBuffer { bytes, .. } => {
 				let len = bytes.len() + 2;
 				4 + len + (4 - len % 4)
 			},
-			Inst::SetBrightness { .. } => 16,
+			Self::SetBrightness { .. } => 16,
 		}
 	}
 }
@@ -550,4 +645,15 @@ mod serde_shift_jis_str {
 			Cow::Owned(_) => panic!("Unable to deserialize"),
 		}
 	}
+}
+
+
+/// Bits iterator from least to most significant
+fn bits_iterator(mut value: u32) -> impl Iterator<Item = bool> {
+	std::iter::from_fn(move || {
+		let is_set = (value & 0x1) != 0;
+		value >>= 1u32;
+		Some(is_set)
+	})
+	.take(32)
 }
