@@ -50,6 +50,15 @@ fn main() -> Result<(), anyhow::Error> {
 	// Setup memory
 	let mut memory = box Memory::new();
 
+	// Read the bios and write it into memory
+	let bios_contents = fs::read("SCPH1001.BIN").context("Unable to read bios")?;
+	anyhow::ensure!(
+		bios_contents.len() == 0x80000,
+		"Bios had an unexpected size: {:#x}",
+		bios_contents.len()
+	);
+	memory[..0x80000].copy_from_slice(&bios_contents);
+
 	// Open the input file and unbin it
 	let game_file = fs::File::open(&args.game_path).context("Unable to open game file")?;
 	let game_file = BufReader::new(game_file);
@@ -234,8 +243,8 @@ impl ExecCtx for ExecState {
 			return Err(ExecError::MemoryUnalignedAccess { pos });
 		}
 
-		// Ignore the top 3 bits
-		let idx = pos.0 & 0x7FFF_FFFF;
+		// Ignore the top nibble
+		let idx = pos.0 & 0x0FFF_FFFF;
 		let idx = idx.try_into().expect("Memory position didn't fit into `usize`");
 
 		// Then read from memory
@@ -252,8 +261,8 @@ impl ExecCtx for ExecState {
 			return Err(ExecError::MemoryUnalignedAccess { pos });
 		}
 
-		// Ignore the top 3 bits
-		let idx = pos.0 & 0x7FFF_FFFF;
+		// Ignore the top nibble
+		let idx = pos.0 & 0x0FFF_FFFF;
 		let idx = idx.try_into().expect("Memory position didn't fit into `usize`");
 
 		// Then read from memory
@@ -266,8 +275,8 @@ impl ExecCtx for ExecState {
 
 	/// Reads a byte from a memory position
 	fn read_byte(&self, pos: Pos) -> Result<u8, ExecError> {
-		// Ignore the top 3 bits
-		let idx = pos.0 & 0x7FFF_FFFF;
+		// Ignore the top nibble
+		let idx = pos.0 & 0x0FFF_FFFF;
 		let idx: usize = idx.try_into().expect("Memory position didn't fit into `usize`");
 
 		// Then read from memory
@@ -284,8 +293,8 @@ impl ExecCtx for ExecState {
 			return Err(ExecError::MemoryUnalignedAccess { pos });
 		}
 
-		// Ignore the top 3 bits
-		let idx = pos.0 & 0x7FFF_FFFF;
+		// Ignore the top nibble
+		let idx = pos.0 & 0x0FFF_FFFF;
 		let idx = idx.try_into().expect("Memory position didn't fit into `usize`");
 
 		// Then write to memory
@@ -304,8 +313,8 @@ impl ExecCtx for ExecState {
 			return Err(ExecError::MemoryUnalignedAccess { pos });
 		}
 
-		// Ignore the top 3 bits
-		let idx = pos.0 & 0x7FFF_FFFF;
+		// Ignore the top nibble
+		let idx = pos.0 & 0x0FFF_FFFF;
 		let idx = idx.try_into().expect("Memory position didn't fit into `usize`");
 
 		// Then write to memory
@@ -319,8 +328,8 @@ impl ExecCtx for ExecState {
 
 	/// Writes a byte to a memory position
 	fn write_byte(&mut self, pos: Pos, value: u8) -> Result<(), ExecError> {
-		// Ignore the top 3 bits
-		let idx = pos.0 & 0x7FFF_FFFF;
+		// Ignore the top nibble
+		let idx = pos.0 & 0x0FFF_FFFF;
 		let idx: usize = idx.try_into().expect("Memory position didn't fit into `usize`");
 
 		// Then write to memory
