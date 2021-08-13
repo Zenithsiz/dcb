@@ -91,7 +91,7 @@ impl DirEntry {
 
 		// Read the sector
 		let sector = cdrom
-			.read_nth_sector(u64::from(dbg!(self.sector_pos)))
+			.read_nth_sector(u64::from(self.sector_pos))
 			.map_err(ReadDirError::ReadSector)?;
 
 		// Then keep parsing until we run out.
