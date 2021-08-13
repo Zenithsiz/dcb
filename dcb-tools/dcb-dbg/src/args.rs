@@ -4,9 +4,9 @@
 use clap::{App as ClapApp, Arg as ClapArg};
 use std::path::PathBuf;
 
-/// Command line data
+/// Arguments
 #[derive(PartialEq, Clone, Debug)]
-pub struct CliData {
+pub struct Args {
 	/// The input file
 	pub input_path: PathBuf,
 
@@ -14,8 +14,8 @@ pub struct CliData {
 	pub header_path: PathBuf,
 }
 
-impl CliData {
-	/// Constructs all of the cli data given and returns it
+impl Args {
+	/// Returns all arguments
 	pub fn new() -> Self {
 		const INPUT_FILE_STR: &str = "input-file";
 		const HEADER_FILE_STR: &str = "header-file";

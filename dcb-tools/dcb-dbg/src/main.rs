@@ -3,9 +3,10 @@
 #![feature(try_blocks, format_args_capture, iter_map_while, box_syntax)]
 
 // Modules
-mod cli;
+mod args;
 
 // Imports
+use crate::args::Args;
 use anyhow::Context;
 use byteorder::{ByteOrder, LittleEndian};
 use dcb_exe::{
@@ -31,11 +32,11 @@ fn main() -> Result<(), anyhow::Error> {
 	)
 	.expect("Unable to initialize logger");
 
-	// Get all data from cli
-	let cli = cli::CliData::new();
+	// Get all arguments
+	let args = Args::new();
 
 	// Open the input file
-	let input_bytes = fs::read(&cli.input_path).context("Unable to read input file")?;
+	let input_bytes = fs::read(&args.input_path).context("Unable to read input file")?;
 
 	// Then put them at `0x10000`
 	let mut memory = vec![0; 0x10000];
