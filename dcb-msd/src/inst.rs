@@ -510,12 +510,13 @@ impl<'a> Inst<'a> {
 				(0x2, value) => write!(f, "battle {value:#x}")?,
 				(0x8, location) => {
 					let location = zutil::DisplayWrapper::new(|f| match location {
+						0 => write!(f, "Player Room"),
 						1 => write!(f, "Battle Cafe"),
 						2 => write!(f, "Battle Arena"),
 						3 => write!(f, "Extra Arena"),
 						4 => write!(f, "Beet Arena"),
 						5 => write!(f, "Haunted Arena"),
-						_ => write!(f, "<Unknown arena>"),
+						_ => write!(f, "<Unknown arena {location:#x}>"),
 					});
 
 					write!(f, "display_location \"{location}\"")?;
@@ -528,7 +529,7 @@ impl<'a> Inst<'a> {
 						3 => write!(f, "Gatomon"),
 						4 => write!(f, "Patamon"),
 						5 => write!(f, "Wormmon"),
-						_ => write!(f, "<Unknown partner>"),
+						_ => write!(f, "<Unknown partner {partner:#x}>"),
 					});
 
 					write!(f, "add_partner \"{partner}\"")?;
@@ -569,7 +570,14 @@ impl<'a> Inst<'a> {
 			},
 			Self::ComboBoxAwait => write!(f, "combo_box_await")?,
 			Self::BattleCafeAwait => write!(f, "battle_cafe_await")?,
-			Self::AddComboBoxButton { value } => write!(f, "combo_box_add_button {value:#x}")?,
+			// TODO: Not do it hackily like this
+			Self::AddComboBoxButton { value } => match ComboBox::Small
+				.parse_button(*value)
+				.or_else(|| ComboBox::Large.parse_button(*value))
+			{
+				Some(button) => write!(f, "combo_box_add_button \"{}\"", button.as_str().escape_debug())?,
+				None => write!(f, "combo_box_add_button {value:#x}")?,
+			},
 		}
 
 		Ok(())
