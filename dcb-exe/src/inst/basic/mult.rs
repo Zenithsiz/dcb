@@ -252,39 +252,41 @@ impl Executable for Inst {
 			Inst::Mult { kind, mode, lhs, rhs } => {
 				let (lo, hi) = match (kind, mode) {
 					(MultKind::Mult, MultMode::Signed) => {
-						let lhs: i64 = state[lhs].as_signed().sign_extended();
-						let rhs: i64 = state[rhs].as_signed().sign_extended();
+						let lhs: i64 = state.load_reg(lhs).as_signed().sign_extended();
+						let rhs: i64 = state.load_reg(rhs).as_signed().sign_extended();
 
 						lhs.wrapping_mul(rhs).as_unsigned().lo_hi()
 					},
 					(MultKind::Mult, MultMode::Unsigned) => {
-						let lhs: u64 = state[lhs].zero_extended();
-						let rhs: u64 = state[rhs].zero_extended();
+						let lhs: u64 = state.load_reg(lhs).zero_extended();
+						let rhs: u64 = state.load_reg(rhs).zero_extended();
 
 						lhs.wrapping_mul(rhs).as_unsigned().lo_hi()
 					},
-					(MultKind::Div, MultMode::Signed) => match (state[lhs].as_signed(), state[rhs].as_signed()) {
-						(lhs @ 0i32..=i32::MAX, 0i32) => ((-1i32).as_unsigned(), lhs.as_unsigned()),
-						(lhs @ i32::MIN..0i32, 0i32) => (1u32, lhs.as_unsigned()),
-						(lhs, rhs) => (lhs.wrapping_div(rhs).as_unsigned(), lhs.wrapping_rem(rhs).as_unsigned()),
+					(MultKind::Div, MultMode::Signed) => {
+						match (state.load_reg(lhs).as_signed(), state.load_reg(rhs).as_signed()) {
+							(lhs @ 0i32..=i32::MAX, 0i32) => ((-1i32).as_unsigned(), lhs.as_unsigned()),
+							(lhs @ i32::MIN..0i32, 0i32) => (1u32, lhs.as_unsigned()),
+							(lhs, rhs) => (lhs.wrapping_div(rhs).as_unsigned(), lhs.wrapping_rem(rhs).as_unsigned()),
+						}
 					},
-					(MultKind::Div, MultMode::Unsigned) => match (state[lhs], state[rhs]) {
+					(MultKind::Div, MultMode::Unsigned) => match (state.load_reg(lhs), state.load_reg(rhs)) {
 						(lhs, 0) => ((-1i32).as_unsigned(), lhs),
 						(lhs, rhs) => (lhs / rhs, lhs % rhs),
 					},
 				};
 
-				state[MultReg::Lo] = lo;
-				state[MultReg::Hi] = hi;
+				state.store_mult_reg(MultReg::Lo, lo);
+				state.store_mult_reg(MultReg::Hi, hi);
 
 				Ok(())
 			},
 			Inst::MoveFrom { dst, src } => {
-				state[dst] = state[src];
+				state.store_reg(dst, state.load_mult_reg(src));
 				Ok(())
 			},
 			Inst::MoveTo { src, dst } => {
-				state[dst] = state[src];
+				state.store_mult_reg(dst, state.load_reg(src));
 				Ok(())
 			},
 		}

@@ -190,25 +190,33 @@ impl ModifiesReg for Inst {
 
 impl Executable for Inst {
 	fn exec<Ctx: ExecCtx>(&self, state: &mut Ctx) -> Result<(), ExecError> {
-		state[self.dst] = match self.kind {
-			Kind::Add(rhs) => state[self.lhs]
+		let value = match self.kind {
+			Kind::Add(rhs) => state
+				.load_reg(self.lhs)
 				.as_signed()
 				.checked_add(rhs.sign_extended::<i32>())
 				.ok_or(ExecError::Overflow)?
 				.as_unsigned(),
-			Kind::AddUnsigned(rhs) => state[self.lhs]
+			Kind::AddUnsigned(rhs) => state
+				.load_reg(self.lhs)
 				.as_signed()
 				.wrapping_add(rhs.sign_extended::<i32>())
 				.as_unsigned(),
-			Kind::SetLessThan(rhs) => state[self.lhs].as_signed().lt(&rhs.sign_extended::<i32>()).into(),
+			Kind::SetLessThan(rhs) => state
+				.load_reg(self.lhs)
+				.as_signed()
+				.lt(&rhs.sign_extended::<i32>())
+				.into(),
 			// TODO: Verify it's sign extended
-			Kind::SetLessThanUnsigned(rhs) => state[self.lhs]
+			Kind::SetLessThanUnsigned(rhs) => state
+				.load_reg(self.lhs)
 				.lt(&rhs.as_signed().sign_extended::<i32>().as_unsigned())
 				.into(),
-			Kind::And(rhs) => state[self.lhs] & rhs.zero_extended::<u32>(),
-			Kind::Or(rhs) => state[self.lhs] | rhs.zero_extended::<u32>(),
-			Kind::Xor(rhs) => state[self.lhs] ^ rhs.zero_extended::<u32>(),
+			Kind::And(rhs) => state.load_reg(self.lhs) & rhs.zero_extended::<u32>(),
+			Kind::Or(rhs) => state.load_reg(self.lhs) | rhs.zero_extended::<u32>(),
+			Kind::Xor(rhs) => state.load_reg(self.lhs) ^ rhs.zero_extended::<u32>(),
 		};
+		state.store_reg(self.dst, value);
 
 		Ok(())
 	}

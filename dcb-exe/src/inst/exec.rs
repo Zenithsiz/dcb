@@ -12,12 +12,9 @@ use crate::{
 	inst::{basic::mult::MultReg, Register},
 	Pos,
 };
-use std::ops::{Index, IndexMut};
 
 /// Executable context
-pub trait ExecCtx:
-	Index<Register, Output = u32> + IndexMut<Register> + Index<MultReg, Output = u32> + IndexMut<MultReg>
-{
+pub trait ExecCtx {
 	/// Returns the current program counter
 	fn pc(&self) -> Pos;
 

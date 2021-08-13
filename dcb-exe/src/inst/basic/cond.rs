@@ -270,10 +270,10 @@ impl ModifiesReg for Inst {
 
 impl Executable for Inst {
 	fn exec<Ctx: ExecCtx>(&self, state: &mut Ctx) -> Result<(), ExecError> {
-		let lhs = state[self.arg].as_signed();
+		let lhs = state.load_reg(self.arg).as_signed();
 		let do_jump = match self.kind {
-			Kind::Equal(rhs) => lhs == state[rhs].as_signed(),
-			Kind::NotEqual(rhs) => lhs != state[rhs].as_signed(),
+			Kind::Equal(rhs) => lhs == state.load_reg(rhs).as_signed(),
+			Kind::NotEqual(rhs) => lhs != state.load_reg(rhs).as_signed(),
 			Kind::LessOrEqualZero => lhs <= 0i32,
 			Kind::GreaterThanZero => lhs > 0i32,
 			Kind::LessThanZero | Kind::LessThanZeroLink => lhs < 0i32,
@@ -284,7 +284,7 @@ impl Executable for Inst {
 			true => {
 				// If we should link, set `$ra`
 				if matches!(self.kind, Kind::LessThanZeroLink | Kind::GreaterOrEqualZeroLink) {
-					state[Register::Ra] = (state.pc() + 8u32).0;
+					state.store_reg(Register::Ra, (state.pc() + 8u32).0);
 				}
 
 				// Then set the jump

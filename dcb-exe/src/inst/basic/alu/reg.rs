@@ -203,10 +203,10 @@ impl ModifiesReg for Inst {
 
 impl Executable for Inst {
 	fn exec<Ctx: ExecCtx>(&self, state: &mut Ctx) -> Result<(), ExecError> {
-		let lhs = state[self.lhs];
-		let rhs = state[self.rhs];
+		let lhs = state.load_reg(self.lhs);
+		let rhs = state.load_reg(self.rhs);
 
-		state[self.dst] = match self.kind {
+		let value = match self.kind {
 			Kind::Add => lhs
 				.as_signed()
 				.checked_add(rhs.as_signed())
@@ -226,6 +226,7 @@ impl Executable for Inst {
 			Kind::SetLessThan => (lhs.as_signed() < rhs.as_signed()).into(),
 			Kind::SetLessThanUnsigned => (lhs < rhs).into(),
 		};
+		state.store_reg(self.dst, value);
 
 		Ok(())
 	}

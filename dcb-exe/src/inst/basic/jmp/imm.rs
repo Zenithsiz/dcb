@@ -142,7 +142,7 @@ impl Executable for Inst {
 	fn exec<Ctx: ExecCtx>(&self, state: &mut Ctx) -> Result<(), ExecError> {
 		// If we should link, set `$ra`
 		if matches!(self.kind, Kind::JumpLink) {
-			state[Register::Ra] = (state.pc() + 8u32).0;
+			state.store_reg(Register::Ra, (state.pc() + 8u32).0);
 		}
 
 		// Then set the jump

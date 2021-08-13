@@ -184,22 +184,23 @@ impl ModifiesReg for Inst {
 
 impl Executable for Inst {
 	fn exec<Ctx: ExecCtx>(&self, state: &mut Ctx) -> Result<(), ExecError> {
-		state[self.value] = match self.kind {
+		let value = match self.kind {
 			Kind::Byte => state
-				.read_byte(Pos(state[self.addr]))?
+				.read_byte(Pos(state.load_reg(self.addr)))?
 				.as_signed()
 				.sign_extended::<i32>()
 				.as_unsigned(),
 			Kind::HalfWord => state
-				.read_half_word(Pos(state[self.addr]))?
+				.read_half_word(Pos(state.load_reg(self.addr)))?
 				.as_signed()
 				.sign_extended::<i32>()
 				.as_unsigned(),
-			Kind::Word => state.read_word(Pos(state[self.addr]))?,
-			Kind::ByteUnsigned => state.read_byte(Pos(state[self.addr]))?.zero_extended(),
-			Kind::HalfWordUnsigned => state.read_half_word(Pos(state[self.addr]))?.zero_extended(),
+			Kind::Word => state.read_word(Pos(state.load_reg(self.addr)))?,
+			Kind::ByteUnsigned => state.read_byte(Pos(state.load_reg(self.addr)))?.zero_extended(),
+			Kind::HalfWordUnsigned => state.read_half_word(Pos(state.load_reg(self.addr)))?.zero_extended(),
 			Kind::WordLeft | Kind::WordRight => todo!(),
 		};
+		state.store_reg(self.value, value);
 
 		Ok(())
 	}

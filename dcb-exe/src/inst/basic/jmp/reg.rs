@@ -131,10 +131,10 @@ impl Executable for Inst {
 	fn exec<Ctx: ExecCtx>(&self, state: &mut Ctx) -> Result<(), ExecError> {
 		// If we should link, set `$ra`
 		if let Kind::JumpLink(link) = self.kind {
-			state[link] = (state.pc() + 8u32).0;
+			state.store_reg(link, (state.pc() + 8u32).0);
 		}
 
 		// Then set the jump
-		state.queue_jump(Pos(state[self.target]))
+		state.queue_jump(Pos(state.load_reg(self.target)))
 	}
 }

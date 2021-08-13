@@ -172,9 +172,11 @@ impl ModifiesReg for Inst {
 impl Executable for Inst {
 	fn exec<Ctx: ExecCtx>(&self, state: &mut Ctx) -> Result<(), ExecError> {
 		match self.kind {
-			Kind::Byte => state.write_byte(Pos(state[self.addr]), state[self.value].truncated()),
-			Kind::HalfWord => state.write_half_word(Pos(state[self.addr]), state[self.value].truncated()),
-			Kind::Word => state.write_word(Pos(state[self.addr]), state[self.value]),
+			Kind::Byte => state.write_byte(Pos(state.load_reg(self.addr)), state.load_reg(self.value).truncated()),
+			Kind::HalfWord => {
+				state.write_half_word(Pos(state.load_reg(self.addr)), state.load_reg(self.value).truncated())
+			},
+			Kind::Word => state.write_word(Pos(state.load_reg(self.addr)), state.load_reg(self.value)),
 			Kind::WordLeft | Kind::WordRight => todo!(),
 		}
 	}

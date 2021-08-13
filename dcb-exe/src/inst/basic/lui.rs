@@ -88,7 +88,7 @@ impl ModifiesReg for Inst {
 
 impl Executable for Inst {
 	fn exec<Ctx: ExecCtx>(&self, state: &mut Ctx) -> Result<(), ExecError> {
-		state[self.dst] = u32::join(0, self.value);
+		state.store_reg(self.dst, u32::join(0, self.value));
 		Ok(())
 	}
 }

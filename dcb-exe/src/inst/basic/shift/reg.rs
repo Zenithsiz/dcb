@@ -147,11 +147,16 @@ impl ModifiesReg for Inst {
 
 impl Executable for Inst {
 	fn exec<Ctx: ExecCtx>(&self, state: &mut Ctx) -> Result<(), ExecError> {
-		state[self.dst] = match self.kind {
-			Kind::LeftLogical => state[self.lhs].wrapping_shl(state[self.rhs]),
-			Kind::RightLogical => state[self.lhs].wrapping_shr(state[self.rhs]),
-			Kind::RightArithmetic => state[self.lhs].as_signed().wrapping_shr(state[self.rhs]).as_unsigned(),
+		let value = match self.kind {
+			Kind::LeftLogical => state.load_reg(self.lhs).wrapping_shl(state.load_reg(self.rhs)),
+			Kind::RightLogical => state.load_reg(self.lhs).wrapping_shr(state.load_reg(self.rhs)),
+			Kind::RightArithmetic => state
+				.load_reg(self.lhs)
+				.as_signed()
+				.wrapping_shr(state.load_reg(self.rhs))
+				.as_unsigned(),
 		};
+		state.store_reg(self.dst, value);
 
 		Ok(())
 	}
