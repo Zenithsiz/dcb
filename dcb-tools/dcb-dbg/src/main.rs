@@ -64,14 +64,8 @@ fn main() -> Result<(), anyhow::Error> {
 		.with_context(|| format!("Unable to load bios from {}", args.bios_path.display()))?;
 
 	// Then open the game and retrieve the root directory.
-	let game_file = fs::File::open(&args.game_path).context("Unable to open game file")?;
-	let game_file = BufReader::new(game_file);
-	let mut game_file = dcb_cdrom_xa::CdRomReader::new(game_file);
-	let game_fs = dcb_iso9660::FilesystemReader::new(&mut game_file).context("Unable to open game file as iso9660")?;
-	let game_root_dir = game_fs
-		.root_dir()
-		.read_dir(&mut game_file)
-		.context("Unable to read game files")?;
+	let (mut game_file, game_root_dir) = self::load_game(&args.game_path)
+		.with_context(|| format!("Unable to load game from {}", args.game_path.display()))?;
 
 	// Note: In other executables, we should read the `SYSTEM.CNF` to
 	//       determine the executable file. For `dcb` we simply know which
@@ -153,6 +147,25 @@ fn main() -> Result<(), anyhow::Error> {
 	}
 
 	Ok(())
+}
+
+/// Loads the game file and it's root directory
+fn load_game(
+	path: impl AsRef<Path>,
+) -> Result<(dcb_cdrom_xa::CdRomReader<BufReader<fs::File>>, dcb_iso9660::Dir), anyhow::Error> {
+	// Open the file, wrap it in a buf reader and then in a cdrom reader.
+	let game_file = fs::File::open(path).context("Unable to open file")?;
+	let game_file = BufReader::new(game_file);
+	let mut game_file = dcb_cdrom_xa::CdRomReader::new(game_file);
+
+	// Then read the iso9660 filesystem and the root directory
+	let game_fs = dcb_iso9660::FilesystemReader::new(&mut game_file).context("Unable to read iso9660 filesystem")?;
+	let game_root_dir = game_fs
+		.root_dir()
+		.read_dir(&mut game_file)
+		.context("Unable to read root directory")?;
+
+	Ok((game_file, game_root_dir))
 }
 
 /// Loads the bis from it's path
