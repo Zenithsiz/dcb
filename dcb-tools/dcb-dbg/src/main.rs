@@ -336,15 +336,15 @@ impl ExecState {
 		// And display the results
 		for result in self.results.borrow_mut().drain(..) {
 			match result {
-				ExecResult::ReadRegister { reg, value } if reg != Register::Zr => println!("[{reg}] {value:#x}"),
-				ExecResult::ReadMultRegister { reg, value } => println!("[{reg}] {value:#x}"),
+				//ExecResult::ReadRegister { reg, value } if reg != Register::Zr => println!("[{reg}] {value:#x}"),
+				//ExecResult::ReadMultRegister { reg, value } => println!("[{reg}] {value:#x}"),
 				ExecResult::WroteRegister { reg, prev, value } if reg != Register::Zr => {
 					println!("[{reg}] {prev:#x} => {value:#x}")
 				},
 				ExecResult::WroteMultRegister { reg, prev, value } => println!("[{reg}] {prev:#x} => {value:#x}"),
-				ExecResult::ReadWord { pos, value } => println!("[{pos:010}] {value:#x}"),
-				ExecResult::ReadHalfWord { pos, value } => println!("[{pos:010}] {value:#x}"),
-				ExecResult::ReadByte { pos, value } => println!("[{pos:010}] {value:#x}"),
+				//ExecResult::ReadWord { pos, value } => println!("[{pos:010}] {value:#x}"),
+				//ExecResult::ReadHalfWord { pos, value } => println!("[{pos:010}] {value:#x}"),
+				//ExecResult::ReadByte { pos, value } => println!("[{pos:010}] {value:#x}"),
 				ExecResult::WriteWord { pos, prev, value } => println!("[{pos:010}] {prev:#x} => {value:#x}"),
 				ExecResult::WriteHalfWord { pos, prev, value } => println!("[{pos:010}] {prev:#x} => {value:#x}"),
 				ExecResult::WriteByte { pos, prev, value } => println!("[{pos:010}] {prev:#x} => {value:#x}"),

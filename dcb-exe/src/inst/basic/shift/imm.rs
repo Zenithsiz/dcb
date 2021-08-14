@@ -50,6 +50,16 @@ pub struct Inst {
 	pub kind: Kind,
 }
 
+impl Inst {
+	/// NOP
+	pub const NOP: Self = Self {
+		dst:  Register::Zr,
+		lhs:  Register::Zr,
+		rhs:  0,
+		kind: Kind::LeftLogical,
+	};
+}
+
 impl Decode for Inst {
 	#[bitmatch::bitmatch]
 	fn decode(raw: u32) -> Option<Self> {
@@ -109,6 +119,11 @@ impl<'a> Parsable<'a> for Inst {
 	fn parse<Ctx: ?Sized + ParseCtx<'a>>(
 		mnemonic: &'a str, args: &'a [LineArg], ctx: &Ctx,
 	) -> Result<Self, ParseError> {
+		// Special case for `nop`
+		if let ("nop", []) = (mnemonic, args) {
+			return Ok(Self::NOP);
+		}
+
 		let kind = match mnemonic {
 			"sll" => Kind::LeftLogical,
 			"srl" => Kind::RightLogical,
@@ -135,6 +150,11 @@ impl<'a> InstDisplay<'a> for Inst {
 	type Args = impl IntoIterator<Item = InstFmtArg<'a>>;
 
 	fn mnemonic<Ctx: DisplayCtx>(&'a self, _ctx: &Ctx) -> Self::Mnemonic {
+		// Special case for `nop`
+		if let Self::NOP = *self {
+			return "nop";
+		}
+
 		self.kind.mnemonic()
 	}
 
@@ -144,6 +164,10 @@ impl<'a> InstDisplay<'a> for Inst {
 
 		// If `$dst` and `$lhs` are the same, only print one of them
 		match dst == lhs {
+			// Special case for `nop`
+			// Note: This has to be in this match due to `auto_enum`.
+			_ if matches!(*self, Self::NOP) => [].into_iter(),
+
 			true => [InstFmtArg::Register(dst), InstFmtArg::literal(rhs)].into_iter(),
 			false => [
 				InstFmtArg::Register(dst),
