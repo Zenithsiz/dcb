@@ -10,7 +10,7 @@ version = "0.1.0"
 dcb-bytes = {path = "../dcb-bytes"}
 dcb-cdrom-xa = {path = "../dcb-cdrom-xa"}
 dcb-drv = {path = "../dcb-drv"}
-zutil = {git = "https://github.com/Zenithsiz/zutil", rev = "8c9cb2d"}
+zutil = {git = "https://github.com/Zenithsiz/zutil", rev = "fd560358d75f7ddb43524879cf0bf017bc6dfeda"}
 
 # Log
 log = "0.4.13"

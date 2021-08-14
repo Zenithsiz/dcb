@@ -26,8 +26,7 @@ either = "1.6.1"
 native-dialog = "0.5.5"
 ref-cast = "1.0.6"
 strum = {version = "0.20.0", features = ["derive"]}
-#zutil = {git = "https://github.com/Zenithsiz/zutil", rev = "8c9cb2d", features = ["gui"]}
-zutil = {path = "../../../zutil", features = ["gui"]}
+zutil = {git = "https://github.com/Zenithsiz/zutil", rev = "fd560358d75f7ddb43524879cf0bf017bc6dfeda", features = ["gui"]}
 
 # Serde
 serde_json = "1.0.66"
