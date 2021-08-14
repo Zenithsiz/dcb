@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Install deps
-        run: sudo apt install pkg-config libx11-dev libasound2-dev libssl-dev cmake libfreetype6-dev libexpat1-dev libxcb-composite0-dev
+        run: sudo apt install -y pkg-config libx11-dev libasound2-dev libssl-dev cmake libfreetype6-dev libexpat1-dev libxcb-composite0-dev fuse
       - name: Install minimal nightly with clippy and rustfmt
         uses: actions-rs/toolchain@v1
         with:
