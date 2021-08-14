@@ -57,7 +57,7 @@ fn main() -> Result<(), anyhow::Error> {
 	let args = Args::new();
 
 	// Setup memory
-	let mut memory = box Memory::new();
+	let mut memory = Memory::new();
 
 	// Load the bios into memory
 	self::load_bios(&args.bios_path, &mut memory)
@@ -198,6 +198,9 @@ fn load_game(
 
 /// Loads the bis from it's path
 fn load_bios(path: impl AsRef<Path>, memory: &mut Memory) -> Result<(), anyhow::Error> {
+	/// Bios position
+	const BIOS_POS: usize = 0x1fc00000;
+
 	/// Bios size
 	const BIOS_SIZE: u64 = 0x80000;
 
@@ -211,8 +214,11 @@ fn load_bios(path: impl AsRef<Path>, memory: &mut Memory) -> Result<(), anyhow::
 	);
 
 	// Then read it into memory
-	file.read_exact(&mut memory[..(BIOS_SIZE as usize)])
+	file.read_exact(&mut memory[BIOS_POS..(BIOS_POS + BIOS_SIZE as usize)])
 		.context("Unable to read from file")?;
+
+	// And copy the first 64k to `0x0`
+	memory.bytes.copy_within(BIOS_POS..(BIOS_POS + 0x10000), 0x0);
 
 	Ok(())
 }
@@ -254,16 +260,28 @@ impl InputState {
 
 /// Memory
 // TODO: Have this work with `u32`s externally.
+// TODO: Make this paginated to not allocate all memory right away.
 pub struct Memory {
 	/// All bytes
-	bytes: [u8; 0x200000],
+	bytes: Box<[u8; Self::SIZE]>,
 }
 
 impl Memory {
+	/// Size
+	//const SIZE: usize = 0x200000;
+	const SIZE: usize = 0x20000000;
+
 	/// Creates a new memory chunk
 	#[allow(clippy::new_without_default)] // We want an explicit constructor
 	pub fn new() -> Self {
-		Self { bytes: [0; 0x200000] }
+		Self {
+			bytes: box [0; Self::SIZE],
+		}
+	}
+
+	/// Dumps all memory to file
+	pub fn dump_to_file(&self, path: impl AsRef<Path>) -> Result<(), anyhow::Error> {
+		fs::write(path, &*self.bytes).context("Unable to write to file")
 	}
 
 	/// Returns the bytes at `index`
@@ -271,7 +289,7 @@ impl Memory {
 	where
 		I: SliceIndex<[u8]>,
 	{
-		index.get(&self.bytes)
+		index.get(&*self.bytes)
 	}
 
 	/// Returns the bytes at `index` mutably
@@ -279,7 +297,7 @@ impl Memory {
 	where
 		I: SliceIndex<[u8]>,
 	{
-		index.get_mut(&mut self.bytes)
+		index.get_mut(&mut *self.bytes)
 	}
 }
 
@@ -315,7 +333,7 @@ pub struct ExecState {
 	lo_hi_reg: [u32; 2],
 
 	/// Memory
-	memory: Box<Memory>,
+	memory: Memory,
 
 	/// Jump target
 	jump_target: JumpTarget,
@@ -329,7 +347,7 @@ pub struct ExecState {
 
 impl ExecState {
 	/// Executes the next instruction
-	fn exec(&mut self, input_state: &InputState) -> Result<(), ExecError> {
+	fn exec(&mut self, _input_state: &InputState) -> Result<(), ExecError> {
 		// Read the next instruction
 		let inst = self.read_word(self.pc)?;
 
@@ -340,6 +358,8 @@ impl ExecState {
 		// TODO: Check what registers changed in the op and print them, maybe also memory locations
 		//       with a countdown until the change is actually realized or something.
 		let print_inst = || println!("{:010}: {}", self.pc, self::inst_display(&inst, self.pc));
+		print_inst();
+		/*
 		match *input_state {
 			InputState::BreakEvery => print_inst(),
 			InputState::RunUntil { pos }
@@ -349,6 +369,7 @@ impl ExecState {
 			},
 			_ => (),
 		}
+		*/
 
 		// Then execute the instruction
 		inst.exec(self)?;

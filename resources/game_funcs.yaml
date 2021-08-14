@@ -35,7 +35,8 @@
     0x80013e54: Just sets `something1_executed` to 1.
     0x80013e5c: Setup interrupts and DMA and possibly other stuff.
     0x80013e6c: "args: (0)"
-    0x80013e84: "args: (0x140, 0xf0, 0, 0)"
+    0x80013e84: 'args: (0x140, 0xf0, 0, 0); Clears the screen from the bios "playstation" logo'
+    0x80013f04: "Triggered 8 times, before and after FMVs, but not during"
   labels:
     0x80013ef4: "0"
     0x80013f04: "1"
@@ -187,7 +188,7 @@
   signature: fn()
   desc: |-
     Advances the current prng, stored at `cur_prng_value`.
-    Returns `cur_prng_value << 0x10 | 0x7fff`.
+    Returns `cur_prng_value >> 0x10 & 0x7fff`.
   start_pos: 0x80069124
   end_pos: 0x80069154
   kind: Known
