@@ -85,11 +85,21 @@ fn main() -> Result<(), anyhow::Error> {
 		results: RefCell::new(vec![]),
 	};
 
+	// Run the repl
+	self::run_repl(&mut exec_state)?;
+
+	Ok(())
+}
+
+/// Runs the `repl` loop
+fn run_repl(exec_state: &mut ExecState) -> Result<(), anyhow::Error> {
+	// Get stdin and
 	let stdin = io::stdin();
 	let mut stdout = io::stdout();
+
 	let mut input_str = String::new();
 	let mut input_state = InputState::BreakEvery;
-	'exec_loop: while !exec_state.should_stop {
+	while !exec_state.should_stop {
 		let run_once = |exec_state: &mut ExecState, input_state| {
 			exec_state
 				.exec(input_state)
@@ -97,35 +107,44 @@ fn main() -> Result<(), anyhow::Error> {
 		};
 
 		match input_state {
-			InputState::BreakEvery => run_once(&mut exec_state, &input_state)?,
+			InputState::BreakEvery => run_once(exec_state, &input_state)?,
 			InputState::RunUntil { pos } => {
-				while exec_state.pc != pos {
-					run_once(&mut exec_state, &input_state)?;
+				while !exec_state.should_stop && Some(exec_state.pc) != pos {
+					run_once(exec_state, &input_state)?;
 				}
 			},
 		};
 
-		loop {
-			// TODO: Cache `input_args` maybe
-			print!(">>> ");
-			stdout.flush().context("Unable to flush stdout")?;
-			input_str.clear();
-			stdin.read_line(&mut input_str).context("Unable to read input")?;
-
-			if input_str.is_empty() {
-				println!();
-				break 'exec_loop;
-			}
-
-			let input_args: Vec<_> = input_str.split_whitespace().collect();
-			match input_state.update(&input_args) {
-				Ok(()) => break,
-				Err(err) => println!("Unable to update input state: {err:?}"),
-			}
+		let args = match self::get_user_input(&stdin, &mut stdout, &mut input_str)? {
+			Some(args) => args,
+			None => break,
+		};
+		match input_state.update(args) {
+			Ok(()) => (),
+			Err(err) => println!("Unable to update input state: {err:?}"),
 		}
 	}
 
 	Ok(())
+}
+
+/// Retrieve user input
+// TODO: Cache memory for the string read and the arguments
+fn get_user_input<'a>(
+	stdin: &io::Stdin, stdout: &mut io::Stdout, input_str: &'a mut String,
+) -> Result<Option<impl Iterator<Item = &'a str>>, anyhow::Error> {
+	// Print the input prompt and wait for input
+	print!(">>> ");
+	stdout.flush().context("Unable to flush stdout")?;
+	input_str.clear();
+	stdin.read_line(input_str).context("Unable to read input")?;
+
+	if input_str.is_empty() {
+		println!();
+		return Ok(None);
+	}
+
+	Ok(Some(input_str.split_whitespace()))
 }
 
 /// Loads the game executable into memory
@@ -204,30 +223,29 @@ enum InputState {
 	BreakEvery,
 
 	/// Run until
-	RunUntil { pos: Pos },
+	RunUntil { pos: Option<Pos> },
 }
 
 impl InputState {
 	/// Updates the input state from arguments
-	pub fn update(&mut self, args: &[&str]) -> Result<(), anyhow::Error> {
-		match args {
-			// Next
-			["n"] => *self = InputState::BreakEvery,
-
-			// Run until
-			["r", pos] => {
-				let pos = self::parse_number(pos)
-					.context("Unable to parse position")?
-					.try_into_as::<u32>()
-					.map(Pos)
-					.context("Position didn't fit into a `u32`")?;
+	pub fn update<S: AsRef<str>>(&mut self, mut args: impl Iterator<Item = S>) -> Result<(), anyhow::Error> {
+		match args.next().as_ref().map(S::as_ref) {
+			Some("n") => *self = InputState::BreakEvery,
+			Some("r") => {
+				let pos = args
+					.next()
+					.map(|pos| {
+						self::parse_number(pos.as_ref())
+							.context("Unable to parse position")?
+							.try_into_as::<u32>()
+							.map(Pos)
+							.context("Position didn't fit into a `u32`")
+					})
+					.transpose()?;
 				*self = InputState::RunUntil { pos };
 			},
-
-			// Keep same
-			[] => (),
-
-			_ => anyhow::bail!("Unknown arguments {:?}", args),
+			Some(arg) => anyhow::bail!("Unknown argument {:?}", arg),
+			None => (),
 		}
 
 		Ok(())
@@ -324,7 +342,9 @@ impl ExecState {
 		let print_inst = || println!("{:010}: {}", self.pc, self::inst_display(&inst, self.pc));
 		match *input_state {
 			InputState::BreakEvery => print_inst(),
-			InputState::RunUntil { pos } if self.pc + 4 == pos && matches!(self.jump_target, JumpTarget::None) => {
+			InputState::RunUntil { pos }
+				if Some(self.pc + 4) == pos && matches!(self.jump_target, JumpTarget::None) =>
+			{
 				print_inst()
 			},
 			_ => (),
