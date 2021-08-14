@@ -18,9 +18,9 @@ jobs:
           profile: minimal
           toolchain: nightly
           components: rustfmt, clippy
-      #- name: Clippy
-      #  run: cargo +nightly clippy --verbose
-      #- name: Run tests
-      #  run: cargo +nightly test --verbose
+      - name: Clippy
+        run: cargo +nightly clippy --lib --verbose
+      - name: Run tests
+        run: cargo +nightly test --lib --verbose
       - name: Rust Fmt
         run: cargo +nightly fmt --verbose -- --check
