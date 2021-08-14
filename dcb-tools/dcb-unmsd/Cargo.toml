@@ -23,8 +23,7 @@ anyhow = "1.0.38"
 byteorder = "1.4.3"
 dbg_hex = {git = "https://github.com/Zenithsiz/dbg_hex"}
 itertools = "0.10.0"
-#zutil = {git = "https://github.com/Zenithsiz/zutil", rev = "8c9cb2d"}
-zutil = {path = "../../../zutil"}
+zutil = {git = "https://github.com/Zenithsiz/zutil", rev = "8c9cb2d"}
 
 # Strings
 encoding_rs = "0.8.28"

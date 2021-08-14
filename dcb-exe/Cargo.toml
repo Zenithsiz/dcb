@@ -10,8 +10,7 @@ version = "0.1.0"
 
 # Dcb
 dcb-bytes = {path = "../dcb-bytes"}
-#zutil = {git = "https://github.com/Zenithsiz/zutil", rev = "8c9cb2d", features = ["use_serde"]}
-zutil = {path = "../../zutil"}
+zutil = {git = "https://github.com/Zenithsiz/zutil", rev = "8c9cb2d", features = ["use_serde"]}
 
 # Log
 log = "0.4.13"

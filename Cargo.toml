@@ -30,3 +30,6 @@ members = [
   "dcb-tools/dcb-file-editor",
   "dcb-tools/dcb-drv-fuse",
 ]
+
+[patch."https://github.com/Zenithsiz/zutil"]
+zutil = {path = "../zutil"}
