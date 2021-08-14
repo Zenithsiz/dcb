@@ -71,29 +71,8 @@ fn main() -> Result<(), anyhow::Error> {
 	//       determine the executable file. For `dcb` we simply know which
 	//       one it is and all it's data.
 
-	// Read the executable file, skipping the header
-	let exec_file = game_root_dir
-		.entries()
-		.iter()
-		.find(|entry| entry.is_file() && entry.name.as_bytes() == b"SLUS_013.28;1")
-		.context("Unable to find game executable file")?;
-	let mut exec_file = exec_file
-		.read_file(&mut game_file)
-		.context("Unable to read game executable")?;
-
-	let exec_contents = {
-		let mut bytes = Vec::with_capacity(exec_file.size().try_into().expect("`u64` didn't fit into `usize`"));
-		exec_file
-			.seek(io::SeekFrom::Start(0x800))
-			.context("Unable to seek past game executable header")?;
-		exec_file
-			.read_to_end(&mut bytes)
-			.context("Unable to read all of game executable")?;
-		bytes
-	};
-
-	// Then write it into memory at `0x10000`
-	memory[0x10000..(0x10000 + exec_contents.len())].copy_from_slice(&exec_contents);
+	// Load the game executable into memory
+	self::load_game_exec(&mut game_file, game_root_dir, &mut memory)?;
 
 	// Create the executor
 	let mut exec_state = ExecState {
@@ -145,6 +124,36 @@ fn main() -> Result<(), anyhow::Error> {
 			}
 		}
 	}
+
+	Ok(())
+}
+
+/// Loads the game executable into memory
+fn load_game_exec(
+	game_file: &mut dcb_cdrom_xa::CdRomReader<impl Read + Seek>, game_root_dir: dcb_iso9660::Dir, memory: &mut Memory,
+) -> Result<(), anyhow::Error> {
+	/// Executable position
+	const EXEC_POS: usize = 0x10000;
+
+	// Search for the executable file
+	let exec_file = game_root_dir
+		.entries()
+		.iter()
+		.find(|entry| entry.is_file() && entry.name.as_bytes() == b"SLUS_013.28;1")
+		.context("Unable to find game executable file")?;
+
+	// Then open it and skip past the header
+	// TODO: Do something with the header, like validate?
+	let mut exec_file = exec_file
+		.read_file(game_file)
+		.context("Unable to read game executable")?;
+	exec_file
+		.seek(io::SeekFrom::Start(0x800))
+		.context("Unable to seek past game executable header")?;
+
+	// Finally read until eof into memory
+	zutil::read_slice_until_eof(&mut exec_file, &mut memory[EXEC_POS..])
+		.context("Unable to read game executable into memory")?;
 
 	Ok(())
 }
