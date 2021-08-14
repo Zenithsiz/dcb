@@ -1,4 +1,6 @@
-//! Decompiler
+//! Game debugger
+//!
+//! Interactive debugger for the game.
 
 #![feature(
 	try_blocks,
@@ -9,7 +11,8 @@
 	slice_index_methods,
 	never_type,
 	label_break_value,
-	stdio_locked
+	stdio_locked,
+	seek_stream_len
 )]
 
 // Modules
@@ -36,6 +39,7 @@ use std::{
 	io::{self, BufReader, Read, Seek, Write},
 	mem,
 	ops::{Index, IndexMut},
+	path::Path,
 	slice::SliceIndex,
 };
 use zutil::TryIntoAs;
@@ -43,7 +47,7 @@ use zutil::TryIntoAs;
 fn main() -> Result<(), anyhow::Error> {
 	// Initialize the logger
 	simplelog::TermLogger::init(
-		log::LevelFilter::Info,
+		log::LevelFilter::Trace,
 		simplelog::Config::default(),
 		simplelog::TerminalMode::Stderr,
 	)
@@ -55,16 +59,11 @@ fn main() -> Result<(), anyhow::Error> {
 	// Setup memory
 	let mut memory = box Memory::new();
 
-	// Read the bios and write it into memory
-	let bios_contents = fs::read("SCPH1001.BIN").context("Unable to read bios")?;
-	anyhow::ensure!(
-		bios_contents.len() == 0x80000,
-		"Bios had an unexpected size: {:#x}",
-		bios_contents.len()
-	);
-	memory[..0x80000].copy_from_slice(&bios_contents);
+	// Load the bios into memory
+	self::load_bios(&args.bios_path, &mut memory)
+		.with_context(|| format!("Unable to load bios from {}", args.bios_path.display()))?;
 
-	// Open the input file and unbin it
+	// Then open the game and retrieve the root directory.
 	let game_file = fs::File::open(&args.game_path).context("Unable to open game file")?;
 	let game_file = BufReader::new(game_file);
 	let mut game_file = dcb_cdrom_xa::CdRomReader::new(game_file);
@@ -152,6 +151,27 @@ fn main() -> Result<(), anyhow::Error> {
 			}
 		}
 	}
+
+	Ok(())
+}
+
+/// Loads the bis from it's path
+fn load_bios(path: impl AsRef<Path>, memory: &mut Memory) -> Result<(), anyhow::Error> {
+	/// Bios size
+	const BIOS_SIZE: u64 = 0x80000;
+
+	// Open the file and check that it's the correct length
+	let mut file = fs::File::open(&path).context("Unable to open file")?;
+	let file_len = file.stream_len().context("Unable to get file length")?;
+	anyhow::ensure!(
+		file_len == BIOS_SIZE,
+		"Unexpected size {:#x}. Expected {BIOS_SIZE:#x}",
+		file_len
+	);
+
+	// Then read it into memory
+	file.read_exact(&mut memory[..(BIOS_SIZE as usize)])
+		.context("Unable to read from file")?;
 
 	Ok(())
 }
