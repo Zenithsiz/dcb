@@ -84,9 +84,8 @@ fn main() -> Result<(), anyhow::Error> {
 
 				let insts: BTreeMap<_, _> = insts.collect();
 				for (pos, inst) in &insts {
-					// If there's a comment, print it
-					if let Some(comment) = func.comments.get(pos) {
-						// Iterate over the lines in the comment
+					// If there's a block comment, print it
+					if let Some(comment) = func.block_comments.get(pos) {
 						for line in comment.lines() {
 							println!("# {line}");
 						}

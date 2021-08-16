@@ -9,7 +9,7 @@
     0x800562d8: "`$a0 |= 0x8000_0000`"
     0x800562ec: "TODO: Figure out why global pointer is here"
     0x800562f8: "InitHeap(&HeapStart, 0x1a0b8)"
-  comments:
+  block_comments:
     0x80056270: |-
       Zero out `ZeroStart..HeapStart`
     0x80056294: |-
@@ -55,7 +55,7 @@
     If something1_executed is 0, sets it to 1.
     Also calls `call_func_arr(something1_data2, something1_data2)` if 0,
     but this seems to be a nop.
-  comments:
+  block_comments:
     0x80056350: |-
       Sets `something1_executed` to `1` and then calls
       `call_func_arr` with an empty array.
@@ -236,7 +236,7 @@
     0x8004b4a4: "$sp[0x4] *= 13;"
     0x8004b4b4: "$sp[0x0] += 1;"
     0x8004b4c4: "if $sp[0x0] <= 0x3c { goto .loop; }"
-  comments:
+  block_comments:
     0x8004b48c: |-
       let value = 0xd;
       for _ in 0..0x3c {
@@ -878,7 +878,7 @@
 
 # Card table
 - name: card_table.something0
-  comments:
+  block_comments:
     0x8004580c: |-
       Store into the stack the following:
         0x10: &func_70
@@ -975,7 +975,7 @@
   desc: |-
     Setups interrupt and DMA.
     If called again, simply returns.
-  comments:
+  block_comments:
     0x800567ac: "Stop all interrupts and save previous state"
     0x800567e0: "Zero out all of `intr.data`"
     0x800567d0: "Write 0x33333333 to `*DPCR_PTR`"
@@ -1019,7 +1019,7 @@
   kind: Known
 
 - name: intr.f5_init.callback
-  comments:
+  block_comments:
     0x80056d3c: |-
       Calls all non-null functions in intr.f5_init.data.
   inline_comments:
@@ -1104,7 +1104,7 @@
     File1.Buffer[File1.BufferLen] = ch;
     File1.BufferLen += 1;
     ```
-  comments:
+  block_comments:
     0x80069ad8: |-
       If `ch` is `\t`, replace it with 8-aligned spaces
     0x80069ae4: |-
@@ -1180,7 +1180,7 @@
 - name: File1.FlushBuffer
   signature: "fn()"
   desc: Flushes `File1.Buffer` to file.
-  comments:
+  block_comments:
     0x80069bcc: "If `File1.BufferLen` < 1, return without writing"
     0x80069bd4: "Else write the buffer"
     0x80069be4: "And set `File1.BufferLen` to 0"
@@ -1423,7 +1423,7 @@
   inline_comments:
     0x80069d6c: "if *buffer == '\\0' { goto.65; }"
     0x80069d84: "if *buffer == '%' { goto .58; }"
-  comments:
+  block_comments:
     0x80069d24: "Save arguments on wasted space."
     0x80069d30: |-
       Reserve stack space and save all additional
@@ -1508,7 +1508,7 @@
     0x80069044: "if src == NULL { return 0; }"
     0x80069048: ""
     0x8006904c: "if len <= 0 { return src; }"
-  comments:
+  block_comments:
     0x80069054: |-
       do {
         *dst = *src;
@@ -1536,7 +1536,7 @@
     0x8006908c: ""
     0x80069090: "if len >  0 { _ret = dst; }"
     0x80069094: "if len <= 0 { return 0; }"
-  comments:
+  block_comments:
     0x8006909c: |-
       do {
         *dst = 0;
@@ -1556,7 +1556,7 @@
     0x800690b4: "if ptr == NULL { return 0; }"
     0x800690b8: ""
     0x800690bc: "if len <= 0 { return 0; }"
-  comments:
+  block_comments:
     0x800690c4: |-
       do {
         *dst = *src;
@@ -1580,7 +1580,7 @@
     0x800690fc: ""
     0x80069100: "if len >  0 { _ret = ptr; }"
     0x80069104: "if len <= 0 { return 0; }"
-  comments:
+  block_comments:
     0x8006910c: |-
       do {
         *dst = value;
@@ -1609,7 +1609,7 @@
     0x800691b4: "dst += 1; if *dst == 0 { goto go_back_1_dst; }"
     0x800691cc: "dst -= 1;"
     0x800691e8: "return dst;"
-  comments:
+  block_comments:
     0x800691ac: |-
       Skips `dst` until it hits one-past '\\0'.
       Then backs up one and begins appending `src`
@@ -1664,7 +1664,7 @@
     0x8006925c: "rhs += 1;"
     0x80069248: "lhs += 1;"
     0x8006926c: "return lhs[0] - rhs[-1]; // Note: This is because we don't advance `lhs` when we don't take the branch"
-  comments:
+  block_comments:
     0x8006924c: |-
       // Note: Includes the code from `.2` and `.1`
       loop {
@@ -1697,7 +1697,7 @@
     0x80069288: ""
     0x8006928c: "if dst == NULL { return NULL; }"
     0x800692bc: "// Returns the original `lhs`"
-  comments:
+  block_comments:
     0x80069294: |-
       let tmp = *rhs;
       rhs += 1;

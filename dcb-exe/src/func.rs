@@ -45,9 +45,9 @@ pub struct Func {
 	#[serde(default)]
 	pub inline_comments: BTreeMap<Pos, String>,
 
-	/// Comments
+	/// Block comments
 	#[serde(default)]
-	pub comments: BTreeMap<Pos, String>,
+	pub block_comments: BTreeMap<Pos, String>,
 
 	/// Labels
 	#[serde(default)]
@@ -84,7 +84,7 @@ impl Func {
 		}
 
 		// Check all positions of labels and comments are within our range.
-		for (&pos, comment) in self.inline_comments.iter().chain(&self.comments) {
+		for (&pos, comment) in self.inline_comments.iter().chain(&self.block_comments) {
 			if !self.contains(pos) {
 				return Err(ValidateError::CommentPosOutOfBounds { pos, comment });
 			}
@@ -232,7 +232,7 @@ impl Func {
 				signature: "fn()".to_owned(),
 				desc: String::new(),
 				inline_comments: BTreeMap::new(),
-				comments: BTreeMap::new(),
+				block_comments: BTreeMap::new(),
 				labels,
 				start_pos: func_pos,
 				end_pos,
