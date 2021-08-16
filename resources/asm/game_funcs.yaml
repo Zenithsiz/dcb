@@ -1152,6 +1152,31 @@
   end_pos: 0x80069bc0
   kind: Known
 
+- name: File1.WriteStr
+  signature: "fn(s: *const char)"
+  desc: |-
+    Writes `s` to file.
+    ```c
+    if (s == NULL) {
+      s = File1.NullStr;
+    }
+
+    while (*s != 0) {
+      File1.WriteChar(*s);
+      s += 1;
+    }
+
+    File1.FlushBuffer();
+    ```
+  labels:
+    0x8006a628: "replace_null_str"
+    0x8006a634: "add_char"
+    0x8006a63c: "loop"
+    0x8006a650: "flush_file"
+  start_pos: 0x8006a614
+  end_pos: 0x8006a668
+  kind: Known
+
 - name: File1.FlushBuffer
   signature: "fn()"
   desc: Flushes `File1.Buffer` to file.

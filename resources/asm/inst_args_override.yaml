@@ -784,3 +784,11 @@
 ? pos: 0x80069ba4
   arg: 1
 : "File1.Buffer@addr_lo"
+
+# File1.WriteStr
+? pos: 0x8006a628
+  arg: 1
+: "File1.NullStr@addr_hi"
+? pos: 0x8006a630
+  arg: 1
+: "File1.NullStr@addr_lo"

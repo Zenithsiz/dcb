@@ -107,6 +107,9 @@
 - name: File1.BufferCurTabAlign
   pos: 0x80077848
   ty: u32
+- name: File1.NullStr
+  pos: 0x80013e3c
+  ty: AsciiStr<6>
 - name: File1.AllowedTable
   desc: |-
     Table for checking if a character should count towards alignment
