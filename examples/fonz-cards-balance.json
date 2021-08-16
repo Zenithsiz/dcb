@@ -89,7 +89,7 @@
 					"Counter": "Triangle"
 				},
 				"effect_description": [
-					"Change own  ",
+					"Change own",
 					"speciality to *a0.",
 					"Boost own Attack",
 					"Power +100."
@@ -397,7 +397,7 @@
 					"Counter": "Circle"
 				},
 				"effect_description": [
-					"Boost own Attack ",
+					"Boost own Attack",
 					"Power +300.",
 					"",
 					""
@@ -451,7 +451,7 @@
 				},
 				"cross_move_effect": "AttackFirst",
 				"effect_description": [
-					"If own Attack is ",
+					"If own Attack is",
 					"*b0, attack first.",
 					"",
 					""
@@ -508,7 +508,7 @@
 				},
 				"effect_description": [
 					"If own speciality",
-					"is *a0, own Attack ",
+					"is *a0, own Attack",
 					"Power is doubled.",
 					""
 				],
@@ -687,8 +687,8 @@
 					"AttackToZero": "Circle"
 				},
 				"effect_description": [
-					"Lower opponent's ",
-					"*b0 Attack Power ",
+					"Lower opponent's",
+					"*b0 Attack Power",
 					"to 0.",
 					""
 				],
@@ -921,7 +921,7 @@
 					"Counter": "Circle"
 				},
 				"effect_description": [
-					"Change own  ",
+					"Change own",
 					"speciality to *a0.",
 					"Boost own Attack",
 					"Power +200."
@@ -1264,7 +1264,7 @@
 				"cross_move_effect": "AttackFirst",
 				"effect_description": [
 					"Discard Cards in own",
-					"Hand, own Attack ",
+					"Hand, own Attack",
 					"Power is doubled.",
 					""
 				],
@@ -1330,8 +1330,8 @@
 				"cross_move_effect": "EatUpHP",
 				"effect_description": [
 					"Discard all own",
-					"DP Cards in DP ",
-					"Slot, boost own ",
+					"DP Cards in DP",
+					"Slot, boost own",
 					"Attack Power +400."
 				],
 				"effect_arrow_color": "Green",
@@ -1911,8 +1911,8 @@
 					"TripleAgainst": "Ice"
 				},
 				"effect_description": [
-					"If opponent's ",
-					"speciality is *a1, ",
+					"If opponent's",
+					"speciality is *a1,",
 					"own Attack Power",
 					"is doubled."
 				],
@@ -2216,7 +2216,7 @@
 					"Counter": "Circle"
 				},
 				"effect_description": [
-					"If own Cards in ",
+					"If own Cards in",
 					"Hand 3 or more,",
 					"opponent's Attack",
 					"Power becomes 0."
@@ -3210,7 +3210,7 @@
 					"AttackToZero": "Circle"
 				},
 				"effect_description": [
-					"Lower opponent's ",
+					"Lower opponent's",
 					"*b0 Attack Power",
 					"to 0.",
 					""
@@ -3364,7 +3364,7 @@
 					"unknown": 135529730
 				},
 				"move_triangle": {
-					"name": "Drowning Aquarius ",
+					"name": "Drowning Aquarius",
 					"power": 370,
 					"unknown": 26739971
 				},
@@ -3440,8 +3440,8 @@
 					"TripleAgainst": "Fire"
 				},
 				"effect_description": [
-					"If opponent's ",
-					"speciality is *a0, ",
+					"If opponent's",
+					"speciality is *a0,",
 					"own Attack Power",
 					"is tripled."
 				],
@@ -3620,7 +3620,7 @@
 					"AttackToZero": "Triangle"
 				},
 				"effect_description": [
-					"Lower opponent's ",
+					"Lower opponent's",
 					"*b1 Attack Power",
 					"to 0.",
 					""
@@ -4394,7 +4394,7 @@
 				},
 				"effect_description": [
 					"If opponent attacks",
-					"first, double their ",
+					"first, double their",
 					"AP and quadruple",
 					"own."
 				],
@@ -5106,7 +5106,7 @@
 					"Counter": "Circle"
 				},
 				"effect_description": [
-					"If own level ",
+					"If own level",
 					"is lower, own",
 					"Attack Power is",
 					"doubled."
@@ -5349,9 +5349,9 @@
 					"AttackToZero": "Triangle"
 				},
 				"effect_description": [
-					"If own level is ",
-					"higher and own ",
-					"attack is *b1, ",
+					"If own level is",
+					"higher and own",
+					"attack is *b1,",
 					"halve opponent's HP."
 				],
 				"effect_arrow_color": null,
@@ -5529,7 +5529,7 @@
 				"effect_description": [
 					"Lower opponent's",
 					"Attack Power to 0.",
-					"Opponent's HP ",
+					"Opponent's HP",
 					"+200."
 				],
 				"effect_arrow_color": "Green",
@@ -5830,7 +5830,7 @@
 				},
 				"cross_move_effect": "EatUpHP",
 				"effect_description": [
-					"If own level is ",
+					"If own level is",
 					"higher, own attack",
 					"becomes Eat-up-HP.",
 					""
@@ -6212,7 +6212,7 @@
 					"AttackToZero": "Triangle"
 				},
 				"effect_description": [
-					"Discard 7 Cards ",
+					"Discard 7 Cards",
 					"from own Online",
 					"Deck. Opponent's",
 					"HP are halved."
@@ -6830,7 +6830,7 @@
 				"effect_description": [
 					"If opponent's",
 					"speciality is *a2,",
-					"opponent discards ",
+					"opponent discards",
 					"all in Hand and DP."
 				],
 				"effect_arrow_color": "Green",
@@ -6957,7 +6957,7 @@
 				"cross_move_effect": "Jamming",
 				"effect_description": [
 					"Own HP become 300.",
-					"Own Attack Power is ",
+					"Own Attack Power is",
 					"doubled.",
 					""
 				],
@@ -7086,7 +7086,7 @@
 				"effect_description": [
 					"Discard 1 DP Card",
 					"from own DP Slot.",
-					"Boost own ",
+					"Boost own",
 					"Attack Power +300."
 				],
 				"effect_arrow_color": "Green",
@@ -8135,7 +8135,7 @@
 				},
 				"effect_description": [
 					"Reduce own Attack",
-					"Power by -100. ",
+					"Power by -100.",
 					"Recover own HP",
 					"by +300."
 				],
@@ -8274,7 +8274,7 @@
 				},
 				"effect_description": [
 					"If opponent's",
-					"Speciality is *a4, ",
+					"Speciality is *a4,",
 					"opponent's HP",
 					"become 100."
 				],
@@ -8851,7 +8851,7 @@
 					"TripleAgainst": "Rare"
 				},
 				"effect_description": [
-					"Opponent's ",
+					"Opponent's",
 					"speciality becomes",
 					"the same as own",
 					"speciality."
@@ -9072,7 +9072,7 @@
 					"Counter": "Circle"
 				},
 				"effect_description": [
-					"If opponent's ",
+					"If opponent's",
 					"specialty is *a4",
 					"Attack First",
 					""
@@ -10182,8 +10182,8 @@
 				},
 				"effect_description": [
 					"Discard 1 Card at",
-					"random from own ",
-					"Hand. HP of both  ",
+					"random from own",
+					"Hand. HP of both",
 					"Players are 200."
 				],
 				"effect_arrow_color": "Green",
@@ -10256,8 +10256,8 @@
 				},
 				"cross_move_effect": "Jamming",
 				"effect_description": [
-					"Swap own ",
-					"speciality with ",
+					"Swap own",
+					"speciality with",
 					"opponent's",
 					"speciality."
 				],
@@ -11414,7 +11414,7 @@
 					"AttackToZero": "Circle"
 				},
 				"effect_description": [
-					"Lower Opponent's ",
+					"Lower Opponent's",
 					"Attack Power -100.",
 					"Draw 1 Card.",
 					""
@@ -11887,7 +11887,7 @@
 				"effect_description": [
 					"Discard 7 Cards",
 					"from own Online",
-					"Deck. Recover own ",
+					"Deck. Recover own",
 					"HP by +1000."
 				],
 				"effect_arrow_color": "Green",
@@ -11930,7 +11930,7 @@
 				"effect_description": [
 					"Discard 7 Cards",
 					"from own Online",
-					"Deck. Boost own ",
+					"Deck. Boost own",
 					"Attack Power +500."
 				],
 				"effect_arrow_color": "Green",
@@ -12009,7 +12009,7 @@
 				"name": "Fake Sevens",
 				"effect_description": [
 					"Man, imagine getting",
-					"Fake Sevens from a ",
+					"Fake Sevens from a",
 					"fusion, like yikes.",
 					"None... I think7"
 				],
@@ -12097,9 +12097,9 @@
 			"Item": {
 				"name": "Missile Pod",
 				"effect_description": [
-					"Discard all Cards ",
+					"Discard all Cards",
 					"in own Hand.",
-					"Own Attack ",
+					"Own Attack",
 					"Power is doubled."
 				],
 				"effect_arrow_color": "Green",
@@ -12140,8 +12140,8 @@
 			"Item": {
 				"name": "Shogun's Order",
 				"effect_description": [
-					"Both players' ",
-					"Attack Power ",
+					"Both players'",
+					"Attack Power",
 					"becomes 0.",
 					""
 				],
@@ -12181,7 +12181,7 @@
 				"name": "Beetle Diamond",
 				"effect_description": [
 					"Attack first.",
-					"Boost own Attack ",
+					"Boost own Attack",
 					"Power +200.",
 					""
 				],
@@ -12601,7 +12601,7 @@
 				"name": "Evil Program",
 				"effect_description": [
 					"Discard 1 Card in",
-					"own DP Slot. ",
+					"own DP Slot.",
 					"Discard all foe's",
 					"Cards in DP Slot."
 				],
@@ -12647,7 +12647,7 @@
 				"name": "Coliseum",
 				"effect_description": [
 					"Both players'",
-					"attacks become *b0. ",
+					"attacks become *b0.",
 					"Boost own *b0",
 					"Attack Power +200."
 				],
@@ -12687,7 +12687,7 @@
 				"effect_description": [
 					"Change opponent's",
 					"speciality to *a0.",
-					"Draw 1 Card from ",
+					"Draw 1 Card from",
 					"own Online Deck."
 				],
 				"effect_arrow_color": "Green",
@@ -12722,7 +12722,7 @@
 				"effect_description": [
 					"Change opponent's",
 					"speciality to *a1.",
-					"Draw 1 Card from ",
+					"Draw 1 Card from",
 					"own Online Deck."
 				],
 				"effect_arrow_color": "Green",
@@ -12757,7 +12757,7 @@
 				"effect_description": [
 					"Change opponent's",
 					"speciality to *a2.",
-					"Draw 1 Card from ",
+					"Draw 1 Card from",
 					"own Online Deck."
 				],
 				"effect_arrow_color": "Green",
@@ -12792,7 +12792,7 @@
 				"effect_description": [
 					"Change opponent's",
 					"speciality to *a3.",
-					"Draw 1 Card from ",
+					"Draw 1 Card from",
 					"own Online Deck."
 				],
 				"effect_arrow_color": "Green",
@@ -12827,7 +12827,7 @@
 				"effect_description": [
 					"Change opponent's",
 					"speciality to *a4.",
-					"Draw 1 Card from ",
+					"Draw 1 Card from",
 					"own Online Deck."
 				],
 				"effect_arrow_color": "Green",
@@ -12861,7 +12861,7 @@
 				"name": "Sup. Rec. Floppy",
 				"effect_description": [
 					"If own HP are",
-					"less than foe's ",
+					"less than foe's",
 					"HP, recover own",
 					"HP by +700."
 				],
@@ -13561,9 +13561,9 @@
 			"Item": {
 				"name": "Mystery Egg",
 				"effect_description": [
-					"Change both ",
+					"Change both",
 					"players'",
-					"Specialties ",
+					"Specialties",
 					"to *a4."
 				],
 				"effect_arrow_color": "Green",
@@ -13602,7 +13602,7 @@
 				"name": "Miracle Ruby",
 				"effect_description": [
 					"KO'd Digimon",
-					"revives with ",
+					"revives with",
 					"1000 HP. Battle",
 					"is still lost."
 				],
@@ -13633,8 +13633,8 @@
 				"name": "Cyber Parts",
 				"effect_description": [
 					"If both Attacks",
-					"are same, own ",
-					"Attack Power is ",
+					"are same, own",
+					"Attack Power is",
 					"tripled."
 				],
 				"effect_arrow_color": "Red",
@@ -13780,7 +13780,7 @@
 			"Item": {
 				"name": "Premium Steak",
 				"effect_description": [
-					"Recover own HP ",
+					"Recover own HP",
 					"by +500. Recover",
 					"foe's HP by +200.",
 					""
@@ -14376,7 +14376,7 @@
 				"effect_description": [
 					"Change own",
 					"speciality to *a1.",
-					"Recover own HP ",
+					"Recover own HP",
 					"by +300."
 				],
 				"effect_arrow_color": "Green",
@@ -14416,7 +14416,7 @@
 				"effect_description": [
 					"Change own",
 					"speciality to *a2.",
-					"Attack first. Boost ",
+					"Attack first. Boost",
 					"own AP +150."
 				],
 				"effect_arrow_color": "Green",
@@ -14956,7 +14956,7 @@
 				"effect_description": [
 					"Opponent moves each",
 					"card from Online",
-					"Deck onto the ",
+					"Deck onto the",
 					"offline pile."
 				],
 				"effect_arrow_color": "Green",
@@ -14984,7 +14984,7 @@
 				"effect_description": [
 					"Change opponent's",
 					"speciality to *a2.",
-					"Own AP +500 and ",
+					"Own AP +500 and",
 					"becomes Eat-up-HP."
 				],
 				"effect_arrow_color": "Green",
@@ -15066,7 +15066,7 @@
 				"effect_description": [
 					"Change opponent's",
 					"speciality to *a0.",
-					"Own attack is ",
+					"Own attack is",
 					"quintupled."
 				],
 				"effect_arrow_color": "Green",
@@ -15561,7 +15561,7 @@
 				"name": "Download Digivolve",
 				"effect_description": [
 					"Can digivolve",
-					"regardless of own ",
+					"regardless of own",
 					"speciality, Level,",
 					"or Digivolve Pts."
 				],
@@ -15573,8 +15573,8 @@
 				"name": "ArmorCrush Digivolve",
 				"effect_description": [
 					"Digivolve a Level",
-					"*ea Digimon to ",
-					"*e4 or *e5. ",
+					"*ea Digimon to",
+					"*e4 or *e5.",
 					"(DP are needed.)"
 				],
 				"effect": "ArmorToChampionUltimate"
@@ -15587,7 +15587,7 @@
 					"Can digivolve",
 					"regardless of own",
 					"speciality by",
-					"adding DP +20. "
+					"adding DP +20."
 				],
 				"effect": "DisregardSpecialityFor20DP"
 			}
@@ -15597,9 +15597,9 @@
 				"name": "Mutant Digivolve",
 				"effect_description": [
 					"Can digivolve",
-					"Digimon at same ",
-					"Level. (Need DP) ",
-					"(Ignore speciality) "
+					"Digimon at same",
+					"Level. (Need DP)",
+					"(Ignore speciality)"
 				],
 				"effect": "SameLevelWithDPIgnoringSpeciality"
 			}
