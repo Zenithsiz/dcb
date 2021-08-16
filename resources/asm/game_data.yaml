@@ -100,6 +100,20 @@
   pos: 0x80070ac8
   ty: Arr<u32, 0x8>
 
+# File1
+- name: File1.BufferLen
+  pos: 0x8007784c
+  ty: u32
+- name: File1.BufferCurTabAlign
+  pos: 0x80077848
+  ty: u32
+- name: File1.AllowedTable
+  desc: |-
+    Table for checking if a character should count towards alignment
+    when it's value bit-and `0x97` isn't 0.
+  pos: 0x80077879
+  ty: Arr<u8, 0x80>
+
 - name: something11_data1
   pos: 0x80077a1a
   ty: u16

@@ -406,3 +406,8 @@
   pos: 0x800857e0
   ty: u32
 # TODO: Foreign functions
+
+# File 1
+- name: File1.Buffer
+  pos: 0x801ddc20
+  ty: Arr<u32, 0x20>

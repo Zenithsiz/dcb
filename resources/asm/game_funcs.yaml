@@ -1075,6 +1075,98 @@
   end_pos: 0x80057070
   kind: Known
 
+# File1
+- name: File1.WriteChar
+  signature: "fn(ch: u8)"
+  desc: |-
+    Writes a character to file `1`
+    ```c
+    if (ch == '\t') {
+      do { File1.WriteChar(b' '); }
+      while (File1.BufferCurTabAlign % 8 != 0);
+      return;
+    }
+    if (ch == '\n') {
+      File1.WriteChar(b'\r');
+      File1.BufferCurTabAlign = 0;
+    }
+    else {
+      if (File1.AllowedTable[ch] & 0x97 != 0) {
+        File1.BufferCurTabAlign += 1;
+      }
+    }
+
+    if (File1.BufferLen >= 0x20) {
+      FileWrite(1, &File1.Buffer, File1.BufferLen);
+      File1.BufferLen = 0;
+    }
+
+    File1.Buffer[File1.BufferLen] = ch;
+    File1.BufferLen += 1;
+    ```
+  comments:
+    0x80069ad8: |-
+      If `ch` is `\t`, replace it with 8-aligned spaces
+    0x80069ae4: |-
+      If `ch` is `\n`, insert a `\r` before and reset alignment
+    0x80069af0: |-
+      ```c
+      File1.WriteChar('\\r');
+      File1.BufferCurTabAlign = 0;
+      ```
+    0x80069b04: |-
+      ```c
+      do {
+        File1.WriteChar(' ');
+      } while (File1.BufferCurTabAlign % 8 != 0);
+      ```
+    0x80069b2c: |-
+      ```c
+      if (File1.AllowedTable[ch] & 0x97 != 0) {
+        File1.BufferCurTabAlign += 1;
+      }
+      ```
+    0x80069b60: |-
+      If the buffer is full, flush it to file.
+      ```c
+      if (File1.BufferLen >= 0x20) {
+        FileWrite(1, &File1.Buffer, File1.BufferLen);
+        File1.BufferLen = 0;
+      }
+      ```c
+    0x80069b90: |-
+      ```c
+      File1.Buffer[File1.BufferLen] = ch;
+      File1.BufferLen += 1;
+      ```
+  inline_comments:
+    0x80069af0: "args: (b'\\r')"
+  labels:
+    0x80069af0: "insert_cr_before_lf"
+    0x80069b04: "convert_tab_aligned_spaces"
+    0x80069b2c: "check_ch_affects_alignment"
+    0x80069b60: "flush_buffer_if_large"
+    0x80069b90: "write_char"
+    0x80069bb0: "exit"
+  start_pos: 0x80069ac4
+  end_pos: 0x80069bc0
+  kind: Known
+
+- name: File1.FlushBuffer
+  signature: "fn()"
+  desc: Flushes `File1.Buffer` to file.
+  comments:
+    0x80069bcc: "If `File1.BufferLen` < 1, return without writing"
+    0x80069bd4: "Else write the buffer"
+    0x80069be4: "And set `File1.BufferLen` to 0"
+  inline_comments:
+    0x80069bdc: "args: (1, &Buffer1, Buffer1Len)"
+  labels:
+    0x80069bec: "exit"
+  start_pos: 0x80069bc0
+  end_pos: 0x80069bfc
+  kind: Known
+
 # A functions
 - name: InitHeap
   signature: "fn(addr: *u32, size: u32)"
