@@ -32,6 +32,7 @@ pub trait ParseCtx<'a> {
 	fn eval_expr(&self, expr: &LineArgExpr) -> Result<i64, ParseError> {
 		match *expr {
 			LineArgExpr::Literal(num) => Ok(num),
+			LineArgExpr::ByteChar(ch) => Ok(i64::from(ch)),
 			LineArgExpr::Label {
 				ref label,
 				offset,

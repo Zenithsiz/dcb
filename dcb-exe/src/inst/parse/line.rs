@@ -244,6 +244,9 @@ pub enum LineArgExpr {
 	/// Literal
 	Literal(i64),
 
+	/// Byte character
+	ByteChar(u8),
+
 	/// Label
 	/// `<name>(`+<offset>`)?(@<func>)?`
 	Label {
@@ -267,6 +270,43 @@ impl LineArgExpr {
 			Some((_, '0'..='9' | '+' | '-')) => self::parse_literal(s)
 				.map(|(num, rest)| (LineArgExpr::Literal(num), rest))
 				.map_err(ParseArgError::Literal),
+
+			// If it's a byte character
+			Some((_, 'b')) => match chars.next() {
+				Some((_, '\'')) => match chars.as_str().split_once('\'') {
+					Some((ch, rest)) => {
+						// Check escapes or just use the raw byte else
+						let ch = match ch {
+							"\\t" => '\t',
+							"\\n" => '\n',
+
+							// TODO: Add more
+
+							// Else just make sure it's a single character and no empty
+							_ => {
+								let mut ch_chars = dbg!(ch).chars();
+								match ch_chars.next() {
+									Some(_) if ch_chars.next().is_some() => return Err(ParseArgError::MultiByteChar),
+									Some(ch) => ch,
+									None => return Err(ParseArgError::EmptyByteChar),
+								}
+							},
+						};
+
+
+						if !ch.is_ascii() {
+							return Err(ParseArgError::NonAsciiByteChar);
+						}
+
+						#[allow(clippy::as_conversions)] // We checked it was ascii
+						Ok((LineArgExpr::ByteChar(ch as u8), rest))
+					},
+
+					_ => Err(ParseArgError::MissingClosingByteChar),
+				},
+
+				_ => Err(ParseArgError::ExpectedByteCharOrString),
+			},
 
 			// If it starts with a label char, it's a label
 			Some((_, c)) if self::is_valid_first_name_char(c) => {

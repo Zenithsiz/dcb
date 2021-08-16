@@ -62,9 +62,29 @@ pub enum ParseArgError {
 	#[error("Argument was empty")]
 	Empty,
 
-	/// Invalid argument
+	/// Invalid starting character
 	#[error("Invalid starting char")]
 	InvalidStartChar,
+
+	/// Expected `'` after `b`
+	#[error("Expected byte character (`'`) after `b`")]
+	ExpectedByteCharOrString,
+
+	/// Missing closing `'`
+	#[error("Missing closing byte character (`'`)")]
+	MissingClosingByteChar,
+
+	/// Empty byte character
+	#[error("Byte characters must not be empty")]
+	EmptyByteChar,
+
+	/// Non ascii byte character
+	#[error("Byte characters must be ascii")]
+	NonAsciiByteChar,
+
+	/// Multi byte character
+	#[error("Byte characters must be a single ascii character")]
+	MultiByteChar,
 
 	/// Parse Literal
 	#[error("Unable to parse literal")]
