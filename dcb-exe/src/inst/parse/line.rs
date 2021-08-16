@@ -279,6 +279,7 @@ impl LineArgExpr {
 						let ch = match ch {
 							"\\t" => '\t',
 							"\\n" => '\n',
+							"\\r" => '\r',
 
 							// TODO: Add more
 
