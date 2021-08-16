@@ -153,14 +153,14 @@ impl CliData {
 /// Default paths
 mod default_paths {
 	/// Known data path
-	pub const KNOWN_DATA: &str = "resources/game_data.yaml";
+	pub const KNOWN_DATA: &str = "resources/asm/game_data.yaml";
 
 	/// Foreign data path
-	pub const FOREIGN_DATA: &str = "resources/foreign_data.yaml";
+	pub const FOREIGN_DATA: &str = "resources/asm/foreign_data.yaml";
 
 	/// Known functions path
-	pub const KNOWN_FUNCS: &str = "resources/game_funcs.yaml";
+	pub const KNOWN_FUNCS: &str = "resources/asm/game_funcs.yaml";
 
 	/// Instruction overrides path
-	pub const INST_ARG_OVERRIDES: &str = "resources/inst_args_override.yaml";
+	pub const INST_ARG_OVERRIDES: &str = "resources/asm/inst_args_override.yaml";
 }
