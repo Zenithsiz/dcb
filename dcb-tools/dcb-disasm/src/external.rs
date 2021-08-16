@@ -3,7 +3,7 @@
 // Imports
 use crate::cli::CliData;
 use dcb_exe::{data::DataKind, Data, DataTable, DataType, FuncTable, Pos};
-use std::{collections::BTreeMap, str::FromStr};
+use std::str::FromStr;
 
 /// External resources
 pub struct ExternalResources {
@@ -12,9 +12,6 @@ pub struct ExternalResources {
 
 	/// Function table
 	pub func_table: FuncTable,
-
-	/// Overrides
-	pub inst_arg_overrides: BTreeMap<ArgPos, String>,
 }
 
 impl ExternalResources {
@@ -23,7 +20,6 @@ impl ExternalResources {
 		let known_data_path = &cli.known_data_path;
 		let foreign_data_path = &cli.foreign_data_path;
 		let known_funcs_path = &cli.known_funcs_path;
-		let inst_arg_overrides_path = &cli.inst_arg_overrides_path;
 
 		// Read all data
 		let known_data: Vec<SerializedData> = zutil::parse_from_file(&known_data_path, serde_yaml::from_reader)
@@ -55,28 +51,9 @@ impl ExternalResources {
 			.map_err(zutil::fmt_err_wrapper_owned)
 			.map_err(|err| log::warn!("Unable to load functions from {known_funcs_path:?}: {err}"))
 			.unwrap_or_default();
-		let inst_arg_overrides = zutil::parse_from_file(&inst_arg_overrides_path, serde_yaml::from_reader)
-			.map_err(zutil::fmt_err_wrapper_owned)
-			.map_err(|err| log::warn!("Unable to load instruction overrides from {inst_arg_overrides_path:?}: {err}"))
-			.unwrap_or_default();
 
-		Self {
-			data_table,
-			func_table,
-			inst_arg_overrides,
-		}
+		Self { data_table, func_table }
 	}
-}
-
-/// Argument position
-#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Debug)]
-#[derive(serde::Serialize, serde::Deserialize)]
-pub struct ArgPos {
-	/// Position
-	pub pos: Pos,
-
-	/// Argument
-	pub arg: usize,
 }
 
 /// Serialized game / foreign data

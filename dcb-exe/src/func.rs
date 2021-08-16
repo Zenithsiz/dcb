@@ -53,6 +53,10 @@ pub struct Func {
 	#[serde(default)]
 	pub labels: BTreeMap<Pos, String>,
 
+	/// Instruction argument overrides
+	#[serde(default)]
+	pub inst_arg_overrides: BTreeMap<ArgPos, String>,
+
 	/// Start position
 	pub start_pos: Pos,
 
@@ -234,6 +238,7 @@ impl Func {
 				inline_comments: BTreeMap::new(),
 				block_comments: BTreeMap::new(),
 				labels,
+				inst_arg_overrides: BTreeMap::new(),
 				start_pos: func_pos,
 				end_pos,
 				kind: FuncKind::Heuristics,
@@ -275,4 +280,17 @@ impl Ord for Func {
 		// Only compare the start position
 		self.start_pos.cmp(&other.start_pos)
 	}
+}
+
+
+/// Instruction argument position
+// TODO: Better serde serialization / deserialize from a single string
+#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Debug)]
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct ArgPos {
+	/// Position
+	pub pos: Pos,
+
+	/// Argument index
+	pub arg: usize,
 }

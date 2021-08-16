@@ -10,11 +10,12 @@ mod external;
 // Exports
 use cli::CliData;
 use display_ctx::DisplayCtx;
-use external::{ArgPos, ExternalResources};
+use external::ExternalResources;
 
 // Imports
 use anyhow::Context;
 use dcb_exe::{
+	func::ArgPos,
 	inst::{parse::LineArgExpr, Inst, InstDisplay, InstFmtArg, ParseCtx},
 	reader::{iter::ExeItem, DeserializeOpts},
 	ExeReader, Func, Pos,
@@ -35,11 +36,7 @@ fn main() -> Result<(), anyhow::Error> {
 	let cli = CliData::new();
 
 	// Load all external resources
-	let ExternalResources {
-		data_table,
-		func_table,
-		mut inst_arg_overrides,
-	} = ExternalResources::load(&cli);
+	let ExternalResources { data_table, func_table } = ExternalResources::load(&cli);
 
 	// Open the input file
 	let input_file_path = &cli.input_path;
@@ -70,6 +67,9 @@ fn main() -> Result<(), anyhow::Error> {
 	// Current function instructions
 	let mut cur_func_insts = BTreeMap::new();
 
+	// Current function instruction argument overrides
+	let mut cur_func_inst_arg_overrides = BTreeMap::new();
+
 	for item in exe.iter() {
 		match item {
 			// For each function or header, print a header and all it's instructions
@@ -81,6 +81,9 @@ fn main() -> Result<(), anyhow::Error> {
 				cur_func_insts.clear();
 				cur_func_insts.extend(insts);
 
+				// Get the argument overrides
+				cur_func_inst_arg_overrides.clone_from(&func.inst_arg_overrides);
+
 				println!("\n##########");
 				println!("{}:", func.name);
 				if !func.signature.is_empty() {
@@ -91,6 +94,7 @@ fn main() -> Result<(), anyhow::Error> {
 				}
 
 				let insts = &cur_func_insts;
+				let inst_arg_overrides = &mut cur_func_inst_arg_overrides;
 				for (pos, inst) in insts {
 					// If there's a block comment, print it
 					if let Some(comment) = func.block_comments.get(pos) {
@@ -126,7 +130,8 @@ fn main() -> Result<(), anyhow::Error> {
 								// Then build the instruction
 								let inst = &insts.get(&pos)?;
 								let inst = inst_display_cache.entry(pos).or_insert_with(|| {
-									self::inst_display(inst, &exe, Some(func), &mut inst_arg_overrides, pos).to_string()
+									self::inst_display(inst, &exe, Some(func), Some(inst_arg_overrides), pos)
+										.to_string()
 								});
 								let inst_len = inst.len();
 
@@ -156,7 +161,7 @@ fn main() -> Result<(), anyhow::Error> {
 						Some(inst) => print!("{inst}"),
 						None => print!(
 							"{}",
-							self::inst_display(inst, &exe, Some(func), &mut inst_arg_overrides, *pos)
+							self::inst_display(inst, &exe, Some(func), Some(inst_arg_overrides), *pos)
 						),
 					}
 
@@ -189,6 +194,12 @@ fn main() -> Result<(), anyhow::Error> {
 					println!();
 				}
 				println!("##########\n");
+
+				// If there are any leftover overrides, warn
+				inst_arg_overrides.drain_filter(|pos, s| {
+					log::warn!("Ignoring override at {}/{}: {}", pos.pos, pos.arg, s.escape_debug());
+					true
+				});
 			},
 
 			ExeItem::Data { data, insts } => {
@@ -204,10 +215,7 @@ fn main() -> Result<(), anyhow::Error> {
 					}
 
 					// Write the instruction
-					print!(
-						"\t{}",
-						self::inst_display(&inst, &exe, None, &mut inst_arg_overrides, pos)
-					);
+					print!("\t{}", self::inst_display(&inst, &exe, None, None, pos));
 
 					println!();
 				}
@@ -229,10 +237,7 @@ fn main() -> Result<(), anyhow::Error> {
 					}
 
 					// Write the instruction
-					print!(
-						"{}",
-						self::inst_display(&inst, &exe, None, &mut inst_arg_overrides, pos)
-					);
+					print!("{}", self::inst_display(&inst, &exe, None, None, pos));
 
 					println!();
 
@@ -242,19 +247,14 @@ fn main() -> Result<(), anyhow::Error> {
 		}
 	}
 
-	// If there are any leftover overrides, warn
-	for (pos, _) in inst_arg_overrides {
-		log::warn!("Ignoring override at {}/{}", pos.pos, pos.arg);
-	}
-
 	Ok(())
 }
 
 /// Returns a display-able for an instruction inside a possible function
 #[must_use]
 pub fn inst_display<'a>(
-	inst: &'a Inst, exe: &'a ExeReader, func: Option<&'a Func>, inst_arg_overrides: &'a mut BTreeMap<ArgPos, String>,
-	pos: Pos,
+	inst: &'a Inst, exe: &'a ExeReader, func: Option<&'a Func>,
+	mut inst_arg_overrides: Option<&'a mut BTreeMap<ArgPos, String>>, pos: Pos,
 ) -> impl fmt::Display + 'a {
 	// Overload the target of as many as possible using `inst_target`.
 	zutil::DisplayWrapper::new(move |f| {
@@ -273,7 +273,10 @@ pub fn inst_display<'a>(
 			let arg = arg.into_inner();
 
 			// If we have an override for this argument, use it
-			match inst_arg_overrides.remove(&ArgPos { pos, arg: idx }) {
+			match inst_arg_overrides
+				.as_mut()
+				.and_then(|arg_overrides| arg_overrides.remove(&ArgPos { pos, arg: idx }))
+			{
 				Some(value) => {
 					// Validator
 					let validate = || -> Result<(), anyhow::Error> {

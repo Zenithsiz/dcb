@@ -27,9 +27,6 @@ pub struct CliData {
 
 	/// Known functions path
 	pub known_funcs_path: PathBuf,
-
-	/// Instruction overrides path
-	pub inst_arg_overrides_path: PathBuf,
 }
 
 impl CliData {
@@ -44,7 +41,6 @@ impl CliData {
 		const KNOWN_DATA_PATH_STR: &str = "known-data-path";
 		const FOREIGN_DATA_PATH_STR: &str = "foreign-data-path";
 		const KNOWN_FUNCS_PATH_STR: &str = "known-funcs-path";
-		const INST_ARG_OVERRIDES_PATH_STR: &str = "inst-arg-overrides-path";
 
 		// Get all matches from cli
 		let matches = ClapApp::new("Dcb disassembler")
@@ -96,12 +92,6 @@ impl CliData {
 					.help("Sets the path of the known funcs")
 					.takes_value(true),
 			)
-			.arg(
-				ClapArg::with_name(INST_ARG_OVERRIDES_PATH_STR)
-					.long(INST_ARG_OVERRIDES_PATH_STR)
-					.help("Sets the path of the function arguments overrides")
-					.takes_value(true),
-			)
 			.get_matches();
 
 		// Get the input filename
@@ -130,9 +120,6 @@ impl CliData {
 		let known_funcs_path = matches
 			.value_of(KNOWN_FUNCS_PATH_STR)
 			.unwrap_or(default_paths::KNOWN_FUNCS);
-		let inst_arg_overrides_path = matches
-			.value_of(INST_ARG_OVERRIDES_PATH_STR)
-			.unwrap_or(default_paths::INST_ARG_OVERRIDES);
 
 		// Return the cli data
 		Self {
@@ -144,7 +131,6 @@ impl CliData {
 			known_data_path: PathBuf::from(known_data_path),
 			foreign_data_path: PathBuf::from(foreign_data_path),
 			known_funcs_path: PathBuf::from(known_funcs_path),
-			inst_arg_overrides_path: PathBuf::from(inst_arg_overrides_path),
 		}
 	}
 }
@@ -160,7 +146,4 @@ mod default_paths {
 
 	/// Known functions path
 	pub const KNOWN_FUNCS: &str = "resources/asm/game_funcs.yaml";
-
-	/// Instruction overrides path
-	pub const INST_ARG_OVERRIDES: &str = "resources/asm/inst_args_override.yaml";
 }

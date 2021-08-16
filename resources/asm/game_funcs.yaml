@@ -1148,6 +1148,34 @@
     0x80069b60: "flush_buffer_if_large"
     0x80069b90: "write_char"
     0x80069bb0: "exit"
+  arg_overrides:
+    ? pos: 0x80069ad8
+      arg: 1
+    : "b'\\t'"
+    ? pos: 0x80069ae4
+      arg: 1
+    : "b'\\n'"
+    ? pos: 0x80069af4
+      arg: 1
+    : "b'\\r'"
+    ? pos: 0x80069af8
+      arg: 1
+    : "File1.BufferCurTabAlign@addr_hi"
+    ? pos: 0x80069b00
+      arg: 1
+    : "File1.BufferCurTabAlign@addr_lo"
+    ? pos: 0x80069b2c
+      arg: 1
+    : "File1.AllowedTable@addr_hi"
+    ? pos: 0x80069b34
+      arg: 1
+    : "File1.AllowedTable@addr_lo"
+    ? pos: 0x80069b9c
+      arg: 1
+    : "File1.Buffer@addr_hi"
+    ? pos: 0x80069ba4
+      arg: 1
+    : "File1.Buffer@addr_lo"
   start_pos: 0x80069ac4
   end_pos: 0x80069bc0
   kind: Known
@@ -1173,6 +1201,14 @@
     0x8006a634: "add_char"
     0x8006a63c: "loop"
     0x8006a650: "flush_file"
+  arg_overrides:
+    ? pos: 0x8006a628
+      arg: 1
+    : "File1.NullStr@addr_hi"
+    ? pos: 0x8006a630
+      arg: 1
+    : "File1.NullStr@addr_lo"
+
   start_pos: 0x8006a614
   end_pos: 0x8006a668
   kind: Known
