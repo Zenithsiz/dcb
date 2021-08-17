@@ -29,6 +29,7 @@ members = [
   "dcb-tools/dcb-deck-editor",
   "dcb-tools/dcb-file-editor",
   "dcb-tools/dcb-drv-fuse",
+  "dcb-tools/dcb-extract-card-table",
 ]
 
 #[patch."https://github.com/Zenithsiz/zutil"]
