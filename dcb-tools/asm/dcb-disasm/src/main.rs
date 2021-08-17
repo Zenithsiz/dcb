@@ -37,6 +37,10 @@ fn main() -> Result<(), anyhow::Error> {
 	// Load all external resources
 	let ExternalResources { data_table, func_table } = ExternalResources::load(&args);
 
+	// Log how much we loaded
+	log::info!("Loaded {} data entries", data_table.len());
+	log::info!("Loaded {} functions", func_table.len());
+
 	// Open the input file
 	let input_file_path = &args.input_path;
 	let mut input_file =

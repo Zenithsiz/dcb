@@ -50,6 +50,19 @@ impl DataNode {
 		self.nodes.iter()
 	}
 
+	/// Returns the number of nodes within this node
+	#[must_use]
+	pub fn len(&self) -> usize {
+		// Note: we need to count the parent too
+		self.nodes.iter().map(Self::len).map(|children| 1 + children).sum()
+	}
+
+	/// Returns if this node is empty
+	#[must_use]
+	pub fn is_empty(&self) -> bool {
+		self.len() == 0
+	}
+
 	/// Inserts a new data into this node and returns it.
 	pub fn insert(&mut self, data: Data) -> Result<Rc<Data>, InsertError> {
 		// If the data isn't contained in ourselves, return Err

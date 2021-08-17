@@ -17,25 +17,34 @@ pub struct ExternalResources {
 impl ExternalResources {
 	/// Loads external resources
 	pub fn load(args: &Args) -> Self {
-		let known_data_path = &args.known_data_path;
-		let foreign_data_path = &args.foreign_data_path;
-		let known_funcs_path = &args.known_funcs_path;
-
 		// Read all data
-		let known_data: Vec<SerializedData> = zutil::parse_from_file(&known_data_path, serde_yaml::from_reader)
-			.map_err(zutil::fmt_err_wrapper_owned)
-			.map_err(|err| log::warn!("Unable to load game data from {known_data_path:?}: {err}"))
-			.unwrap_or_default();
-		let foreign_data: Vec<SerializedData> = zutil::parse_from_file(&foreign_data_path, serde_yaml::from_reader)
-			.map_err(zutil::fmt_err_wrapper_owned)
-			.map_err(|err| log::warn!("Unable to load foreign data from {foreign_data_path:?}: {err}"))
-			.unwrap_or_default();
+		// TODO: Merge them both and just print the foreign data to the `.asm`.
+		let game_data = match &args.game_data_path {
+			Some(path) => match zutil::parse_from_file::<Vec<SerializedData>, _, _>(&path, serde_yaml::from_reader) {
+				Ok(data) => data,
+				Err(err) => {
+					log::warn!("Unable to load game data from {}: {err}", path.display());
+					Vec::new()
+				},
+			},
+			None => Vec::new(),
+		};
+		let foreign_data = match &args.foreign_data_path {
+			Some(path) => match zutil::parse_from_file::<Vec<SerializedData>, _, _>(&path, serde_yaml::from_reader) {
+				Ok(data) => data,
+				Err(err) => {
+					log::warn!("Unable to load foreign data from {}: {err}", path.display());
+					Vec::new()
+				},
+			},
+			None => Vec::new(),
+		};
 
 		// Bundle it up
-		let all_data = known_data
+		let all_data = game_data
 			.into_iter()
 			.map(|data| data.into_data(DataKind::Known))
-			.chain(foreign_data.into_iter().map(|data| data.into_data(DataKind::Known)));
+			.chain(foreign_data.into_iter().map(|data| data.into_data(DataKind::Foreign)));
 
 		// Then create the data table
 		let data_table = all_data.fold(DataTable::default(), |mut data_table, data| {
@@ -47,10 +56,16 @@ impl ExternalResources {
 			data_table
 		});
 
-		let func_table = zutil::parse_from_file(&known_funcs_path, serde_yaml::from_reader)
-			.map_err(zutil::fmt_err_wrapper_owned)
-			.map_err(|err| log::warn!("Unable to load functions from {known_funcs_path:?}: {err}"))
-			.unwrap_or_default();
+		let func_table = match &args.game_funcs_path {
+			Some(path) => match zutil::parse_from_file(&path, serde_yaml::from_reader) {
+				Ok(data) => data,
+				Err(err) => {
+					log::warn!("Unable to load game functions from {}: {err}", path.display());
+					FuncTable::new()
+				},
+			},
+			None => FuncTable::new(),
+		};
 
 		Self { data_table, func_table }
 	}

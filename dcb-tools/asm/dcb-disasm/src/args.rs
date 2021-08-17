@@ -19,14 +19,14 @@ pub struct Args {
 	/// Path to print the header to
 	pub header_path: Option<PathBuf>,
 
-	/// Known data path
-	pub known_data_path: PathBuf,
+	/// Game data path
+	pub game_data_path: Option<PathBuf>,
 
 	/// Foreign data path
-	pub foreign_data_path: PathBuf,
+	pub foreign_data_path: Option<PathBuf>,
 
-	/// Known functions path
-	pub known_funcs_path: PathBuf,
+	/// Game functions path
+	pub game_funcs_path: Option<PathBuf>,
 }
 
 impl Args {
@@ -38,9 +38,9 @@ impl Args {
 		const PRINT_INST_POS_STR: &str = "print-inst-pos";
 		const PRINT_HEADER_STR: &str = "print-header";
 
-		const KNOWN_DATA_PATH_STR: &str = "known-data-path";
+		const GAME_DATA_PATH_STR: &str = "game-data-path";
 		const FOREIGN_DATA_PATH_STR: &str = "foreign-data-path";
-		const KNOWN_FUNCS_PATH_STR: &str = "known-funcs-path";
+		const GAME_FUNCS_PATH_STR: &str = "game-funcs-path";
 
 		// Get all matches from cli
 		let matches = ClapApp::new("Dcb disassembler")
@@ -75,9 +75,9 @@ impl Args {
 					.takes_value(true),
 			)
 			.arg(
-				ClapArg::with_name(KNOWN_DATA_PATH_STR)
-					.long(KNOWN_DATA_PATH_STR)
-					.help("Sets the path of the known data")
+				ClapArg::with_name(GAME_DATA_PATH_STR)
+					.long(GAME_DATA_PATH_STR)
+					.help("Sets the path of the game data")
 					.takes_value(true),
 			)
 			.arg(
@@ -87,9 +87,9 @@ impl Args {
 					.takes_value(true),
 			)
 			.arg(
-				ClapArg::with_name(KNOWN_FUNCS_PATH_STR)
-					.long(KNOWN_FUNCS_PATH_STR)
-					.help("Sets the path of the known funcs")
+				ClapArg::with_name(GAME_FUNCS_PATH_STR)
+					.long(GAME_FUNCS_PATH_STR)
+					.help("Sets the path of the game funcs")
 					.takes_value(true),
 			)
 			.get_matches();
@@ -101,25 +101,19 @@ impl Args {
 			.map(PathBuf::from)
 			.expect("Unable to get required argument `input-file`");
 
-		// Get the output directory, or just use `src`
+		// Get the output directory, or just use the default
 		let output_dir_path = match matches.value_of(OUTPUT_DIR_STR) {
 			Some(path) => PathBuf::from(path),
-			None => PathBuf::from("src/"),
+			None => PathBuf::from("game/asm/"),
 		};
 
 
 		let print_inst_pos = matches.is_present(PRINT_INST_POS_STR);
 		let header_path = matches.value_of(PRINT_HEADER_STR).map(PathBuf::from);
 
-		let known_data_path = matches
-			.value_of(KNOWN_DATA_PATH_STR)
-			.unwrap_or(default_paths::KNOWN_DATA);
-		let foreign_data_path = matches
-			.value_of(FOREIGN_DATA_PATH_STR)
-			.unwrap_or(default_paths::FOREIGN_DATA);
-		let known_funcs_path = matches
-			.value_of(KNOWN_FUNCS_PATH_STR)
-			.unwrap_or(default_paths::KNOWN_FUNCS);
+		let game_data_path = matches.value_of(GAME_DATA_PATH_STR).map(PathBuf::from);
+		let foreign_data_path = matches.value_of(FOREIGN_DATA_PATH_STR).map(PathBuf::from);
+		let game_funcs_path = matches.value_of(GAME_FUNCS_PATH_STR).map(PathBuf::from);
 
 		// Return the cli data
 		Self {
@@ -127,23 +121,9 @@ impl Args {
 			output_dir_path,
 			print_inst_pos,
 			header_path,
-
-			known_data_path: PathBuf::from(known_data_path),
-			foreign_data_path: PathBuf::from(foreign_data_path),
-			known_funcs_path: PathBuf::from(known_funcs_path),
+			game_data_path,
+			foreign_data_path,
+			game_funcs_path,
 		}
 	}
-}
-
-
-/// Default paths
-mod default_paths {
-	/// Known data path
-	pub const KNOWN_DATA: &str = "resources/asm/game_data.yaml";
-
-	/// Foreign data path
-	pub const FOREIGN_DATA: &str = "resources/asm/foreign_data.yaml";
-
-	/// Known functions path
-	pub const KNOWN_FUNCS: &str = "resources/asm/game_funcs.yaml";
 }

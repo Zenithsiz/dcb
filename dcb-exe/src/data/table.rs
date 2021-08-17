@@ -131,6 +131,19 @@ impl DataTable {
 	pub fn search_name(&self, name: &str) -> Option<&Data> {
 		self.by_name.get(name).map(|data| &**data)
 	}
+
+	/// Returns the total number of data within this table
+	#[must_use]
+	pub fn len(&self) -> usize {
+		// Note: we don't count the root node
+		self.root.len()
+	}
+
+	/// Returns if this table is empty
+	#[must_use]
+	pub fn is_empty(&self) -> bool {
+		self.len() == 0
+	}
 }
 
 impl Default for DataTable {

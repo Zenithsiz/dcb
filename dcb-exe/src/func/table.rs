@@ -50,6 +50,18 @@ impl FuncTable {
 	pub fn range(&self, range: impl RangeBounds<Pos>) -> impl DoubleEndedIterator<Item = &Func> + Clone {
 		self.0.range(range)
 	}
+
+	/// Returns the number of functions
+	#[must_use]
+	pub const fn len(&self) -> usize {
+		self.0.len()
+	}
+
+	/// Returns if this table is empty
+	#[must_use]
+	pub const fn is_empty(&self) -> bool {
+		self.len() == 0
+	}
 }
 
 // Note: `BTreeSet` already discards duplicates on it's own.
