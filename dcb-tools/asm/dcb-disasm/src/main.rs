@@ -73,184 +73,201 @@ fn main() -> Result<(), anyhow::Error> {
 	// Current function instruction argument overrides
 	let mut cur_func_inst_arg_overrides = BTreeMap::new();
 
+	// Display all items in the executable
 	for item in exe.iter() {
-		match item {
-			// For each function or header, print a header and all it's instructions
-			ExeItem::Func { func, insts } => {
-				// Drop any old instruction buffers
-				inst_display_cache.drain_filter(|&pos, _| pos < func.start_pos);
-
-				// Clear the previous function's instruction and append the new ones
-				cur_func_insts.clear();
-				cur_func_insts.extend(insts);
-
-				// Get the argument overrides
-				cur_func_inst_arg_overrides.clone_from(&func.inst_arg_overrides);
-
-				println!("\n##########");
-				println!("{}:", func.name);
-				if !func.signature.is_empty() {
-					println!("# {}", func.signature);
-				}
-				for description in func.desc.lines() {
-					println!("# {description}");
-				}
-
-				let insts = &cur_func_insts;
-				let inst_arg_overrides = &mut cur_func_inst_arg_overrides;
-				for (pos, inst) in insts {
-					// If there's a block comment, print it
-					if let Some(comment) = func.block_comments.get(pos) {
-						for line in comment.lines() {
-							println!("# {line}");
-						}
-					}
-
-					// If there's a label, print it
-					if let Some(label) = func.labels.get(pos) {
-						println!("\t.{label}:");
-					}
-
-					// If we don't have a comment, remove the current alignment
-					if !func.inline_comments.contains_key(pos) {
-						cur_inline_comment_run_max_inst_len = None;
-					}
-
-					// If we don't have any alignment padding, and this instruction and the next have inline comments,
-					// set the inline alignment
-					if cur_inline_comment_run_max_inst_len.is_none() &&
-						func.inline_comments.contains_key(pos) &&
-						func.inline_comments.contains_key(&(pos + 4))
-					{
-						let max_inst_len = (0..)
-							.map(|n| pos + 4 * n)
-							.map_while(|pos| {
-								// If the next instruction doesn't have a comment, return
-								if !func.inline_comments.contains_key(&pos) {
-									return None;
-								}
-
-								// Then build the instruction
-								let inst = &insts.get(&pos)?;
-								let inst = inst_display_cache.entry(pos).or_insert_with(|| {
-									self::inst_display(inst, &exe, Some(func), Some(inst_arg_overrides), pos)
-										.to_string()
-								});
-								let inst_len = inst.len();
-
-								Some(inst_len)
-							})
-							.max()
-							.expect("Next instruction had an inline comment");
-
-						cur_inline_comment_run_max_inst_len = Some(max_inst_len);
-					}
-
-					// Write the position
-					if args.print_inst_pos {
-						print!("{pos}:");
-					}
-
-					// Add a tab before any instruction in a function
-					print!("\t");
-
-					// If we had a branch / jump instruction before this one, add a "+ "
-					if insts.get(&(pos - 4)).map_or(false, |inst| inst.expects_branch_delay()) {
-						print!("+ ");
-					}
-
-					// If we have the instruction buffer, pop it and use it
-					match inst_display_cache.get(pos) {
-						Some(inst) => print!("{inst}"),
-						None => print!(
-							"{}",
-							self::inst_display(inst, &exe, Some(func), Some(inst_arg_overrides), *pos)
-						),
-					}
-
-					// If there's an inline comment, print it
-					if let Some(comment) = func.inline_comments.get(pos) {
-						// Replace any newlines with '\n'
-						let modified_comment;
-						let comment = match comment.contains('\n') {
-							true => {
-								modified_comment = comment.replace("\n", "\\n");
-								&modified_comment
-							},
-							false => comment,
-						};
-
-						// If we have alignment padding, apply it
-						if let Some(max_inst_len) = cur_inline_comment_run_max_inst_len {
-							let inst = inst_display_cache
-								.get(pos)
-								.expect("Instruction wasn't in buffer during inline comment alignment");
-							let padding = max_inst_len - inst.len();
-							for _ in 0..padding {
-								print!(" ");
-							}
-						}
-
-						print!(" # {comment}");
-					}
-
-					println!();
-				}
-				println!("##########\n");
-
-				// If there are any leftover overrides, warn
-				inst_arg_overrides.drain_filter(|pos, s| {
-					log::warn!("Ignoring override at {}/{}: {}", pos.pos, pos.arg, s.escape_debug());
-					true
-				});
-			},
-
-			ExeItem::Data { data, insts } => {
-				println!("\n##########");
-				println!("{}:", data.name());
-				for description in data.desc().lines() {
-					println!("# {description}");
-				}
-				for (pos, inst) in insts {
-					// Write the position
-					if args.print_inst_pos {
-						print!("{pos}:");
-					}
-
-					// Write the instruction
-					print!("\t{}", self::inst_display(&inst, &exe, None, None, pos));
-
-					println!();
-				}
-				println!("##########\n");
-			},
-
-			// If it's standalone, print it by it's own
-			ExeItem::Unknown { insts } => {
-				let mut prev_inst = None;
-				for (pos, inst) in insts {
-					// Write the position
-					if args.print_inst_pos {
-						print!("{pos}: ");
-					}
-
-					// If we had a branch / jump instruction before this one, add a "+ "
-					if prev_inst.as_ref().map_or(false, Inst::expects_branch_delay) {
-						print!("+ ");
-					}
-
-					// Write the instruction
-					print!("{}", self::inst_display(&inst, &exe, None, None, pos));
-
-					println!();
-
-					prev_inst = Some(inst);
-				}
-			},
-		}
+		self::display_item(
+			item,
+			&exe,
+			&mut inst_display_cache,
+			&mut cur_func_insts,
+			&mut cur_func_inst_arg_overrides,
+			&mut cur_inline_comment_run_max_inst_len,
+			&args,
+		);
 	}
 
 	Ok(())
+}
+
+/// Displays an executable item
+fn display_item<'a>(
+	item: ExeItem<'a>, exe: &'a ExeReader, inst_display_cache: &mut BTreeMap<Pos, String>,
+	cur_func_insts: &mut BTreeMap<Pos, Inst<'a>>, cur_func_inst_arg_overrides: &mut BTreeMap<ArgPos, String>,
+	cur_inline_comment_run_max_inst_len: &mut Option<usize>, args: &args::Args,
+) {
+	match item {
+		// For each function or header, print a header and all it's instructions
+		ExeItem::Func { func, insts } => {
+			// Drop any old instruction buffers
+			inst_display_cache.drain_filter(|&pos, _| pos < func.start_pos);
+
+			// Clear the previous function's instruction and append the new ones
+			cur_func_insts.clear();
+			cur_func_insts.extend(insts);
+
+			// Get the argument overrides
+			cur_func_inst_arg_overrides.clone_from(&func.inst_arg_overrides);
+
+			println!("\n##########");
+			println!("{}:", func.name);
+			if !func.signature.is_empty() {
+				println!("# {}", func.signature);
+			}
+			for description in func.desc.lines() {
+				println!("# {description}");
+			}
+
+			let insts = &*cur_func_insts;
+			let inst_arg_overrides = cur_func_inst_arg_overrides;
+			for (pos, inst) in insts {
+				// If there's a block comment, print it
+				if let Some(comment) = func.block_comments.get(pos) {
+					for line in comment.lines() {
+						println!("# {line}");
+					}
+				}
+
+				// If there's a label, print it
+				if let Some(label) = func.labels.get(pos) {
+					println!("\t.{label}:");
+				}
+
+				// If we don't have a comment, remove the current alignment
+				if !func.inline_comments.contains_key(pos) {
+					*cur_inline_comment_run_max_inst_len = None;
+				}
+
+				// If we don't have any alignment padding, and this instruction and the next have inline comments,
+				// set the inline alignment
+				if cur_inline_comment_run_max_inst_len.is_none() &&
+					func.inline_comments.contains_key(pos) &&
+					func.inline_comments.contains_key(&(pos + 4))
+				{
+					let max_inst_len = (0..)
+						.map(|n| pos + 4 * n)
+						.map_while(|pos| {
+							// If the next instruction doesn't have a comment, return
+							if !func.inline_comments.contains_key(&pos) {
+								return None;
+							}
+
+							// Then build the instruction
+							let inst = &insts.get(&pos)?;
+							let inst = inst_display_cache.entry(pos).or_insert_with(|| {
+								self::inst_display(inst, exe, Some(func), Some(inst_arg_overrides), pos).to_string()
+							});
+							let inst_len = inst.len();
+
+							Some(inst_len)
+						})
+						.max()
+						.expect("Next instruction had an inline comment");
+
+					*cur_inline_comment_run_max_inst_len = Some(max_inst_len);
+				}
+
+				// Write the position
+				if args.print_inst_pos {
+					print!("{pos}:");
+				}
+
+				// Add a tab before any instruction in a function
+				print!("\t");
+
+				// If we had a branch / jump instruction before this one, add a "+ "
+				if insts.get(&(pos - 4)).map_or(false, |inst| inst.expects_branch_delay()) {
+					print!("+ ");
+				}
+
+				// If we have the instruction buffer, pop it and use it
+				match inst_display_cache.get(pos) {
+					Some(inst) => print!("{inst}"),
+					None => print!(
+						"{}",
+						self::inst_display(inst, exe, Some(func), Some(inst_arg_overrides), *pos)
+					),
+				}
+
+				// If there's an inline comment, print it
+				if let Some(comment) = func.inline_comments.get(pos) {
+					// Replace any newlines with '\n'
+					let modified_comment;
+					let comment = match comment.contains('\n') {
+						true => {
+							modified_comment = comment.replace("\n", "\\n");
+							&modified_comment
+						},
+						false => comment,
+					};
+
+					// If we have alignment padding, apply it
+					if let Some(max_inst_len) = *cur_inline_comment_run_max_inst_len {
+						let inst = inst_display_cache
+							.get(pos)
+							.expect("Instruction wasn't in buffer during inline comment alignment");
+						let padding = max_inst_len - inst.len();
+						for _ in 0..padding {
+							print!(" ");
+						}
+					}
+
+					print!(" # {comment}");
+				}
+
+				println!();
+			}
+			println!("##########\n");
+
+			// If there are any leftover overrides, warn
+			inst_arg_overrides.drain_filter(|pos, s| {
+				log::warn!("Ignoring override at {}/{}: {}", pos.pos, pos.arg, s.escape_debug());
+				true
+			});
+		},
+
+		ExeItem::Data { data, insts } => {
+			println!("\n##########");
+			println!("{}:", data.name());
+			for description in data.desc().lines() {
+				println!("# {description}");
+			}
+			for (pos, inst) in insts {
+				// Write the position
+				if args.print_inst_pos {
+					print!("{pos}:");
+				}
+
+				// Write the instruction
+				print!("\t{}", self::inst_display(&inst, exe, None, None, pos));
+
+				println!();
+			}
+			println!("##########\n");
+		},
+
+		// If it's standalone, print it by it's own
+		ExeItem::Unknown { insts } => {
+			let mut prev_inst = None;
+			for (pos, inst) in insts {
+				// Write the position
+				if args.print_inst_pos {
+					print!("{pos}: ");
+				}
+
+				// If we had a branch / jump instruction before this one, add a "+ "
+				if prev_inst.as_ref().map_or(false, Inst::expects_branch_delay) {
+					print!("+ ");
+				}
+
+				// Write the instruction
+				print!("{}", self::inst_display(&inst, exe, None, None, pos));
+
+				println!();
+
+				prev_inst = Some(inst);
+			}
+		},
+	}
 }
 
 /// Returns a display-able for an instruction inside a possible function
