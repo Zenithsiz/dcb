@@ -3,12 +3,11 @@
 #![feature(try_blocks, format_args_capture, iter_map_while, btree_drain_filter)]
 
 // Modules
-mod cli;
+mod args;
 mod display_ctx;
 mod external;
 
 // Exports
-use cli::CliData;
 use display_ctx::DisplayCtx;
 use external::ExternalResources;
 
@@ -33,13 +32,13 @@ fn main() -> Result<(), anyhow::Error> {
 	.expect("Unable to initialize logger");
 
 	// Get all data from cli
-	let cli = CliData::new();
+	let args = args::Args::get();
 
 	// Load all external resources
-	let ExternalResources { data_table, func_table } = ExternalResources::load(&cli);
+	let ExternalResources { data_table, func_table } = ExternalResources::load(&args);
 
 	// Open the input file
-	let input_file_path = &cli.input_path;
+	let input_file_path = &args.input_path;
 	let mut input_file =
 		fs::File::open(input_file_path).with_context(|| format!("Unable to open input file {input_file_path:?}"))?;
 
@@ -52,7 +51,7 @@ fn main() -> Result<(), anyhow::Error> {
 	.context("Unable to parse game executable")?;
 
 	// If we should print a header, create a `.header` file with the input
-	if let Some(header_path) = &cli.header_path {
+	if let Some(header_path) = &args.header_path {
 		zutil::write_to_file(header_path, exe.header(), serde_yaml::to_writer)
 			.with_context(|| format!("Unable to write header to file {header_path:?}"))?;
 	}
@@ -144,7 +143,7 @@ fn main() -> Result<(), anyhow::Error> {
 					}
 
 					// Write the position
-					if cli.print_inst_pos {
+					if args.print_inst_pos {
 						print!("{pos}:");
 					}
 
@@ -210,7 +209,7 @@ fn main() -> Result<(), anyhow::Error> {
 				}
 				for (pos, inst) in insts {
 					// Write the position
-					if cli.print_inst_pos {
+					if args.print_inst_pos {
 						print!("{pos}:");
 					}
 
@@ -227,7 +226,7 @@ fn main() -> Result<(), anyhow::Error> {
 				let mut prev_inst = None;
 				for (pos, inst) in insts {
 					// Write the position
-					if cli.print_inst_pos {
+					if args.print_inst_pos {
 						print!("{pos}: ");
 					}
 

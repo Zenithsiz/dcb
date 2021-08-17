@@ -1,7 +1,7 @@
 //! External resources
 
 // Imports
-use crate::cli::CliData;
+use crate::args::Args;
 use dcb_exe::{data::DataKind, Data, DataTable, DataType, FuncTable, Pos};
 use std::str::FromStr;
 
@@ -16,10 +16,10 @@ pub struct ExternalResources {
 
 impl ExternalResources {
 	/// Loads external resources
-	pub fn load(cli: &CliData) -> Self {
-		let known_data_path = &cli.known_data_path;
-		let foreign_data_path = &cli.foreign_data_path;
-		let known_funcs_path = &cli.known_funcs_path;
+	pub fn load(args: &Args) -> Self {
+		let known_data_path = &args.known_data_path;
+		let foreign_data_path = &args.foreign_data_path;
+		let known_funcs_path = &args.known_funcs_path;
 
 		// Read all data
 		let known_data: Vec<SerializedData> = zutil::parse_from_file(&known_data_path, serde_yaml::from_reader)

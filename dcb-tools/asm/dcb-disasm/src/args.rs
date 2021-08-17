@@ -4,9 +4,9 @@
 use clap::{App as ClapApp, Arg as ClapArg};
 use std::path::PathBuf;
 
-/// Command line data
+/// Arguments
 #[derive(PartialEq, Clone, Debug)]
-pub struct CliData {
+pub struct Args {
 	/// The input file
 	pub input_path: PathBuf,
 
@@ -29,10 +29,10 @@ pub struct CliData {
 	pub known_funcs_path: PathBuf,
 }
 
-impl CliData {
-	/// Constructs all of the cli data given and returns it
+impl Args {
+	/// Returns the arguments given
 	#[allow(clippy::new_without_default)] // No need
-	pub fn new() -> Self {
+	pub fn get() -> Self {
 		const INPUT_FILE_STR: &str = "input-file";
 		const OUTPUT_DIR_STR: &str = "output-dir";
 		const PRINT_INST_POS_STR: &str = "print-inst-pos";
