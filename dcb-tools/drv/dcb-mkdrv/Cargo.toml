@@ -1,0 +1,27 @@
+[package]
+authors = ["Filipe Rodrigues <filipejacintorodrigues1@gmail.com>"]
+edition = "2018"
+name = "dcb-mkdrv"
+version = "0.1.0"
+
+[dependencies]
+# Dcb
+dcb-drv = {path = "../../../dcb-drv"}
+zutil = {git = "https://github.com/Zenithsiz/zutil", rev = "896cf73ac7ca2551a1d0fad2fb2eb7d98941d00a"}
+
+# Util
+chrono = "0.4.19"
+filetime = "0.2.14"
+itertools = "0.10.0"
+size_format = "1.0.2"
+
+# Cmd
+clap = "2.33.3"
+
+# Logging
+log = "0.4.13"
+simplelog = "0.9.0"
+
+# Error handling
+anyhow = "1.0.38"
+thiserror = "1.0.23"
