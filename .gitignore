@@ -8,6 +8,9 @@
 # Logs
 /latest.log
 
+# Default output directory for unpack
+/game
+
 # Resources
 /resources/*
 
