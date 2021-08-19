@@ -156,7 +156,12 @@ fn display_item<'a>(
 							let inst = inst_display_cache.entry(pos).or_insert_with(|| {
 								self::inst_display(inst, exe, Some(func), Some(inst_arg_overrides), pos).to_string()
 							});
-							let inst_len = inst.len();
+							let mut inst_len = inst.len();
+
+							// If we had a branch / jump instruction before this one, add the "+ " length
+							if insts.get(&(pos - 4)).map_or(false, |inst| inst.expects_branch_delay()) {
+								inst_len += 2;
+							}
 
 							Some(inst_len)
 						})
@@ -175,7 +180,8 @@ fn display_item<'a>(
 				print!("\t");
 
 				// If we had a branch / jump instruction before this one, add a "+ "
-				if insts.get(&(pos - 4)).map_or(false, |inst| inst.expects_branch_delay()) {
+				let is_branch_delay = insts.get(&(pos - 4)).map_or(false, |inst| inst.expects_branch_delay());
+				if is_branch_delay {
 					print!("+ ");
 				}
 
@@ -205,7 +211,7 @@ fn display_item<'a>(
 						let inst = inst_display_cache
 							.get(pos)
 							.expect("Instruction wasn't in buffer during inline comment alignment");
-						let padding = max_inst_len - inst.len();
+						let padding = max_inst_len - inst.len() - if is_branch_delay { 2 } else { 0 };
 						for _ in 0..padding {
 							print!(" ");
 						}
