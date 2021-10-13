@@ -90,6 +90,7 @@ fn main() -> Result<(), anyhow::Error> {
 }
 
 /// Displays an executable item
+#[allow(clippy::too_many_lines)] // TODO: Refactor
 fn display_item<'a>(
 	item: ExeItem<'a>, exe: &'a ExeReader, inst_display_cache: &mut BTreeMap<Pos, String>,
 	cur_func_insts: &mut BTreeMap<Pos, Inst<'a>>, cur_func_inst_arg_overrides: &mut BTreeMap<ArgPos, String>,
@@ -141,10 +142,10 @@ fn display_item<'a>(
 				// set the inline alignment
 				if cur_inline_comment_run_max_inst_len.is_none() &&
 					func.inline_comments.contains_key(pos) &&
-					func.inline_comments.contains_key(&(pos + 4))
+					func.inline_comments.contains_key(&(pos + 4u32))
 				{
 					let max_inst_len = (0..)
-						.map(|n| pos + 4 * n)
+						.map(|n| pos + 4u32 * n)
 						.map_while(|pos| {
 							// If the next instruction doesn't have a comment, return
 							if !func.inline_comments.contains_key(&pos) {
@@ -159,7 +160,7 @@ fn display_item<'a>(
 							let mut inst_len = inst.len();
 
 							// If we had a branch / jump instruction before this one, add the "+ " length
-							if insts.get(&(pos - 4)).map_or(false, |inst| inst.expects_branch_delay()) {
+							if insts.get(&(pos - 4)).map_or(false, Inst::expects_branch_delay) {
 								inst_len += 2;
 							}
 
@@ -180,7 +181,7 @@ fn display_item<'a>(
 				print!("\t");
 
 				// If we had a branch / jump instruction before this one, add a "+ "
-				let is_branch_delay = insts.get(&(pos - 4)).map_or(false, |inst| inst.expects_branch_delay());
+				let is_branch_delay = insts.get(&(pos - 4)).map_or(false, Inst::expects_branch_delay);
 				if is_branch_delay {
 					print!("+ ");
 				}

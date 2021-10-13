@@ -24,7 +24,11 @@ use native_dialog::FileDialog;
 use preview_panel::{PreviewPanel, PreviewPanelBuilder};
 use std::{fs, path::PathBuf, sync::Arc, thread};
 use swap_window::SwapWindow;
-use zutil::{alert, task, Void};
+use zutil::{
+	alert,
+	task::{self, ValueFuture},
+	Void,
+};
 
 fn main() {
 	// Initialize the logger
@@ -91,7 +95,7 @@ impl epi::App for FileEditor {
 		} = self;
 
 		// If the game file finished loading, get it
-		if let Some(res) = game_file_future.as_mut().and_then(|fut| fut.get()) {
+		if let Some(res) = game_file_future.as_mut().and_then(ValueFuture::get) {
 			*game_file_future = None;
 			match res {
 				Ok(game) => *game_file = Some(Arc::new(game)),
@@ -99,7 +103,7 @@ impl epi::App for FileEditor {
 			};
 		}
 
-		if let Some(panel) = preview_panel_builder_future.as_mut().and_then(|fut| fut.get()) {
+		if let Some(panel) = preview_panel_builder_future.as_mut().and_then(ValueFuture::get) {
 			// Drop the future
 			*preview_panel_builder_future = None;
 
@@ -146,7 +150,7 @@ impl epi::App for FileEditor {
 
 				egui::menu::menu(ui, "Edit", |ui| {
 					if game_file.is_some() && ui.button("Swap").clicked() {
-						*swap_window = Some(SwapWindow::default())
+						*swap_window = Some(SwapWindow::default());
 					}
 				});
 			});
@@ -179,7 +183,7 @@ impl epi::App for FileEditor {
 
 		// And swap window
 		if let (Some(swap_window), Some(game_file)) = (swap_window, game_file) {
-			swap_window.display(ctx, &*game_file)
+			swap_window.display(ctx, &*game_file);
 		}
 	}
 

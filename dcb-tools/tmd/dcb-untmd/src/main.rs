@@ -26,7 +26,7 @@ fn main() -> Result<(), anyhow::Error> {
 		simplelog::Config::default(),
 		simplelog::TerminalMode::Stderr,
 	)
-	.expect("Unable to initialize logger");
+	.context("Unable to initialize logger")?;
 
 	// Get all data from cli
 	let cli_data = CliData::new();
@@ -35,7 +35,7 @@ fn main() -> Result<(), anyhow::Error> {
 	for input_path in &cli_data.input_files {
 		// If we don't have an output, try the input filename with `.obj`
 		let output_dir = match &cli_data.output_dir {
-			Some(output) => output.to_path_buf(),
+			Some(output) => output.clone(),
 			None => {
 				input_path.with_extension("")
 				//let mut path = input_path.as_os_str().to_os_string();
@@ -288,6 +288,7 @@ impl Obj {
 		for Normal { x, y, z } in &self.normals {
 			writeln!(writer, "vn {x} {y} {z}")?;
 		}
+		#[allow(clippy::unneeded_field_pattern)] // We'll use them eventually
 		for index in &self.indices {
 			match index {
 				Index::Quad {
@@ -382,6 +383,7 @@ enum Index {
 }
 
 impl Index {
+	#[allow(clippy::too_many_lines)] // TODO: Refactor
 	fn read<R: io::Read>(reader: &mut R) -> Result<Self, anyhow::Error> {
 		let header = IndexHeader::read(reader).context("Unable to read header")?;
 		let index = match (header.olen, header.ilen, header.flag, header.mode) {
@@ -429,7 +431,7 @@ impl Index {
 			},
 			(0xc, 0x8, 0x0, 0x3e) => {
 				let uv0 = [reader.read_u8()?, reader.read_u8()?];
-				let _ = reader.read_u16::<LittleEndian>();
+				let _ = reader.read_u16::<LittleEndian>()?;
 				let uv1 = [reader.read_u8()?, reader.read_u8()?];
 				let _ = reader.read_u16::<LittleEndian>()?;
 				let uv2 = [reader.read_u8()?, reader.read_u8()?];
@@ -452,34 +454,14 @@ impl Index {
 					normals:  [n0, n1, n2, n3],
 				}
 			},
-			(0x9, 0x6, 0x0, 0x36) => {
+			(0x9, 0x6, 0x0, 0x36 | 0x34) => {
 				let uv0 = [reader.read_u8()?, reader.read_u8()?];
-				let _ = reader.read_u16::<LittleEndian>();
+				let _ = reader.read_u16::<LittleEndian>()?;
 				let uv1 = [reader.read_u8()?, reader.read_u8()?];
 				let _ = reader.read_u16::<LittleEndian>()?;
 				let uv2 = [reader.read_u8()?, reader.read_u8()?];
 				let _ = reader.read_u16::<LittleEndian>()?;
 
-				let n0 = reader.read_u16::<LittleEndian>()?;
-				let v0 = reader.read_u16::<LittleEndian>()?;
-				let n1 = reader.read_u16::<LittleEndian>()?;
-				let v1 = reader.read_u16::<LittleEndian>()?;
-				let n2 = reader.read_u16::<LittleEndian>()?;
-				let v2 = reader.read_u16::<LittleEndian>()?;
-
-				Self::Tri {
-					uvs:      [uv0, uv1, uv2],
-					vertices: [v0, v1, v2],
-					normals:  [n0, n1, n2],
-				}
-			},
-			(0x9, 0x6, 0x0, 0x34) => {
-				let uv0 = [reader.read_u8()?, reader.read_u8()?];
-				let _ = reader.read_u16::<LittleEndian>();
-				let uv1 = [reader.read_u8()?, reader.read_u8()?];
-				let _ = reader.read_u16::<LittleEndian>()?;
-				let uv2 = [reader.read_u8()?, reader.read_u8()?];
-				let _ = reader.read_u16::<LittleEndian>()?;
 				let n0 = reader.read_u16::<LittleEndian>()?;
 				let v0 = reader.read_u16::<LittleEndian>()?;
 				let n1 = reader.read_u16::<LittleEndian>()?;

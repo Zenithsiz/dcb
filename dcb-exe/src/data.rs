@@ -145,7 +145,6 @@ impl Data {
 
 	/// Consumes this data and returns it as a label
 	#[must_use]
-	#[allow(clippy::missing_const_for_fn)] // False positive
 	pub fn into_label(self) -> (Pos, Label) {
 		(self.pos, Label::new(self.name))
 	}

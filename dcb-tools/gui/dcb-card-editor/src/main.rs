@@ -65,6 +65,7 @@ fn main() {
 	eframe::run_native(Box::new(app), NativeOptions::default());
 }
 
+#[derive(Default)]
 pub struct CardEditor {
 	/// Loaded game
 	loaded_game: Option<LoadedGame>,
@@ -85,20 +86,8 @@ pub struct CardEditor {
 	replace_str_screen: Option<ReplaceStrScreen>,
 }
 
-impl Default for CardEditor {
-	fn default() -> Self {
-		Self {
-			loaded_game:        None,
-			open_edit_screens:  vec![],
-			swap_screen:        None,
-			overview_screen:    None,
-			diff_screen:        None,
-			replace_str_screen: None,
-		}
-	}
-}
-
 impl epi::App for CardEditor {
+	#[allow(clippy::too_many_lines)] // TODO: Refactor
 	fn update(&mut self, ctx: &egui::CtxRef, frame: &mut epi::Frame<'_>) {
 		let Self {
 			loaded_game,
@@ -491,8 +480,8 @@ fn render_cross_move_effect_opt(ui: &mut egui::Ui, cross_move_effect: &mut Optio
 
 		// Then display extra arguments
 		match cross_move_effect {
-			Some(CrossMoveEffect::AttackToZero(attack_type)) | Some(CrossMoveEffect::Counter(attack_type)) => {
-				self::render_attack_type(ui, attack_type)
+			Some(CrossMoveEffect::AttackToZero(attack_type) | CrossMoveEffect::Counter(attack_type)) => {
+				self::render_attack_type(ui, attack_type);
 			},
 			Some(CrossMoveEffect::TripleAgainst(speciality)) => self::render_speciality(ui, speciality),
 			_ => (),
@@ -761,6 +750,7 @@ fn render_effect_condition_opt(ui: &mut egui::Ui, cur_cond: &mut Option<EffectCo
 }
 
 /// Displays an optional effect
+#[allow(clippy::too_many_lines)] // TODO: Refactor
 fn render_effect_opt(ui: &mut egui::Ui, effect: &mut Option<Effect>) {
 	ui.group(|ui| {
 		match effect {
@@ -1056,7 +1046,7 @@ fn on_open(loaded_game: &mut Option<LoadedGame>) -> Result<(), anyhow::Error> {
 	};
 
 	// And try to load it
-	let game = LoadedGame::load(file_path).context("Unable to load game")?;
+	let game = LoadedGame::load(&file_path).context("Unable to load game")?;
 	*loaded_game = Some(game);
 
 	Ok(())
@@ -1117,7 +1107,7 @@ fn on_diff(diff_screen: &mut Option<DiffScreen>) -> Result<(), anyhow::Error> {
 	};
 
 	// Try to create the screen
-	let screen = DiffScreen::new(other_file_path).context("Unable to create diff screen")?;
+	let screen = DiffScreen::new(&other_file_path).context("Unable to create diff screen")?;
 	*diff_screen = Some(screen);
 
 	Ok(())

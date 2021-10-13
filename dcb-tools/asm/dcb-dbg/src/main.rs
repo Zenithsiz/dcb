@@ -71,7 +71,7 @@ fn main() -> Result<(), anyhow::Error> {
 	//       one it is and all it's data.
 
 	// Load the game executable into memory
-	self::load_game_exec(&mut game_file, game_root_dir, &mut memory)?;
+	self::load_game_exec(&mut game_file, &game_root_dir, &mut memory)?;
 
 	// Create the executor
 	let mut exec_state = ExecState {
@@ -120,7 +120,7 @@ fn run_repl(exec_state: &mut ExecState) -> Result<(), anyhow::Error> {
 		};
 		match input_state.update(args) {
 			Ok(()) => (),
-			Err(err) => println!("Unable to update input state: {err:?}"),
+			Err(err) => println!("Unable to update input state: {err}"),
 		}
 	}
 
@@ -148,7 +148,7 @@ fn get_user_input<'a>(
 
 /// Loads the game executable into memory
 fn load_game_exec(
-	game_file: &mut dcb_cdrom_xa::CdRomReader<impl Read + Seek>, game_root_dir: dcb_iso9660::Dir, memory: &mut Memory,
+	game_file: &mut dcb_cdrom_xa::CdRomReader<impl Read + Seek>, game_root_dir: &dcb_iso9660::Dir, memory: &mut Memory,
 ) -> Result<(), anyhow::Error> {
 	/// Executable position
 	const EXEC_POS: usize = 0x10000;
@@ -272,6 +272,7 @@ impl Memory {
 
 	/// Creates a new memory chunk
 	#[allow(clippy::new_without_default)] // We want an explicit constructor
+	#[must_use]
 	pub fn new() -> Self {
 		Self {
 			bytes: box [0; Self::SIZE],
@@ -379,22 +380,22 @@ impl ExecState {
 				//ExecResult::ReadRegister { reg, value } if reg != Register::Zr => println!("[{reg}] {value:#x}"),
 				//ExecResult::ReadMultRegister { reg, value } => println!("[{reg}] {value:#x}"),
 				ExecResult::WroteRegister { reg, prev, value } if reg != Register::Zr && prev != value => {
-					println!("[{reg}] {prev:#x} => {value:#x}")
+					println!("[{reg}] {prev:#x} => {value:#x}");
 				},
 				ExecResult::WroteMultRegister { reg, prev, value } if prev != value => {
-					println!("[{reg}] {prev:#x} => {value:#x}")
+					println!("[{reg}] {prev:#x} => {value:#x}");
 				},
 				//ExecResult::ReadWord { pos, value } => println!("[{pos:010}] {value:#x}"),
 				//ExecResult::ReadHalfWord { pos, value } => println!("[{pos:010}] {value:#x}"),
 				//ExecResult::ReadByte { pos, value } => println!("[{pos:010}] {value:#x}"),
 				ExecResult::WriteWord { pos, prev, value } if prev != value => {
-					println!("[{pos:010}] {prev:#x} => {value:#x}")
+					println!("[{pos:010}] {prev:#x} => {value:#x}");
 				},
 				ExecResult::WriteHalfWord { pos, prev, value } if prev != value => {
-					println!("[{pos:010}] {prev:#x} => {value:#x}")
+					println!("[{pos:010}] {prev:#x} => {value:#x}");
 				},
 				ExecResult::WriteByte { pos, prev, value } if prev != value => {
-					println!("[{pos:010}] {prev:#x} => {value:#x}")
+					println!("[{pos:010}] {prev:#x} => {value:#x}");
 				},
 				ExecResult::QueuedJump { pos } => println!("=> [{pos:010}]"),
 				_ => (),
@@ -722,7 +723,7 @@ pub fn inst_display(inst: &basic::Inst, pos: Pos) -> impl fmt::Display + '_ {
 			let arg = arg.into_inner();
 
 			// Then write the argument
-			arg.write(f, &ctx)?
+			arg.write(f, &ctx)?;
 		}
 
 		Ok(())

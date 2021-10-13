@@ -151,7 +151,7 @@ impl<'a> InstDisplay<'a> for Inst {
 
 	fn mnemonic<Ctx: DisplayCtx>(&'a self, _ctx: &Ctx) -> Self::Mnemonic {
 		// Special case for `nop`
-		if let Self::NOP = *self {
+		if *self == Self::NOP {
 			return "nop";
 		}
 

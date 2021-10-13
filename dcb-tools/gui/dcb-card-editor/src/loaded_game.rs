@@ -11,7 +11,7 @@ use std::{
 	convert::TryInto,
 	fs,
 	io::{Seek, Write},
-	path::{Path, PathBuf},
+	path::Path,
 };
 use zutil::StrContainsCaseInsensitive;
 
@@ -32,7 +32,7 @@ pub struct LoadedGame {
 
 impl LoadedGame {
 	/// Loads a game from a path
-	pub fn load(file_path: PathBuf) -> Result<Self, anyhow::Error> {
+	pub fn load(file_path: &Path) -> Result<Self, anyhow::Error> {
 		// Open the file
 		let file = fs::File::with_options()
 			.read(true)

@@ -28,7 +28,7 @@ fn main() -> Result<(), anyhow::Error> {
 	for input_file_path in &cli_data.input_files {
 		// If we don't have an output, try the input filename without extension if it's `.drv`, else use `.`
 		let output_dir = match &cli_data.output_dir {
-			Some(output) => output.to_path_buf(),
+			Some(output) => output.clone(),
 			None => match input_file_path.extension() {
 				Some(extension) if extension.eq_ignore_ascii_case("drv") => input_file_path.with_extension(""),
 				_ => PathBuf::from("."),

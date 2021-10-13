@@ -20,7 +20,7 @@ fn main() -> Result<(), anyhow::Error> {
 		simplelog::Config::default(),
 		simplelog::TerminalMode::Stderr,
 	)
-	.expect("Unable to initialize logger");
+	.context("Unable to initialize logger")?;
 
 	// Get all data from cli
 	let cli_data = CliData::new();
@@ -29,7 +29,7 @@ fn main() -> Result<(), anyhow::Error> {
 	for input_file_path in &cli_data.input_files {
 		// If we don't have an output, try the input filename without extension if it's `.pak`, else use `.`
 		let output_dir = match &cli_data.output_dir {
-			Some(output) => output.to_path_buf(),
+			Some(output) => output.clone(),
 			None => match input_file_path.extension() {
 				Some(extension) if extension.eq_ignore_ascii_case("pak") => input_file_path.with_extension(""),
 				_ => PathBuf::from("."),
@@ -59,7 +59,7 @@ fn extract_file(input_file_path: &Path, output_dir: &Path, cli_data: &CliData) -
 	}
 
 	// Then read all entries
-	let mut idx = 0;
+	let mut idx = 0u32;
 	while let Some(entry) = pak_fs.next_entry().context("Unable to read entry")? {
 		let idx = {
 			let cur_idx = idx;

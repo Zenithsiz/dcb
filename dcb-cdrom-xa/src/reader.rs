@@ -48,7 +48,6 @@ impl<R> CdRomReader<R> {
 	}
 
 	/// Converts this into it's underlying reader
-	#[allow(clippy::missing_const_for_fn)] // False positive
 	pub fn into_reader(self) -> R {
 		self.reader
 	}

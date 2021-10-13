@@ -78,12 +78,9 @@ impl Model3dSet {
 			];
 
 			let cur_pos = reader.stream_position().map_err(FromReaderError::GetPos)?;
-			dbg!(cur_pos);
 			let model = TmdModel::from_reader(reader).map_err(FromReaderError::ReadModel)?;
 			let after_pos = reader.stream_position().map_err(FromReaderError::GetPos)?;
-			dbg!(after_pos);
 			let size = after_pos - cur_pos;
-			dbg!(size);
 
 			models.push((cur_pos, size, unknown1, model));
 		}

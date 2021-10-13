@@ -17,6 +17,7 @@ use dcb_bytes::Bytes;
 
 /// A volume descriptor
 #[derive(PartialEq, Eq, Clone, Debug)]
+#[allow(clippy::large_enum_variant)] // Both variants are comparable (~2k vs ~1.3k)
 pub enum VolumeDescriptor {
 	/// Boot record
 	BootRecord(BootRecordVolumeDescriptor),

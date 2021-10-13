@@ -163,6 +163,7 @@ impl<'a> Parsable<'a> for Inst {
 		let to_kind = match mnemonic {
 			"li" => |ctx: &Ctx, arg: &LineArg| match arg {
 				// Try `i16`, `u16` then `u32` for the literal
+				#[allow(clippy::same_functions_in_if_condition)] // Each one has a different type
 				LineArg::Expr(expr) => {
 					let value = ctx.eval_expr(expr)?;
 					if let Ok(value) = value.try_into() {

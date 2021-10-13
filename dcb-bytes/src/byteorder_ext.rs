@@ -54,6 +54,7 @@ impl<B: ByteOrder> ByteOrderExt<B> for i8 {
 	}
 }
 
+/// Implements [`ByteOrderExt`] for `$T` with size `$SIZE` and methods to read/write `$read_func`/`$write_func`
 macro_rules! impl_read_bytes {
 	($($T:ty, $SIZE:literal, $read_func:ident, $write_func:ident),* $(,)?) => {
 		$(

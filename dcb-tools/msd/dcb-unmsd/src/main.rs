@@ -364,6 +364,7 @@ impl State {
 	}
 
 	/// Returns the display context for this state
+	#[must_use]
 	pub fn display_ctx<'a>(
 		&'a self, labels: &'a HashMap<u32, String>, vars: &'a HashMap<u16, String>,
 	) -> impl dcb_msd::inst::DisplayCtx + 'a {

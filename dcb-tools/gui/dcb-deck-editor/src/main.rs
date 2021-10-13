@@ -32,6 +32,7 @@ fn main() {
 	eframe::run_native(Box::new(app), NativeOptions::default());
 }
 
+#[derive(Default)]
 pub struct DeckEditor {
 	/// File path
 	file_path: Option<PathBuf>,
@@ -111,18 +112,8 @@ impl DeckEditor {
 	}
 }
 
-impl Default for DeckEditor {
-	fn default() -> Self {
-		Self {
-			file_path:         None,
-			loaded_game:       None,
-			deck_search:       String::new(),
-			open_edit_screens: vec![],
-		}
-	}
-}
-
 impl epi::App for DeckEditor {
+	#[allow(clippy::too_many_lines)] // TODO: Refactor
 	fn update(&mut self, ctx: &egui::CtxRef, frame: &mut epi::Frame<'_>) {
 		let Self {
 			file_path,
@@ -153,12 +144,7 @@ impl epi::App for DeckEditor {
 								(Ok(card_table), Ok(deck_table)) => {
 									*loaded_game = Some(LoadedGame { card_table, deck_table });
 								},
-								(Err(err), _) => MessageDialog::new()
-									.set_text(&format!("Unable to open file: {:?}", err))
-									.set_type(MessageType::Error)
-									.show_alert()
-									.expect("Unable to alert user"),
-								(_, Err(err)) => MessageDialog::new()
+								(Err(err), _) | (_, Err(err)) => MessageDialog::new()
 									.set_text(&format!("Unable to open file: {:?}", err))
 									.set_type(MessageType::Error)
 									.show_alert()
@@ -338,6 +324,7 @@ fn render_deck(ui: &mut egui::Ui, deck: &mut Deck, card_table: &mut CardTable) {
 					return;
 				}
 
+				#[allow(clippy::range_minus_one)] // `Slider::new` doesn't take a generic range
 				let range = 0..=(range.end - 1);
 				let card = &card_table.cards[usize::from(card_id.0)];
 

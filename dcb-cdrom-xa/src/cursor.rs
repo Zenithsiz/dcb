@@ -54,7 +54,6 @@ impl<T> CdRomCursor<T> {
 
 	/// Consumes this cursor and returns the inner value
 	#[must_use]
-	#[allow(clippy::missing_const_for_fn)] // False positive
 	pub fn into_inner(self) -> T {
 		self.inner
 	}

@@ -25,7 +25,7 @@ fn main() -> Result<(), anyhow::Error> {
 
 	// If we don't have an output, use the input filename with `.iso`
 	let output_file = match &cli_data.output_file {
-		Some(output) => output.to_path_buf(),
+		Some(output) => output.clone(),
 		None => {
 			let mut path = cli_data.input_dir.as_os_str().to_os_string();
 			path.push(".iso");

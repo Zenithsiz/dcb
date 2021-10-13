@@ -1,5 +1,8 @@
 //! Filesystem
 
+// Lints
+// TODO: Check all usages and remove
+#![allow(clippy::as_conversions)]
 
 // Imports
 use anyhow::Context;
@@ -61,11 +64,11 @@ impl DrvFs {
 	fn lookup(
 		&mut self, _req: &fuser::Request<'_>, parent: u64, name: &std::ffi::OsStr,
 	) -> Result<fuser::FileAttr, anyhow::Error> {
-		// Get the inode
-		let inode = self.inodes.get(&parent).context("Unable to get inode")?;
+		// Get the parent inode
+		let parent_inode = self.inodes.get(&parent).context("Unable to get inode")?;
 
 		// It it's not a directory, return Err
-		let dir = match inode.kind {
+		let dir = match parent_inode.kind {
 			InodeKind::Dir { ptr } => ptr,
 			_ => anyhow::bail!("Cannot lookup non-directories"),
 		};
@@ -164,10 +167,10 @@ impl DrvFs {
 				hash_map::Entry::Vacant(entry) => {
 					// Create the new inode
 					let inode = Inode {
-						ino:  self.inodes.len() as u64 + 1,
-						name: OsStr::from_bytes(name.as_bytes()).to_os_string(),
-						date: SystemTime::UNIX_EPOCH + Duration::from_secs(dir_entry.date.timestamp() as u64),
-						kind: InodeKind::from(dir_entry.kind),
+						ino:   self.inodes.len() as u64 + 1,
+						_name: OsStr::from_bytes(name.as_bytes()).to_os_string(),
+						date:  SystemTime::UNIX_EPOCH + Duration::from_secs(dir_entry.date.timestamp() as u64),
+						kind:  InodeKind::from(dir_entry.kind),
 					};
 
 					// TODO: Maybe use an `HashSet`?
@@ -297,7 +300,7 @@ pub struct Inode {
 	ino: u64,
 
 	/// Name
-	name: OsString,
+	_name: OsString,
 
 	/// Date
 	date: SystemTime,
@@ -310,10 +313,10 @@ impl Inode {
 	/// Returns the root inode
 	pub fn root() -> Self {
 		Self {
-			ino:  1,
-			name: OsString::from("<root>"),
-			date: SystemTime::now(),
-			kind: InodeKind::Dir { ptr: DirPtr::root() },
+			ino:   1,
+			_name: OsString::from("<root>"),
+			date:  SystemTime::now(),
+			kind:  InodeKind::Dir { ptr: DirPtr::root() },
 		}
 	}
 

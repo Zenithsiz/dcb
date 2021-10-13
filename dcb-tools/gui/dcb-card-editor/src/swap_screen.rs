@@ -32,6 +32,7 @@ impl SwapScreen {
 		// Else clamp our indexes and get our range as inclusive
 		self.lhs_idx = self.lhs_idx.clamp(range.start, range.end - 1);
 		self.rhs_idx = self.rhs_idx.clamp(range.start, range.end - 1);
+		#[allow(clippy::range_minus_one)] // `Slider::new` doesn't take a generic range
 		let range = range.start..=(range.end - 1);
 
 		// Then draw the sliders for both cards

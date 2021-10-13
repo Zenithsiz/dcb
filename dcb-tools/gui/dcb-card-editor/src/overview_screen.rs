@@ -75,7 +75,7 @@ impl OverviewScreen {
 				ui.label(format!("{cards_len}"));
 				ui.label(format!("{:.2}%", 100.0 * cards_len as f32 / *total_digimons as f32));
 
-				ui.end_row()
+				ui.end_row();
 			}
 
 			ui.label("Total");

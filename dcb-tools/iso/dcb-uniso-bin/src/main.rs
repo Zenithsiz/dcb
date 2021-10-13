@@ -28,7 +28,7 @@ fn main() -> Result<(), anyhow::Error> {
 
 	// If we don't have an output, try the input filename without extension if it's `.iso`, else use `.`
 	let output_dir = match &cli_data.output_dir {
-		Some(output) => output.to_path_buf(),
+		Some(output) => output.clone(),
 		None => match cli_data.input_file.extension() {
 			Some(extension) if extension.eq_ignore_ascii_case("iso") => cli_data.input_file.with_extension(""),
 			_ => PathBuf::from("."),

@@ -148,6 +148,8 @@ pub enum PreviewPanelBuilder {
 
 impl PreviewPanelBuilder {
 	/// Creates a new builder for a preview Panel
+	#[must_use]
+	#[allow(clippy::case_sensitive_file_extension_comparisons)] // TODO: Fix
 	pub fn new(game_file: Arc<GameFile>, path: String) -> ValueFuture<Self> {
 		task::spawn(move || {
 			let res: Result<_, anyhow::Error> = try {

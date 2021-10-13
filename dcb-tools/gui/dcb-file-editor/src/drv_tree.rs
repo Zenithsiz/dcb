@@ -132,12 +132,14 @@ pub enum TreeDirEntryKind {
 }
 
 impl TreeDirEntryKind {
-	/// Returns `true` if the tree_dir_entry_kind is [`Self::Dir`].
+	/// Returns `true` if the entry is a directory.
+	#[must_use]
 	pub fn is_dir(&self) -> bool {
 		matches!(self, Self::Dir(..))
 	}
 
-	/// Returns `true` if the tree_dir_entry_kind is [`Self::File`].
+	/// Returns `true` if the entry is a file.
+	#[must_use]
 	pub fn is_file(&self) -> bool {
 		matches!(self, Self::File { .. })
 	}

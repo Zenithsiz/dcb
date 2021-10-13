@@ -56,7 +56,7 @@ impl CliData {
 			None => {
 				let extension = match input_file.extension() {
 					Some(extension) => format!("{}.bin", extension.to_string_lossy()),
-					None => "bin".to_string(),
+					None => "bin".to_owned(),
 				};
 
 				input_file.with_extension(extension)

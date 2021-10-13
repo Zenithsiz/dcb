@@ -1,4 +1,4 @@
-//! CdRom packer
+//! Cd-Rom packer
 
 // Modules
 mod cli;

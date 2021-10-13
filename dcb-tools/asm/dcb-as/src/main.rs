@@ -11,7 +11,7 @@ use dcb_bytes::Bytes;
 use dcb_exe::{
 	data::DataKind,
 	inst::{
-		parse::{Line, LineInst},
+		parse::{Line, LineArgExpr, LineInst},
 		Inst, InstSize, Label, Parsable, ParseCtx,
 	},
 	Data, DataType, Pos,
@@ -27,6 +27,7 @@ use std::{
 };
 use zutil::{AsciiStrArr, BTreeMapVector};
 
+#[allow(clippy::too_many_lines)] // TODO: Refactor
 fn main() -> Result<(), anyhow::Error> {
 	// Initialize the logger
 	simplelog::TermLogger::init(
@@ -68,7 +69,7 @@ fn main() -> Result<(), anyhow::Error> {
 		let label = Rc::new(label);
 
 		labels_by_name.insert(Rc::clone(&label), pos);
-		labels_by_pos.insert(pos, label)
+		labels_by_pos.insert(pos, label);
 	}
 
 	// Read all lines within the input
@@ -118,7 +119,7 @@ fn main() -> Result<(), anyhow::Error> {
 			// Modify any local labels within the instruction to be global
 			for arg in &mut inst.args {
 				// Try to get it as a label
-				let label_name = match arg.as_expr_mut().and_then(|expr| expr.as_label_mut()) {
+				let label_name = match arg.as_expr_mut().and_then(LineArgExpr::as_label_mut) {
 					Some((label, ..)) => label,
 					None => continue,
 				};
@@ -264,7 +265,8 @@ impl<'a> ParseCtx<'a> for Ctx<'a> {
 }
 
 /// Helper function to retrieve a position by it's label name
-pub fn pos_by_label_name(labels_by_name: &HashMap<Rc<Label>, Pos>, label: &str) -> Option<Pos> {
+#[must_use]
+pub fn pos_by_label_name<S: BuildHasher>(labels_by_name: &HashMap<Rc<Label>, Pos, S>, label: &str) -> Option<Pos> {
 	let mut state = labels_by_name.hasher().build_hasher();
 	label.hash(&mut state);
 	let hash = state.finish();
@@ -326,6 +328,7 @@ pub struct SerializedData {
 
 impl SerializedData {
 	/// Converts this data to a `Data`
+	#[must_use]
 	pub fn into_data(self) -> Data {
 		Data::new(self.name, self.desc, self.pos, self.ty, DataKind::Foreign)
 	}

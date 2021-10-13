@@ -116,6 +116,7 @@ impl SwapFileStatus {
 	}
 
 	/// Returns this status as a string
+	#[must_use]
 	pub fn as_str(&self) -> Option<&str> {
 		match self {
 			Self::Setting(s) => s.as_deref(),
@@ -124,17 +125,20 @@ impl SwapFileStatus {
 		}
 	}
 
-	/// Returns `true` if the swap_file_status is [`Self::Setting`].
+	/// Returns `true` if the status is [`Self::Setting`].
+	#[must_use]
 	pub fn is_setting(&self) -> bool {
 		matches!(self, Self::Setting(..))
 	}
 
-	/// Returns `true` if the swap_file_status is [`Self::Set`].
+	/// Returns `true` if the status is [`Self::Set`].
+	#[must_use]
 	pub fn is_set(&self) -> bool {
 		matches!(self, Self::Set(..))
 	}
 
-	/// Returns `true` if the swap_file_status is [`Self::Unset`].
+	/// Returns `true` if the status is [`Self::Unset`].
+	#[must_use]
 	pub fn is_unset(&self) -> bool {
 		matches!(self, Self::Unset)
 	}

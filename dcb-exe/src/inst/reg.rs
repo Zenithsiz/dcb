@@ -1,6 +1,6 @@
 //! Cpu registers
 
-// Macro to generate `Register`
+/// Generates `Register`
 macro_rules! generate_register {
 	(
 		pub enum Register {

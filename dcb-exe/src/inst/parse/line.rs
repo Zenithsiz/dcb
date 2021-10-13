@@ -285,7 +285,7 @@ impl LineArgExpr {
 
 							// Else just make sure it's a single character and no empty
 							_ => {
-								let mut ch_chars = dbg!(ch).chars();
+								let mut ch_chars = ch.chars();
 								match ch_chars.next() {
 									Some(_) if ch_chars.next().is_some() => return Err(ParseArgError::MultiByteChar),
 									Some(ch) => ch,

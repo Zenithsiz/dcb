@@ -12,7 +12,7 @@ use dcb::{
 	CardTable,
 };
 use eframe::egui::{self, Color32};
-use std::{collections::BTreeMap, path::PathBuf};
+use std::{collections::BTreeMap, path::Path};
 use zutil::{keyed_par_iter::ParIterValue, AsciiStrArr, CachedValue, KeyedParIter, StrContainsCaseInsensitive};
 
 /// Diff screen
@@ -30,7 +30,7 @@ pub struct DiffScreen {
 
 impl DiffScreen {
 	/// Creates a new diff screen
-	pub fn new(other_file_path: PathBuf) -> Result<Self, anyhow::Error> {
+	pub fn new(other_file_path: &Path) -> Result<Self, anyhow::Error> {
 		// Load the other loaded game
 		let other_loaded_game = LoadedGame::load(other_file_path).context("Unable to load other game")?;
 
@@ -42,6 +42,7 @@ impl DiffScreen {
 	}
 
 	/// Displays this diff screen
+	#[allow(clippy::too_many_lines, clippy::cognitive_complexity)] // TODO: Refactor
 	pub fn display(&mut self, ui: &mut egui::Ui, loaded_game: &LoadedGame) {
 		let self_ptr = self as *const _;
 		let lhs = &loaded_game.card_table;
@@ -170,8 +171,8 @@ impl DiffScreen {
 								}
 							}
 							if changes.cross_move_effect {
-								self::display_cross_move_effect_opt(ui, &lhs.cross_move_effect);
-								self::display_cross_move_effect_opt(ui, &rhs.cross_move_effect);
+								self::display_cross_move_effect_opt(ui, lhs.cross_move_effect);
+								self::display_cross_move_effect_opt(ui, rhs.cross_move_effect);
 								ui.end_row();
 							}
 							if changes.effect_description.iter().any(|&changed| changed) {
@@ -195,8 +196,8 @@ impl DiffScreen {
 							}
 							for (idx, &changed) in changes.effect_conditions.iter().enumerate() {
 								if changed {
-									self::display_effect_condition_opt(ui, idx, &lhs.effect_conditions[idx]);
-									self::display_effect_condition_opt(ui, idx, &rhs.effect_conditions[idx]);
+									self::display_effect_condition_opt(ui, idx, lhs.effect_conditions[idx]);
+									self::display_effect_condition_opt(ui, idx, rhs.effect_conditions[idx]);
 									ui.end_row();
 								}
 							}
@@ -241,8 +242,8 @@ impl DiffScreen {
 							}
 							for (idx, &changed) in changes.effect_conditions.iter().enumerate() {
 								if changed {
-									self::display_effect_condition_opt(ui, idx, &lhs.effect_conditions[idx]);
-									self::display_effect_condition_opt(ui, idx, &rhs.effect_conditions[idx]);
+									self::display_effect_condition_opt(ui, idx, lhs.effect_conditions[idx]);
+									self::display_effect_condition_opt(ui, idx, rhs.effect_conditions[idx]);
 									ui.end_row();
 								}
 							}
@@ -297,7 +298,7 @@ impl DiffScreen {
 }
 
 /// Displays an optional cross move effect
-fn display_cross_move_effect_opt(ui: &mut egui::Ui, effect: &Option<CrossMoveEffect>) {
+fn display_cross_move_effect_opt(ui: &mut egui::Ui, effect: Option<CrossMoveEffect>) {
 	ui.label(format!(
 		"Cross move effect: {}",
 		zutil::DisplayWrapper::new(|f| match effect {
@@ -308,7 +309,7 @@ fn display_cross_move_effect_opt(ui: &mut egui::Ui, effect: &Option<CrossMoveEff
 }
 
 /// Displays an optional effect condition
-fn display_effect_condition_opt(ui: &mut egui::Ui, idx: usize, cond: &Option<EffectCondition>) {
+fn display_effect_condition_opt(ui: &mut egui::Ui, idx: usize, cond: Option<EffectCondition>) {
 	ui.label(format!(
 		"Effect condition #{}: {}",
 		idx + 1,
@@ -379,11 +380,11 @@ impl TableChanges {
 								},
 								digimon::DiffKind::CrossMoveEffect(..) => changes.cross_move_effect ^= true,
 								digimon::DiffKind::EffectDescription { idx, .. } => {
-									changes.effect_description[idx] ^= true
+									changes.effect_description[idx] ^= true;
 								},
 								digimon::DiffKind::EffectArrowColor(..) => changes.effect_arrow_color ^= true,
 								digimon::DiffKind::EffectCondition { idx, .. } => {
-									changes.effect_conditions[idx] ^= true
+									changes.effect_conditions[idx] ^= true;
 								},
 								digimon::DiffKind::Effect { idx, .. } => changes.effects[idx] ^= true,
 							});
@@ -398,7 +399,7 @@ impl TableChanges {
 							lhs.diff(rhs, &mut |diff: item::DiffKind| match diff {
 								item::DiffKind::Name(..) => panic!("Name was different"),
 								item::DiffKind::EffectDescription { idx, .. } => {
-									changes.effect_description[idx] ^= true
+									changes.effect_description[idx] ^= true;
 								},
 								item::DiffKind::EffectArrowColor(..) => changes.effect_arrow_color ^= true,
 								item::DiffKind::EffectCondition { idx, .. } => changes.effect_conditions[idx] ^= true,
@@ -415,7 +416,7 @@ impl TableChanges {
 							lhs.diff(rhs, &mut |diff: digivolve::DiffKind| match diff {
 								digivolve::DiffKind::Name(..) => panic!("Name was different"),
 								digivolve::DiffKind::EffectDescription { idx, .. } => {
-									changes.effect_description[idx] ^= true
+									changes.effect_description[idx] ^= true;
 								},
 								digivolve::DiffKind::Effect(..) => changes.effect ^= true,
 							});
@@ -482,6 +483,7 @@ pub enum CardChanges {
 
 /// Digimon changes
 #[derive(PartialEq, Eq, Clone, Copy, Default, Hash, Debug)]
+#[allow(clippy::struct_excessive_bools)] // We're just tracking the changes to digimons, can't simplify
 pub struct DigimonChanges {
 	pub speciality:         bool,
 	pub level:              bool,
