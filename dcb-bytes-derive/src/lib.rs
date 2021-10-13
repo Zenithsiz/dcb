@@ -4,6 +4,7 @@
 // Imports
 use quote::ToTokens;
 
+/// Derives `Bytes` using a sentinel value which maps to `None`.
 #[proc_macro_derive(ProxySentinel, attributes(proxy_sentinel))]
 pub fn proxy_sentinel_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 	//let args = syn::parse_macro_input!(args as syn::AttributeArgs);
@@ -18,21 +19,13 @@ pub fn proxy_sentinel_derive(input: proc_macro::TokenStream) -> proc_macro::Toke
 		},
 	};
 
-	if field.ident.is_some() {
-		panic!("Struct must be a tuple struct");
-	}
+	assert!(field.ident.is_none(), "Struct must be a tuple struct");
 
 	let mut sentinel_value = None;
 	let mut wrapper_type = None;
 	for attr in &input.attrs {
 		match attr.parse_meta() {
-			Ok(syn::Meta::List(list))
-				if list
-					.path
-					.get_ident()
-					.map(|ident| ident == "proxy_sentinel")
-					.unwrap_or(false) =>
-			{
+			Ok(syn::Meta::List(list)) if list.path.get_ident().map_or(false, |ident| ident == "proxy_sentinel") => {
 				for nested_attr in &list.nested {
 					match nested_attr {
 						syn::NestedMeta::Meta(syn::Meta::NameValue(name_value)) => match name_value.path.get_ident() {
@@ -87,6 +80,7 @@ pub fn proxy_sentinel_derive(input: proc_macro::TokenStream) -> proc_macro::Toke
 	output.into()
 }
 
+/// Derives `Bytes` using discriminants for each variant
 #[proc_macro_derive(Discriminant)]
 pub fn discriminant_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 	let input = syn::parse_macro_input!(input as syn::ItemEnum);
@@ -103,6 +97,7 @@ pub fn discriminant_derive(input: proc_macro::TokenStream) -> proc_macro::TokenS
 	}
 
 	let struct_name = input.ident;
+	#[allow(clippy::semicolon_if_nothing_returned)] // `quote!`'s fault
 	let output = quote::quote!(
 		// TODO: Maybe just define this in `dcb_bytes` and reference it here instead?
 		/// Error type for [`Bytes::deserialize_bytes`]

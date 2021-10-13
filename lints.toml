@@ -1,0 +1,91 @@
+warn = [
+  "clippy::restriction",
+  "clippy::pedantic",
+  "clippy::nursery",
+]
+
+forbid = [
+  # Must use `expect` instead of unwrap
+  "clippy::unwrap_used",
+]
+
+allow = [
+  # We don't need to mark every public function `inline`
+  "clippy::missing_inline_in_public_items", #
+  # We prefer literals to be copy-paste-able rather than readable
+  "clippy::unreadable_literal", #
+  # We prefer suffixes to be glued to the literal
+  "clippy::unseparated_literal_suffix", #
+  # We're fine with panicking when entering an unexpected state
+  "clippy::panic",
+  "clippy::unreachable",
+  "clippy::expect_used",
+  "clippy::panic_in_result_fn",
+  "clippy::unwrap_in_result",
+  "clippy::indexing_slicing",
+  "clippy::todo", #
+  # We prefer tail calls
+  "clippy::implicit_return", #
+  # We use multiple implementations to separate logic
+  "clippy::multiple_inherent_impl", #
+  # We use granular error types, usually one for each function, which document the
+  # errors that might happen, as opposed to documenting them in the function
+  "clippy::missing_errors_doc", #
+  # Due to our module organization, we end up with data types inheriting their module's name
+  "clippy::module_name_repetitions", #
+  # We need arithmetic for this crate
+  "clippy::integer_arithmetic",
+  "clippy::integer_division", #
+  # We want to benefit from match ergonomics where possible
+  "clippy::pattern_type_mismatch", #
+  # We only use wildcards when we only care about certain variants
+  "clippy::wildcard_enum_match_arm",
+  "clippy::match_wildcard_for_single_variants", #
+  # We're fine with shadowing, as long as it's related
+  "clippy::shadow_reuse",
+  "clippy::shadow_same", #
+  # Matching on booleans can look better than `if / else`
+  "clippy::match_bool",
+  "clippy::single_match_else",
+  "clippy::if_not_else", #
+  # If the `else` isn't needed, we don't put it
+  "clippy::else_if_without_else", #
+  # We're fine with non-exhaustive structs / enums, we aren't committing to them yet.
+  "clippy::exhaustive_structs",
+  "clippy::exhaustive_enums", #
+  # There are too many false positives with these lints
+  "clippy::use_self", #
+  # `Header` and `Reader` are common names
+  "clippy::similar_names", #
+  # We only use `# Panics` where a panic might be caused by a mis-use of the user, not assertions
+  "clippy::missing_panics_doc", #
+  # Some errors don't carry enough information to include them in another super-error
+  "clippy::map_err_ignore", #
+  # We prefer to not use `mods.rs` files
+  "clippy::self_named_module_files", #
+  # Some private items don't make sense to document
+  "clippy::missing_docs_in_private_items", #
+  # Too many false posities
+  # TODO: Remove once not as many false positives
+  "clippy::missing_const_for_fn", #
+  # We use `println` in binaries
+  # TODO: Filter this just for binaries
+  "clippy::print_stdout", #
+  # Not worth considering for most crates
+  # TODO: Deny in certain crates where it matters
+  "clippy::as_conversions",
+  "clippy::cast_possible_truncation",
+  "clippy::cast_sign_loss",
+  "clippy::cast_precision_loss", #
+  # We're fine defining items closer to their first usage
+  # TODO: Find a lint that instead warns of using items before defined
+  "clippy::items_after_statements", #
+  # TODO: Remove it from here once `array_split[_mut]` fixes this.
+  "clippy::shadow_unrelated", #
+  # TODO: Remove once most false positives are dealt with
+  "clippy::same_name_method", #
+  # We're fine with non-ascii characters in *strings*
+  "clippy::non_ascii_literal", #
+  # We're fine with floating point arithmetic
+  "clippy::float_arithmetic",
+]
