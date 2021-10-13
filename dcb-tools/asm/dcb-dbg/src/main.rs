@@ -5,7 +5,6 @@
 #![feature(
 	try_blocks,
 	format_args_capture,
-	iter_map_while,
 	box_syntax,
 	trivial_bounds,
 	slice_index_methods,

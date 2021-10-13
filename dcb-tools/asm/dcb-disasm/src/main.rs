@@ -1,6 +1,6 @@
 //! Disassembler
 
-#![feature(try_blocks, format_args_capture, iter_map_while, btree_drain_filter)]
+#![feature(try_blocks, format_args_capture, btree_drain_filter)]
 
 // Modules
 mod args;
