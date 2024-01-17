@@ -1,6 +1,6 @@
 //! Disassembler
 
-#![feature(try_blocks, format_args_capture, btree_drain_filter)]
+#![feature(try_blocks, format_args_capture, btree_extract_if)]
 
 // Modules
 mod args;
@@ -100,7 +100,7 @@ fn display_item<'a>(
 		// For each function or header, print a header and all it's instructions
 		ExeItem::Func { func, insts } => {
 			// Drop any old instruction buffers
-			inst_display_cache.drain_filter(|&pos, _| pos < func.start_pos);
+			inst_display_cache.extract_if(|&pos, _| pos < func.start_pos);
 
 			// Clear the previous function's instruction and append the new ones
 			cur_func_insts.clear();
@@ -226,7 +226,7 @@ fn display_item<'a>(
 			println!("##########\n");
 
 			// If there are any leftover overrides, warn
-			inst_arg_overrides.drain_filter(|pos, s| {
+			inst_arg_overrides.extract_if(|pos, s| {
 				log::warn!("Ignoring override at {}/{}: {}", pos.pos, pos.arg, s.escape_debug());
 				true
 			});

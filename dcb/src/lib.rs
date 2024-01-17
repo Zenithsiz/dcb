@@ -8,7 +8,6 @@
 	format_args_capture,
 	iter_is_partitioned,
 	try_trait_v2,
-	array_zip,
 	array_methods,
 	iter_zip
 )]

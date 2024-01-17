@@ -74,7 +74,7 @@ impl<T> GameFile<T> {
 impl<T: io::Seek> GameFile<T> {
 	/// Returns the `A.DRV` file alongside it's cursor
 	pub fn a_drv(&mut self) -> Result<DriveCursor<&mut T>, io::Error> {
-		match DriveCursor::new(&mut self.cdrom, Self::A_OFFSET, Self::A_SIZE) {
+		match DriveCursor::new_with_offset_len(&mut self.cdrom, Self::A_OFFSET, Self::A_SIZE) {
 			Ok(cursor) => Ok(cursor),
 			Err(err) => Err(err),
 		}
@@ -82,7 +82,7 @@ impl<T: io::Seek> GameFile<T> {
 
 	/// Returns the `B.DRV` file alongside it's cursor
 	pub fn b_drv(&mut self) -> Result<DriveCursor<&mut T>, io::Error> {
-		match DriveCursor::new(&mut self.cdrom, Self::B_OFFSET, Self::B_SIZE) {
+		match DriveCursor::new_with_offset_len(&mut self.cdrom, Self::B_OFFSET, Self::B_SIZE) {
 			Ok(cursor) => Ok(cursor),
 			Err(err) => Err(err),
 		}
@@ -90,7 +90,7 @@ impl<T: io::Seek> GameFile<T> {
 
 	/// Returns the `C.DRV` file alongside it's cursor
 	pub fn c_drv(&mut self) -> Result<DriveCursor<&mut T>, io::Error> {
-		match DriveCursor::new(&mut self.cdrom, Self::C_OFFSET, Self::C_SIZE) {
+		match DriveCursor::new_with_offset_len(&mut self.cdrom, Self::C_OFFSET, Self::C_SIZE) {
 			Ok(cursor) => Ok(cursor),
 			Err(err) => Err(err),
 		}
@@ -98,7 +98,7 @@ impl<T: io::Seek> GameFile<T> {
 
 	/// Returns the `E.DRV` file alongside it's cursor
 	pub fn e_drv(&mut self) -> Result<DriveCursor<&mut T>, io::Error> {
-		match DriveCursor::new(&mut self.cdrom, Self::E_OFFSET, Self::E_SIZE) {
+		match DriveCursor::new_with_offset_len(&mut self.cdrom, Self::E_OFFSET, Self::E_SIZE) {
 			Ok(cursor) => Ok(cursor),
 			Err(err) => Err(err),
 		}
@@ -106,7 +106,7 @@ impl<T: io::Seek> GameFile<T> {
 
 	/// Returns the `F.DRV` file alongside it's cursor
 	pub fn f_drv(&mut self) -> Result<DriveCursor<&mut T>, io::Error> {
-		match DriveCursor::new(&mut self.cdrom, Self::F_OFFSET, Self::F_SIZE) {
+		match DriveCursor::new_with_offset_len(&mut self.cdrom, Self::F_OFFSET, Self::F_SIZE) {
 			Ok(cursor) => Ok(cursor),
 			Err(err) => Err(err),
 		}
@@ -114,7 +114,7 @@ impl<T: io::Seek> GameFile<T> {
 
 	/// Returns the `G.DRV` file alongside it's cursor
 	pub fn g_drv(&mut self) -> Result<DriveCursor<&mut T>, io::Error> {
-		match DriveCursor::new(&mut self.cdrom, Self::G_OFFSET, Self::G_SIZE) {
+		match DriveCursor::new_with_offset_len(&mut self.cdrom, Self::G_OFFSET, Self::G_SIZE) {
 			Ok(cursor) => Ok(cursor),
 			Err(err) => Err(err),
 		}
@@ -122,7 +122,7 @@ impl<T: io::Seek> GameFile<T> {
 
 	/// Returns the `P.DRV` file alongside it's cursor
 	pub fn p_drv(&mut self) -> Result<DriveCursor<&mut T>, io::Error> {
-		match DriveCursor::new(&mut self.cdrom, Self::P_OFFSET, Self::P_SIZE) {
+		match DriveCursor::new_with_offset_len(&mut self.cdrom, Self::P_OFFSET, Self::P_SIZE) {
 			Ok(cursor) => Ok(cursor),
 			Err(err) => Err(err),
 		}

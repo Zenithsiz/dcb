@@ -34,7 +34,7 @@ impl LoadedGame {
 	/// Loads a game from a path
 	pub fn load(file_path: &Path) -> Result<Self, anyhow::Error> {
 		// Open the file
-		let file = fs::File::with_options()
+		let file = fs::File::options()
 			.read(true)
 			.write(true)
 			.open(&file_path)

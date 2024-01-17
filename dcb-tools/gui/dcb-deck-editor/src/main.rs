@@ -94,7 +94,7 @@ impl DeckEditor {
 	/// Saves the deck table to file
 	pub fn save_deck_table(file_path: &Path, deck_table: &DeckTable) -> Result<(), anyhow::Error> {
 		// Open the file
-		let file = fs::File::with_options()
+		let file = fs::File::options()
 			.write(true)
 			.open(file_path)
 			.context("Unable to open file")?;

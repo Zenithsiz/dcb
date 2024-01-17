@@ -390,8 +390,10 @@ struct DisplayCtx<'a> {
 }
 
 impl<'a> dcb_msd::inst::DisplayCtx for DisplayCtx<'a> {
-	type PosLabel<'b> = &'b str;
-	type VarLabel<'b> = &'b str;
+	type PosLabel<'b> = &'b str
+		where Self:'b;
+	type VarLabel<'b> = &'b str
+		where Self:'b;
 
 	fn cur_combo_box(&self) -> Option<ComboBox> {
 		match self.state {

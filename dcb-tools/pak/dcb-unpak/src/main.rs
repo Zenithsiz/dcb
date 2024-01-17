@@ -54,7 +54,7 @@ fn extract_file(input_file_path: &Path, output_dir: &Path, cli_data: &CliData) -
 
 	// Try to create the output directory if we're not just listing
 	if !cli_data.only_list {
-		zutil::try_create_folder(output_dir)
+		zutil::try_create_dir_all(output_dir)
 			.with_context(|| format!("Unable to create directory {}", output_dir.display()))?;
 	}
 

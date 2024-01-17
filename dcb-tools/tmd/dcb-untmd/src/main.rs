@@ -61,7 +61,7 @@ fn extract_file(input_path: &Path, output_dir: &Path) -> Result<(), anyhow::Erro
 
 	let m3d: M3d = M3d::read(&mut file).context("Unable to read m3d")?;
 
-	zutil::try_create_folder(output_dir).context("Unable to create output directory")?;
+	zutil::try_create_dir_all(output_dir).context("Unable to create output directory")?;
 
 	let mut output = fs::File::create(output_dir.join("final.obj")).context("Unable to create output file")?;
 
@@ -125,7 +125,8 @@ impl M3d {
 		let tmds = (0..entries_len)
 			.map(|idx| {
 				let start_pos = reader.stream_position().context("Unable to get reader's position")?;
-				let mut file = IoSlice::new(&mut reader, start_pos, u64::MAX).context("Unable to create inner file")?;
+				let mut file = IoSlice::new_with_offset_len(&mut reader, start_pos, u64::MAX)
+					.context("Unable to create inner file")?;
 
 				Tmd::read(&mut file).with_context(|| format!("Unable to parse tmd {idx}@{start_pos:#x}"))
 			})

@@ -5,12 +5,10 @@
 #![feature(
 	try_blocks,
 	format_args_capture,
-	box_syntax,
 	trivial_bounds,
 	slice_index_methods,
 	never_type,
 	label_break_value,
-	stdio_locked,
 	seek_stream_len
 )]
 
@@ -275,7 +273,7 @@ impl Memory {
 	#[must_use]
 	pub fn new() -> Self {
 		Self {
-			bytes: box [0; Self::SIZE],
+			bytes: Box::new([0; Self::SIZE]),
 		}
 	}
 

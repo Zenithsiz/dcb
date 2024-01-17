@@ -17,7 +17,8 @@
 	assert_matches,
 	extend_one,
 	exclusive_range_pattern,
-	label_break_value
+	label_break_value,
+	impl_trait_in_assoc_type
 )]
 
 // Modules

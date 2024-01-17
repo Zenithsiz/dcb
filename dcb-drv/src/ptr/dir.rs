@@ -11,7 +11,6 @@ pub use error::{FindEntryError, FindError, ReadEntriesError, ReadEntryError, Wri
 // Imports
 use crate::{path, DirEntry, DirEntryKind, DirEntryPtr, Path};
 use ascii::AsciiStr;
-use core::str::lossy::Utf8Lossy;
 use dcb_bytes::Bytes;
 use std::io::{self, SeekFrom};
 
@@ -63,7 +62,10 @@ impl DirPtr {
 				#[allow(clippy::single_match)] // We might add more matches in the future
 				match &bytes {
 					b"\x01CDD\xd5/\x00\x00\xf0?\x01\x00\xe6u\xad:\x83R\x83S\x81[ \x81` CARD2\x00" => {
-						log::warn!("Ignoring special directory entry: {:?}", Utf8Lossy::from_bytes(&bytes));
+						log::warn!(
+							"Ignoring special directory entry: {:?}",
+							String::from_utf8_lossy(&bytes)
+						);
 						return None;
 					},
 					_ => (),

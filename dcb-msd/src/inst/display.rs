@@ -7,10 +7,14 @@ use std::fmt;
 /// Display context for [`Inst::display`](super::Inst::display)
 pub trait DisplayCtx {
 	/// Position label type
-	type PosLabel<'a>: fmt::Display;
+	type PosLabel<'a>: fmt::Display
+	where
+		Self: 'a;
 
 	/// Variable label type
-	type VarLabel<'a>: fmt::Display;
+	type VarLabel<'a>: fmt::Display
+	where
+		Self: 'a;
 
 	/// Returns the current combo box, if any
 	fn cur_combo_box(&self) -> Option<ComboBox>;

@@ -8,8 +8,8 @@
 	never_type,
 	seek_stream_len,
 	try_blocks,
-	array_zip,
-	unwrap_infallible
+	unwrap_infallible,
+	lazy_cell
 )]
 
 // Modules
@@ -41,9 +41,8 @@ use ref_cast::RefCast;
 use replace_str_screen::ReplaceStrScreen;
 use std::{
 	fs,
-	lazy::SyncLazy,
 	path::Path,
-	sync::Mutex,
+	sync::{LazyLock, Mutex},
 	time::{Duration, SystemTime},
 };
 use strum::IntoEnumIterator;
@@ -613,7 +612,7 @@ fn render_digivolve_effect(ui: &mut egui::Ui, cur_effect: &mut DigivolveEffect) 
 /// Displays a digimon property
 fn render_digimon_property(ui: &mut egui::Ui, cur_property: &mut DigimonProperty) {
 	// Note: Only one search menu is up at a time, so this is fine.
-	static SEARCH: SyncLazy<Mutex<String>> = SyncLazy::new(Mutex::default);
+	static SEARCH: LazyLock<Mutex<String>> = LazyLock::new(Mutex::default);
 	let mut search = SEARCH.lock().expect("Poisoned");
 
 	let response = egui::ComboBox::from_id_source(cur_property as *const _)
@@ -641,7 +640,7 @@ fn render_digimon_property(ui: &mut egui::Ui, cur_property: &mut DigimonProperty
 /// Displays an optional digimon property
 fn render_digimon_property_opt(ui: &mut egui::Ui, cur_property: &mut Option<DigimonProperty>) {
 	// Note: Only one search menu is up at a time, so this is fine.
-	static SEARCH: SyncLazy<Mutex<String>> = SyncLazy::new(Mutex::default);
+	static SEARCH: LazyLock<Mutex<String>> = LazyLock::new(Mutex::default);
 	let mut search = SEARCH.lock().expect("Poisoned");
 
 	const TO_STR: fn(Option<DigimonProperty>) -> &'static str = |color| color.map_or("None", DigimonProperty::as_str);

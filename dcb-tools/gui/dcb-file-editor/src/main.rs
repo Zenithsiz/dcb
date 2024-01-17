@@ -1,14 +1,7 @@
 //! Card editor
 
 // Features
-#![feature(
-	with_options,
-	format_args_capture,
-	once_cell,
-	never_type,
-	try_blocks,
-	hash_drain_filter
-)]
+#![feature(with_options, format_args_capture, once_cell, never_type, try_blocks)]
 
 // Modules
 pub mod drv_tree;
@@ -132,7 +125,7 @@ impl epi::App for FileEditor {
 						// Then open the file
 						if let Some(file_path) = file_path.clone() {
 							*game_file_future = Some(task::spawn(move || {
-								let file = fs::File::with_options()
+								let file = fs::File::options()
 									.read(true)
 									.write(true)
 									.open(file_path)

@@ -32,5 +32,5 @@ members = [
   "dcb-tools/simple/dcb-extract-card-table",
 ]
 
-#[patch."https://github.com/Zenithsiz/zutil"]
-#zutil = {path = "../zutil"}
+[patch."https://github.com/Zenithsiz/zutil"]
+zutil = {path = "../.old/zutil"}
